@@ -191,7 +191,6 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
 
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
-using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, BuilderTypes>;
 
 using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 
@@ -207,6 +206,8 @@ using StoredRelations = ::ygg::formalism::ConcurrentRelations<RelationStorage, T
 /// then never instantiates them (yggdrasil/formalism/declarations.hpp).
 using Repository = ::ygg::formalism::Repository<boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>,
                                                 boost::mp11::mp_apply<StoredRelations, RelationRepositoryTypes>>;
+/// The pools of a writer's builders and scratch records, interned into a Repository (ygg::formalism::insert).
+using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<BuilderTypes, Repository>>;
 using RepositoryPtr = std::shared_ptr<Repository>;
 
 /**
@@ -239,7 +240,7 @@ using PredicateRowView = ygg::RowView<Predicate<T>, Repository>;
 template<FactKind T>
 using FunctionRowView = ygg::RowView<Function<T>, Repository>;
 using ActionRowView = ygg::RowView<Action<LiftedTag>, Repository>;
-using ActionRowDataView = urd::borrowed_view<ygg::Row<Action<LiftedTag>>, Repository>;
+using ActionRowBuilderView = urd::borrowed_view<ygg::Row<Action<LiftedTag>>, Repository, urd::builder<ygg::Row<Action<LiftedTag>>, Repository>>;
 using AxiomRowView = ygg::RowView<Axiom<LiftedTag>, Repository>;
 
 template<TaskKind T>

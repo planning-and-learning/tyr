@@ -24,18 +24,19 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of FDRFact: its record's members; each child built or interned (urd::child).
+/// The builder of FDRFact: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind T, typename C>
 struct builder<::tyr::formalism::planning::FDRFact<T>, C>
 {
-    urd::child<::tyr::formalism::planning::FDRVariable<T>, C> variable;
-    ::tyr::formalism::planning::FDRValue value;
+    urd::built_t<urd::index<::tyr::formalism::planning::FDRVariable<T>>, C> variable;
+    urd::built_t<::tyr::formalism::planning::FDRValue, C> value;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &builder::variable>, urd::field<"value", &builder::value>> {}; }
 

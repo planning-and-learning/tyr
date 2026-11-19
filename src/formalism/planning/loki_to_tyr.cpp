@@ -285,7 +285,7 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
         auto function = planning::checkout<Function<Tag>>(builder);
         function->name = element.get_name();
         function->arity = element.get_parameters().size();
-        return planning::insert(context, *function).first;
+        return context.insert(*function, builder).first;
     };
 
     if (element.get_name() == "total-cost")
@@ -300,7 +300,7 @@ urd::index<Object> LokiToTyrTranslator::translate_common(loki::formalism::Object
 {
     auto object = planning::checkout<Object>(builder);
     object->name = element.get_name();
-    return planning::insert(context, *object).first.index();
+    return context.insert(*object, builder).first.index();
 }
 
 urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
@@ -313,7 +313,7 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
         auto predicate = planning::checkout<Predicate<Tag>>(builder);
         predicate->name = element.get_name();
         predicate->arity = element.get_parameters().size();
-        return planning::insert(context, *predicate).first;
+        return context.insert(*predicate, builder).first;
     };
 
     if (m_fluent_predicates.count(element.get_name().str()) && !m_derived_predicates.count(element.get_name().str()))
@@ -328,7 +328,7 @@ urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::Vari
 {
     auto variable = planning::checkout<Variable>(builder);
     variable->name = element.get_name();
-    return planning::insert(context, *variable).first.index();
+    return context.insert(*variable, builder).first.index();
 }
 
 namespace
@@ -341,11 +341,11 @@ auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Buil
         throw std::invalid_argument("Row value count does not match relation arity.");
 
     auto binding = planning::checkout<ygg::Row<T>>(builder);
-    binding->relation = element.index();
+    binding->relation = element;
     binding->values.reserve(std::ranges::size(terms));
     for (const auto term : terms)
         binding->values.push_back(translate(term).value);
-    return planning::insert(context, *binding);
+    return context.insert(*binding, builder);
 }
 
 }
@@ -369,12 +369,12 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> AtomViewVariant
         {
             auto parameters = planning::checkout<Parameters>(builder);
-            parameters->variables = m_param_map.variables;
+            urd::build_member(parameters->variables, m_param_map.variables, context);
             auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
-            atom->parameters = planning::insert(context, *parameters).first.index();
-            atom->predicate = predicate.index();
+            atom->parameters = context.insert(*parameters, builder).first;
+            atom->predicate = predicate;
             this->translate_lifted(element.get_terms(), builder, context, atom->terms);
-            return planning::insert(context, *atom).first;
+            return context.insert(*atom, builder).first;
         },
         predicate_view_variant);
 }
@@ -387,9 +387,9 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
         [&]<FactKind Tag>(AtomView<LiftedTag, Tag> atom) -> LiteralViewVariant
         {
             auto literal = planning::checkout<Literal<LiftedTag, Tag>>(builder);
-            literal->atom = atom.index();
+            literal->atom = atom;
             literal->polarity = element.get_polarity();
-            return planning::insert(context, *literal).first;
+            return context.insert(*literal, builder).first;
         },
         atom_view_variant);
 }
@@ -409,9 +409,9 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     {
         auto binary = planning::checkout<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         binary->operation = operation;
-        binary->lhs = translate_lifted(element.get_left(), builder, context);
-        binary->rhs = translate_lifted(element.get_right(), builder, context);
-        return FunctionExpression<LiftedTag>(planning::insert(context, *binary).first.index());
+        urd::build_member(binary->lhs, translate_lifted(element.get_left(), builder, context), context);
+        urd::build_member(binary->rhs, translate_lifted(element.get_right(), builder, context), context);
+        return FunctionExpression<LiftedTag>(context.insert(*binary, builder).first.index());
     };
 
     switch (element.get_operation())
@@ -439,7 +439,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
         auto multi = planning::checkout<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         multi->operation = operation;
         translate_lifted(element.get_args(), builder, context, multi->args);
-        return FunctionExpression<LiftedTag>(planning::insert(context, *multi).first.index());
+        return FunctionExpression<LiftedTag>(context.insert(*multi, builder).first.index());
     };
 
     switch (element.get_operation())
@@ -460,8 +460,8 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 {
     auto minus = planning::checkout<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
     minus->operation = ArithmeticOperatorKind::Sub;
-    minus->arg = translate_lifted(element.get_expression(), builder, context);
-    return FunctionExpression<LiftedTag>(planning::insert(context, *minus).first.index());
+    urd::build_member(minus->arg, translate_lifted(element.get_expression(), builder, context), context);
+    return FunctionExpression<LiftedTag>(context.insert(*minus, builder).first.index());
 }
 
 FunctionExpression<LiftedTag> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
@@ -493,12 +493,12 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
         [&]<FactKind Tag>(FunctionView<Tag> function) -> FunctionTermViewVariant
         {
             auto parameters = planning::checkout<Parameters>(builder);
-            parameters->variables = m_param_map.variables;
+            urd::build_member(parameters->variables, m_param_map.variables, context);
             auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
-            fterm->parameters = planning::insert(context, *parameters).first.index();
-            fterm->function = function.index();
+            fterm->parameters = context.insert(*parameters, builder).first;
+            fterm->function = function;
             this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
-            return planning::insert(context, *fterm).first;
+            return context.insert(*fterm, builder).first;
         },
         function_view_variant);
 }
@@ -512,9 +512,9 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     {
         auto binary = planning::checkout<BinaryOperator<LiftedTag, BooleanOperatorKind>>(builder);
         binary->operation = operation;
-        binary->lhs = translate_lifted(element.get_left(), builder, context);
-        binary->rhs = translate_lifted(element.get_right(), builder, context);
-        return urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>(planning::insert(context, *binary).first.index());
+        urd::build_member(binary->lhs, translate_lifted(element.get_left(), builder, context), context);
+        urd::build_member(binary->rhs, translate_lifted(element.get_right(), builder, context), context);
+        return urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>(context.insert(*binary, builder).first.index());
     };
 
     switch (element.get_comparator())
@@ -543,13 +543,13 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
 {
     auto conj_condition = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
 
-    conj_condition->variables.insert(conj_condition->variables.end(), parameters.begin(), parameters.end());
+    urd::build_member(conj_condition->variables, parameters, context);
 
     const auto insert_literal = [&](LiteralViewVariant literal_view_variant)
     {
-        std::visit(Overloaded { [&](LiteralView<LiftedTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal.index()); },
-                                [&](LiteralView<LiftedTag, FluentTag> literal) { conj_condition->fluent_literals.push_back(literal.index()); },
-                                [&](LiteralView<LiftedTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal.index()); } },
+        std::visit(Overloaded { [&](LiteralView<LiftedTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal); },
+                                [&](LiteralView<LiftedTag, FluentTag> literal) { conj_condition->fluent_literals.push_back(literal); },
+                                [&](LiteralView<LiftedTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal); } },
                    literal_view_variant);
     };
 
@@ -574,7 +574,7 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
                             {
                                 const auto numeric_constraint = translate_lifted(subcondition, builder, context);
 
-                                conj_condition->numeric_constraints.push_back(numeric_constraint);
+                                urd::build_member(conj_condition->numeric_constraints.emplace_back(), numeric_constraint, context);
                             }
                             else
                             {
@@ -585,7 +585,7 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
                         part);
                 }
 
-                return planning::insert(context, *conj_condition).first.index();
+                return context.insert(*conj_condition, builder).first.index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
             {
@@ -593,15 +593,15 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
 
                 insert_literal(literal_view_variant);
 
-                return planning::insert(context, *conj_condition).first.index();
+                return context.insert(*conj_condition, builder).first.index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
             {
                 const auto numeric_constraint = translate_lifted(condition, builder, context);
 
-                conj_condition->numeric_constraints.push_back(numeric_constraint);
+                urd::build_member(conj_condition->numeric_constraints.emplace_back(), numeric_constraint, context);
 
-                return planning::insert(context, *conj_condition).first.index();
+                return context.insert(*conj_condition, builder).first.index();
             }
             else
             {
@@ -623,9 +623,9 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
         auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, F>>(builder);
 
         numeric_effect->operation = operation;
-        numeric_effect->fterm = fterm.index();
-        numeric_effect->fexpr = this->translate_lifted(element.get_expression(), builder, context);
-        return planning::insert(context, *numeric_effect).first;
+        numeric_effect->fterm = fterm;
+        urd::build_member(numeric_effect->fexpr, this->translate_lifted(element.get_expression(), builder, context), context);
+        return context.insert(*numeric_effect, builder).first;
     };
 
     const auto operation = [&]
@@ -714,7 +714,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     {
                         // Create empty conjunctive condition for unconditional effects
                         auto conj_cond = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
-                        return planning::insert(context, *conj_cond).first.index();
+                        return context.insert(*conj_cond, builder).first.index();
                     }
                 },
                 tmp_effect);
@@ -794,20 +794,21 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
             value;
 
         auto conj_effect = planning::checkout<ConjunctiveEffect<LiftedTag>>(builder);
-        conj_effect->literals.insert(conj_effect->literals.end(), cond_effect_fluent_literals.begin(), cond_effect_fluent_literals.end());
-        conj_effect->numeric_effects.insert(conj_effect->numeric_effects.end(),
-                                            cond_effect_fluent_numeric_effects.begin(),
-                                            cond_effect_fluent_numeric_effects.end());
-        conj_effect->auxiliary_numeric_effect = cond_effect_auxiliary_numeric_effects;
-        const auto conj_effect_index = planning::insert(context, *conj_effect).first.index();
+        for (const auto& literal : cond_effect_fluent_literals)
+            urd::build_member(conj_effect->literals.emplace_back(), literal, context);
+        for (const auto& numeric_effect : cond_effect_fluent_numeric_effects)
+            urd::build_member(conj_effect->numeric_effects.emplace_back(), numeric_effect, context);
+        urd::build_member(conj_effect->auxiliary_numeric_effect, cond_effect_auxiliary_numeric_effects, context);
+        const auto conj_effect_index = context.insert(*conj_effect, builder).first.index();
 
         auto cond_effect = planning::checkout<ConditionalEffect<LiftedTag>>(builder);
-        cond_effect->variables.insert(cond_effect->variables.end(), cond_effect_universal_parameters.begin(), cond_effect_universal_parameters.end());
-        cond_effect->condition = cond_conjunctive_condition;
-        cond_effect->effect = conj_effect_index;
-        const auto cond_effect_index = planning::insert(context, *cond_effect).first.index();
+        for (const auto& variable : cond_effect_universal_parameters)
+            urd::build_member(cond_effect->variables.emplace_back(), variable, context);
+        urd::build_member(cond_effect->condition, cond_conjunctive_condition, context);
+        urd::build_member(cond_effect->effect, conj_effect_index, context);
+        const auto cond_effect_index = context.insert(*cond_effect, builder).first.index();
 
-        output.push_back(cond_effect_index);
+        urd::build_member(output.emplace_back(), cond_effect_index, context);
     }
 }
 
@@ -818,55 +819,63 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
     action->name = std::string(element.get_name());
     action->original_name = std::string(element.get_original_name());
 
-    // 1. Translate conditions
-    translate_common(element.get_parameters(), builder, context, action->variables);
+    // 1. Translate conditions (the parameters: a list of indices the scope map reads, written into the builder)
+    auto variables = urd::flat_vector<urd::index<Variable>>();
+    translate_common(element.get_parameters(), builder, context, variables);
+    urd::build_member(action->variables, variables, context);
 
     ///---------- Push parameters and parse scope -------------
-    m_param_map.push_parameters(action->variables);
+    m_param_map.push_parameters(variables);
     {
         auto conjunctive_condition = urd::index<ConjunctiveCondition<LiftedTag>>();
         if (element.get_precondition().has_value())
         {
-            conjunctive_condition = translate_lifted(element.get_precondition().value(), action->variables, builder, context);
+            conjunctive_condition = translate_lifted(element.get_precondition().value(), variables, builder, context);
         }
         else
         {
             // Create empty one
             auto conj_cond = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
-            conjunctive_condition = planning::insert(context, *conj_cond).first.index();
+            conjunctive_condition = context.insert(*conj_cond, builder).first.index();
         }
-        action->condition = conjunctive_condition;
+        urd::build_member(action->condition, conjunctive_condition, context);
 
         // 2. Translate effects
         if (element.get_effect().has_value())
-            translate_lifted(element.get_effect().value(), action->variables, builder, context, action->effects);
+        {
+            auto effects = urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>();
+            translate_lifted(element.get_effect().value(), variables, builder, context, effects);
+            urd::build_member(action->effects, effects, context);
+        }
     }
     ///---------- Pop parameters -------------
-    m_param_map.pop_parameters(action->variables);
+    m_param_map.pop_parameters(variables);
 
-    return planning::insert(context, *action).first.index();
+    return context.insert(*action, builder).first.index();
 }
 
 urd::index<Axiom<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context)
 {
     auto axiom = planning::checkout<Axiom<LiftedTag>>(builder);
 
-    translate_common(element.get_parameters(), builder, context, axiom->variables);
+    auto variables = urd::flat_vector<urd::index<Variable>>();  // the scope map reads them
+    translate_common(element.get_parameters(), builder, context, variables);
+    urd::build_member(axiom->variables, variables, context);
 
     ///---------- Push parameters and parse scope -------------
-    m_param_map.push_parameters(axiom->variables);
+    m_param_map.push_parameters(variables);
     {
-        axiom->body = translate_lifted(element.get_condition(), axiom->variables, builder, context);
+        urd::build_member(axiom->body, translate_lifted(element.get_condition(), variables, builder, context), context);
         const auto literal_view_variant = translate_lifted(element.get_head(), builder, context);
 
-        std::visit(Overloaded { [&](LiteralView<LiftedTag, DerivedTag> literal) { axiom->head = literal.get_atom().index(); },
+        std::visit(Overloaded { [&](LiteralView<LiftedTag, DerivedTag> literal) { axiom->head = literal.get_atom(); },
                                 [](auto) { throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head."); } },
                    literal_view_variant);
     }
     ///---------- Pop parameters -------------
-    m_param_map.pop_parameters(axiom->variables);
+    m_param_map.pop_parameters(variables);
 
-    return planning::insert(context, *axiom).first.index();
+    return context.insert(*axiom, builder).first.index();
 }
 
 /**
@@ -891,7 +900,7 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
             atom->row =
                 to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.index();
-            return planning::insert(context, *atom).first;
+            return context.insert(*atom, builder).first;
         },
         predicate_view_variant);
 }
@@ -914,9 +923,9 @@ GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism
         [&]<FactKind Tag>(AtomView<GroundTag, Tag> atom) -> GroundLiteralViewVariant
         {
             auto literal = planning::checkout<Literal<GroundTag, Tag>>(builder);
-            literal->atom = atom.index();
+            literal->atom = atom;
             literal->polarity = element.get_polarity();
-            return planning::insert(context, *literal).first;
+            return context.insert(*literal, builder).first;
         },
         atom_view_variant);
 }
@@ -947,9 +956,9 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     {
         auto binary = planning::checkout<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         binary->operation = operation;
-        binary->lhs = translate_grounded(element.get_left(), builder, context);
-        binary->rhs = translate_grounded(element.get_right(), builder, context);
-        return FunctionExpression<GroundTag>(planning::insert(context, *binary).first.index());
+        urd::build_member(binary->lhs, translate_grounded(element.get_left(), builder, context), context);
+        urd::build_member(binary->rhs, translate_grounded(element.get_right(), builder, context), context);
+        return FunctionExpression<GroundTag>(context.insert(*binary, builder).first.index());
     };
 
     switch (element.get_operation())
@@ -977,7 +986,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
         auto multi = planning::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         multi->operation = operation;
         translate_grounded(element.get_args(), builder, context, multi->args);
-        return FunctionExpression<GroundTag>(planning::insert(context, *multi).first.index());
+        return FunctionExpression<GroundTag>(context.insert(*multi, builder).first.index());
     };
 
     switch (element.get_operation())
@@ -998,8 +1007,8 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 {
     auto minus = planning::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
     minus->operation = ArithmeticOperatorKind::Sub;
-    minus->arg = translate_grounded(element.get_expression(), builder, context);
-    return FunctionExpression<GroundTag>(planning::insert(context, *minus).first.index());
+    urd::build_member(minus->arg, translate_grounded(element.get_expression(), builder, context), context);
+    return FunctionExpression<GroundTag>(context.insert(*minus, builder).first.index());
 }
 
 FunctionExpression<GroundTag> LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
@@ -1032,7 +1041,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
             fterm->row =
                 to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.index();
-            return planning::insert(context, *fterm).first;
+            return context.insert(*fterm, builder).first;
         },
         function_view_variant);
 }
@@ -1046,7 +1055,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
         [&]<FactKind Tag>(FunctionTermView<GroundTag, Tag> fterm) -> GroundFunctionTermValueViewVariant
         {
             auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, Tag>>(builder);
-            fterm_value->fterm = fterm.index();
+            fterm_value->fterm = fterm;
             fterm_value->value = std::visit(
                 []<typename T>(const T& expression) -> ygg::float_t
                 {
@@ -1056,7 +1065,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
                         throw std::runtime_error("Expected numeric initial function value.");
                 },
                 element.get_value());
-            return planning::insert(context, *fterm_value).first;
+            return context.insert(*fterm_value, builder).first;
         },
         fterm_view_variant);
 }
@@ -1070,9 +1079,9 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     {
         auto binary = planning::checkout<BinaryOperator<GroundTag, BooleanOperatorKind>>(builder);
         binary->operation = operation;
-        binary->lhs = translate_grounded(element.get_left(), builder, context);
-        binary->rhs = translate_grounded(element.get_right(), builder, context);
-        return urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>(planning::insert(context, *binary).first.index());
+        urd::build_member(binary->lhs, translate_grounded(element.get_left(), builder, context), context);
+        urd::build_member(binary->rhs, translate_grounded(element.get_right(), builder, context), context);
+        return urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>(context.insert(*binary, builder).first.index());
     };
 
     switch (element.get_comparator())
@@ -1101,13 +1110,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 
     const auto insert_literal = [&](GroundLiteralOrFactViewVariant literal_or_fact_view_variant)
     {
-        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal.index()); },
+        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal); },
                                 [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
                                 {
-                                    (fact.second ? conj_condition->positive_facts : conj_condition->negative_facts)
-                                        .push_back(urd::make<FDRFact<FluentTag>>(fact.first.get_variable(), fact.first.get_value()));
+                                    urd::build_member((fact.second ? conj_condition->positive_facts : conj_condition->negative_facts).emplace_back(),
+                                                      urd::make<FDRFact<FluentTag>>(fact.first.get_variable(), fact.first.get_value()),
+                                                      context);
                                 },
-                                [&](LiteralView<GroundTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal.index()); } },
+                                [&](LiteralView<GroundTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal); } },
                    literal_or_fact_view_variant);
     };
 
@@ -1132,7 +1142,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                             {
                                 const auto numeric_constraint = translate_grounded(subcondition, builder, context);
 
-                                conj_condition->numeric_constraints.push_back(numeric_constraint);
+                                urd::build_member(conj_condition->numeric_constraints.emplace_back(), numeric_constraint, context);
                             }
                             else
                             {
@@ -1143,7 +1153,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                         part);
                 }
 
-                return planning::insert(context, *conj_condition).first.index();
+                return context.insert(*conj_condition, builder).first.index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
             {
@@ -1151,15 +1161,15 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 
                 insert_literal(index_literal_variant);
 
-                return planning::insert(context, *conj_condition).first.index();
+                return context.insert(*conj_condition, builder).first.index();
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
             {
                 const auto numeric_constraint = translate_grounded(condition, builder, context);
 
-                conj_condition->numeric_constraints.push_back(numeric_constraint);
+                urd::build_member(conj_condition->numeric_constraints.emplace_back(), numeric_constraint, context);
 
-                return planning::insert(context, *conj_condition).first.index();
+                return context.insert(*conj_condition, builder).first.index();
             }
             else
             {
@@ -1174,12 +1184,12 @@ urd::index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
 {
     auto metric = planning::checkout<Metric>(builder);
 
-    metric->fexpr = translate_grounded(element.get_expression(), builder, context);
+    urd::build_member(metric->fexpr, translate_grounded(element.get_expression(), builder, context), context);
     metric->optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
                                          OptimizationDirection::Minimize :
                                          OptimizationDirection::Maximize;
 
-    return planning::insert(context, *metric).first.index();
+    return context.insert(*metric, builder).first.index();
 }
 
 PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path)
@@ -1202,19 +1212,19 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
 
     /* Predicates section */
     for (const auto predicate : element.get_predicates())
-        std::visit(Overloaded { [&](PredicateView<StaticTag> p) { domain->static_predicates.push_back(p.index()); },
-                                [&](PredicateView<FluentTag> p) { domain->fluent_predicates.push_back(p.index()); },
-                                [&](PredicateView<DerivedTag> p) { domain->derived_predicates.push_back(p.index()); } },
+        std::visit(Overloaded { [&](PredicateView<StaticTag> p) { domain->static_predicates.push_back(p); },
+                                [&](PredicateView<FluentTag> p) { domain->fluent_predicates.push_back(p); },
+                                [&](PredicateView<DerivedTag> p) { domain->derived_predicates.push_back(p); } },
                    translate_common(predicate, builder, *context));
 
     /* Functions section */
     for (const auto function : element.get_functions())
-        std::visit(Overloaded { [&](FunctionView<StaticTag> f) { domain->static_functions.push_back(f.index()); },
-                                [&](FunctionView<FluentTag> f) { domain->fluent_functions.push_back(f.index()); },
+        std::visit(Overloaded { [&](FunctionView<StaticTag> f) { domain->static_functions.push_back(f); },
+                                [&](FunctionView<FluentTag> f) { domain->fluent_functions.push_back(f); },
                                 [&](FunctionView<AuxiliaryTag> f)
                                 {
                                     assert(!domain->auxiliary_function);
-                                    domain->auxiliary_function = f.index();
+                                    domain->auxiliary_function = f;
                                 } },
                    translate_common(function, builder, *context));
 
@@ -1222,7 +1232,7 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     translate_lifted(element.get_actions(), builder, *context, domain->actions);
     translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
 
-    return PlanningDomain(planning::insert(*context, *domain).first, context, std::move(path));
+    return PlanningDomain(context->insert(*domain, builder).first, context, std::move(path));
 }
 
 PlanningTask<LiftedTag>
@@ -1243,7 +1253,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     task->name = element.get_name();
 
     /* Domain */
-    task->domain = domain.get_domain().index();
+    task->domain = domain.get_domain();
 
     auto task_derived_predicates = urd::Store<urd::set<std::string>, urd::stable_refs> {};
     for (const auto predicate : domain.get_domain().get_predicates<DerivedTag>())
@@ -1254,7 +1264,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
         std::visit(Overloaded { [&](PredicateView<DerivedTag> p)
                                 {
                                     if (task_derived_predicates.insert(std::string(p.get_name())).second)
-                                        task->derived_predicates.push_back(p.index());
+                                        task->derived_predicates.push_back(p);
                                 },
                                 [](auto) {} },
                    predicate_view_variant);
@@ -1273,20 +1283,20 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     /* Initial section */
     for (const auto& literal : element.get_initial_literals())
-        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> l) { task->static_atoms.push_back(l.get_atom().index()); },
+        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> l) { task->static_atoms.push_back(l.get_atom()); },
                                 [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
-                                { task->fluent_atoms.push_back(fact.first.get_atom().value().index()); },  // we know it must have a value
+                                { task->fluent_atoms.push_back(fact.first.get_atom().value()); },  // we know it must have a value
                                 [](LiteralView<GroundTag, DerivedTag>)
                                 { throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section."); } },
                    translate_grounded(literal, builder, *task_context, *fdr_context));
 
     for (const auto fterm_value : element.get_initial_function_values())
-        std::visit(Overloaded { [&](FunctionTermValueView<GroundTag, StaticTag> v) { task->static_fterm_values.push_back(v.index()); },
-                                [&](FunctionTermValueView<GroundTag, FluentTag> v) { task->fluent_fterm_values.push_back(v.index()); },
+        std::visit(Overloaded { [&](FunctionTermValueView<GroundTag, StaticTag> v) { task->static_fterm_values.push_back(v); },
+                                [&](FunctionTermValueView<GroundTag, FluentTag> v) { task->fluent_fterm_values.push_back(v); },
                                 [&](FunctionTermValueView<GroundTag, AuxiliaryTag> v)
                                 {
                                     assert(!task->auxiliary_fterm_value);
-                                    task->auxiliary_fterm_value = v.index();
+                                    task->auxiliary_fterm_value = v;
                                 } },
                    translate_grounded(fterm_value, builder, *task_context));
 
@@ -1294,19 +1304,19 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     if (element.get_goal().has_value())
     {
-        task->goal = translate_grounded(element.get_goal().value(), builder, *task_context, *fdr_context);
+        urd::build_member(task->goal, translate_grounded(element.get_goal().value(), builder, *task_context, *fdr_context), *task_context);
     }
     else
     {
         // Create empty conjunctive condition
         auto conj_cond = planning::checkout<ConjunctiveCondition<GroundTag>>(builder);
-        task->goal = planning::insert(*task_context, *conj_cond).first.index();
+        task->goal = task_context->insert(*conj_cond, builder).first;
     }
 
     /* Metric section */
     if (element.get_metric().has_value())
     {
-        task->metric = translate_grounded(element.get_metric().value(), builder, *task_context);
+        urd::build_member(task->metric.emplace(), translate_grounded(element.get_metric().value(), builder, *task_context), *task_context);
     }
     else
     {
@@ -1316,6 +1326,6 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     /* Structures section */
     translate_lifted(element.get_axioms(), builder, *task_context, task->axioms);
 
-    return PlanningTask<LiftedTag>(planning::insert(*task_context, *task).first, std::move(fdr_context), task_context, std::move(domain), std::move(path));
+    return PlanningTask<LiftedTag>(task_context->insert(*task, builder).first, std::move(fdr_context), task_context, std::move(domain), std::move(path));
 }
 }

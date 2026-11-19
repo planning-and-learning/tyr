@@ -44,11 +44,12 @@ std::pair<PredicateRowView<T_DST>, bool> merge_d2p(datalog::PredicateRowView<T_S
 {
     auto binding = planning::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
-    binding->relation = predicate_mapping.at(element.get_relation()).index();
+    // The mapped predicate may be the lifted task's (a derived predicate): the destination's copy at its index.
+    binding->relation = schema_in_destination(predicate_mapping.at(element.get_relation()), context);
     for (const auto object : element.template get<urd::index<Object>>())
         binding->values.push_back(object.value);
 
-    return planning::insert(context.destination(), *binding);
+    return context.destination().insert(*binding, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -60,7 +61,7 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateRow
 
     urd::store(atom->row, merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first);
 
-    return planning::insert(context.destination(), *atom);
+    return context.destination().insert(*atom, context.builder());
 }
 
 }

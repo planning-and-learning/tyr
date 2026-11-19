@@ -63,7 +63,7 @@ void translate_task_symbols(formalism::planning::TaskView<LiftedTag> task,
                             bool with_derived,
                             TranslationContext<LiftedTag>& translation_context,
                             formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                            urd::data<formalism::datalog::Program<LiftedTag>>& program);
+                            urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program);
 
 /// The RPG heuristics charge each action rule a unit cost.
 inline void require_unit_cost(CostMode cost_mode)

@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/write_context.hpp"
 
 #include <yggdrasil/formalism/interning.hpp>
 
@@ -30,9 +31,18 @@ namespace tyr::formalism::planning
 
 using ygg::formalism::insert;
 
+/// A record the repository holds as a symbol is made canonical before it is interned (a row is ygg's).
 template<typename T>
+    requires ygg::formalism::SupportsSymbol<Repository, T>
 void prepare_for_insert(Repository&, urd::data<T>& data)
 { canonicalize(data); }
+
+/// A lifted schema (a predicate, function, action or axiom) as the destination holds it: at the schema's own index. The
+/// ground repository holds every schema it grounds there: in the domain layer it shares with the lifted task, or, for the
+/// task's own derived predicates and axioms, as the copies instantiate_ground_task makes of them, in order.
+template<typename T>
+urd::index_view<T, Repository> schema_in_destination(urd::index_view<T, Repository> schema, WriteContext<Builder, Repository>& context)
+{ return context.destination().view(schema.index()); }
 
 }
 

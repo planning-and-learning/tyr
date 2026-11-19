@@ -44,7 +44,7 @@ private:
     using BuilderNode = Node<LiftedTag, StateBuilderView<LiftedTag>>;
     using Builder = urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>;
     using Bindings = urd::Store<urd::sequence<formalism::planning::ActionRowView>>;
-    using BindingData = urd::data<ygg::Row<formalism::planning::Action<LiftedTag>>>;
+    using BindingData = urd::builder<ygg::Row<formalism::planning::Action<LiftedTag>>, formalism::planning::Repository>;
 
     explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
 
@@ -154,11 +154,11 @@ public:
     BuilderNode
     get_successor_node(const Source& node, formalism::planning::ActionRowView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     Node<LiftedTag> get_successor_node(const Source& node,
-                                       formalism::planning::ActionRowDataView binding,
+                                       formalism::planning::ActionRowBuilderView binding,
                                        StateRepository<LiftedTag>& storage,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
     BuilderNode
-    get_successor_node(const Source& node, formalism::planning::ActionRowDataView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    get_successor_node(const Source& node, formalism::planning::ActionRowBuilderView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     Node<LiftedTag>
     get_successor_node(const Source& node, const BindingData& binding, StateRepository<LiftedTag>& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     BuilderNode get_successor_node(const Source& node, const BindingData& binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);

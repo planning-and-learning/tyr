@@ -5,6 +5,7 @@
 #ifndef TYR_DATALOG_DATABASE_SYNTAX_QUERY_CONSTRUCTION_HPP_
 #define TYR_DATALOG_DATABASE_SYNTAX_QUERY_CONSTRUCTION_HPP_
 
+#include "tyr/datalog/lifted/database/syntax/query_builder.hpp"
 #include "tyr/datalog/lifted/database/syntax/query_repository.hpp"
 #include "yggdrasil/formalism/builder.hpp"
 #include "yggdrasil/formalism/interning.hpp"
@@ -17,7 +18,7 @@
 
 namespace tyr::datalog::database
 {
-using QueryBuilder = boost::mp11::mp_apply<::ygg::formalism::BuilderStorage, QuerySymbolTypes>;
+using QueryBuilder = boost::mp11::mp_apply<::ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<QuerySymbolTypes, QueryRepository>>;
 
 using ::ygg::formalism::checkout;
 using ::ygg::formalism::insert;
@@ -58,12 +59,13 @@ void derive(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& rep
 void derive(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository);
 }  // namespace detail
 
-/// A query's columns are valid (an input's, an empty relation's); a record is interned as it is, its derived field
-/// included (detail::derive, which its creator runs).
+/// A query is prepared from its children and other fields, once they are its record's: its derived field (a plan, a
+/// rename's columns) computed from them (detail::derive), its columns validated (an input's, an empty relation's).
 template<typename Tag>
     requires(!std::same_as<Tag, void>)
-void prepare_for_insert(QueryRepository& /*repository*/, urd::data<Query<Tag>>& data)
+void prepare_for_insert(QueryRepository& repository, urd::data<Query<Tag>>& data)
 {
+    detail::derive(data, repository);
     if constexpr (requires { data.columns; } && !std::same_as<Tag, QueryRenameTag>)
         ygg::validate_columns({ data.columns.data(), data.columns.size() });
 }
@@ -71,23 +73,13 @@ void prepare_for_insert(QueryRepository& /*repository*/, urd::data<Query<Tag>>& 
 /// The concrete record must already be interned.
 void prepare_for_insert(QueryRepository& repository, urd::data<Query<>>& data);
 
-/// Interns a query its creator built from its children and other fields: its derived field (a plan, a rename's
-/// columns) is computed from them first (detail::derive). The view, and whether it was new.
+/// Interns a built query (prepared: prepare_for_insert), then its heterogeneous root.
 template<typename Tag>
-    requires(!std::same_as<Tag, void>)
-std::pair<QueryView<Tag>, bool> derive_and_insert(QueryRepository& repository, urd::data<Query<Tag>>& data)
-{
-    detail::derive(data, repository);
-    return insert(repository, data);
-}
-
-/// Creates a query (derive_and_insert), then interns its heterogeneous root.
-template<typename Tag>
-QueryView<> insert_query(QueryRepository& repository, QueryBuilder& builder, urd::data<Query<Tag>>& data)
+QueryView<> insert_query(QueryRepository& repository, QueryBuilder& builder, const urd::builder<Query<Tag>, QueryRepository>& built)
 {
     auto root = checkout<Query<>>(builder);
-    root->variant = derive_and_insert(repository, data).first.index();
-    return insert(repository, *root).first;
+    root->variant = repository.insert(built, builder).first;
+    return repository.insert(*root, builder).first;
 }
 }  // namespace tyr::datalog::database
 

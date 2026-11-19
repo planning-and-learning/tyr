@@ -68,11 +68,12 @@ namespace
 {
 void append_variable(formalism::planning::VariableView variable,
                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                     urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                     urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
-    const auto index = formalism::copy(variable, context).first.index();
-    if (std::ranges::find(conj_cond.variables, index) == conj_cond.variables.end())
-        conj_cond.variables.push_back(index);
+    const auto copied = formalism::copy(variable, context).first;
+    const auto child = urd::child<formalism::Variable, formalism::datalog::Repository>(copied);
+    if (std::ranges::find(conj_cond.variables, child) == conj_cond.variables.end())
+        conj_cond.variables.push_back(copied);
 }
 
 /// The relaxation holds no values of functions: the numeric constraints of a condition are taken to hold.
@@ -80,24 +81,24 @@ void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> actio
                                 formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
                                 TranslationContext<LiftedTag>& translation_context,
                                 formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                                urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                                urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     // Action parameter may get deleted.
     for (const auto& variable : action.get_variables())
         append_variable(variable, context, conj_cond);
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
     for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 
     for (const auto variable : cond_eff.get_variables())
         append_variable(variable, context, conj_cond);
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 }
 
 auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
@@ -108,9 +109,9 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
 
     for (const auto fact : goal.get_facts<formalism::PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_predicate, context))
-            conj_cond->fluent_literals.push_back(literal->index());
+            conj_cond->fluent_literals.push_back(*literal);
 
-    return formalism::datalog::insert(context.destination(), *conj_cond);
+    return context.destination().insert(*conj_cond, context.builder());
 }
 
 auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
@@ -124,21 +125,21 @@ auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> acti
 
     fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
+    const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
     for (const auto variable : new_conj_cond.get_variables())
         urd::append(rule->variables, variable);
-    rule->body = new_conj_cond.index();
+    rule->body = new_conj_cond;
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects
-            rule->heads.push_back(merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
+            rule->heads.push_back(merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first);
     rule->cost = 1;
 
-    return formalism::datalog::insert(context.destination(), *rule);
+    return context.destination().insert(*rule, context.builder());
 }
 
 void translate_action_to_rpg_rules(formalism::planning::ActionView<LiftedTag> action,
-                                   urd::data<formalism::datalog::Program<LiftedTag>>& program,
+                                   urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program,
                                    TranslationContext<LiftedTag>& translation_context,
                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                                    RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
@@ -149,7 +150,7 @@ void translate_action_to_rpg_rules(formalism::planning::ActionView<LiftedTag> ac
         {
             const auto rule = create_rpg_cond_effect_rule(action, cond_eff, translation_context, context).first;
 
-            program.rules.push_back(rule.index());
+            program.rules.push_back(rule);
             rule_to_action[rule.index()].push_back(action);
         }
     }
@@ -166,12 +167,12 @@ auto create_rpg_program(formalism::planning::TaskView<LiftedTag> task,
 
     translate_task_symbols(task, false, translation_context, context, *program);
 
-    program->goal = create_delete_free_goal(task.get_goal(), translation_context, context).first.index();
+    program->goal = create_delete_free_goal(task.get_goal(), translation_context, context).first;
 
     for (const auto action : task.get_domain().get_actions())
         translate_action_to_rpg_rules(action, *program, translation_context, context, rule_to_action);
 
-    return formalism::datalog::insert(destination, *program).first;
+    return destination.insert(*program, builder).first;
 }
 
 struct RPGTables

@@ -41,25 +41,25 @@ std::pair<ygg::RowView<Rel, R>, bool> copy(ygg::RowView<Rel, S> element, WriteCo
 {
     auto binding = ygg::formalism::checkout<ygg::Row<Rel>>(context.builder());
 
-    binding->relation = copy(element.get_relation(), context).first.index();
+    binding->relation = copy(element.get_relation(), context).first;
     for (const auto object : element.get_objects())
         binding->values.push_back(copy(object, context).first.index().value);
 
-    return ygg::formalism::insert(context.destination(), *binding);
+    return context.destination().insert(*binding, context.builder());
 }
 
-/// A record: its members copied, each child (every index of a type the builder builds, urd::map_children) and its
+/// A record: its members copied, each child (every child of its builder, urd::build_from) and its
 /// binding (a ground record's) copied first.
 template<typename T, typename S, typename B, typename R>
 std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, S> element, WriteContext<B, R>& context)
 {
     auto record = ygg::formalism::checkout<T>(context.builder());
 
-    urd::map_children<typename B::Types, T>(element, *record, [&](auto child) { return copy(child, context).first; });
+    urd::build_from(element, *record, [&](auto child) { return copy(child, context).first; });
     if constexpr (requires { record->row; })
         urd::store(record->row, copy(element.context().view(record->row), context).first);
 
-    return ygg::formalism::insert(context.destination(), *record);
+    return context.destination().insert(*record, context.builder());
 }
 
 /// A variant readout (a term, a function expression) copied alternative by alternative; a value it holds (a

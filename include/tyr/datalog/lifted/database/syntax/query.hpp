@@ -108,7 +108,7 @@ urd::Store<urd::sequence<QueryView<>>> copy(std::span<const QueryView<>> roots, 
             auto data = checkout<Query<QueryInputTag>>(builder);
             data->input_slot = slot_of(as<QueryInputTag>(query).get_input_slot());
             const auto columns = columns_of(query);
-            data->columns.set(columns.begin(), columns.end());
+            data->columns.assign(columns.begin(), columns.end());
             copied = insert_query(destination, builder, *data);
             continue;
         }

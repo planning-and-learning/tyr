@@ -29,6 +29,7 @@
 #include <optional>
 #include <type_traits>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -36,14 +37,14 @@
 namespace urd
 {
 
-/// The builder of FunctionTerm: its record's members; each child built or interned (urd::child).
+/// The builder of FunctionTerm: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>, C>
 {
     urd::index<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>> index;
-    urd::child<::tyr::formalism::Parameters, C> parameters;
-    urd::child<::tyr::formalism::Function<F>, C> function;
-    std::vector<::tyr::formalism::BuiltTerm<C>> terms;
+    urd::built_t<urd::index<::tyr::formalism::Parameters>, C> parameters;
+    urd::built_t<urd::index<::tyr::formalism::Function<F>>, C> function;
+    urd::built_t<::tyr::formalism::TermList, C> terms;
 
     static constexpr auto fields() noexcept
     {
@@ -53,12 +54,12 @@ struct builder<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>, C>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
-/// The builder of FunctionTerm: its record's members; each child built or interned (urd::child).
+/// The builder of FunctionTerm: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>, C>
 {
     urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> index;
-    ygg::RowIndex<::tyr::formalism::Function<F>> row;
+    urd::built_t<ygg::RowIndex<::tyr::formalism::Function<F>>, C> row;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &builder::row>> {}; }
 

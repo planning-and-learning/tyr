@@ -20,7 +20,7 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using tyr::datalog::tests::value_of;
+using ygg::value_of;
 using tyr::datalog::tests::values_of;
 using Delta = tyr::datalog::tests::Change;
 using Change = std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView>;
@@ -137,7 +137,7 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
     const auto b = tyr::datalog::tests::qb::input(repository, 1, { y, z });
     const auto insert = [&]<typename Tag>(urd::data<tyr::datalog::database::Query<Tag>> data)
     {
-        const auto concrete = tyr::datalog::database::derive_and_insert(repository, data).first;
+        const auto concrete = tyr::datalog::database::insert(repository, data).first;
         auto erased = urd::data<tyr::datalog::database::Query<>>(concrete.index());
         return tyr::datalog::database::insert(repository, erased).first;
     };
@@ -169,7 +169,7 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
                                                                                                             ygg::type_id<std::int32_t>,
                                                                                                             {});
     EXPECT_EQ(mismatched.constant_type, (ygg::type_id<std::int32_t>) );
-    EXPECT_THROW(static_cast<void>(tyr::datalog::database::derive_and_insert(repository, mismatched)), std::invalid_argument);
+    EXPECT_THROW(static_cast<void>(tyr::datalog::database::insert(repository, mismatched)), std::invalid_argument);
 }
 
 TEST(DatabaseQuery, InternsValidatedNodesAndCompilesIndependentReachablePlan)

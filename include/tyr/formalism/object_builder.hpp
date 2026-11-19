@@ -24,18 +24,19 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Object: its record's members; each child built or interned (urd::child).
+/// The builder of Object: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::Object, C>
 {
     urd::index<::tyr::formalism::Object> index;
-    urd::flat_string name;
+    urd::built_t<urd::flat_string, C> name;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &builder::name>> {}; }
 

@@ -25,12 +25,16 @@ template<typename Tag>
 using ConcreteQueryView = tyr::datalog::database::QueryView<Tag>;
 
 /// A query of operation Tag, whose record is bound first (bind_data; Python builds it through its empty __init__ and
-/// its fields): its view (bind_view, and its columns), and QueryRepository.insert of the record, which derives its
-/// plan from its children first (derive_and_insert).
+/// its fields): its view (bind_view, and its columns), and QueryRepository.insert of the record, prepared first: its plan
+/// derived from its children (prepare_for_insert).
 template<typename Tag>
 nb::class_<ConcreteQueryView<Tag>> bind_query_operation(nb::module_& m, QueryRepositoryBinding& repository)
 {
-    repository.def("insert", &tyr::datalog::database::derive_and_insert<Tag>, nb::arg("data"));
+    repository.def(
+        "insert",
+        [](tyr::datalog::database::QueryRepository& self, urd::data<tyr::datalog::database::Query<Tag>>& data)
+        { return tyr::datalog::database::insert(self, data); },
+        nb::arg("data"));
     return urd::python::bind_view<ConcreteQueryView<Tag>>(m);
 }
 

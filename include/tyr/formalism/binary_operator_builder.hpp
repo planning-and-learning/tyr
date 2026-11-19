@@ -24,20 +24,21 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of BinaryOperator: its record's members; each child built or interned (urd::child).
+/// The builder of BinaryOperator: its record's members, each in its built form (urd::built_t).
 template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O, typename C>
 struct builder<::tyr::formalism::BinaryOperator<T, O>, C>
 {
     urd::index<::tyr::formalism::BinaryOperator<T, O>> index;
-    O operation {};
-    ::tyr::formalism::BuiltFunctionExpression<T, C> lhs;
-    ::tyr::formalism::BuiltFunctionExpression<T, C> rhs;
+    urd::built_t<O, C> operation {};
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> lhs;
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> rhs;
 
     static constexpr auto fields() noexcept
     {

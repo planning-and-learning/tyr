@@ -45,14 +45,14 @@
 namespace tyr::formalism::datalog
 {
 
-/// Copies everything of the program but its rules into the program data.
+/// Copies everything of the program but its rules into a program builder.
 template<TaskKind T>
-void copy_except_rules(ProgramView<T> element, urd::data<Program<T>>& result, WriteContext<Builder, Repository>& context)
+void copy_except_rules(ProgramView<T> element, urd::builder<Program<T>, Repository>& result, WriteContext<Builder, Repository>& context)
 {
     const auto copy_all = [&](const auto elements, auto& destination)
     {
         for (const auto e : elements)
-            destination.push_back(copy(e, context).first.index());
+            destination.push_back(copy(e, context).first);
     };
 
     copy_all(element.template get_predicates<StaticTag>(), result.static_predicates);
@@ -66,7 +66,7 @@ void copy_except_rules(ProgramView<T> element, urd::data<Program<T>>& result, Wr
     copy_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
 
     if (const auto goal = element.get_goal())
-        result.goal = copy(*goal, context).first.index();
+        result.goal = copy(*goal, context).first;
 }
 
 }

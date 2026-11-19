@@ -178,10 +178,10 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     const auto predicate = tyr::formalism::planning::insert(repository, predicate_data).first;
 
     auto data = tyr::formalism::planning::checkout<ygg::Row<Predicate>>(builder);
-    data->relation = predicate.index();
+    data->relation = predicate;
     data->values.push_back(b.index().value);
     data->values.push_back(a.index().value);
-    const auto [binding, inserted] = tyr::formalism::planning::insert(repository, *data);
+    const auto [binding, inserted] = repository.insert(*data, builder);
     ASSERT_TRUE(inserted);
     EXPECT_EQ(binding.get_relation(), predicate);
     ASSERT_EQ(binding.get_objects().size(), 2);
@@ -190,11 +190,11 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     EXPECT_EQ(binding.type(0), ygg::type_id<urd::index<tyr::formalism::Object>>);
     EXPECT_THROW((void) binding.template get<double>(0), std::invalid_argument);  // an object column
 
-    const auto [duplicate, duplicate_inserted] = tyr::formalism::planning::insert(repository, *data);
+    const auto [duplicate, duplicate_inserted] = repository.insert(*data, builder);
     EXPECT_FALSE(duplicate_inserted);
     EXPECT_EQ(duplicate, binding);
     std::swap(data->values[0], data->values[1]);
-    const auto [reversed, reversed_inserted] = tyr::formalism::planning::insert(repository, *data);
+    const auto [reversed, reversed_inserted] = repository.insert(*data, builder);
     EXPECT_TRUE(reversed_inserted);
     EXPECT_NE(reversed, binding);
     EXPECT_EQ(reversed.get_objects()[0], a);

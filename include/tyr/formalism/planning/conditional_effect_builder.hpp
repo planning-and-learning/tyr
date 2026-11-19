@@ -26,20 +26,21 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of ConditionalEffect: its record's members; each child built or interned (urd::child).
+/// The builder of ConditionalEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
-    std::vector<urd::child<::tyr::formalism::Variable, C>> variables;
-    urd::child<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, C> condition;
-    urd::child<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, C> effect;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect;
 
     static constexpr auto fields() noexcept
     {
@@ -50,13 +51,13 @@ struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::variables, &builder::condition, &builder::effect> {}; }
 };
 
-/// The builder of ConditionalEffect: its record's members; each child built or interned (urd::child).
+/// The builder of ConditionalEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
-    urd::child<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C> condition;
-    urd::child<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>, C> effect;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>, C> effect;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &builder::condition>, urd::field<"effect", &builder::effect>> {}; }
 

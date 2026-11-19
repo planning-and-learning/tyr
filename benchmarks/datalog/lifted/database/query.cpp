@@ -26,7 +26,7 @@ using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Change;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using tyr::datalog::tests::value_of;
+using ygg::value_of;
 using tyr::datalog::tests::values_of;
 namespace
 {
@@ -84,15 +84,15 @@ struct Triangle
         auto data = database::checkout<database::Query<database::QueryInputTag>>(builder);
         data->input_slot = slot;
         const auto columns = initial[slot].columns();
-        data->columns.set(columns.begin(), columns.end());
+        data->columns.assign(columns.begin(), columns.end());
         return database::insert_query(repository, builder, *data);
     }
 
     database::QueryView<> join(database::QueryView<> left_operand, database::QueryView<> right_operand)
     {
         auto data = database::checkout<database::Query<database::QueryJoinTag>>(builder);
-        data->left_operand = left_operand.index();
-        data->right_operand = right_operand.index();
+        data->left_operand = left_operand;
+        data->right_operand = right_operand;
         return database::insert_query(repository, builder, *data);
     }
 

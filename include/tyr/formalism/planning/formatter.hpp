@@ -229,9 +229,9 @@ struct fmt::formatter<ygg::RowView<R, tyr::formalism::planning::Repository>> : t
 
 /// An action's binding held by a view: as a stored one.
 template<>
-struct fmt::formatter<tyr::formalism::planning::ActionRowDataView> : tyr::formalism::detail::without_format_spec
+struct fmt::formatter<tyr::formalism::planning::ActionRowBuilderView> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const tyr::formalism::planning::ActionRowDataView& value, fmt::format_context& context) const;
+    fmt::format_context::iterator format(const tyr::formalism::planning::ActionRowBuilderView& value, fmt::format_context& context) const;
 };
 
 /// A planning domain: its domain.

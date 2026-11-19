@@ -206,7 +206,7 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
 
         URD_ASSUME(remapped.literal.has_value());  // Mapped literals are present.
 
-        fdr_conj_cond->derived_literals.push_back(remapped.literal->index());
+        fdr_conj_cond->derived_literals.push_back(*remapped.literal);
     }
 
     for (const auto fact : element.get_facts<formalism::PositiveTag>())
@@ -221,8 +221,9 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
 
         URD_ASSUME(remapped_fdr_fact.fact.has_value());  // Mapped facts are present.
 
-        fdr_conj_cond->positive_facts.push_back(
-            urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()));
+        urd::build_member(fdr_conj_cond->positive_facts.emplace_back(),
+            urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()),
+            context.destination());
     }
 
     for (const auto fact : element.get_facts<formalism::NegativeTag>())
@@ -237,14 +238,15 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
 
         URD_ASSUME(remapped_fdr_fact.fact.has_value());  // Mapped facts are present.
 
-        fdr_conj_cond->negative_facts.push_back(
-            urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()));
+        urd::build_member(fdr_conj_cond->negative_facts.emplace_back(),
+            urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()),
+            context.destination());
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        fdr_conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).first.index());
+        fdr_conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).first);
 
-    return formalism::planning::insert(context.destination(), *fdr_conj_cond).first;
+    return context.destination().insert(*fdr_conj_cond, context.builder()).first;
 }
 
 std::optional<formalism::planning::ConjunctiveConditionView<GroundTag>>
@@ -282,9 +284,9 @@ ground_pruned(formalism::planning::ConjunctiveConditionView<LiftedTag> element,
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_cond->positive_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
+            urd::build_member(conj_cond->positive_facts.emplace_back(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()), context.destination());
         else
-            conj_cond->negative_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
+            urd::build_member(conj_cond->negative_facts.emplace_back(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()), context.destination());
     }
 
     for (const auto literal : element.template get_literals<formalism::DerivedTag>())
@@ -300,13 +302,13 @@ ground_pruned(formalism::planning::ConjunctiveConditionView<LiftedTag> element,
 
         URD_ASSUME(remapped.literal.has_value());  // Mapped literals are present.
 
-        conj_cond->derived_literals.push_back(remapped.literal->index());
+        conj_cond->derived_literals.push_back(*remapped.literal);
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).first.index());
+        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).first);
 
-    return formalism::planning::insert(context.destination(), *conj_cond).first;
+    return context.destination().insert(*conj_cond, context.builder()).first;
 }
 
 std::optional<formalism::planning::ConjunctiveEffectView<GroundTag>>
@@ -329,21 +331,21 @@ ground_pruned(formalism::planning::ConjunctiveEffectView<LiftedTag> element,
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_eff->add_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
+            urd::build_member(conj_eff->add_facts.emplace_back(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()), context.destination());
         else
-            conj_eff->del_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
+            urd::build_member(conj_eff->del_facts.emplace_back(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()), context.destination());
     }
     for (const auto numeric_effect : element.get_numeric_effects())
-        conj_eff->numeric_effects.push_back(ground(numeric_effect, context).first.index());
+        conj_eff->numeric_effects.push_back(ground(numeric_effect, context).first);
     if (element.get_auxiliary_numeric_effect().has_value())
-        conj_eff->auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).first.index();
+        conj_eff->auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), context).first;
 
     // Prune no-op effects
     if (conj_eff->add_facts.empty() && conj_eff->del_facts.empty() && conj_eff->numeric_effects.empty() && !conj_eff->auxiliary_numeric_effect)
         return std::nullopt;  // no-op
 
     // Canonicalize and Serialize
-    return formalism::planning::insert(context.destination(), *conj_eff).first;
+    return context.destination().insert(*conj_eff, context.builder()).first;
 }
 
 std::optional<formalism::planning::ConditionalEffectView<GroundTag>>
@@ -362,16 +364,16 @@ ground_pruned(formalism::planning::ConditionalEffectView<LiftedTag> element,
     if (!new_condition_or_nullopt)
         return std::nullopt;
 
-    cond_effect->condition = new_condition_or_nullopt->index();
+    cond_effect->condition = *new_condition_or_nullopt;
 
     const auto new_effect_or_nullopt = ground_pruned(element.get_effect(), fluent_atoms, context, fdr_context);
     if (!new_effect_or_nullopt)
         return std::nullopt;
 
-    cond_effect->effect = new_effect_or_nullopt->index();
+    cond_effect->effect = *new_effect_or_nullopt;
 
     // Canonicalize and Serialize
-    return formalism::planning::insert(context.destination(), *cond_effect).first;
+    return context.destination().insert(*cond_effect, context.builder()).first;
 }
 
 /// Grounds the action binding of the context with its effects grounded for each completed binding that `for_each_effect_binding`
@@ -396,7 +398,7 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
     if (!new_condition_or_nullopt)
         return std::nullopt;
 
-    action->condition = new_condition_or_nullopt->index();
+    action->condition = *new_condition_or_nullopt;
 
     for (const auto cond_effect : element.get_effects())
         for_each_effect_binding(cond_effect,
@@ -405,14 +407,14 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
                                     const auto ground_cond_effect_or_nullopt =
                                         ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_state, context, fdr_context);
                                     if (ground_cond_effect_or_nullopt.has_value())
-                                        action->effects.push_back(ground_cond_effect_or_nullopt->index());
+                                        action->effects.push_back(*ground_cond_effect_or_nullopt);
                                 });
 
     if (action->effects.empty())
         return std::nullopt;
 
     // Canonicalize and Serialize
-    return formalism::planning::insert(context.destination(), *action).first;
+    return context.destination().insert(*action, context.builder()).first;
 }
 
 std::optional<formalism::planning::AxiomView<GroundTag>>
@@ -433,16 +435,16 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
     if (!new_body_or_nullopt.has_value())
         return std::nullopt;  // body is false in all reachable states -> axiom is irrelevant
 
-    axiom->body = new_body_or_nullopt->index();
+    axiom->body = *new_body_or_nullopt;
 
     const auto new_head = ground(element.get_head(), context).first;
     if (!derived_atoms.contains(new_head))
         return std::nullopt;  // head is false in all reachable states -> axiom is irrelevant
 
-    axiom->head = new_head.index();
+    axiom->head = new_head;
 
     // Canonicalize and Serialize
-    return formalism::planning::insert(context.destination(), *axiom).first;
+    return context.destination().insert(*axiom, context.builder()).first;
 }
 
 /// Rejects orders that are not a sequence of distinct invariants synthesized for this domain and interned into its
@@ -533,11 +535,11 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto merge_context = formalism::WriteContext { builder, *repository };
 
     ground_task->name = task.get_name();
-    ground_task->domain = task.get_domain().index();
+    ground_task->domain = task.get_domain();
     for (const auto predicate : task.get_derived_predicates())
-        ground_task->derived_predicates.push_back(copy(predicate, merge_context).first.index());
+        ground_task->derived_predicates.push_back(copy(predicate, merge_context).first);
     for (const auto object : task.get_objects())
-        ground_task->objects.push_back(copy(object, merge_context).first.index());
+        ground_task->objects.push_back(copy(object, merge_context).first);
 
     auto initial_atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
@@ -568,7 +570,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                            ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
                                            merge_planning_context)
                                            .first.index();
-                    fluent_atoms.push_back(formalism::planning::insert(*repository, *fluent_atom).first);
+                    fluent_atoms.push_back(repository->insert(*fluent_atom, builder).first);
                 }
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
                 {
@@ -578,7 +580,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                             ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
                                             merge_planning_context)
                                             .first.index();
-                    derived_atoms.push_back(formalism::planning::insert(*repository, *derived_atom).first);
+                    derived_atoms.push_back(repository->insert(*derived_atom, builder).first);
                 }
             });
     }
@@ -606,39 +608,49 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         fdr_context = std::make_shared<formalism::planning::FDRContext>(mutex_groups, repository);
     }
 
+    auto static_atoms = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::StaticTag>>>();  // the static state's
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
-        ground_task->static_atoms.push_back(copy(atom, merge_context).first.index());
+    {
+        const auto copied = copy(atom, merge_context).first;
+        ground_task->static_atoms.push_back(copied);
+        static_atoms.push_back(copied.index());
+    }
     for (const auto atom : fluent_atoms)
-        ground_task->fluent_atoms.push_back(copy(atom, merge_context).first.index());
+        ground_task->fluent_atoms.push_back(copy(atom, merge_context).first);
     for (const auto atom : derived_atoms)
-        ground_task->derived_atoms.push_back(copy(atom, merge_context).first.index());
+        ground_task->derived_atoms.push_back(copy(atom, merge_context).first);
+    auto static_fterm_values = urd::flat_vector<urd::index<formalism::FunctionTermValue<GroundTag, formalism::StaticTag>>>();
     for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
-        ground_task->static_fterm_values.push_back(copy(fterm_value, merge_context).first.index());
+    {
+        const auto copied = copy(fterm_value, merge_context).first;
+        ground_task->static_fterm_values.push_back(copied);
+        static_fterm_values.push_back(copied.index());
+    }
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
-        ground_task->fluent_fterm_values.push_back(copy(fterm_value, merge_context).first.index());
+        ground_task->fluent_fterm_values.push_back(copy(fterm_value, merge_context).first);
     if (task.get_auxiliary_fterm_value().has_value())
-        ground_task->auxiliary_fterm_value = copy(task.get_auxiliary_fterm_value().value(), merge_context).first.index();
+        ground_task->auxiliary_fterm_value = copy(task.get_auxiliary_fterm_value().value(), merge_context).first;
     if (task.get_metric())
-        ground_task->metric = copy(task.get_metric().value(), merge_context).first.index();
+        ground_task->metric = copy(task.get_metric().value(), merge_context).first;
     for (const auto axiom : task.get_axioms())
-        ground_task->axioms.push_back(copy(axiom, merge_context).first.index());
+        ground_task->axioms.push_back(copy(axiom, merge_context).first);
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context->get_variables())
-        ground_task->fluent_variables.push_back(variable.index());
+        ground_task->fluent_variables.push_back(variable);
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
         if (const auto fact = std::as_const(*fdr_context).get_fact(copy(atom, merge_context).first))
-            ground_task->fluent_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact->get_variable(), fact->get_value()));
+            urd::build_member(ground_task->fluent_facts.emplace_back(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact->get_variable(), fact->get_value()), *repository);
 
-    const auto static_state = StaticState(urd::resolve(ground_task->static_atoms, *repository), urd::resolve(ground_task->static_fterm_values, *repository));
+    const auto static_state = StaticState(urd::resolve(static_atoms, *repository), urd::resolve(static_fterm_values, *repository));
 
     /// --- Create FDR goal
     const auto goal_or_nullopt =
         create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, static_state, *fdr_context, merge_context);
     if (goal_or_nullopt.has_value())
-        ground_task->goal = goal_or_nullopt->index();
+        ground_task->goal = *goal_or_nullopt;
     else
         return GroundTaskInstantiationResult { nullptr, GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE };
 
@@ -686,7 +698,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                 if (is_consistent(ground_action, fluent_assign, derived_assign))
                 {
-                    ground_task->ground_actions.push_back(ground_action.index());
+                    ground_task->ground_actions.push_back(ground_action);
                 }
             }
         });
@@ -720,14 +732,14 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                     if (is_consistent(ground_axiom, fluent_assign, derived_assign))
                     {
-                        ground_task->ground_axioms.push_back(ground_axiom.index());
+                        ground_task->ground_axioms.push_back(ground_axiom);
                     }
                 }
             }
         });
 
     return GroundTaskInstantiationResult { std::make_shared<Task<GroundTag>>(
-                                               formalism::planning::PlanningTask<GroundTag>(formalism::planning::insert(*repository, *ground_task).first,
+                                               formalism::planning::PlanningTask<GroundTag>(repository->insert(*ground_task, builder).first,
                                                                                             std::move(fdr_context),
                                                                                             repository,
                                                                                             planning_task.get_domain(),

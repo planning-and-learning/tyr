@@ -28,27 +28,28 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Domain: its record's members; each child built or interned (urd::child).
+/// The builder of Domain: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Domain, C>
 {
     urd::index<::tyr::formalism::planning::Domain> index;
-    urd::flat_string name;
-    std::vector<urd::child<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>, C>> static_predicates;
-    std::vector<urd::child<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>, C>> fluent_predicates;
-    std::vector<urd::child<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>, C>> derived_predicates;
-    std::vector<urd::child<::tyr::formalism::Function<::tyr::formalism::StaticTag>, C>> static_functions;
-    std::vector<urd::child<::tyr::formalism::Function<::tyr::formalism::FluentTag>, C>> fluent_functions;
-    std::optional<urd::child<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>, C>> auxiliary_function;
-    std::vector<urd::child<::tyr::formalism::Object, C>> constants;
-    std::vector<urd::child<::tyr::formalism::planning::Action<::tyr::LiftedTag>, C>> actions;
-    std::vector<urd::child<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>> axioms;
+    urd::built_t<urd::flat_string, C> name;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::StaticTag>>>, C> static_functions;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>>, C> fluent_functions;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>>, C> auxiliary_function;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> constants;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>, C> actions;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
 
     static constexpr auto fields() noexcept
     {

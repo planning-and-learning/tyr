@@ -155,7 +155,7 @@ private:
         if constexpr (std::ranges::sized_range<Range>)
             output.reserve(output.size() + std::ranges::size(input));
         for (auto&& element : input)
-            output.push_back(this->translate_common(element, builder, context));
+            urd::build_member(output.emplace_back(), this->translate_common(element, builder, context), context);
     }
 
     FunctionViewVariant translate_common(loki::formalism::FunctionSkeletonView element, Builder& builder, Repository& context);
@@ -178,7 +178,7 @@ private:
         if constexpr (std::ranges::sized_range<Range>)
             output.reserve(output.size() + std::ranges::size(input));
         for (auto&& element : input)
-            output.push_back(this->translate_lifted(element, builder, context));
+            urd::build_member(output.emplace_back(), this->translate_lifted(element, builder, context), context);
     }
 
     Term translate_lifted(loki::formalism::TermView element, Builder& builder, Repository& context);
@@ -238,7 +238,7 @@ private:
         if constexpr (std::ranges::sized_range<Range>)
             output.reserve(output.size() + std::ranges::size(input));
         for (auto&& element : input)
-            output.push_back(this->translate_grounded(element, builder, context));
+            urd::build_member(output.emplace_back(), this->translate_grounded(element, builder, context), context);
     }
 
     urd::index<Object> translate_grounded(loki::formalism::TermView element, Builder& builder, Repository& context);

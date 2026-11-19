@@ -396,20 +396,20 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto nodes = tyr::planning::NodeList<Kind, tyr::planning::StateBuilderView<Kind>> { node };
     const auto labeled_nodes = tyr::planning::LabeledNodeList<Kind, tyr::planning::StateBuilderView<Kind>> { labeled };
 
-    auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>> {};
-    binding_data.relation = label.get_relation().index();
+    auto binding_data = urd::builder<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>, tyr::formalism::planning::Repository> {};
+    binding_data.relation = label.get_relation();
     for (const auto object : label.template get<urd::index<tyr::formalism::Object>>())
         binding_data.values.push_back(object.value);
-    const auto borrowed_label = urd::resolve(binding_data, label.context());
+    const auto borrowed_label = label.context().view(binding_data);
     const auto borrowed_labeled =
-        tyr::planning::LabeledNode<Kind, tyr::planning::StateBuilderView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label, node };
+        tyr::planning::LabeledNode<Kind, tyr::planning::StateBuilderView<Kind>, tyr::formalism::planning::ActionRowBuilderView> { borrowed_label, node };
     const auto indexed_labeled = tyr::planning::LabeledNode<Kind> { label, tyr::planning::Node<Kind>(registered, 3) };
     const auto borrowed_indexed_labeled =
-        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label, indexed_labeled.node };
+        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowBuilderView> { borrowed_label, indexed_labeled.node };
     static_assert(Packable<decltype(indexed_labeled)>);
     static_assert(!Packable<decltype(borrowed_labeled)> && !Packable<decltype(borrowed_indexed_labeled)>);
     const auto borrowed_labeled_nodes =
-        tyr::planning::LabeledNodeList<Kind, tyr::planning::StateBuilderView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_labeled };
+        tyr::planning::LabeledNodeList<Kind, tyr::planning::StateBuilderView<Kind>, tyr::formalism::planning::ActionRowBuilderView> { borrowed_labeled };
     EXPECT_TRUE(std::ranges::equal(borrowed_labeled_nodes.front().label.get_values(), binding_data.values));
     EXPECT_TRUE(std::ranges::equal(borrowed_indexed_labeled.label.get_values(), binding_data.values));
     EXPECT_EQ(indexed_labeled.pack().unpack().label, label);
@@ -664,6 +664,12 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         EXPECT_EQ(duplicate, state);
         EXPECT_EQ(derived_names(duplicate), derived_names(state));
         EXPECT_EQ(derived_names(repository->get_registered_state(duplicate.index())), derived_names(state));
+
+        // A copy of its record, held outside the repository (not registered), unpacks to the same state without an index.
+        const auto held = (*repository)[state.index()];
+        const auto unpacked_held = urd::resolve(held, *repository).unpack();
+        EXPECT_TRUE(std::ranges::equal(unpacked_held.get_fluent_fact_index_values(), state.get_fluent_fact_index_values()));
+        EXPECT_EQ(derived_names(unpacked_held), derived_names(state));
     };
     expect_duplicate(cheap->node.get_state());
 

@@ -34,29 +34,31 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Task: its record's members; each child built or interned (urd::child).
+/// The builder of Task: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Task<::tyr::LiftedTag>, C>
 {
     urd::index<::tyr::formalism::planning::Task<::tyr::LiftedTag>> index;
-    urd::flat_string name;
-    urd::child<::tyr::formalism::planning::Domain, C> domain;
-    std::vector<urd::child<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>, C>> derived_predicates;
-    std::vector<urd::child<::tyr::formalism::Object, C>> objects;
-    std::vector<urd::child<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>, C>> static_atoms;
-    std::vector<urd::child<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>, C>> fluent_atoms;
-    std::vector<urd::child<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>, C>> static_fterm_values;
-    std::vector<urd::child<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>, C>> fluent_fterm_values;
-    std::optional<urd::child<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>, C>> auxiliary_fterm_value;
-    urd::child<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C> goal;
-    std::optional<urd::child<::tyr::formalism::planning::Metric, C>> metric;
-    std::vector<urd::child<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>> axioms;
+    urd::built_t<urd::flat_string, C> name;
+    urd::built_t<urd::index<::tyr::formalism::planning::Domain>, C> domain;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_atoms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_atoms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_fterm_values;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
+        auxiliary_fterm_value;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>>, C> metric;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
 
     static constexpr auto fields() noexcept
     {
@@ -91,28 +93,29 @@ struct builder<::tyr::formalism::planning::Task<::tyr::LiftedTag>, C>
     }
 };
 
-/// The builder of Task: its record's members; each child built or interned (urd::child).
+/// The builder of Task: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Task<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::Task<::tyr::GroundTag>> index;
-    urd::flat_string name;
-    urd::child<::tyr::formalism::planning::Domain, C> domain;
-    std::vector<urd::child<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>, C>> derived_predicates;
-    std::vector<urd::child<::tyr::formalism::Object, C>> objects;
-    std::vector<urd::child<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>, C>> static_atoms;
-    std::vector<urd::child<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>, C>> fluent_atoms;
-    std::vector<urd::child<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>, C>> derived_atoms;
-    std::vector<urd::child<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>, C>> static_fterm_values;
-    std::vector<urd::child<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>, C>> fluent_fterm_values;
-    std::optional<urd::child<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>, C>> auxiliary_fterm_value;
-    urd::child<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C> goal;
-    std::optional<urd::child<::tyr::formalism::planning::Metric, C>> metric;
-    std::vector<urd::child<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>> axioms;
-    std::vector<urd::child<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>, C>> fluent_variables;
-    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> fluent_facts;
-    std::vector<urd::child<::tyr::formalism::planning::Action<::tyr::GroundTag>, C>> ground_actions;
-    std::vector<urd::child<::tyr::formalism::planning::Axiom<::tyr::GroundTag>, C>> ground_axioms;
+    urd::built_t<urd::flat_string, C> name;
+    urd::built_t<urd::index<::tyr::formalism::planning::Domain>, C> domain;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_atoms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_atoms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_atoms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_fterm_values;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
+        auxiliary_fterm_value;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>>, C> metric;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>>, C> fluent_variables;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> fluent_facts;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>>>, C> ground_actions;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>>, C> ground_axioms;
 
     static constexpr auto fields() noexcept
     {

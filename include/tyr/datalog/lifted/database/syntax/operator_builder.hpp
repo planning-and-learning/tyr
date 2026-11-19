@@ -31,7 +31,7 @@ public:
 
     QueryBuilder& builder() noexcept { return *m_builder; }
 
-    template<class Tag, std::invocable<urd::data<Query<Tag>>&> Fill>
+    template<class Tag, std::invocable<urd::builder<Query<Tag>, QueryRepository>&> Fill>
     QueryView<> make(Fill fill)
     {
         auto data = checkout<Query<Tag>>(*m_builder);
@@ -41,7 +41,7 @@ public:
 
     QueryView<> empty(std::span<const ygg::ColumnLayout> columns)
     {
-        return make<QueryEmptyTag>([&](auto& data) { data.columns.set(columns.begin(), columns.end()); });
+        return make<QueryEmptyTag>([&](auto& data) { data.columns.assign(columns.begin(), columns.end()); });
     }
 
     template<class Tag>
@@ -50,8 +50,8 @@ public:
         return make<Tag>(
             [&](auto& data)
             {
-                data.left_operand = left_operand.index();
-                data.right_operand = right_operand.index();
+                data.left_operand = left_operand;
+                data.right_operand = right_operand;
             });
     }
 
@@ -61,8 +61,8 @@ public:
         return make<Tag>(
             [&](auto& data)
             {
-                data.operand = arg.index();
-                data.labels.set(labels.begin(), labels.end());
+                data.operand = arg;
+                data.labels.assign(labels.begin(), labels.end());
             });
     }
 

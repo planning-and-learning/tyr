@@ -24,19 +24,20 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Literal: its record's members; each child built or interned (urd::child).
+/// The builder of Literal: its record's members, each in its built form (urd::built_t).
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::Literal<T, F>, C>
 {
     urd::index<::tyr::formalism::Literal<T, F>> index;
-    urd::child<::tyr::formalism::Atom<T, F>, C> atom;
-    bool polarity = false;
+    urd::built_t<urd::index<::tyr::formalism::Atom<T, F>>, C> atom;
+    urd::built_t<bool, C> polarity = false;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atom", &builder::atom>, urd::field<"polarity", &builder::polarity>> {}; }
 

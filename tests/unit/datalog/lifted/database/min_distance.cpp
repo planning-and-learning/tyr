@@ -25,7 +25,7 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using tyr::datalog::tests::value_of;
+using ygg::value_of;
 using tyr::datalog::tests::values_of;
 using ygg::uint_t;
 

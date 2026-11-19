@@ -45,7 +45,7 @@ Before running a validation target, check whether the existing `build/` director
 
 ## Validation
 
-- Build core with `cmake --build build --target core -j16` when C++ core code changes.
+- Build core with `cmake --build build --target core -j24` when C++ core code changes.
 - Run targeted C++ unit tests for touched areas.
 - Build Python bindings with `source .venv/bin/activate && uv pip install .` only when Python bindings or exported C++ APIs change.
 - Run Python tests with `.venv/bin/python -m pytest python/tests -q` when Python bindings, parser behavior, or exposed APIs change.
@@ -54,7 +54,7 @@ Before running a validation target, check whether the existing `build/` director
 
 ## Coding Conventions
 
-- Compile on 16 cores only.
+- Compile on 24 cores only.
 - Explicitly instantiate templates when the set of types is small
 - Follow the [template and include rules](https://planning-and-learning.github.io/brokkr/template_rules.html).
 - Use JSON fixtures for large repetitive test data.

@@ -127,12 +127,12 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
             continue;
 
         auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder());
-        literal->atom = translate_atom(*atom).index();
+        literal->atom = translate_atom(*atom);
         literal->polarity = true;
-        condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination(), *literal).first.index());
+        condition->fluent_literals.push_back(merge_context.destination().insert(*literal, merge_context.builder()).first);
     }
 
-    workspace.tp.set_goals(formalism::datalog::insert(merge_context.destination(), *condition).first);
+    workspace.tp.set_goals(merge_context.destination().insert(*condition, merge_context.builder()).first);
 }
 
 template<typename Derived,

@@ -121,10 +121,6 @@ template<typename R>
 const void* record_of(const R& row)
 { return &std::get<2>(row).get_values(); }
 
-/// The value of a row's column, as it is held.
-template<typename R>
-ygg::Value value_of(const R& row, size_t column)
-{ return ygg::with_values(row, [column](const auto& values) { return std::ranges::begin(values)[static_cast<std::ptrdiff_t>(column)]; }); }
 }  // namespace tyr::datalog::tests
 
 /// Test-only query construction on top of checkout + insert_query.
@@ -152,18 +148,18 @@ inline database::QueryBuilder& builder()
     return storage;
 }
 
-inline urd::index<database::Query<>> require(const database::QueryRepository& repository, database::QueryView<> query)
+inline database::QueryView<> require(const database::QueryRepository& repository, database::QueryView<> query)
 {
     if (&get_repository(query.context()) != &repository)
         throw std::invalid_argument("Query: operand belongs to another repository.");
-    return query.index();
+    return query;
 }
 
 inline database::QueryView<> input(database::QueryRepository& repository, size_t slot, std::span<const ygg::ColumnLayout> columns)
 {
     auto data = database::checkout<database::Query<database::QueryInputTag>>(builder());
     data->input_slot = slot;
-    data->columns.set(columns.begin(), columns.end());
+    data->columns.assign(columns.begin(), columns.end());
     return database::insert_query(repository, builder(), *data);
 }
 
@@ -176,7 +172,7 @@ inline database::QueryView<> input(database::QueryRepository& repository, size_t
 inline database::QueryView<> empty(database::QueryRepository& repository, std::span<const ygg::ColumnLayout> columns)
 {
     auto data = database::checkout<database::Query<database::QueryEmptyTag>>(builder());
-    data->columns.set(columns.begin(), columns.end());
+    data->columns.assign(columns.begin(), columns.end());
     return database::insert_query(repository, builder(), *data);
 }
 
@@ -215,7 +211,7 @@ database::QueryView<> relabel(database::QueryRepository& repository, database::Q
 {
     auto data = database::checkout<database::Query<Tag>>(builder());
     data->operand = require(repository, arg);
-    data->labels.set(labels.begin(), labels.end());
+    data->labels.assign(labels.begin(), labels.end());
     return database::insert_query(repository, builder(), *data);
 }
 
@@ -286,8 +282,8 @@ inline database::QueryView<> generic_join(database::QueryRepository& repository,
     auto data = database::checkout<database::Query<database::QueryGenericJoinTag>>(builder());
     for (const auto input : inputs)
         data->inputs.push_back(require(repository, input));
-    data->variable_order.set(variable_order.begin(), variable_order.end());
-    data->output_order.set(output_order.begin(), output_order.end());
+    data->variable_order.assign(variable_order.begin(), variable_order.end());
+    data->output_order.assign(output_order.begin(), output_order.end());
     return database::insert_query(repository, builder(), *data);
 }
 
@@ -310,22 +306,13 @@ namespace tyr::datalog::tests::ops
 /// uint_t columns labeled `labels`.
 inline std::vector<ygg::ColumnLayout> cols(std::initializer_list<urd::index<ygg::Column>> labels) { return qb::columns_of(labels); }
 
-/// The scratch records free relations are interned from (rows, columns, relation), reused by every test.
-using RelationRecords = ::ygg::formalism::BuilderStorage<ygg::Row<ygg::Schema>, ygg::Columns, ygg::Relation<ygg::Schema>>;
-
-inline RelationRecords& records()
-{
-    static RelationRecords storage;
-    return storage;
-}
-
 /// Interns the columns and the relation of `relation` (its pool and rows set) in `repository`.
 inline std::pair<ygg::FreeRelationView, bool>
 intern_relation(ygg::FreeRelationRepository& repository, urd::data<ygg::Relation<ygg::Schema>>& relation, std::span<const ygg::ColumnLayout> labels)
 {
-    auto columns = checkout<ygg::Columns>(records());
-    columns->values.set(labels.begin(), labels.end());
-    relation.columns = repository.insert(*columns).first.index();
+    auto columns = urd::data<ygg::Columns>();
+    columns.values.set(labels.begin(), labels.end());
+    relation.columns = repository.insert(columns).first.index();
     return repository.insert(relation);
 }
 
@@ -334,19 +321,19 @@ intern_relation(ygg::FreeRelationRepository& repository, urd::data<ygg::Relation
 template<typename V>
 std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repository, const V& source)
 {
-    auto relation = checkout<ygg::Relation<ygg::Schema>>(records());
-    relation->pool = repository.schema(source.columns());
-    auto row = checkout<ygg::Row<ygg::Schema>>(records());
-    row->relation = relation->pool;
+    auto relation = urd::data<ygg::Relation<ygg::Schema>>();
+    relation.pool = repository.schema(source.columns());
+    auto row = urd::data<ygg::Row<ygg::Schema>>();
+    row.relation = relation.pool;
     for (const auto& held : source.get_rows())
         ygg::with_values(held,
                          [&](const auto& values)
                          {
-                             row->values.set(std::ranges::begin(values), std::ranges::end(values));
-                             urd::append(relation->rows, repository.insert(*row).first);
+                             row.values.set(std::ranges::begin(values), std::ranges::end(values));
+                             urd::append(relation.rows, repository.insert(row).first);
                          });
-    ygg::canonicalize(*relation, repository);
-    return intern_relation(repository, *relation, source.columns());
+    ygg::canonicalize(relation, repository);
+    return intern_relation(repository, relation, source.columns());
 }
 
 inline std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repository, const Relation& source)
@@ -355,10 +342,10 @@ inline std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository
 /// `source` (of `repository`) under new columns: the same pool and rows.
 inline ygg::FreeRelationView rename(ygg::FreeRelationRepository& repository, ygg::FreeRelationView source, std::span<const ygg::ColumnLayout> labels)
 {
-    auto relation = checkout<ygg::Relation<ygg::Schema>>(records());
-    relation->pool = repository[source.index()].pool;
-    urd::store(relation->rows, source.get_rows());
-    return intern_relation(repository, *relation, labels).first;
+    auto relation = urd::data<ygg::Relation<ygg::Schema>>();
+    relation.pool = repository[source.index()].pool;
+    urd::store(relation.rows, source.get_rows());
+    return intern_relation(repository, relation, labels).first;
 }
 
 template<typename V>

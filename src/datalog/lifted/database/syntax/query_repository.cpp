@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include "tyr/datalog/lifted/database/syntax/query_builder.hpp"
 #include "tyr/datalog/lifted/database/syntax/query_repository.hpp"
 
 #include "tyr/datalog/lifted/database/detail/repository_instantiations.hpp"

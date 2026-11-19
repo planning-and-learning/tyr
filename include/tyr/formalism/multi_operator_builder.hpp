@@ -24,19 +24,20 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of MultiOperator: its record's members; each child built or interned (urd::child).
+/// The builder of MultiOperator: its record's members, each in its built form (urd::built_t).
 template<::tyr::TaskKind T, ::tyr::formalism::ArithmeticOperatorKindOnly O, typename C>
 struct builder<::tyr::formalism::MultiOperator<T, O>, C>
 {
     urd::index<::tyr::formalism::MultiOperator<T, O>> index;
-    O operation = O::Add;
-    std::vector<::tyr::formalism::BuiltFunctionExpression<T, C>> args;
+    urd::built_t<O, C> operation = O::Add;
+    urd::built_t<urd::flat_vector<::tyr::formalism::FunctionExpression<T>>, C> args;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"args", &builder::args>> {}; }
 

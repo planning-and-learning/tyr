@@ -47,19 +47,17 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     auto repository = tyr::planning::match_tree::Repository<Action>(0, formalism_repository);
     auto builder = tyr::planning::match_tree::GroundActionBuilder {};
     auto data = tyr::planning::match_tree::checkout<Generator>(builder);
-    const auto [view, inserted] = tyr::planning::match_tree::insert(repository, *data);
+    const auto [view, inserted] = repository.insert(*data, builder);
     EXPECT_TRUE(inserted);
     EXPECT_EQ(&view.context(), &repository);
     EXPECT_TRUE(view.get_elements().empty());
-    EXPECT_EQ(data->index, view.index());
 
-    data->index = urd::index<Generator>();
-    const auto [duplicate, duplicate_inserted] = tyr::planning::match_tree::insert(repository, *data);
+    const auto [duplicate, duplicate_inserted] = repository.insert(*data, builder);
     EXPECT_FALSE(duplicate_inserted);
     EXPECT_EQ(duplicate, view);
-    EXPECT_EQ(data->index, view.index());
     EXPECT_EQ(&duplicate.context(), &repository);
-    const auto found = repository.find(*data);
+    auto record = urd::data<Generator>();  // a record of the same content: found as the one interned
+    const auto found = repository.find(record);
     ASSERT_TRUE(found);
     EXPECT_EQ(&found.value().context(), &repository);
     EXPECT_EQ(repository.size<Generator>(), 1);

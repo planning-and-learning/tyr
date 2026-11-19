@@ -27,20 +27,21 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of NumericEffect: its record's members; each child built or interned (urd::child).
+/// The builder of NumericEffect: its record's members, each in its built form (urd::built_t).
 template<::tyr::TaskKind T, ::tyr::formalism::NumericEffectFactKind F, typename C>
 struct builder<::tyr::formalism::NumericEffect<T, F>, C>
 {
     urd::index<::tyr::formalism::NumericEffect<T, F>> index;
-    ::tyr::formalism::NumericEffectOperatorKind operation = ::tyr::formalism::default_numeric_effect_operator<F>;
-    urd::child<::tyr::formalism::FunctionTerm<T, F>, C> fterm;
-    ::tyr::formalism::BuiltFunctionExpression<T, C> fexpr;
+    urd::built_t<::tyr::formalism::NumericEffectOperatorKind, C> operation = ::tyr::formalism::default_numeric_effect_operator<F>;
+    urd::built_t<urd::index<::tyr::formalism::FunctionTerm<T, F>>, C> fterm;
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> fexpr;
 
     static constexpr auto fields() noexcept
     {

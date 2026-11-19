@@ -50,11 +50,11 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
     {
         for (const auto rule : program.get_rules())
             if (is_statically_applicable(rule, fact_sets))
-                result->rules.push_back(formalism::copy(rule, context).first.index());
+                result->rules.push_back(formalism::copy(rule, context).first);
     };
     merge_applicable_rules();
 
-    return formalism::datalog::insert(repository, *result).first;
+    return repository.insert(*result, builder).first;
 }
 
 }

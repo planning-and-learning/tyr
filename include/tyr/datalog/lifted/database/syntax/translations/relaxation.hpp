@@ -126,7 +126,7 @@ private:
             [&](auto& data)
             {
                 data.input_slot = renumbered(slot);
-                data.columns.set(columns.begin(), columns.end());
+                data.columns.assign(columns.begin(), columns.end());
             });
     }
 
@@ -215,7 +215,7 @@ private:
                 [&](auto& filtered)
                 {
                     // The same selection over the relaxed operand.
-                    urd::map_children<boost::mp11::mp_list<Query<>>, Query<Tag>>(concrete, filtered, [&](QueryView<>) { return *arg; });
+                    urd::build_from(concrete, filtered, [&](QueryView<>) { return *arg; });
                 });
         }
         else if constexpr (std::same_as<Tag, QueryUnionTag>)

@@ -77,6 +77,10 @@ public:
     /// Const: the state's builder comes from the repository's pool of scratch builders.
     StateView<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
 
+    /// A state record unpacked, its storages read from this repository's: a registered one's (get_registered_state, its
+    /// index set) or a record held outside it, packed here but not registered (no index).
+    StateView<Kind> unpack(const urd::data<State<Kind>>& packed) const;
+
     StateView<Kind>
     create_state(AxiomEvaluator<Kind>& axiom_evaluator,
                  const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>& fluent_facts,
@@ -119,6 +123,9 @@ public:
     [[nodiscard]] size_t num_states() const noexcept;
 
 private:
+    /// A state record's storages, read from this repository's, into a builder.
+    void unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const;
+
     std::unique_ptr<Impl> m_impl;
 };
 

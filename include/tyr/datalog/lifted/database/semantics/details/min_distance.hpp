@@ -39,7 +39,7 @@ Evaluator relation_edges(ygg::FreeScratchRelations& scratch, const DistancePlan&
     auto input = checkout<Query<QueryInputTag>>(builder);
     input->input_slot = 0;
     const auto columns = plan.edge_columns();
-    input->columns.set(columns.begin(), columns.end());
+    input->columns.assign(columns.begin(), columns.end());
     // The edge relation is the one input, slot 0.
     auto static_slots = urd::Store<urd::set<size_t>, urd::dense>();
     if (static_edges)

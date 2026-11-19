@@ -24,20 +24,21 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Invariant: its record's members; each child built or interned (urd::child).
+/// The builder of Invariant: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Invariant, C>
 {
     urd::index<::tyr::formalism::planning::Invariant> index;
-    ygg::uint_t num_rigid_variables = 0;
-    ygg::uint_t num_counted_variables = 0;
-    std::vector<urd::child<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>, C>> atoms;
+    urd::built_t<ygg::uint_t, C> num_rigid_variables = 0;
+    urd::built_t<ygg::uint_t, C> num_counted_variables = 0;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> atoms;
 
     static constexpr auto fields() noexcept
     {

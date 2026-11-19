@@ -45,6 +45,7 @@ class BenchmarkToolsTest(unittest.TestCase):
                 repetitions=3,
                 report_aggregates_only=True,
                 timeout=60.0,
+                jobs=1,
             )
             command = runner.build_benchmark_command(Path("astar_blind_ground"), run_name, None, options)
             expected_arguments = [

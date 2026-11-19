@@ -703,7 +703,7 @@ ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_bin
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->try_get_applicable_action_binding(
         node,
-        binding.get_relation(),
+        action_of(binding),
         urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }),
                      binding.context()));
 }
@@ -917,9 +917,9 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTa
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowView binding);
-template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowDataView binding);
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowBuilderView binding);
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, formalism::planning::ActionRowView binding);
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node,
-                                                                                              formalism::planning::ActionRowDataView binding);
+                                                                                              formalism::planning::ActionRowBuilderView binding);
 
 }

@@ -82,21 +82,21 @@ namespace
 void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag> axiom_body,
                         const TranslationContext<LiftedTag>& translation_context,
                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                        urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                        urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
+        conj_cond.static_literals.push_back(formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
 
     for (const auto literal : axiom_body.get_literals<formalism::FluentTag>())
-        conj_cond.fluent_literals.push_back(formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
+        conj_cond.fluent_literals.push_back(formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 
     for (const auto literal : axiom_body.get_literals<formalism::DerivedTag>())
         conj_cond.fluent_literals.push_back(
             formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context)
-                .first.index());
+                .first);
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context).first.index());
+        conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context).first);
 }
 
 auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
@@ -108,22 +108,22 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
-        conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
+        conj_cond->variables.push_back(formalism::copy(variable, context).first);
 
     process_axiom_body(axiom.get_body(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first.index();
+    const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
     rule->body = new_conj_cond;
 
     const auto new_head = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(axiom.get_head(),
                                                                                                       translation_context.p2d.derived_to_fluent_predicate,
                                                                                                       context)
-                              .first.index();
+                              .first;
 
     rule->heads.push_back(new_head);
 
-    return formalism::datalog::insert(context.destination(), *rule);
+    return context.destination().insert(*rule, context.builder());
 }
 
 auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task,
@@ -137,11 +137,11 @@ auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task,
     translate_task_symbols(task, true, translation_context, context, *program);
 
     for (const auto axiom : task.get_domain().get_axioms())
-        program->rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
+        program->rules.push_back(create_axiom_rule(axiom, translation_context, context).first);
     for (const auto axiom : task.get_axioms())
-        program->rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
+        program->rules.push_back(create_axiom_rule(axiom, translation_context, context).first);
 
-    return formalism::datalog::insert(repository, *program).first;
+    return repository.insert(*program, builder).first;
 }
 
 struct AxiomTables

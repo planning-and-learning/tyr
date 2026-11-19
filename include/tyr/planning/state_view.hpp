@@ -279,8 +279,8 @@ public:
     }
 };
 
-/// A registered state, packed (PackedStateView: the view of its record's index): its storages packed, and the state
-/// unpacked.
+/// A state, packed: registered (PackedStateView: the view of its record's index) or a record held outside its repository
+/// (not registered): its storages packed, and the state unpacked (a registered one's with its index).
 template<::tyr::TaskKind Kind, typename V>
 struct urd::view_mixin<::tyr::planning::State<Kind>, V>
 {
@@ -294,7 +294,13 @@ public:
 
     [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
 
-    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const { return self().context().get_registered_state(self().index()); }
+    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const
+    {
+        if constexpr (std::same_as<V, ::tyr::planning::PackedStateView<Kind>>)
+            return self().context().get_registered_state(self().index());
+        else
+            return self().context().unpack(urd::detail::view_access::record(self()));
+    }
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"unpack", &view_mixin::unpack>> {}; }
 };

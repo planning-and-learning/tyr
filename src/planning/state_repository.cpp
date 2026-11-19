@@ -320,18 +320,29 @@ template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kind>> state_index) const
 {
     auto state_builder = get_state_builder();
-
     state_builder->set(state_index);
+    unpack_storages((*this)[state_index], *state_builder);
+    return StateView<Kind>(std::move(state_builder), this);
+}
+
+template<TaskKind Kind>
+StateView<Kind> StateRepository<Kind>::unpack(const urd::data<State<Kind>>& packed) const
+{
+    auto state_builder = get_state_builder();
+    unpack_storages(packed, *state_builder);
+    return StateView<Kind>(std::move(state_builder), this);
+}
+
+template<TaskKind Kind>
+void StateRepository<Kind>::unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const
+{
     m_impl->visit_evaluator(
         [&](auto& evaluator)
         {
-            const auto& packed_state = (*this)[state_index];
-            evaluator.fact_repository.unpack(handle_of(packed_state.fact_storage), state_builder->fact_storage);
-            evaluator.atom_repository.unpack(handle_of(packed_state.atom_storage), state_builder->atom_storage);
-            evaluator.numeric_repository.unpack(handle_of(packed_state.numeric_storage), state_builder->numeric_storage);
+            evaluator.fact_repository.unpack(handle_of(packed.fact_storage), state.fact_storage);
+            evaluator.atom_repository.unpack(handle_of(packed.atom_storage), state.atom_storage);
+            evaluator.numeric_repository.unpack(handle_of(packed.numeric_storage), state.numeric_storage);
         });
-
-    return StateView<Kind>(std::move(state_builder), this);
 }
 
 template<TaskKind Kind>

@@ -71,9 +71,9 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.
     urd::index<::tyr::planning::State<Kind>> index;
-    builder<::tyr::planning::FactStorage<Kind>, ::tyr::formalism::planning::Repository> fact_storage;
-    builder<::tyr::planning::AtomStorage<Kind>, ::tyr::formalism::planning::Repository> atom_storage;
-    builder<::tyr::planning::NumericStorage<Kind>, ::tyr::formalism::planning::Repository> numeric_storage;
+    urd::built_t<urd::data<::tyr::planning::FactStorage<Kind>>, ::tyr::formalism::planning::Repository> fact_storage;
+    urd::built_t<urd::data<::tyr::planning::AtomStorage<Kind>>, ::tyr::formalism::planning::Repository> atom_storage;
+    urd::built_t<urd::data<::tyr::planning::NumericStorage<Kind>>, ::tyr::formalism::planning::Repository> numeric_storage;
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { index = state; }

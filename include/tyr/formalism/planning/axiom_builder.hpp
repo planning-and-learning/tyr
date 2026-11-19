@@ -26,20 +26,21 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Axiom: its record's members; each child built or interned (urd::child).
+/// The builder of Axiom: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>
 {
     urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> index;
-    std::vector<urd::child<::tyr::formalism::Variable, C>> variables;
-    urd::child<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, C> body;
-    urd::child<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>, C> head;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> body;
+    urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C> head;
 
     static constexpr auto fields() noexcept
     {
@@ -49,14 +50,14 @@ struct builder<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::variables, &builder::body, &builder::head> {}; }
 };
 
-/// The builder of Axiom: its record's members; each child built or interned (urd::child).
+/// The builder of Axiom: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Axiom<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
-    ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> row;
-    urd::child<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C> body;
-    urd::child<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>, C> head;
+    urd::built_t<ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>, C> row;
+    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> body;
+    urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> head;
 
     static constexpr auto fields() noexcept
     {

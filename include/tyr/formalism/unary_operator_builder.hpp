@@ -24,19 +24,20 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of UnaryOperator: its record's members; each child built or interned (urd::child).
+/// The builder of UnaryOperator: its record's members, each in its built form (urd::built_t).
 template<::tyr::TaskKind T, ::tyr::formalism::ArithmeticOperatorKindOnly O, typename C>
 struct builder<::tyr::formalism::UnaryOperator<T, O>, C>
 {
     urd::index<::tyr::formalism::UnaryOperator<T, O>> index;
-    O operation = O::Sub;
-    ::tyr::formalism::BuiltFunctionExpression<T, C> arg;
+    urd::built_t<O, C> operation = O::Sub;
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> arg;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"arg", &builder::arg>> {}; }
 

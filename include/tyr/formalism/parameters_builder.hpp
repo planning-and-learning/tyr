@@ -24,18 +24,19 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Parameters: its record's members; each child built or interned (urd::child).
+/// The builder of Parameters: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::Parameters, C>
 {
     urd::index<::tyr::formalism::Parameters> index;
-    std::vector<urd::child<::tyr::formalism::Variable, C>> variables;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variables", &builder::variables>> {}; }
 

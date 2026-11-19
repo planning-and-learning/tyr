@@ -90,7 +90,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
     auto context = tyr::formalism::WriteContext { builder, *fixture.repository, indices };
     auto prepared = tyr::formalism::datalog::checkout<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
-    prepared->relation = atom.get_predicate().index();
+    prepared->relation = atom.get_predicate();
     tyr::formalism::datalog::ground(atom.get_terms(), context, prepared->values);
 
     indices[0] = objects[1].index();
@@ -98,7 +98,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     EXPECT_EQ(nested.get<urd::index<tyr::formalism::Object>>(0), objects[1].index());
     ASSERT_EQ(prepared->values.size(), 1);
     EXPECT_EQ(prepared->values[0], objects[0].index().value);
-    const auto retained = tyr::formalism::datalog::insert(*fixture.repository, *prepared).first;
+    const auto retained = fixture.repository->insert(*prepared, builder).first;
     EXPECT_EQ(retained.get<urd::index<tyr::formalism::Object>>(0), objects[0].index());
 }
 

@@ -487,11 +487,13 @@ fmt::format_context::iterator fmt::formatter<ygg::RowView<R, tp::Repository>>::f
     }
 }
 
-fmt::format_context::iterator fmt::formatter<tp::ActionRowDataView>::format(const tp::ActionRowDataView& value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tp::ActionRowBuilderView>::format(const tp::ActionRowBuilderView& value, fmt::format_context& context) const
 {
+    // The relation in whatever form the binding holds it (interned, as a staged binding's is).
+    const auto name = urd::visit_view(value.get_relation(), [](const auto& action) { return std::string(action.get_name()); });
     if (value.get_values().empty())
-        return fmt::format_to(context.out(), "({})", value.get_relation().get_name());
-    return fmt::format_to(context.out(), "({} {})", value.get_relation().get_name(), ygg::values_text<tp::Action<LiftedTag>>(value));
+        return fmt::format_to(context.out(), "({})", name);
+    return fmt::format_to(context.out(), "({} {})", name, ygg::values_text<tp::Action<LiftedTag>>(value));
 }
 
 fmt::format_context::iterator fmt::formatter<tp::PlanningDomain>::format(const tp::PlanningDomain& value, fmt::format_context& context) const

@@ -24,19 +24,20 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of FunctionTermValue: its record's members; each child built or interned (urd::child).
+/// The builder of FunctionTermValue: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>, C>
 {
     urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>> index;
-    urd::child<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>, C> fterm;
-    ygg::float_t value = 0.0;
+    urd::built_t<urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>, C> fterm;
+    urd::built_t<ygg::float_t, C> value = 0.0;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"fterm", &builder::fterm>, urd::field<"value", &builder::value>> {}; }
 

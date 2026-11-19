@@ -27,22 +27,24 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of ConjunctiveCondition: its record's members; each child built or interned (urd::child).
+/// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> index;
-    std::vector<urd::child<::tyr::formalism::Variable, C>> variables;
-    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>, C>> static_literals;
-    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>, C>> fluent_literals;
-    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>, C>> derived_literals;
-    std::vector<urd::child<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>, C>> numeric_constraints;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>>, C>
+        numeric_constraints;
 
     static constexpr auto fields() noexcept
     {
@@ -60,16 +62,17 @@ struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag
     }
 };
 
-/// The builder of ConjunctiveCondition: its record's members; each child built or interned (urd::child).
+/// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> index;
-    std::vector<urd::child<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>, C>> static_literals;
-    std::vector<urd::child<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>, C>> derived_literals;
-    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> positive_facts;
-    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> negative_facts;
-    std::vector<urd::child<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>, C>> numeric_constraints;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> positive_facts;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> negative_facts;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>>, C>
+        numeric_constraints;
 
     static constexpr auto fields() noexcept
     {

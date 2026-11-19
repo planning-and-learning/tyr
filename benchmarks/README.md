@@ -35,7 +35,7 @@ configured build:
 
 ```bash
 cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DTYR_BUILD_BENCHMARKS=ON
-cmake --build build-release --target benchmarks_planning -j16
+cmake --build build-release --target benchmarks_planning -j24
 ```
 
 All executables are in `build-release/benchmarks/planning/`. Each target has a
@@ -49,7 +49,7 @@ All executables are in `build-release/benchmarks/planning/`. Each target has a
 | `schema_selection` | Selected-schema queries and construction diagnostics |
 
 Build only the targets needed for an experiment, or use `benchmarks_planning`
-for all of them. Build commands use 16 cores; run measurements after building.
+for all of them. Build commands use 24 cores; run measurements after building.
 
 ## IPC suites
 
@@ -81,8 +81,9 @@ The runner forwards it to the executable, so external/subset suites work too.
 ## A* blind
 
 Run both backends against the same suite, with identical worker counts and
-budgets. Each case runs in its own subprocess; cases and worker variants run
-sequentially. Parallelism occurs **inside search**, through `num_search_workers`.
+budgets. Each case runs in its own subprocess; with `--jobs 1`, cases and worker
+variants run sequentially on every CPU. Parallelism occurs **inside search**,
+through `num_search_workers`.
 
 ```bash
 for backend in ground lifted; do
@@ -90,6 +91,7 @@ for backend in ground lifted; do
     --executable build-release/benchmarks/planning/astar_blind_${backend} \
     --suite-json benchmarks/suites/strips.json \
     --output-dir benchmark-results/astar-blind/strips/${backend} \
+    --jobs 1 \
     --benchmark-arg=--cores=1,16 \
     --benchmark-arg=--search-timeout=30 \
     --benchmark-arg=--max-states=1000000 \
@@ -137,8 +139,7 @@ All benchmarks accept the same runtime suites. For example:
 .venv/bin/python benchmarks/tools/runner.py \
   --executable build-release/benchmarks/planning/successors_ground \
   --suite-json benchmarks/suites/non_strips.json \
-  --output-dir benchmark-results/successors/non-strips/ground \
-  --benchmark-min-time 0.1s --benchmark-timeout 60
+  --output-dir benchmark-results/successors/non-strips/ground
 ```
 
 `successors` times repeated initial-state queries with interned bindings/states;
@@ -162,9 +163,14 @@ results fail the case. Hard subprocess timeouts fail the run and discard partial
 results. Search budget limits instead produce valid measurements with the
 termination reason and `solved=0`.
 
-The hard `--benchmark-timeout` covers parsing, grounding, every worker variant,
-and every repetition in a case. Set it above their combined search budgets plus
-setup time. No timeout makes grounding itself cheap.
+The runner runs `--jobs` cases at a time (default 24), each pinned to a CPU of its
+own; benchmarks that run threads of their own (A* search workers, GBFS evaluation
+threads) need `--jobs 1`, which runs cases one at a time on every CPU.
+
+The hard `--benchmark-timeout` (default 10 s) covers parsing, grounding, every
+worker variant, and every repetition in a case. Set it above their combined
+search budgets plus setup time. No timeout makes grounding itself cheap.
+`--benchmark-min-time` defaults to 0.01 s.
 
 Summary rows include every benchmark variant and use median wall times and
 counters. `solved` is the fraction of successful repetitions, so partial failures
@@ -190,3 +196,30 @@ Comparison uses median records (including older aggregate-only results), matches
 identical benchmark names, and checks configured attributes present in the
 objective. A nonzero runner exit indicates failed or timed-out subprocesses;
 inspect `solved` and termination labels separately for search outcomes.
+
+## Comparing a branch with main
+
+Run both sides through `runner.py` with the same executable target, suite, case filter and options, then compare
+their summaries:
+
+```bash
+for side in main branch; do
+  .venv/bin/python benchmarks/tools/runner.py \
+    --executable <${side}-build>/benchmarks/planning/successors_ground \
+    --suite-json benchmarks/suites/strips.json \
+    --output-dir benchmark-results/successors/strips/ground/${side}
+done
+.venv/bin/python benchmarks/tools/compare.py \
+  benchmark-results/successors/strips/ground/main/summary.json \
+  benchmark-results/successors/strips/ground/branch/summary.json
+```
+
+- Build main's targets from main's current commit before measuring; an older build measures other code.
+- Both sides must run the same benchmark source: a change to a benchmark lands on main first.
+- Leave `--benchmark-repetitions` unset: one run per case is enough to spot a regression, and each repetition repeats
+  the case's setup.
+- Run one side after the other and nothing else meanwhile, no build and no other benchmark: the runner already uses
+  every CPU, and timings taken next to other work are not comparable.
+- A case's time depends on the CPU it ran on (performance or efficiency core, a busy sibling thread); compare the two
+  sides' summaries, not cases with each other.
+- Report a regression as measured; do not change a benchmark or its case selection to make it disappear.

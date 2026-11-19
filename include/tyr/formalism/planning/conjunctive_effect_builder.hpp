@@ -26,20 +26,22 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of ConjunctiveEffect: its record's members; each child built or interned (urd::child).
+/// The builder of ConjunctiveEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
-    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>, C>> literals;
-    std::vector<urd::child<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>, C>> numeric_effects;
-    std::optional<urd::child<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>, C>> auxiliary_numeric_effect;  // :action-cost
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> numeric_effects;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>, C>
+        auxiliary_numeric_effect;  // :action-cost
 
     static constexpr auto fields() noexcept
     {
@@ -54,15 +56,16 @@ struct builder<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, 
     }
 };
 
-/// The builder of ConjunctiveEffect: its record's members; each child built or interned (urd::child).
+/// The builder of ConjunctiveEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> index;
-    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> add_facts;
-    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> del_facts;
-    std::vector<urd::child<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>, C>> numeric_effects;
-    std::optional<urd::child<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>, C>> auxiliary_numeric_effect;  // :action-cost
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> add_facts;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> del_facts;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> numeric_effects;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
+        auxiliary_numeric_effect;  // :action-cost
 
     static constexpr auto fields() noexcept
     {

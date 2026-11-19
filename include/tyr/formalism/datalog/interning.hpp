@@ -30,7 +30,9 @@ namespace tyr::formalism::datalog
 
 using ygg::formalism::insert;
 
+/// A record the repository holds as a symbol is made canonical before it is interned (a row is ygg's).
 template<typename T>
+    requires ygg::formalism::SupportsSymbol<Repository, T>
 void prepare_for_insert(Repository&, urd::data<T>& data)
 { canonicalize(data); }
 

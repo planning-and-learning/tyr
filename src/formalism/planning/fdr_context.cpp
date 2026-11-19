@@ -53,8 +53,8 @@ FDRContext::FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, Fl
     {
         auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
         for (const auto& atom : group)
-            variable->atoms.push_back(atom.index());
-        const auto variable_view = planning::insert(*m_context, *variable).first;
+            variable->atoms.push_back(atom);
+        const auto variable_view = m_context->insert(*variable, m_builder).first;
         m_variables.push_back(variable_view);
         for (ygg::uint_t i = 0; i < group.size(); ++i)
         {
@@ -74,8 +74,8 @@ FDRContext::FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, Repo
     for (const auto& atom : all_atoms)
     {
         auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
-        variable->atoms.push_back(atom.index());
-        const auto variable_view = planning::insert(*m_context, *variable).first;
+        variable->atoms.push_back(atom);
+        const auto variable_view = m_context->insert(*variable, m_builder).first;
         m_variables.push_back(variable_view);
         [[maybe_unused]] const auto inserted = publish_fact(atom, urd::data<FDRFact<FluentTag>>(variable_view.index(), FDRValue { 1 }));
         assert(inserted);
@@ -105,8 +105,8 @@ FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
 
     // Construct a new binary FDR variable
     auto variable_data = planning::checkout<FDRVariable<FluentTag>>(m_builder);
-    variable_data->atoms.push_back(atom.index());
-    const auto variable = planning::insert(*m_context, *variable_data).first;
+    variable_data->atoms.push_back(atom);
+    const auto variable = m_context->insert(*variable_data, m_builder).first;
 
     // Grow before changing the variable list so allocation failure leaves this registration retryable.
     ensure_fact_slot(atom);

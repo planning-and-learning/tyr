@@ -27,19 +27,20 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Metric: its record's members; each child built or interned (urd::child).
+/// The builder of Metric: its record's members, each in its built form (urd::built_t).
 template<typename C>
 struct builder<::tyr::formalism::planning::Metric, C>
 {
     urd::index<::tyr::formalism::planning::Metric> index;
-    ::tyr::formalism::OptimizationDirection optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
-    ::tyr::formalism::BuiltFunctionExpression<::tyr::GroundTag, C> fexpr;
+    urd::built_t<::tyr::formalism::OptimizationDirection, C> optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
+    urd::built_t<::tyr::formalism::FunctionExpression<::tyr::GroundTag>, C> fexpr;
 
     static constexpr auto fields() noexcept
     {

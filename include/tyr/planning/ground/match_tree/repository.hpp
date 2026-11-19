@@ -23,11 +23,16 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
+#include "tyr/planning/ground/match_tree/nodes/atom_builder.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
+#include "tyr/planning/ground/match_tree/nodes/constraint_builder.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
+#include "tyr/planning/ground/match_tree/nodes/generator_builder.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
+#include "tyr/planning/ground/match_tree/nodes/negative_fact_builder.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
+#include "tyr/planning/ground/match_tree/nodes/variable_builder.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
 #include <boost/mp11.hpp>
@@ -41,8 +46,14 @@
 namespace tyr::planning::match_tree
 {
 
-using GroundActionBuilder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Action<GroundTag>>>;
-using GroundAxiomBuilder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Axiom<GroundTag>>>;
+template<typename Tag>
+class Repository;
+
+/// The pools of a match tree's builders and scratch records, interned into its Repository.
+template<typename Tag>
+using BuilderOf = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<RepositoryTypes<Tag>, Repository<Tag>>>;
+using GroundActionBuilder = BuilderOf<formalism::planning::Action<GroundTag>>;
+using GroundAxiomBuilder = BuilderOf<formalism::planning::Axiom<GroundTag>>;
 
 using ygg::formalism::checkout;
 using ygg::formalism::insert;
@@ -77,20 +88,26 @@ public:
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
     [[nodiscard]] urd::index_view<T, Repository> view(urd::index<T> index) const noexcept
-    { return { index, this }; }
+    {
+        return { index, this };
+    }
 
     /// A formalism element a node refers to (an atom, a constraint, a fact, a variable): its view in the formalism
     /// repository, which owns it.
     template<typename T>
         requires(!ygg::formalism::SupportsSymbol<Repository, T>)
     [[nodiscard]] auto view(urd::index<T> index) const
-    { return get_formalism_repository().view(index); }
+    {
+        return get_formalism_repository().view(index);
+    }
 };
 
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
 void prepare_for_insert(Repository<Tag>&, urd::data<T>& data)
-{ canonicalize(data); }
+{
+    canonicalize(data);
+}
 
 }
 

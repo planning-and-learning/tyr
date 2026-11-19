@@ -23,19 +23,20 @@
 
 #include <optional>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
 #include <variant>
 #include <vector>
 
 namespace urd
 {
 
-/// The builder of Predicate: its record's members; each child built or interned (urd::child).
+/// The builder of Predicate: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind T, typename C>
 struct builder<::tyr::formalism::Predicate<T>, C>
 {
     urd::index<::tyr::formalism::Predicate<T>> index;
-    urd::flat_string name;
-    ygg::uint_t arity = 0;
+    urd::built_t<urd::flat_string, C> name;
+    urd::built_t<ygg::uint_t, C> arity = 0;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &builder::name>, urd::field<"arity", &builder::arity>> {}; }
 

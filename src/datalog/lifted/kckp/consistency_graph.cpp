@@ -624,7 +624,7 @@ create_overapproximation_conjunctive_condition(size_t k,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
-        conj_cond->variables.push_back(variable.index());
+        conj_cond->variables.push_back(variable);
 
     const auto literal_belongs_to_k_overapproximation = [k](const auto literal)
     { return literal.get_polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
@@ -632,17 +632,17 @@ create_overapproximation_conjunctive_condition(size_t k,
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (literal_belongs_to_k_overapproximation(literal))
-            conj_cond->static_literals.push_back(literal.index());
+            conj_cond->static_literals.push_back(literal);
 
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (literal_belongs_to_k_overapproximation(literal))
-            conj_cond->fluent_literals.push_back(literal.index());
+            conj_cond->fluent_literals.push_back(literal);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
-            conj_cond->numeric_constraints.push_back(numeric_constraint.index());
+            conj_cond->numeric_constraints.push_back(numeric_constraint);
 
-    return formalism::datalog::insert(context, *conj_cond);
+    return context.insert(*conj_cond, builder);
 }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
@@ -654,7 +654,7 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
-        conj_cond->variables.push_back(variable.index());
+        conj_cond->variables.push_back(variable);
 
     // Binary KCKP edges join distinct rule parameters, so a one-parameter literal such as p(x,x) still needs an exact check.
     const auto requires_exact_literal_check = [k](const auto literal)
@@ -664,17 +664,17 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (requires_exact_literal_check(literal))
-            conj_cond->static_literals.push_back(literal.index());
+            conj_cond->static_literals.push_back(literal);
 
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (requires_exact_literal_check(literal))
-            conj_cond->fluent_literals.push_back(literal.index());
+            conj_cond->fluent_literals.push_back(literal);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (requires_exact_numeric_check(numeric_constraint))
-            conj_cond->numeric_constraints.push_back(numeric_constraint.index());
+            conj_cond->numeric_constraints.push_back(numeric_constraint);
 
-    return formalism::datalog::insert(context, *conj_cond);
+    return context.insert(*conj_cond, builder);
 }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
@@ -684,13 +684,13 @@ create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionV
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : conflicting_condition.get_variables())
-        conj_cond->variables.push_back(variable.index());
+        conj_cond->variables.push_back(variable);
 
     for (const auto literal : conflicting_condition.get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond->fluent_literals.push_back(literal.index());
+            conj_cond->fluent_literals.push_back(literal);
 
-    return formalism::datalog::insert(context, *conj_cond);
+    return context.insert(*conj_cond, builder);
 }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>
@@ -706,16 +706,16 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (is_nullary(literal))
-            conj_cond->static_literals.push_back(ground(literal, grounder_context).first.index());
+            conj_cond->static_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (is_nullary(literal))
-            conj_cond->fluent_literals.push_back(ground(literal, grounder_context).first.index());
+            conj_cond->fluent_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (is_nullary(numeric_constraint))
-            conj_cond->numeric_constraints.push_back(ground(numeric_constraint, grounder_context).first.index());
+            conj_cond->numeric_constraints.push_back(ground(numeric_constraint, grounder_context).first);
 
-    return formalism::datalog::insert(context, *conj_cond);
+    return context.insert(*conj_cond, builder);
 }
 }

@@ -160,7 +160,7 @@ std::pair<datalog::PredicateView<T_DST>, bool> merge_p2d(PredicateView<T_SRC> el
     predicate->name = element.get_name();
     predicate->arity = element.get_arity();
 
-    return datalog::insert(context.destination(), *predicate);
+    return context.destination().insert(*predicate, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -171,12 +171,12 @@ merge_p2d(AtomView<LiftedTag, T_SRC> element,  //
 {
     auto atom = datalog::checkout<Atom<LiftedTag, T_DST>>(context.builder());
 
-    atom->parameters = copy(element.get_parameters(), context).first.index();
-    atom->predicate = predicate_mapping.at(element.get_predicate()).index();
+    atom->parameters = copy(element.get_parameters(), context).first;
+    atom->predicate = predicate_mapping.at(element.get_predicate());
     for (const auto term : element.get_terms())
-        atom->terms.push_back(merge_p2d(term, context));
+        urd::build_member(atom->terms.emplace_back(), merge_p2d(term, context), context.destination());
 
-    return datalog::insert(context.destination(), *atom);
+    return context.destination().insert(*atom, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -191,11 +191,11 @@ merge_p2d(PredicateRowView<T_SRC> element, datalog::PredicateView<T_DST> predica
 {
     auto binding = datalog::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
-    binding->relation = predicate.index();
+    binding->relation = predicate;
     for (const auto object : element.template get<urd::index<Object>>())
         binding->values.push_back(object.value);
 
-    return datalog::insert(context.destination(), *binding);
+    return context.destination().insert(*binding, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -208,7 +208,7 @@ merge_p2d(AtomView<GroundTag, T_SRC> element,  //
 
     urd::store(atom->row, merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first);
 
-    return datalog::insert(context.destination(), *atom);
+    return context.destination().insert(*atom, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -235,9 +235,9 @@ merge_p2d(LiteralView<LiftedTag, T_SRC> element,  //
     auto literal = datalog::checkout<Literal<LiftedTag, T_DST>>(context.builder());
 
     literal->polarity = element.get_polarity();
-    literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.index();
+    literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first;
 
-    return datalog::insert(context.destination(), *literal);
+    return context.destination().insert(*literal, context.builder());
 }
 
 inline std::optional<datalog::LiteralView<GroundTag, FluentTag>>
@@ -252,9 +252,9 @@ merge_p2d(FDRFactView<FluentTag> element,
 
     auto literal = datalog::checkout<Literal<GroundTag, FluentTag>>(context.builder());
     literal->polarity = polarity;
-    literal->atom = merge_p2d(*atom, predicate_mapping, context).first.index();
+    literal->atom = merge_p2d(*atom, predicate_mapping, context).first;
 
-    return datalog::insert(context.destination(), *literal).first;
+    return context.destination().insert(*literal, context.builder()).first;
 }
 
 inline std::optional<datalog::LiteralView<GroundTag, FluentTag>>
@@ -270,9 +270,9 @@ merge_p2d(FDRFactView<FluentTag> element,
 
     auto literal = datalog::checkout<Literal<GroundTag, FluentTag>>(context.builder());
     literal->polarity = polarity;
-    literal->atom = merge_p2d(*atom, atom_mapping, predicate_mapping, context).first.index();
+    literal->atom = merge_p2d(*atom, atom_mapping, predicate_mapping, context).first;
 
-    return datalog::insert(context.destination(), *literal).first;
+    return context.destination().insert(*literal, context.builder()).first;
 }
 
 // Numeric
@@ -285,7 +285,7 @@ std::pair<datalog::FunctionView<T_DST>, bool> merge_p2d(FunctionView<T_SRC> elem
     function->name = element.get_name();
     function->arity = element.get_arity();
 
-    return datalog::insert(context.destination(), *function);
+    return context.destination().insert(*function, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -294,12 +294,12 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 {
     auto fterm = datalog::checkout<FunctionTerm<LiftedTag, T_DST>>(context.builder());
 
-    fterm->parameters = copy(element.get_parameters(), context).first.index();
-    fterm->function = merge_p2d<T_SRC, T_DST>(element.get_function(), context).first.index();
+    fterm->parameters = copy(element.get_parameters(), context).first;
+    fterm->function = merge_p2d<T_SRC, T_DST>(element.get_function(), context).first;
     for (const auto term : element.get_terms())
-        fterm->terms.push_back(merge_p2d(term, context));
+        urd::build_member(fterm->terms.emplace_back(), merge_p2d(term, context), context.destination());
 
-    return datalog::insert(context.destination(), *fterm);
+    return context.destination().insert(*fterm, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -312,11 +312,11 @@ merge_p2d(FunctionRowView<T_SRC> element, datalog::FunctionView<T_DST> function,
 {
     auto binding = datalog::checkout<ygg::Row<Function<T_DST>>>(context.builder());
 
-    binding->relation = function.index();
+    binding->relation = function;
     for (const auto object : element.template get<urd::index<Object>>())
         binding->values.push_back(object.value);
 
-    return datalog::insert(context.destination(), *binding);
+    return context.destination().insert(*binding, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -327,7 +327,7 @@ std::pair<datalog::FunctionTermView<GroundTag, T_DST>, bool> merge_p2d(FunctionT
 
     urd::store(fterm->row, merge_p2d<T_SRC, T_DST>(element.get_row(), context).first);
 
-    return datalog::insert(context.destination(), *fterm);
+    return context.destination().insert(*fterm, context.builder());
 }
 
 template<FactKind T_SRC, FactKind T_DST, TaskKind Kind>
@@ -338,10 +338,10 @@ std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffect
     auto numeric_effect = datalog::checkout<NumericEffect<Kind, T_DST>>(context.builder());
 
     numeric_effect->operation = element.get_operation();
-    numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.index();
-    numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
+    numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first;
+    urd::build_member(numeric_effect->fexpr, merge_p2d(element.get_fexpr(), context), context.destination());
 
-    return datalog::insert(context.destination(), *numeric_effect);
+    return context.destination().insert(*numeric_effect, context.builder());
 }
 
 inline FunctionExpression<LiftedTag> merge_p2d(FunctionExpressionView<LiftedTag> element, WriteContext<datalog::Builder, datalog::Repository>& context)
@@ -373,7 +373,7 @@ inline FunctionExpression<GroundTag> merge_p2d(FunctionExpressionView<GroundTag>
 }
 
 /// An arithmetic or boolean operator: its operator kind kept, each of its function expressions merged (an auxiliary
-/// function term in one made fluent), by urd::map_variant_children over the source record.
+/// function term in one made fluent), by urd::build_variants_from over the source record.
 template<typename T>
     requires boost::mp11::mp_contains<ExpressionTypes, T>::value
 std::pair<urd::index_view<T, datalog::Repository>, bool> merge_p2d(urd::index_view<T, Repository> element,
@@ -381,9 +381,9 @@ std::pair<urd::index_view<T, datalog::Repository>, bool> merge_p2d(urd::index_vi
 {
     auto record = datalog::checkout<T>(context.builder());
 
-    urd::map_variant_children<boost::mp11::mp_list<>, T>(element, *record, [&](const auto& expression) { return merge_p2d(expression, context); });
+    urd::build_variants_from(element, *record, context.destination(), [&](const auto& expression) { return merge_p2d(expression, context); });
 
-    return datalog::insert(context.destination(), *record);
+    return context.destination().insert(*record, context.builder());
 }
 
 }

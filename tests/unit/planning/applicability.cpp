@@ -52,7 +52,7 @@ concept HasBindingQuery = requires(tyr::planning::SuccessorGenerator<Kind>& gene
 };
 
 static_assert(std::same_as<tyr::planning::ActionBindingView<tyr::GroundTag>, tyr::formalism::planning::ActionRowView>);
-static_assert(std::same_as<tyr::planning::ActionBindingView<tyr::LiftedTag>, tyr::formalism::planning::ActionRowDataView>);
+static_assert(std::same_as<tyr::planning::ActionBindingView<tyr::LiftedTag>, tyr::formalism::planning::ActionRowBuilderView>);
 static_assert(!HasBindingQuery<tyr::GroundTag, tyr::planning::StateBuilderView<tyr::LiftedTag>>);
 static_assert(!HasBindingQuery<tyr::LiftedTag, tyr::planning::StateView<tyr::GroundTag>>);
 

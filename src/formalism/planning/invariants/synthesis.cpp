@@ -79,19 +79,19 @@ InvariantView intern(const MutableInvariant& invariant, Builder& builder, Reposi
     {
         auto variable = checkout<Variable>(builder);
         variable->name = fmt::format("?v{}", position);
-        parameters->variables.push_back(insert(repository, *variable).first.index());
+        parameters->variables.push_back(repository.insert(*variable, builder).first);
     }
-    const auto parameters_index = insert(repository, *parameters).first.index();
+    const auto parameters_view = repository.insert(*parameters, builder).first;
     for (const auto& atom : invariant.atoms)
     {
         auto atom_data = checkout<Atom<LiftedTag, FluentTag>>(builder);
-        atom_data->parameters = parameters_index;
-        atom_data->predicate = atom.predicate.index();
+        atom_data->parameters = parameters_view;
+        atom_data->predicate = atom.predicate;
         for (const auto& term : atom.terms)
-            atom_data->terms.push_back(term);
-        data->atoms.push_back(insert(repository, *atom_data).first.index());
+            urd::build_member(atom_data->terms.emplace_back(), term, repository);
+        data->atoms.push_back(repository.insert(*atom_data, builder).first);
     }
-    return insert(repository, *data).first;
+    return repository.insert(*data, builder).first;
 }
 
 MutableInvariantList synthesize_mutable_invariants(DomainView domain)

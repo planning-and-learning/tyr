@@ -226,8 +226,8 @@ class Normalizer
         return m_build.template make<Tag>(
             [&](auto& filtered)
             {
-                filtered = condition(data);
-                filtered.operand = arg.index();
+                urd::build_member(filtered, condition(data), m_build.repository());
+                filtered.operand = arg;
             });
     }
 

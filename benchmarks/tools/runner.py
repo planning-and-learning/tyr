@@ -5,10 +5,13 @@
 """Run each case of a benchmark suite as its own Google Benchmark subprocess with a hard timeout."""
 
 import argparse
+import concurrent.futures
+import io
 import json
 import os
 import pathlib
 import platform
+import queue
 import re
 import subprocess
 import sys
@@ -40,6 +43,7 @@ class BenchmarkOptions:
     repetitions: int | None
     report_aggregates_only: bool
     timeout: float
+    jobs: int
 
 
 def run_text(command: list[str], cwd: pathlib.Path | None = None) -> str | None:
@@ -215,22 +219,23 @@ def build_benchmark_command(
     return command
 
 
-def run_command(command: list[str], timeout: float) -> CommandResult:
-    """Run the command with a wall-clock timeout, capturing stdout and stderr together."""
+def run_command(command: list[str], timeout: float, cpu: int | None = None) -> CommandResult:
+    """Run the command with a wall-clock timeout, capturing stdout and stderr together; on ``cpu`` alone if given."""
     started = time.monotonic()
-    try:
-        result = subprocess.run(
-            command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout, check=False
-        )
-        duration = time.monotonic() - started
-        stdout = normalize_stdout(result.stdout)
-        exit_code = result.returncode
-        status = "passed" if result.returncode == 0 else "failed"
-    except subprocess.TimeoutExpired as error:
-        duration = time.monotonic() - started
-        stdout = normalize_stdout(error.stdout)
-        exit_code = None
-        status = "timed_out"
+    with subprocess.Popen(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process:
+        if cpu is not None:
+            os.sched_setaffinity(process.pid, {cpu})
+        try:
+            output, _ = process.communicate(timeout=timeout)
+            exit_code = process.returncode
+            status = "passed" if exit_code == 0 else "failed"
+        except subprocess.TimeoutExpired:
+            process.kill()
+            output, _ = process.communicate()
+            exit_code = None
+            status = "timed_out"
+    duration = time.monotonic() - started
+    stdout = normalize_stdout(output)
 
     return {
         "command": command,
@@ -289,70 +294,94 @@ def validate_benchmark_result(path: pathlib.Path, run_name: str) -> str | None:
         return "Missing or invalid benchmark JSON."
 
 
+def run_case(
+    benchmark_executable: pathlib.Path,
+    output_dir: pathlib.Path,
+    case: dict[str, Any],
+    options: BenchmarkOptions,
+    cpu: int | None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str]:
+    """Run one case, on ``cpu`` alone if given, recording its status in the case; its result or its failure, and its log entry."""
+    timeout = options.timeout
+    run_name = case["run_name"]
+    result_file = output_dir / "benchmark-results" / f"{run_name}.json"
+    temp_result_file = result_file.with_name(f"{result_file.name}.tmp")
+    result_file.parent.mkdir(parents=True, exist_ok=True)
+    result_file.unlink(missing_ok=True)
+    temp_result_file.unlink(missing_ok=True)
+
+    command = build_benchmark_command(benchmark_executable, run_name, temp_result_file, options)
+    result = run_command(command, timeout, cpu)
+    if result["status"] == "passed":
+        error = validate_benchmark_result(temp_result_file, run_name)
+        if error:
+            result["status"] = "failed"
+            result["stdout"] += f"\n{error}\n"
+    log = io.StringIO()
+    write_log_entry(log, run_name, "benchmark", result)
+
+    success: dict[str, Any] | None = None
+    failure: dict[str, Any] | None = None
+    if result["status"] == "passed":
+        temp_result_file.replace(result_file)
+        success = {
+            "run_name": run_name,
+            "command": command,
+            "status": result["status"],
+            "exit_code": result["exit_code"],
+            "result_file": str(result_file),
+            "duration_seconds": result["duration_seconds"],
+        }
+        case["benchmark_result_file"] = str(result_file)
+    else:
+        temp_result_file.unlink(missing_ok=True)
+        reason = "benchmark_timed_out" if result["status"] == "timed_out" else "benchmark_failed"
+        failure = {
+            "run_name": run_name,
+            "command": command,
+            "status": result["status"],
+            "exit_code": result["exit_code"],
+            "duration_seconds": result["duration_seconds"],
+            "reason": reason,
+        }
+        if result["status"] == "timed_out":
+            failure["timeout_seconds"] = timeout
+        case["benchmark_failure_reason"] = reason
+        if result["status"] == "timed_out":
+            case["benchmark_timeout_seconds"] = timeout
+
+    case["status"] = result["status"]
+    case["benchmark_status"] = result["status"]
+    case["benchmark_duration_seconds"] = result["duration_seconds"]
+    case["benchmark_exit_code"] = result["exit_code"]
+    return success, failure, log.getvalue()
+
+
 def run_benchmarks(
     benchmark_executable: pathlib.Path, output_dir: pathlib.Path, cases: list[dict[str, Any]], options: BenchmarkOptions
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Run every case, logging its output and recording its status in the case; return the results and failures."""
-    timeout = options.timeout
-    results: list[dict[str, Any]] = []
-    failures: list[dict[str, Any]] = []
-    benchmark_output_dir = output_dir / "benchmark-results"
-    benchmark_log_file = output_dir / "benchmark.log"
+    """Run every case, ``options.jobs`` at a time, each on a CPU of its own (one at a time: on every CPU, for cases that
+    run threads of their own); log their output in suite order and record each status in its case; return the results
+    and failures."""
+    cpus: queue.Queue[int] = queue.Queue()
+    for cpu in sorted(os.sched_getaffinity(0))[: options.jobs]:
+        cpus.put(cpu)
 
-    with benchmark_log_file.open("w") as benchmark_log:
-        for case in cases:
-            run_name = case["run_name"]
-            result_file = benchmark_output_dir / f"{run_name}.json"
-            temp_result_file = result_file.with_name(f"{result_file.name}.tmp")
-            result_file.parent.mkdir(parents=True, exist_ok=True)
-            result_file.unlink(missing_ok=True)
-            temp_result_file.unlink(missing_ok=True)
+    def on_free_cpu(case: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str]:
+        cpu = cpus.get()
+        try:
+            return run_case(benchmark_executable, output_dir, case, options, cpu if options.jobs > 1 else None)
+        finally:
+            cpus.put(cpu)
 
-            command = build_benchmark_command(benchmark_executable, run_name, temp_result_file, options)
-            result = run_command(command, timeout)
-            if result["status"] == "passed":
-                error = validate_benchmark_result(temp_result_file, run_name)
-                if error:
-                    result["status"] = "failed"
-                    result["stdout"] += f"\n{error}\n"
-            write_log_entry(benchmark_log, run_name, "benchmark", result)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=cpus.qsize()) as pool:
+        outcomes = list(pool.map(on_free_cpu, cases))
 
-            if result["status"] == "passed":
-                temp_result_file.replace(result_file)
-                results.append(
-                    {
-                        "run_name": run_name,
-                        "command": command,
-                        "status": result["status"],
-                        "exit_code": result["exit_code"],
-                        "result_file": str(result_file),
-                        "duration_seconds": result["duration_seconds"],
-                    }
-                )
-                case["benchmark_result_file"] = str(result_file)
-            else:
-                temp_result_file.unlink(missing_ok=True)
-                reason = "benchmark_timed_out" if result["status"] == "timed_out" else "benchmark_failed"
-                failure = {
-                    "run_name": run_name,
-                    "command": command,
-                    "status": result["status"],
-                    "exit_code": result["exit_code"],
-                    "duration_seconds": result["duration_seconds"],
-                    "reason": reason,
-                }
-                if result["status"] == "timed_out":
-                    failure["timeout_seconds"] = timeout
-                failures.append(failure)
-                case["benchmark_failure_reason"] = reason
-                if result["status"] == "timed_out":
-                    case["benchmark_timeout_seconds"] = timeout
-
-            case["status"] = result["status"]
-            case["benchmark_status"] = result["status"]
-            case["benchmark_duration_seconds"] = result["duration_seconds"]
-            case["benchmark_exit_code"] = result["exit_code"]
-
+    results = [success for success, _, _ in outcomes if success is not None]
+    failures = [failure for _, failure, _ in outcomes if failure is not None]
+    with (output_dir / "benchmark.log").open("w") as benchmark_log:
+        for _, _, log in outcomes:
+            benchmark_log.write(log)
     return results, failures
 
 
@@ -371,7 +400,7 @@ def main() -> int:
         required=True,
         help="Benchmark suite JSON with domains, domain files, and task files.",
     )
-    parser.add_argument("--benchmark-min-time", default="0.1s", help="Google Benchmark --benchmark_min_time value.")
+    parser.add_argument("--benchmark-min-time", default="0.01s", help="Google Benchmark --benchmark_min_time value.")
     parser.add_argument("--benchmark-repetitions", type=int, help="Google Benchmark --benchmark_repetitions value.")
     parser.add_argument(
         "--benchmark-arg",
@@ -383,8 +412,15 @@ def main() -> int:
     parser.add_argument(
         "--benchmark-timeout",
         type=float,
-        default=60.0,
+        default=10.0,
         help="Hard wall-clock timeout in seconds for each per-case Google Benchmark subprocess.",
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=24,
+        help="Cases run at a time, each pinned to a CPU of its own (at most the CPUs available); 1 runs them one at a "
+        "time on every CPU, for benchmarks with threads of their own (A* search workers, GBFS evaluation threads).",
     )
     parser.add_argument(
         "--benchmark-report-aggregates-only",
@@ -394,6 +430,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.benchmark_timeout <= 0:
         parser.error("--benchmark-timeout must be greater than 0.")
+    if args.jobs <= 0:
+        parser.error("--jobs must be greater than 0.")
 
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -418,6 +456,7 @@ def main() -> int:
         repetitions=args.benchmark_repetitions,
         report_aggregates_only=args.benchmark_report_aggregates_only,
         timeout=args.benchmark_timeout,
+        jobs=args.jobs,
     )
     benchmark_results, benchmark_failures = run_benchmarks(executable, output_dir, cases, options)
     summary = build_summary(suite, cases, metadata, benchmark_results, benchmark_failures)
