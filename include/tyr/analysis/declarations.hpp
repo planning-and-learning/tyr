@@ -23,6 +23,8 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
+#include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
@@ -46,6 +48,10 @@ struct Scoped
 {
     urd::index<Element> element;
     Payload payload;
+
+    static constexpr std::string_view name = "Scoped";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"element", &Scoped::element>, urd::field<"payload", &Scoped::payload>> {}; }
 };
 
 template<typename Element>
@@ -94,6 +100,10 @@ struct ScopedView
 {
     urd::index_view<Element, C> element;
     Payload payload;
+
+    static constexpr std::string_view name = "ScopedView";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"element", &ScopedView::element>, urd::field<"payload", &ScopedView::payload>> {}; }
 };
 
 template<typename C>
@@ -116,6 +126,10 @@ struct VariableDomainView
     auto& operator[](std::size_t i) noexcept { return objects[i]; }
 
     const auto& operator[](std::size_t i) const noexcept { return objects[i]; }
+
+    static constexpr std::string_view name = "VariableDomainView";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"objects", &VariableDomainView::objects>> {}; }
 };
 
 template<typename C>
@@ -150,6 +164,14 @@ struct ConditionalEffectDomainViewData
 {
     ConjunctiveConditionDomainView<C> condition_domain;
     ConjunctiveEffectDomainView<C> effect_domain;
+
+    static constexpr std::string_view name = "ConditionalEffectDomainViewData";
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"condition_domain", &ConditionalEffectDomainViewData::condition_domain>,
+                           urd::field<"effect_domain", &ConditionalEffectDomainViewData::effect_domain>> {};
+    }
 };
 
 template<typename C>
@@ -164,6 +186,14 @@ struct ActionDomainViewData
 {
     ConjunctiveConditionDomainView<C> precondition_domain;
     ConditionalEffectDomainViewMap<C> effect_domains;
+
+    static constexpr std::string_view name = "ActionDomainViewData";
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"precondition_domain", &ActionDomainViewData::precondition_domain>,
+                           urd::field<"effect_domains", &ActionDomainViewData::effect_domains>> {};
+    }
 };
 
 template<typename C>

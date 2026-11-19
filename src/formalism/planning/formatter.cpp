@@ -581,3 +581,9 @@ template struct fmt::formatter<ygg::RowView<tp::Action<LiftedTag>, tp::Repositor
 template struct fmt::formatter<ygg::RowView<tp::Axiom<LiftedTag>, tp::Repository>>;
 template struct fmt::formatter<tp::PlanningTask<LiftedTag>>;
 template struct fmt::formatter<tp::PlanningTask<GroundTag>>;
+
+fmt::format_context::iterator fmt::formatter<tyr::formalism::planning::FDRValue>::format(const tyr::formalism::planning::FDRValue& value, fmt::format_context& ctx) const
+{ return fmt::format_to(ctx.out(), "{}", value.value); }
+
+fmt::format_context::iterator fmt::formatter<tyr::formalism::OptimizationDirection>::format(tyr::formalism::OptimizationDirection value, fmt::format_context& ctx) const
+{ return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }

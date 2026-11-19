@@ -20,6 +20,8 @@
 
 #include "tyr/formalism/declarations.hpp"
 
+#include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
@@ -30,6 +32,10 @@ namespace tyr::analysis
 struct VariableDomain
 {
     urd::Store<urd::sequence<urd::index<formalism::Object>>> objects;
+
+    static constexpr std::string_view name = "VariableDomain";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"objects", &VariableDomain::objects>> {}; }
 };
 
 using VariableDomainList = urd::Store<urd::sequence<VariableDomain>>;

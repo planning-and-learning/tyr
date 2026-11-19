@@ -42,6 +42,8 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -133,6 +135,14 @@ public:
     [[nodiscard]] auto get_parameter_index() const noexcept { return m_parameter_index; }
 
     [[nodiscard]] auto get_object_index() const noexcept { return m_object_index; }
+
+    static constexpr std::string_view name = "Vertex";
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"parameter_index", &Vertex::m_parameter_index>,
+                           urd::field<"object_index", &Vertex::m_object_index>> {};
+    }
 };
 
 /**
@@ -151,6 +161,10 @@ public:
     [[nodiscard]] const auto& vi() const noexcept { return m_vi; }
 
     [[nodiscard]] const auto& vj() const noexcept { return m_vj; }
+
+    static constexpr std::string_view name = "Edge";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"vi", &Edge::m_vi>, urd::field<"vj", &Edge::m_vj>> {}; }
 };
 
 }

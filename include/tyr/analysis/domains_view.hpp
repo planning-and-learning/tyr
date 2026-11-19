@@ -22,6 +22,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
+#include <string_view>
+#include <urd/elements/concepts.hpp>
+
 namespace tyr::analysis
 {
 
@@ -36,6 +39,19 @@ struct TaskVariableDomainsView
     FunctionDomainViewMap<formalism::FluentTag, C> fluent_function_domains;
     ActionDomainViewMap<C> action_domains;
     AxiomDomainViewMap<C> axiom_domains;
+
+    static constexpr std::string_view name = "TaskVariableDomainsView";
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"static_predicate_domains", &TaskVariableDomainsView::static_predicate_domains>,
+                           urd::field<"fluent_predicate_domains", &TaskVariableDomainsView::fluent_predicate_domains>,
+                           urd::field<"derived_predicate_domains", &TaskVariableDomainsView::derived_predicate_domains>,
+                           urd::field<"static_function_domains", &TaskVariableDomainsView::static_function_domains>,
+                           urd::field<"fluent_function_domains", &TaskVariableDomainsView::fluent_function_domains>,
+                           urd::field<"action_domains", &TaskVariableDomainsView::action_domains>,
+                           urd::field<"axiom_domains", &TaskVariableDomainsView::axiom_domains>> {};
+    }
 };
 
 }

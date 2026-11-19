@@ -28,8 +28,10 @@
 #include <concepts>
 #include <memory>
 #include <ranges>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -59,6 +61,11 @@ public:
 private:
     State m_state;
     ygg::float_t m_metric;
+
+public:
+    static constexpr std::string_view name = "Node";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"state", &Node::m_state>, urd::field<"metric", &Node::m_metric>> {}; }
 };
 
 /// A node whose state is packed. It keeps the state's repository alive (the view borrows it), so that it can be held
@@ -94,6 +101,10 @@ struct LabeledNode
     [[nodiscard]] auto pack() const noexcept(noexcept(node.pack()))
         requires std::same_as<Binding, formalism::planning::ActionRowView> && requires(const Node<Kind, State>& value) { value.pack(); }
     { return PackedLabeledNode<Kind> { label, node.pack() }; }
+
+    static constexpr std::string_view name = "LabeledNode";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &LabeledNode::label>, urd::field<"node", &LabeledNode::node>> {}; }
 };
 
 template<TaskKind Kind>

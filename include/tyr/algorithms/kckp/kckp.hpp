@@ -23,6 +23,7 @@
 #include <limits>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <urd/elements/concepts.hpp>
 #include <urd/graphs.hpp>
 #include <urd/key_range.hpp>
@@ -47,6 +48,10 @@ struct Vertex
     static constexpr auto identifying_members() noexcept { return urd::Members<&Vertex::index> {}; }
 
     friend constexpr bool operator==(Vertex, Vertex) noexcept = default;
+
+    static constexpr std::string_view name = "Vertex";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"index", &Vertex::index>> {}; }
 };
 
 /// A set of vertices: over the window of one part (Graph::empty_parts), or over all vertices.

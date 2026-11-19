@@ -6,6 +6,7 @@
 #define TYR_DATALOG_DATABASE_SYNTAX_FORMATTER_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
+#include "tyr/formalism/formatter.hpp"
 #include "yggdrasil/formalism/formatter.hpp"
 #include "yggdrasil/formatting/formatter.hpp"
 
@@ -21,48 +22,19 @@
 
 namespace tyr::datalog::database
 {
-namespace detail
-{
-template<typename OutputIt>
-OutputIt format_query_plan(OutputIt out, const QueryPlan& plan)
-{
-    // Plain values, so explanations do not depend on the optional public formatters.
-    const auto value = [](auto index) { return index.value; };
-    for (size_t id = 0; id < plan.node_count(); ++id)
-        std::visit(
-            [&]<typename Tag>(QueryView<Tag> operation)
-            {
-                urd::Store<urd::sequence<ygg::uint_t>> children;
-                for_each_child(operation, [&](QueryView<> child) { children.push_back(child.index().value); });
-                const auto columns =
-                    operation.columns()
-                    | std::views::transform([](const ygg::ColumnLayout& column) { return fmt::format("{}:{}", column.label.value, column.type); });
-                out = fmt::format_to(out, "{}: {}({}) columns=[{}]", id, Tag::operation, fmt::join(children, ","), fmt::join(columns, ","));
-                if constexpr (std::same_as<Tag, QueryInputTag>)
-                    out = fmt::format_to(out, " slot={}", operation.get_input_slot());
-                if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
-                    out = fmt::format_to(out, " variables=[{}]", fmt::join(operation.get_variable_order() | std::views::transform(value), ","));
-                out = fmt::format_to(out, "\n");
-            },
-            plan[urd::index<Query<>>(ygg::to_uint_t(id))].get_variant());
-    return fmt::format_to(out, "roots=[{}]\n", fmt::join(plan.roots() | std::views::transform(value), ","));
-}
-}  // namespace detail
-
+/// The plan as text: each node by its number, its operation, children and columns (an input its slot, a generic join its
+/// variable order), then its roots.
 std::string explain(const QueryPlan& plan);
 }  // namespace tyr::datalog::database
 
 #if YGG_ENABLE_FMT_FORMATTERS
 namespace fmt
 {
+/// A query plan, as explain writes it.
 template<>
-struct formatter<tyr::datalog::database::QueryPlan, char>
+struct formatter<tyr::datalog::database::QueryPlan, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::datalog::database::QueryPlan& plan, FormatContext& ctx) const
-    { return tyr::datalog::database::detail::format_query_plan(ctx.out(), plan); }
+    fmt::format_context::iterator format(const tyr::datalog::database::QueryPlan& plan, fmt::format_context& ctx) const;
 };
 
 /// An operation's plan, as the columns it produces: how a query's record writes it.
@@ -75,13 +47,9 @@ template<typename Plan>
                                                            tyr::datalog::database::DistancePlan,
                                                            tyr::datalog::database::GenericJoinPlan>,
                                       Plan>::value
-struct formatter<Plan, char>
+struct formatter<Plan, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const Plan& plan, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "[{}]", fmt::join(plan.output_columns(), ", ")); }
+    fmt::format_context::iterator format(const Plan& plan, fmt::format_context& ctx) const;
 };
 }  // namespace fmt
 #endif

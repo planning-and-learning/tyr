@@ -24,7 +24,9 @@
 #include <cassert>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/ordered_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
@@ -152,6 +154,11 @@ private:
 
     /// Each parameter of the domain with its value, unbound where it has none, in the order the parameters were given.
     urd::Store<urd::map<ParameterIndex, std::optional<T>>, urd::insertion_ordered> m_bindings;
+
+public:
+    static constexpr std::string_view name = "SubstitutionFunction";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"bindings", &SubstitutionFunction::m_bindings>> {}; }
 };
 
 }

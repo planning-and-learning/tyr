@@ -17,6 +17,7 @@
 
 #include "tyr/formalism/formatter.hpp"
 
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <fmt/format.h>
@@ -24,3 +25,12 @@
 fmt::format_context::iterator fmt::formatter<tyr::formalism::ParameterIndex>::format(const tyr::formalism::ParameterIndex& value,
                                                                                      fmt::format_context& context) const
 { return fmt::format_to(context.out(), "?x{}", value.value); }
+
+fmt::format_context::iterator fmt::formatter<tyr::formalism::BooleanOperatorKind>::format(tyr::formalism::BooleanOperatorKind value, fmt::format_context& context) const
+{ return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
+
+fmt::format_context::iterator fmt::formatter<tyr::formalism::ArithmeticOperatorKind>::format(tyr::formalism::ArithmeticOperatorKind value, fmt::format_context& context) const
+{ return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
+
+fmt::format_context::iterator fmt::formatter<tyr::formalism::NumericEffectOperatorKind>::format(tyr::formalism::NumericEffectOperatorKind value, fmt::format_context& context) const
+{ return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }

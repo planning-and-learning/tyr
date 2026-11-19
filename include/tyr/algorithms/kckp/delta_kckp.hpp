@@ -27,7 +27,9 @@
 #include <functional>
 #include <limits>
 #include <span>
+#include <string_view>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
 #include <urd/graphs.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
@@ -47,6 +49,10 @@ struct Edge
     constexpr Edge(Vertex lhs, Vertex rhs) noexcept : src(lhs.index < rhs.index ? lhs : rhs), dst(lhs.index < rhs.index ? rhs : lhs) {}
 
     friend constexpr bool operator==(Edge, Edge) noexcept = default;
+
+    static constexpr std::string_view name = "Edge";
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"src", &Edge::src>, urd::field<"dst", &Edge::dst>> {}; }
 };
 
 /// Anchor of a clique whose first new element is a new atom of a literal the graph does not encode:

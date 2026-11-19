@@ -267,23 +267,15 @@ struct fmt::formatter<std::pair<tyr::formalism::planning::ActionView<tyr::Ground
 };
 
 template<>
-struct fmt::formatter<tyr::formalism::planning::FDRValue, char>
+struct fmt::formatter<tyr::formalism::planning::FDRValue, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FDRValue& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", value.value); }
+    fmt::format_context::iterator format(const tyr::formalism::planning::FDRValue& value, fmt::format_context& ctx) const;
 };
 
 template<>
-struct fmt::formatter<tyr::formalism::OptimizationDirection, char>
+struct fmt::formatter<tyr::formalism::OptimizationDirection, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    fmt::format_context::iterator format(tyr::formalism::OptimizationDirection value, fmt::format_context& ctx) const;
 };
 
 #endif

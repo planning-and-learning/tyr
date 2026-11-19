@@ -54,33 +54,21 @@ struct formatter<tyr::formalism::ParameterIndex, char> : tyr::formalism::detail:
 };
 
 template<>
-struct formatter<tyr::formalism::BooleanOperatorKind, char>
+struct formatter<tyr::formalism::BooleanOperatorKind, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(tyr::formalism::BooleanOperatorKind value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    fmt::format_context::iterator format(tyr::formalism::BooleanOperatorKind value, fmt::format_context& context) const;
 };
 
 template<>
-struct formatter<tyr::formalism::ArithmeticOperatorKind, char>
+struct formatter<tyr::formalism::ArithmeticOperatorKind, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(tyr::formalism::ArithmeticOperatorKind value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    fmt::format_context::iterator format(tyr::formalism::ArithmeticOperatorKind value, fmt::format_context& context) const;
 };
 
 template<>
-struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
+struct formatter<tyr::formalism::NumericEffectOperatorKind, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    fmt::format_context::iterator format(tyr::formalism::NumericEffectOperatorKind value, fmt::format_context& context) const;
 };
 
 }  // namespace fmt

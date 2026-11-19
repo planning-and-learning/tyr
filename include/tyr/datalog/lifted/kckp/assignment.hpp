@@ -22,6 +22,8 @@
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <limits>
+#include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -52,6 +54,14 @@ struct VertexAssignment
 
     /// Assigned: an object is set (a default assignment has none).
     [[nodiscard]] inline bool is_valid() const noexcept { return object != urd::index<formalism::Object>(); }
+
+    static constexpr std::string_view name = "VertexAssignment";
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"index", &VertexAssignment::index>,
+                           urd::field<"object", &VertexAssignment::object>> {};
+    }
 };
 
 /**
@@ -81,6 +91,16 @@ struct EdgeAssignment
 
     [[nodiscard]] inline bool is_valid() const noexcept
     { return (first_index < second_index) && (first_object != urd::index<formalism::Object>()) && (second_object != urd::index<formalism::Object>()); }
+
+    static constexpr std::string_view name = "EdgeAssignment";
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"first_index", &EdgeAssignment::first_index>,
+                           urd::field<"first_object", &EdgeAssignment::first_object>,
+                           urd::field<"second_index", &EdgeAssignment::second_index>,
+                           urd::field<"second_object", &EdgeAssignment::second_object>> {};
+    }
 };
 }
 

@@ -55,6 +55,7 @@ add_library(
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp
 
+    datalog/formatter.cpp
     datalog/rule_splitting.cpp
     datalog/static_literal_decomposition.cpp
     datalog/static_rule_filter.cpp
@@ -102,6 +103,7 @@ add_library(
     datalog/lifted/database/syntax/query_construction.cpp
     datalog/lifted/database/syntax/query_repository.cpp
 
+    planning/formatter.cpp
     planning/state_storage/numeric.cpp
     planning/state_storage/tree_bitset/atom.cpp
     planning/state_storage/tree_bitset/fact.cpp

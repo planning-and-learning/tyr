@@ -112,11 +112,6 @@ struct StateWithThrowingPack : tyr::planning::StateView<Kind>
 };
 }  // namespace
 
-template<typename State>
-struct fmt::formatter<StateFormattingView<State>, char> : fmt::state_formatter<StateFormattingView<State>>
-{
-};
-
 using StateKinds = boost::mp11::mp_list<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
 static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
@@ -386,7 +381,6 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto formatting_view = StateFormattingView<tyr::planning::StateBuilderView<Kind>> { &state };
     static_assert(tyr::planning::IterableViewStateConcept<decltype(formatting_view)>);
     static_assert(!tyr::planning::StateViewConcept<decltype(formatting_view), Kind>);
-    EXPECT_EQ(fmt::format("{}", formatting_view), fmt::format("{}", state));
     const auto markerless_state = StateWithoutMetadata(state);
     const auto markerless_node = tyr::planning::Node<Kind, StateWithoutMetadata<tyr::planning::StateBuilderView<Kind>>>(markerless_state, 3);
     EXPECT_EQ(&(*markerless_node.get_state().context().get_task()), task.get());
@@ -428,7 +422,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_EQ(labeled_nodes.front().node.get_metric(), 3);
     EXPECT_EQ(labeled_nodes.front().label, label);
     const auto formatted_node = fmt::format("{}", node);
-    EXPECT_NE(formatted_node.find("metric value = 3"), std::string::npos);
+    EXPECT_NE(formatted_node.find("metric=3"), std::string::npos);
     EXPECT_EQ(formatted_node.find("index = "), std::string::npos);
     EXPECT_NE(fmt::format("{}", labeled).find(label.get_relation().get_name().str()), std::string::npos);
     EXPECT_EQ(&state.get_numeric_storage().get_values(), &owned->numeric_storage.values);
