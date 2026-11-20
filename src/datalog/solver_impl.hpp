@@ -26,7 +26,9 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/solver.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
+#include <limits>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::datalog
@@ -47,7 +49,7 @@ concept SchedulerConcept = TaskKind<Kind> && AnnotationPolicyConcept<AP> && Term
 template<typename Kind, typename AP, typename TP, typename CP>
 concept SolverPolicyConcept =
     SchedulerConcept<Kind, AP, TP, CP> && std::constructible_from<SolverPolicy<Kind, AP, TP, CP>, ProgramExecutionContext<Kind, AP, TP, CP>&>
-    && requires(SolverPolicy<Kind, AP, TP, CP>& policy, CostBuckets& cost_buckets, PendingPredicateAchievers<Kind>& pending_achievers) {
+    && requires(SolverPolicy<Kind, AP, TP, CP>& policy, CostBuckets& cost_buckets, PendingPredicateAchieverFamily<Kind>& pending_achievers) {
            { policy.next_stratum() } -> std::same_as<bool>;
            { policy.generate_updates(cost_buckets, pending_achievers) } -> std::same_as<bool>;
            { policy.scheduler() } -> std::same_as<Scheduler<Kind>&>;
@@ -57,7 +59,8 @@ template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP,
 bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Scheduler<Kind>& scheduler, CostBuckets& cost_buckets, Cost cost)
 {
     auto& bucket = cost_buckets.at(cost);
-    erase_if(bucket.predicate, [&](const auto fact) { return !ctx.out().insert(fact); });
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
+                                          { erase_if(bucket.predicate.template get<F>(), [&](const auto fact) { return !ctx.out().insert(fact); }); });
 
     // Install the entire bucket before notifying rules. The scheduler controls the representation-specific
     // notification order.
@@ -101,12 +104,12 @@ void compute_model(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
             {
                 const auto cost = cost_buckets.min_cost();
                 fact_changed = commit_head_bucket(ctx, scheduler, cost_buckets, cost);
-                publish_pending_achievers(pending_achievers, pending_achievers.buckets.upper_bound(cost), ctx.out().annotation_policy());
+                publish_pending_achievers(pending_achievers, cost, ctx.out().annotation_policy());
             }
 
             if (!fact_changed)
             {
-                publish_pending_achievers(pending_achievers, pending_achievers.buckets.end(), ctx.out().annotation_policy());
+                publish_pending_achievers(pending_achievers, std::numeric_limits<Cost>::infinity(), ctx.out().annotation_policy());
                 break;
             }
             scheduler.finish_iteration(SchedulerIterationTrigger::FactChanged);

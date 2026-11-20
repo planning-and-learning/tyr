@@ -27,6 +27,7 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
@@ -115,8 +116,12 @@ public:
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
-        for (const auto fact : bucket.predicate)
-            activate(fact.relation);
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto fact : bucket.predicate.template get<F>())
+                    activate(fact.relation);
+            });
     }
 
     void finish_iteration([[maybe_unused]] SchedulerIterationTrigger trigger)

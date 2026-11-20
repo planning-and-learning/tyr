@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/policies/annotation_types.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <optional>
 #include <type_traits>
@@ -28,15 +29,16 @@
 namespace tyr::datalog
 {
 
-template<typename T, typename Kind>
-concept AnnotationStoragePolicy = requires(T& policy,
-                                           const T& const_policy,
-                                           formalism::datalog::PredicateRowIndex<formalism::FluentTag> head,
-                                           WitnessAnnotation<Kind> predicate_witness,
-                                           PredicateAnnotations<Kind>& annotations,
-                                           PredicateAnnotations<Kind, true>& delta_annotations,
-                                           const PredicateAnnotations<Kind, true>& const_delta_annotations,
-                                           StagedPredicateAnnotation<Kind>& staged_annotation) {
+/// A policy that stores the annotations of the predicate facts of kind F.
+template<typename T, typename Kind, typename F>
+concept AnnotationStoragePolicyFor = requires(T& policy,
+                                              const T& const_policy,
+                                              formalism::datalog::PredicateRowIndex<F> head,
+                                              WitnessAnnotation<Kind> predicate_witness,
+                                              PredicateAnnotations<Kind>& annotations,
+                                              PredicateAnnotations<Kind, true>& delta_annotations,
+                                              const PredicateAnnotations<Kind, true>& const_delta_annotations,
+                                              StagedPredicateAnnotation<Kind>& staged_annotation) {
     { policy.record_achiever(head, std::move(predicate_witness)) } -> std::same_as<void>;
     { const_policy.publish_annotation(head, std::move(predicate_witness), annotations) } -> std::same_as<std::optional<CostUpdate>>;
     { const_policy.can_update(head, Cost {}, annotations, const_delta_annotations) } -> std::same_as<bool>;
@@ -47,14 +49,36 @@ concept AnnotationStoragePolicy = requires(T& policy,
     { const_policy.commit_annotation(head, staged_annotation, annotations) } -> std::same_as<CostUpdate>;
 };
 
+template<typename T, typename Kind, typename F>
+concept AnnotationInitializingPolicyFor =
+    requires(const T& const_policy, formalism::datalog::PredicateRowIndex<F> head, PredicateAnnotations<Kind>& annotations) {
+        { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
+    };
+
+template<typename T, typename Kind, typename Tags>
+inline constexpr bool is_annotation_storage_policy_for_all = false;
+
+template<typename T, typename Kind, typename... Fs>
+inline constexpr bool is_annotation_storage_policy_for_all<T, Kind, boost::mp11::mp_list<Fs...>> = (AnnotationStoragePolicyFor<T, Kind, Fs> && ...);
+
+template<typename T, typename Kind, typename Tags>
+inline constexpr bool is_annotation_initializing_policy_for_all = false;
+
+template<typename T, typename Kind, typename... Fs>
+inline constexpr bool is_annotation_initializing_policy_for_all<T, Kind, boost::mp11::mp_list<Fs...>> = (AnnotationInitializingPolicyFor<T, Kind, Fs> && ...);
+
+/// A policy that stores the annotations of the predicate facts of each mutable fact kind.
+template<typename T, typename Kind>
+concept AnnotationStoragePolicy = is_annotation_storage_policy_for_all<T, Kind, MutableTags>;
+
 template<typename T, typename Kind>
 concept AnnotationPolicyFor =
-    requires(T& policy, const T& const_policy, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head, PredicateAnnotations<Kind>& annotations) {
+    requires(T& policy) {
         typename std::bool_constant<T::stores_annotations>;
         typename std::bool_constant<T::records_propositional_achievers>;
-        { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
         { policy.clear_achievers() } -> std::same_as<void>;
-    } && (!T::stores_annotations || (requires { typename T::Aggregation; } && AnnotationStoragePolicy<T, Kind>) );
+    } && is_annotation_initializing_policy_for_all<T, Kind, MutableTags>
+    && (!T::stores_annotations || (requires { typename T::Aggregation; } && AnnotationStoragePolicy<T, Kind>) );
 
 /// A policy of either engine: the witnesses name rule instances by RuleKey<Kind>, so a policy that stores them serves
 /// one engine.

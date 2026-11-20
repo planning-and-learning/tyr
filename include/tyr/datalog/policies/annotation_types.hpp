@@ -20,9 +20,11 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
@@ -67,42 +69,43 @@ private:
     Cost cost;
 };
 
-template<TaskKind Kind>
+template<TaskKind Kind, formalism::FactKind F>
 struct PredicateAchiever
 {
-    formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
+    formalism::datalog::PredicateRowIndex<F> head;
     WitnessAnnotation<Kind> witness;
 };
 
-template<TaskKind Kind>
-struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey<Kind>>
+template<TaskKind Kind, formalism::FactKind F>
+struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey<Kind, F>>
 {
     RuleKey<Kind> rule_key;
-    formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
+    formalism::datalog::PredicateRowIndex<F> head;
 
     PredicateAchieverKey() = default;
 
-    PredicateAchieverKey(RuleKey<Kind> rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) : rule_key(rule_key_), head(head_) {}
+    PredicateAchieverKey(RuleKey<Kind> rule_key_, formalism::datalog::PredicateRowIndex<F> head_) : rule_key(rule_key_), head(head_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
 };
 
 /// The achievers by cost, least first; erased buckets keep their vectors for the next costs (retains).
-template<TaskKind Kind>
+template<TaskKind Kind, formalism::FactKind F>
 using PendingPredicateAchieverBuckets =
-    urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey<Kind>>>>, urd::sorted, urd::retains, urd::stable_refs>;
+    urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey<Kind, F>>>>, urd::sorted, urd::retains, urd::stable_refs>;
 
-/// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_key and of the bucket vectors.
-template<TaskKind Kind>
+/// The achievers of the heads of kind F not published yet. Owned by the program workspace and reused across solves:
+/// clear() keeps the capacity of by_key and of the bucket vectors.
+template<TaskKind Kind, formalism::FactKind F>
 struct PendingPredicateAchievers
 {
-    using Buckets = PendingPredicateAchieverBuckets<Kind>;
+    using Buckets = PendingPredicateAchieverBuckets<Kind, F>;
 
     Buckets buckets;
-    urd::Store<urd::map<PredicateAchieverKey<Kind>, PredicateAchiever<Kind>>>
+    urd::Store<urd::map<PredicateAchieverKey<Kind, F>, PredicateAchiever<Kind, F>>>
         by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
 
-    urd::Store<urd::sequence<PredicateAchieverKey<Kind>>>& bucket(Cost cost) { return buckets[cost]; }
+    urd::Store<urd::sequence<PredicateAchieverKey<Kind, F>>>& bucket(Cost cost) { return buckets[cost]; }
 
     /// Erases the buckets before `end`, cheapest first.
     void erase_buckets(typename Buckets::const_iterator end)
@@ -119,10 +122,24 @@ struct PendingPredicateAchievers
 };
 
 template<TaskKind Kind>
-void insert_pending_achiever(PendingPredicateAchievers<Kind>& pending, PredicateAchiever<Kind> achiever)
+struct PendingPredicateAchieversOf
 {
+    template<typename F>
+    using type = PendingPredicateAchievers<Kind, F>;
+};
+
+/// The pending achievers of each mutable fact kind.
+template<TaskKind Kind>
+struct PendingPredicateAchieverFamily : MutableFamily<PendingPredicateAchieversOf<Kind>::template type>
+{
+};
+
+template<TaskKind Kind, formalism::FactKind F>
+void insert_pending_achiever(PendingPredicateAchieverFamily<Kind>& pending_family, PredicateAchiever<Kind, F> achiever)
+{
+    auto& pending = pending_family.template get<F>();
     const auto cost = achiever.witness.get_cost();
-    const auto key = PredicateAchieverKey<Kind>(achiever.witness.get_rule_key(), achiever.head);
+    const auto key = PredicateAchieverKey<Kind, F>(achiever.witness.get_rule_key(), achiever.head);
     const auto it = pending.by_key.find(key);
     if (it == pending.by_key.end())
     {
@@ -137,24 +154,30 @@ void insert_pending_achiever(PendingPredicateAchievers<Kind>& pending, Predicate
     pending.bucket(cost).push_back(key);
 }
 
+/// Publishes the pending achievers of cost at most `max_cost` (all of them at infinity), cheapest first per kind.
 template<TaskKind Kind, typename AnnotationPolicy>
-void publish_pending_achievers(PendingPredicateAchievers<Kind>& pending,
-                               typename PendingPredicateAchievers<Kind>::Buckets::const_iterator end,
-                               AnnotationPolicy& annotation_policy)
+void publish_pending_achievers(PendingPredicateAchieverFamily<Kind>& pending_family, Cost max_cost, AnnotationPolicy& annotation_policy)
 {
-    if constexpr (AnnotationPolicy::records_propositional_achievers)
-        for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
-            for (const auto key : bucket->second)
-            {
-                // An achiever improved into a cheaper bucket appears again in its older buckets; only its current one publishes it.
-                // Published entries are erased: record_achiever keeps the cheapest witness per (head, rule) itself.
-                const auto it = pending.by_key.find(key);
-                if (it == pending.by_key.end() || it->second.witness.get_cost() != bucket->first)
-                    continue;
-                annotation_policy.record_achiever(it->second.head, std::move(it->second.witness));
-                pending.by_key.erase(it);
-            }
-    pending.erase_buckets(end);
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F)
+        {
+            auto& pending = pending_family.template get<F>();
+            const auto end = pending.buckets.upper_bound(max_cost);
+            if constexpr (AnnotationPolicy::records_propositional_achievers)
+                for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
+                    for (const auto key : bucket->second)
+                    {
+                        // An achiever improved into a cheaper bucket appears again in its older buckets; only its current one
+                        // publishes it. Published entries are erased: record_achiever keeps the cheapest witness per (head, rule)
+                        // itself.
+                        const auto it = pending.by_key.find(key);
+                        if (it == pending.by_key.end() || it->second.witness.get_cost() != bucket->first)
+                            continue;
+                        annotation_policy.record_achiever(it->second.head, std::move(it->second.witness));
+                        pending.by_key.erase(it);
+                    }
+            pending.erase_buckets(end);
+        });
 }
 
 struct BaseAnnotation : urd::compared_by_identity<BaseAnnotation>
@@ -205,18 +228,16 @@ struct CostUpdate
     [[nodiscard]] bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
 };
 
-/// One urd generation map per relation (clear starts a new generation; slots keep their storage for reuse).
-/// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
+/// One urd generation map per relation of kind R and fact kind F (clear starts a new generation; slots keep their storage
+/// for reuse). ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
 /// are initialized. initialize(), clear(), find(), moves, and destruction require quiescence.
-template<formalism::RelationKind R, std::default_initializable Value, bool ThreadSafe = false>
+template<formalism::RelationKind R, formalism::FactKind F, std::default_initializable Value, bool ThreadSafe = false>
 class DenseRelationMap
 {
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
-    using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>,
-                                   formalism::datalog::PredicateRowIndex<formalism::FluentTag>,
-                                   formalism::datalog::FunctionRowIndex<formalism::FluentTag>>;
+    using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>, formalism::datalog::PredicateRowIndex<F>, formalism::datalog::FunctionRowIndex<F>>;
     using Relation = decltype(std::declval<Key>().relation);
     using Row = decltype(std::declval<Key>().row);
 
@@ -290,105 +311,131 @@ private:
     urd::Store<urd::sequence<Lane>> m_lanes;
 };
 
-/// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
-/// and destruction require quiescence.
+/// The annotations of the predicate facts of each mutable fact kind, each kind's reached by its keys.
+/// ThreadSafe permits concurrent insertions and cost reads once the lanes are sized (the program constructor); clear(),
+/// find(), moves, and destruction require quiescence.
 template<TaskKind Kind, bool ThreadSafe = false>
 class PredicateAnnotationMap
 {
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
-    /// Both engines key predicate annotations by the fluent predicate binding.
-    using Key = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
     using Annotation = datalog::Annotation<Kind>;
 
     PredicateAnnotationMap()
         requires(!ThreadSafe)
     = default;
 
-    explicit PredicateAnnotationMap(size_t num_relations) : m_annotations(num_relations) {}
+    /// Sized for the predicates of each mutable kind of the program.
+    explicit PredicateAnnotationMap(formalism::datalog::ProgramView<Kind> program)
+    {
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_annotations.template get<F>().initialize(program.template get_predicates<F>().size()); });
+    }
 
     /// Resetting bumps the generation rather than touching the dense row span. Slots of older
     /// generations read as absent and retain their annotation storage for reuse.
     void clear() noexcept { m_annotations.clear(); }
 
-    void insert_or_assign(Key key, Annotation annotation)
+    template<formalism::FactKind F>
+    void insert_or_assign(formalism::datalog::PredicateRowIndex<F> key, Annotation annotation)
     {
-        m_annotations.update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
+        m_annotations.template get<F>().update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
     }
 
-    [[nodiscard]] Cost fetch_cost(Key key) const noexcept
+    template<formalism::FactKind F>
+    [[nodiscard]] Cost fetch_cost(formalism::datalog::PredicateRowIndex<F> key) const noexcept
     {
-        return m_annotations.read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
+        return m_annotations.template get<F>().read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
     }
 
-    std::optional<CostUpdate> insert_if_better(Key key, Annotation annotation)
+    template<formalism::FactKind F>
+    std::optional<CostUpdate> insert_if_better(formalism::datalog::PredicateRowIndex<F> key, Annotation annotation)
     {
-        return m_annotations.update(key,
-                                    [&](auto& incumbent, bool initialized)
-                                    {
-                                        const auto new_cost = get_cost(annotation);
-                                        const auto old_cost = initialized ? std::optional<Cost>(get_cost(incumbent)) : std::nullopt;
-                                        if (old_cost && *old_cost <= new_cost)
-                                            return std::optional<CostUpdate> {};
+        return m_annotations.template get<F>().update(key,
+                                                      [&](auto& incumbent, bool initialized)
+                                                      {
+                                                          const auto new_cost = get_cost(annotation);
+                                                          const auto old_cost = initialized ? std::optional<Cost>(get_cost(incumbent)) : std::nullopt;
+                                                          if (old_cost && *old_cost <= new_cost)
+                                                              return std::optional<CostUpdate> {};
 
-                                        incumbent = std::move(annotation);
-                                        return std::optional<CostUpdate>(std::in_place, old_cost, new_cost);
-                                    });
+                                                          incumbent = std::move(annotation);
+                                                          return std::optional<CostUpdate>(std::in_place, old_cost, new_cost);
+                                                      });
     }
 
-    [[nodiscard]] const Annotation* find(Key key) const noexcept { return m_annotations.find(key); }
+    template<formalism::FactKind F>
+    [[nodiscard]] const Annotation* find(formalism::datalog::PredicateRowIndex<F> key) const noexcept
+    { return m_annotations.template get<F>().find(key); }
 
-    Annotation* find(Key key) noexcept
+    template<formalism::FactKind F>
+    Annotation* find(formalism::datalog::PredicateRowIndex<F> key) noexcept
         requires(!ThreadSafe)
     { return const_cast<Annotation*>(std::as_const(*this).find(key)); }
 
 private:
-    DenseRelationMap<formalism::PredicateTag, Annotation, ThreadSafe> m_annotations;
+    template<typename F>
+    using Lane = DenseRelationMap<formalism::PredicateTag, F, Annotation, ThreadSafe>;
+
+    MutableFamily<Lane> m_annotations;
 };
 
 template<TaskKind Kind, bool ThreadSafe = false>
 using PredicateAnnotations = PredicateAnnotationMap<Kind, ThreadSafe>;
 
-/// Stores of staged predicate annotations: PredicateAnnotations<LiftedTag, true> for the parallel lifted engine,
-/// StagedPredicateAnnotation<GroundTag> for the ground engine.
+/// A store of staged annotations for the predicate facts of kind F, keyed by their rows.
+template<typename T, typename F>
+concept PredicateAnnotationStoreFor =
+    requires(T& store, const T& const_store, formalism::datalog::PredicateRowIndex<F> key, typename T::Annotation annotation) {
+        { const_store.fetch_cost(key) } -> std::same_as<Cost>;
+        { const_store.find(key) } -> std::same_as<const typename T::Annotation*>;
+        { store.insert_if_better(key, std::move(annotation)) } -> std::same_as<std::optional<CostUpdate>>;
+    };
+
+template<typename T, typename Tags>
+inline constexpr bool is_predicate_annotation_store_for_all = false;
+
+template<typename T, typename... Fs>
+inline constexpr bool is_predicate_annotation_store_for_all<T, boost::mp11::mp_list<Fs...>> = (PredicateAnnotationStoreFor<T, Fs> && ...);
+
+/// Stores of staged predicate annotations, for each mutable fact kind: PredicateAnnotations<LiftedTag, true> for the
+/// parallel lifted engine, StagedPredicateAnnotation<GroundTag> for the ground engine.
 template<typename T>
-concept PredicateAnnotationStore = requires(T& store, const T& const_store, typename T::Key key, typename T::Annotation annotation) {
-    { const_store.fetch_cost(key) } -> std::same_as<Cost>;
-    { const_store.find(key) } -> std::same_as<const typename T::Annotation*>;
-    { store.insert_if_better(key, std::move(annotation)) } -> std::same_as<std::optional<CostUpdate>>;
-    store.clear();
-};
+concept PredicateAnnotationStore = is_predicate_annotation_store_for_all<T, MutableTags> && requires(T& store) { store.clear(); };
 
 /// The predicate annotations staged by one ground rule firing; the ground engine fires one rule, i.e. its few heads, at a time.
 template<TaskKind Kind>
 class StagedPredicateAnnotation
 {
 public:
-    using Key = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
     using Annotation = datalog::Annotation<Kind>;
 
     void clear() noexcept { m_entries.clear(); }
 
-    [[nodiscard]] Cost fetch_cost(Key key) const noexcept
+    template<formalism::FactKind F>
+    [[nodiscard]] Cost fetch_cost(formalism::datalog::PredicateRowIndex<F> key) const noexcept
     {
         const auto* annotation = find(key);
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    [[nodiscard]] const Annotation* find(Key key) const noexcept
+    template<formalism::FactKind F>
+    [[nodiscard]] const Annotation* find(formalism::datalog::PredicateRowIndex<F> key) const noexcept
     {
-        const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
-        return it != m_entries.end() ? &it->second : nullptr;
+        const auto& entries = m_entries.template get<F>();
+        const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.first == key; });
+        return it != entries.end() ? &it->second : nullptr;
     }
 
-    std::optional<CostUpdate> insert_if_better(Key key, Annotation annotation)
+    template<formalism::FactKind F>
+    std::optional<CostUpdate> insert_if_better(formalism::datalog::PredicateRowIndex<F> key, Annotation annotation)
     {
+        auto& entries = m_entries.template get<F>();
         const auto new_cost = get_cost(annotation);
-        const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
-        if (it == m_entries.end())
+        const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.first == key; });
+        if (it == entries.end())
         {
-            m_entries.emplace_back(key, annotation);
+            entries.emplace_back(key, annotation);
             return std::optional<CostUpdate>(std::in_place, std::nullopt, new_cost);
         }
 
@@ -401,7 +448,10 @@ public:
     }
 
 private:
-    urd::Store<urd::sequence<std::pair<Key, Annotation>>> m_entries;
+    template<typename F>
+    using Entries = urd::Store<urd::sequence<std::pair<formalism::datalog::PredicateRowIndex<F>, Annotation>>>;
+
+    MutableFamily<Entries> m_entries;
 };
 
 static_assert(PredicateAnnotationStore<PredicateAnnotations<LiftedTag, true>>);

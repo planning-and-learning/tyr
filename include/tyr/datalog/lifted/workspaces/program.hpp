@@ -62,7 +62,7 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
-    PendingPredicateAchievers<LiftedTag> pending_achievers;
+    PendingPredicateAchieverFamily<LiftedTag> pending_achievers;
 
     /// The evaluation engine's own state (KCKP: assignment sets and rule workspaces).
     KCKPWorkspace engine;

@@ -39,8 +39,8 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
           program.get_program().get_fterm_values<formalism::FluentTag>(),
           *workspace_repository),
     annotation_policy(std::move(annotation_policy_)),
-    annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
-    delta_annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
+    annotations(program.get_program()),
+    delta_annotations(program.get_program()),
     tp(std::move(tp_)),
     cost_policy(std::move(cost_policy_)),
     engine(const_workspace->engine, program.get_program(), program.get_domains(), facts.fact_sets),
@@ -54,7 +54,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     statistics()
 {
     if constexpr (AP::records_propositional_achievers)
-        this->annotation_policy.initialize(program.get_program().get_predicates<formalism::FluentTag>().size());
+        this->annotation_policy.initialize(program.get_program());
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

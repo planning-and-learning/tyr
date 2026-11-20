@@ -657,7 +657,6 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
     const auto head = head_atom.get_row();
     const auto rule = fixture.rule(fixture.condition(), head_atom);
     auto policy = datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>();
-    policy.initialize(static_cast<ygg::uint_t>(head.index().relation.value) + 1);
 
     policy.record_achiever(head.index(), datalog::WitnessAnnotation<GroundTag>(rule.index(), static_cast<datalog::Cost>(2)));
     policy.record_achiever(head.index(), datalog::WitnessAnnotation<GroundTag>(rule.index(), static_cast<datalog::Cost>(2)));

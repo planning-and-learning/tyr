@@ -21,6 +21,7 @@
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <optional>
 #include <urd/repr/maps/std_map.hpp>
@@ -37,61 +38,59 @@ namespace tyr::datalog
 /// Zero-cost conservative reachability: solvers ignore annotation-only metric effects and cost credits.
 class NoAnnotationPolicy
 {
-    using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-
 public:
     static constexpr bool stores_annotations = false;
     static constexpr bool records_propositional_achievers = false;
 
-    template<TaskKind Kind>
-    void initialize_annotation(PredicateHead, PredicateAnnotations<Kind>&) const noexcept
+    template<TaskKind Kind, formalism::FactKind F>
+    void initialize_annotation(formalism::datalog::PredicateRowIndex<F>, PredicateAnnotations<Kind>&) const noexcept
     {
     }
 
     void clear_achievers() noexcept {}
 };
 
-/// Keyless: its member templates take the witnesses and annotations of either engine (Kind), so one policy type serves
-/// both; only MinCostAnnotationWithAchieversPolicy stores rule keys and so names its engine.
+/// Keyless: its member templates take the witnesses and annotations of either engine (Kind), and the heads of any
+/// mutable fact kind (F), so one policy type serves both; only MinCostAnnotationWithAchieversPolicy stores rule keys and
+/// so names its engine.
 template<typename AggregationFunction>
 class MinCostAnnotationPolicy
 {
 public:
     using Aggregation = AggregationFunction;
 
-private:
-    using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-
-public:
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
 
-    template<TaskKind Kind>
-    void initialize_annotation(PredicateHead head, PredicateAnnotations<Kind>& annotations) const
+    template<TaskKind Kind, formalism::FactKind F>
+    void initialize_annotation(formalism::datalog::PredicateRowIndex<F> head, PredicateAnnotations<Kind>& annotations) const
     { annotations.insert_or_assign(head, BaseAnnotation(static_cast<Cost>(0))); }
 
     void clear_achievers() noexcept {}
 
-    template<TaskKind Kind>
-    void record_achiever(PredicateHead, const WitnessAnnotation<Kind>&) const noexcept
+    template<TaskKind Kind, formalism::FactKind F>
+    void record_achiever(formalism::datalog::PredicateRowIndex<F>, const WitnessAnnotation<Kind>&) const noexcept
     {
     }
 
-    template<TaskKind Kind, PredicateAnnotationStore Annotations>
-    std::optional<CostUpdate> publish_annotation(PredicateHead head, WitnessAnnotation<Kind> witness, Annotations& annotations) const
+    template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore Annotations>
+    std::optional<CostUpdate> publish_annotation(formalism::datalog::PredicateRowIndex<F> head, WitnessAnnotation<Kind> witness, Annotations& annotations) const
     { return annotations.insert_if_better(head, Annotation<Kind>(witness)); }
 
-    template<TaskKind Kind, PredicateAnnotationStore Annotations>
-    bool try_update_candidate(PredicateHead head, WitnessAnnotation<Kind>&& witness, Annotations& annotations) const
+    template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore Annotations>
+    bool try_update_candidate(formalism::datalog::PredicateRowIndex<F> head, WitnessAnnotation<Kind>&& witness, Annotations& annotations) const
     { return publish_annotation(head, std::move(witness), annotations).has_value(); }
 
-    template<TaskKind Kind, PredicateAnnotationStore DeltaAnnotations>
-    [[nodiscard]] bool
-    can_update(PredicateHead head, Cost cost, const PredicateAnnotations<Kind>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
+    template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore DeltaAnnotations>
+    [[nodiscard]] bool can_update(formalism::datalog::PredicateRowIndex<F> head,
+                                  Cost cost,
+                                  const PredicateAnnotations<Kind>& annotations,
+                                  const DeltaAnnotations& delta_annotations) const noexcept
     { return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head)); }
 
-    template<TaskKind Kind, PredicateAnnotationStore DeltaAnnotations>
-    CostUpdate commit_annotation(PredicateHead head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<Kind>& annotations) const
+    template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore DeltaAnnotations>
+    CostUpdate
+    commit_annotation(formalism::datalog::PredicateRowIndex<F> head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<Kind>& annotations) const
     {
         const auto old_cost = annotations.fetch_cost(head);
         if (const auto* delta_annotation = delta_annotations.find(head))
@@ -104,7 +103,6 @@ public:
 template<TaskKind Kind, typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<AggregationFunction>
 {
-    using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<Kind>;
 
 public:
@@ -112,13 +110,19 @@ public:
 
     static constexpr bool records_propositional_achievers = true;
 
-    void initialize(size_t num_predicates) { m_achievers.initialize(num_predicates); }
+    /// Sized for the predicates of each mutable kind of the program.
+    void initialize(formalism::datalog::ProgramView<Kind> program)
+    {
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_achievers.template get<F>().initialize(program.template get_predicates<F>().size()); });
+    }
 
     void clear_achievers() noexcept;
 
-    [[nodiscard]] const Achievers* find_achievers(PredicateHead head) const noexcept;
+    template<formalism::FactKind F>
+    [[nodiscard]] const Achievers* find_achievers(formalism::datalog::PredicateRowIndex<F> head) const noexcept;
 
-    void record_achiever(PredicateHead head, PredicateWitness witness);
+    template<formalism::FactKind F>
+    void record_achiever(formalism::datalog::PredicateRowIndex<F> head, PredicateWitness witness);
 
 private:
     struct IndexedAchievers
@@ -127,7 +131,10 @@ private:
         urd::Store<urd::map<RuleKey<Kind>, size_t>> indices;
     };
 
-    DenseRelationMap<formalism::PredicateTag, IndexedAchievers> m_achievers;
+    template<typename F>
+    using AchieversByHead = DenseRelationMap<formalism::PredicateTag, F, IndexedAchievers>;
+
+    MutableFamily<AchieversByHead> m_achievers;
 };
 }
 

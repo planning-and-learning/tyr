@@ -72,6 +72,10 @@ struct ApplicabilityCache
     }
 };
 
+/// The heads of kind F of a rule's binding.
+template<typename F>
+using HeadBindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<F>>>;
+
 template<>
 struct RuleWorkspace<LiftedTag>
 {
@@ -102,7 +106,7 @@ struct RuleWorkspace<LiftedTag>
         void clear() noexcept;
 
         /// Head updates
-        PredicateHeadUpdates<LiftedTag> head_updates;
+        PredicateHeadUpdateFamily<LiftedTag> head_updates;
 
         /// KCKP
         kckp::Workspace kckp_workspace;
@@ -110,8 +114,8 @@ struct RuleWorkspace<LiftedTag>
         /// Hyperedge anchors
         urd::Store<urd::sequence<urd::data<kckp::Vertex>>> anchor_vertices;
 
-        /// Heads of the current binding that the rule updates
-        urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<formalism::FluentTag>>> head_bindings;
+        /// Heads of the current binding that the rule updates, of each mutable fact kind
+        MutableFamily<HeadBindings> head_bindings;
     };
 
     struct Solve

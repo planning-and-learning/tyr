@@ -25,6 +25,7 @@
 #include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <yggdrasil/core/config.hpp>
 
@@ -88,8 +89,12 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 void Scheduler<GroundTag>::notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     // In any order: waking a rule only counts down its conditions and aggregates its support.
-    for (const auto fact : bucket.predicate)
-        notify_predicate_generated(fact, ctx);
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F)
+        {
+            for (const auto fact : bucket.predicate.template get<F>())
+                notify_predicate_generated(fact, ctx);
+        });
 }
 
 }

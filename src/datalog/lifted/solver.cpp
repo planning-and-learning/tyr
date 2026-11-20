@@ -62,6 +62,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/parallel_for_each.h>
@@ -103,7 +104,7 @@ public:
         return true;
     }
 
-    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers<LiftedTag>& pending_achievers)
+    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchieverFamily<LiftedTag>& pending_achievers)
     {
         auto& ctx = stratum();
         begin_goal_cutoff_iteration(ctx);
@@ -117,7 +118,9 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
-    using GoalAtom = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    /// The goal atoms of kind F, by their position among all goal atoms.
+    template<typename F>
+    using GoalPositions = urd::Store<urd::map<formalism::datalog::PredicateRowIndex<F>, size_t>>;
 
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
     /// constraints, propositional rules only, one stratum, and annotations without achievers.
@@ -138,14 +141,14 @@ private:
                 if (rule)
                     min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
-            m_goal_atoms.clear();
             m_goal_positions.clear();
+            m_num_goal_atoms = 0;
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal_positions.emplace(literal.get_atom().get_row().index(), m_goal_atoms.size()).second)
-                    m_goal_atoms.push_back(literal.get_atom().get_row().index());
+                if (m_goal_positions.template get<formalism::FluentTag>().emplace(literal.get_atom().get_row().index(), m_num_goal_atoms).second)
+                    ++m_num_goal_atoms;
             m_goal_final.clear();
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
-            m_goal_cutoff_enabled = !m_goal_atoms.empty();
+            m_goal_cutoff_enabled = m_num_goal_atoms != 0;
         }
     }
 
@@ -168,7 +171,7 @@ private:
         if (m_goal_final.contains(i) || tentative_cost > m_goal_cutoff_bound)
             return;
         m_goal_final.insert(i);
-        if (m_goal_final.size() == m_goal_atoms.size())
+        if (m_goal_final.size() == m_num_goal_atoms)
             m_goal_cutoff_stopped = true;
     }
 
@@ -181,25 +184,34 @@ private:
         m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
         m_goal_final.clear();
         const auto& program_out = ctx.out().program();
-        const auto& facts = program_out.facts().fact_sets;
-        for (size_t i = 0; i < m_goal_atoms.size(); ++i)
-        {
-            if (contains(facts, m_goal_atoms[i]))
-                observe_goal_atom(i, static_cast<Cost>(0));
-            else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
-                observe_goal_atom(i, get_cost(*annotation));
-        }
+        const auto facts = FactSets { m_ctx->in().facts().fact_sets, program_out.facts().fact_sets };
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto& [atom, i] : m_goal_positions.template get<F>())
+                {
+                    if (contains(facts.template get<F>(), atom))
+                        observe_goal_atom(i, static_cast<Cost>(0));
+                    else if (const auto* annotation = program_out.annotations().find(atom))
+                        observe_goal_atom(i, get_cost(*annotation));
+                }
+            });
     }
 
     /// Observes the tentative costs of the goal atoms among the heads of a processed binding.
-    void observe_goal_heads(StratumExecutionContext<AP, TP, CP>& ctx, std::span<const GoalAtom> heads)
+    void observe_goal_heads(StratumExecutionContext<AP, TP, CP>& ctx, const MutableFamily<HeadBindings>& heads)
     {
         if (!m_goal_cutoff_enabled || m_goal_cutoff_stopped)
             return;
-        for (const auto head : heads)
-            if (const auto it = m_goal_positions.find(head); it != m_goal_positions.end())
-                if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
-                    observe_goal_atom(it->second, get_cost(*annotation));
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                const auto& positions = m_goal_positions.template get<F>();
+                for (const auto head : heads.template get<F>())
+                    if (const auto it = positions.find(head); it != positions.end())
+                        if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
+                            observe_goal_atom(it->second, get_cost(*annotation));
+            });
     }
 
     [[nodiscard]] bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
@@ -227,9 +239,10 @@ private:
         auto& out = ctx.out();
         auto& heads = out.head_bindings();
         heads.clear();
+        // Rules derive fluent heads only.
         for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
-            heads.push_back(formalism::datalog::ground_row(head_atom, out.ground_context()).first);
-        insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
+            heads.template get<formalism::FluentTag>().push_back(formalism::datalog::ground_row(head_atom, out.ground_context()).first);
+        insert_propositional_update(std::as_const(heads), input, out.head_updates(), out.delta_annotations());
     }
 
     void generate_nullary_case(RuleExecutionContext<AP, TP, CP>& rctx)
@@ -354,12 +367,13 @@ private:
         auto& ground_context = out.ground_context();
         auto& heads = out.head_bindings();
         heads.clear();
+        // Rules derive fluent heads only.
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
             const auto head = formalism::datalog::ground_row(head_atom, ground_context).first;
             if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<formalism::FluentTag>(), head))
                 continue;
-            heads.push_back(head);
+            heads.template get<formalism::FluentTag>().push_back(head);
         }
     }
 
@@ -371,16 +385,15 @@ private:
         auto& out = wrctx.out();
         // ponytail: heads of bindings rejected below are interned too (rare: N_rej is ~0.02% of generated rules on genome).
         collect_predicate_heads(wrctx);
-        if (out.head_bindings().empty())
+        if (has_no_heads(out.head_bindings()))
             return true;
 
         if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
             return false;
 
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
-        const auto handled =
-            insert_propositional_update(std::span(std::as_const(out.head_bindings())), input, out.head_updates(), out.delta_annotations()).is_handled();
-        observe_goal_heads(stratum(), std::span(std::as_const(out.head_bindings())));
+        const auto handled = insert_propositional_update(std::as_const(out.head_bindings()), input, out.head_updates(), out.delta_annotations()).is_handled();
+        observe_goal_heads(stratum(), out.head_bindings());
         return handled;
     }
 
@@ -621,10 +634,12 @@ private:
     }
 
     /// Sequential phase: reduce worker annotations and bucket their already-canonical heads by cost.
-    bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, CostBuckets& cost_buckets, PendingPredicateAchievers<LiftedTag>& pending_achievers)
+    bool
+    reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, CostBuckets& cost_buckets, PendingPredicateAchieverFamily<LiftedTag>& pending_achievers)
     {
         auto& program_out = ctx.out().program();
         auto& annotation_policy = program_out.annotation_policy();
+        const auto facts = FactSets { m_ctx->in().facts().fact_sets, program_out.facts().fact_sets };
         auto annotation_improved = false;
 
         for (const auto rule_index : ctx.out().scheduler().rules().get_active_rules())
@@ -636,7 +651,7 @@ private:
             {
                 reduce_predicate_head_updates(worker.iteration.head_updates,
                                               annotation_policy,
-                                              program_out.facts().fact_sets,
+                                              facts,
                                               program_out.delta_annotations(),
                                               program_out.annotations(),
                                               cost_buckets,
@@ -660,9 +675,9 @@ private:
     bool m_goal_cutoff_stopped = false;
     Cost m_min_edge_cost = static_cast<Cost>(0);
     Cost m_goal_cutoff_bound = static_cast<Cost>(0);
-    urd::Store<urd::sequence<GoalAtom>> m_goal_atoms;
-    urd::Store<urd::map<GoalAtom, size_t>> m_goal_positions;
-    /// The positions in m_goal_atoms of the goal atoms whose cost is final.
+    MutableFamily<GoalPositions> m_goal_positions;
+    size_t m_num_goal_atoms = 0;
+    /// The positions of the goal atoms whose cost is final.
     urd::Store<urd::set<size_t>, urd::dense> m_goal_final;
 };
 

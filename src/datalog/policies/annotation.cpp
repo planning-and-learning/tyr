@@ -30,31 +30,33 @@ void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::clear_achi
 { m_achievers.clear(); }
 
 template<TaskKind Kind, typename AggregationFunction>
+template<formalism::FactKind F>
 const typename MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::Achievers*
-MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(PredicateHead head) const noexcept
+MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(formalism::datalog::PredicateRowIndex<F> head) const noexcept
 {
-    const auto* entry = m_achievers.find(head);
+    const auto* entry = m_achievers.template get<F>().find(head);
     return entry ? &entry->achievers : nullptr;
 }
 
 template<TaskKind Kind, typename AggregationFunction>
-void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_achiever(PredicateHead head, PredicateWitness witness)
+template<formalism::FactKind F>
+void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_achiever(formalism::datalog::PredicateRowIndex<F> head, PredicateWitness witness)
 {
-    m_achievers.update(head,
-                       [&](auto& entry, bool initialized)
-                       {
-                           if (!initialized)
-                           {
-                               entry.achievers.clear();
-                               entry.indices.clear();
-                           }
+    m_achievers.template get<F>().update(head,
+                                         [&](auto& entry, bool initialized)
+                                         {
+                                             if (!initialized)
+                                             {
+                                                 entry.achievers.clear();
+                                                 entry.indices.clear();
+                                             }
 
-                           const auto [it, inserted] = entry.indices.try_emplace(witness.get_rule_key(), entry.achievers.size());
-                           if (inserted)
-                               entry.achievers.push_back(std::move(witness));
-                           else if (witness.get_cost() < entry.achievers[it->second].get_cost())
-                               entry.achievers[it->second] = std::move(witness);
-                       });
+                                             const auto [it, inserted] = entry.indices.try_emplace(witness.get_rule_key(), entry.achievers.size());
+                                             if (inserted)
+                                                 entry.achievers.push_back(std::move(witness));
+                                             else if (witness.get_cost() < entry.achievers[it->second].get_cost())
+                                                 entry.achievers[it->second] = std::move(witness);
+                                         });
 }
 
 static_assert(AnnotationPolicyConcept<NoAnnotationPolicy>);
@@ -67,5 +69,13 @@ template class MinCostAnnotationPolicy<SumAggregation>;
 template class MinCostAnnotationPolicy<MaxAggregation>;
 template class MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>;
 template class MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>;
+template const MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::Achievers*
+    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(formalism::datalog::PredicateRowIndex<formalism::FluentTag>) const noexcept;
+template const MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::Achievers*
+    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(formalism::datalog::PredicateRowIndex<formalism::FluentTag>) const noexcept;
+template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::datalog::PredicateRowIndex<formalism::FluentTag>,
+                                                                                               WitnessAnnotation<GroundTag>);
+template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::datalog::PredicateRowIndex<formalism::FluentTag>,
+                                                                                               WitnessAnnotation<LiftedTag>);
 
 }

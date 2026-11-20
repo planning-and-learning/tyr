@@ -22,12 +22,34 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <cstdint>
 #include <type_traits>
+#include <yggdrasil/core/family.hpp>
 
 namespace tyr::datalog
 {
+/// The fact kinds a rule head derives: each head structure (head updates, annotations, cost buckets, achievers) is held
+/// once per kind, a mutable kind more is one more tag here.
+using MutableTags = boost::mp11::mp_list<formalism::FluentTag>;
+
+namespace details
+{
+template<template<typename> class M, typename Tags>
+struct MutableFamily;
+
+template<template<typename> class M, typename... Fs>
+struct MutableFamily<M, boost::mp11::mp_list<Fs...>>
+{
+    using type = ygg::Family<M, Fs...>;
+};
+}
+
+/// One M<F> for each mutable fact kind F (MutableTags), reached by get<F>().
+template<template<typename> class M>
+using MutableFamily = typename details::MutableFamily<M, MutableTags>::type;
+
 template<formalism::FactKind T>
 class PredicateAssignmentSet;
 template<formalism::FactKind T>

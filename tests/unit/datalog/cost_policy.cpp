@@ -99,7 +99,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     EXPECT_EQ(buckets.min_cost(), 3);
 
     const auto* address = &buckets.at(3);
-    const auto predicate_capacity = urd::memory_usage(buckets.at(3).predicate);
+    const auto predicate_capacity = urd::memory_usage(buckets.at(3).predicate.get<tyr::formalism::FluentTag>());
     EXPECT_TRUE(buckets.erase(3));
     EXPECT_TRUE(buckets.is_empty());
     EXPECT_FALSE(buckets.erase(3));
@@ -107,7 +107,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     EXPECT_TRUE(buckets.insert(5, predicate.index()));
     auto& bucket = buckets.at(5);
     EXPECT_EQ(&bucket, address);
-    EXPECT_EQ(urd::memory_usage(bucket.predicate), predicate_capacity);
+    EXPECT_EQ(urd::memory_usage(bucket.predicate.get<tyr::formalism::FluentTag>()), predicate_capacity);
     bucket.predicate.clear();
     EXPECT_TRUE(buckets.erase(5));
 

@@ -73,7 +73,7 @@ Cost support_start()
 
 struct GroundSchedulerScratch
 {
-    PredicateHeadUpdates<GroundTag> predicate_updates;
+    PredicateHeadUpdateFamily<GroundTag> predicate_updates;
     StagedPredicateAnnotation<GroundTag> delta_annotations;
 
     void clear_updates() noexcept

@@ -45,7 +45,7 @@ private:
     using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
 
 public:
-    DenseRelationMap<formalism::PredicateTag, Rules> fluent_precondition_to_rules;
+    DenseRelationMap<formalism::PredicateTag, formalism::FluentTag, Rules> fluent_precondition_to_rules;
 
     explicit GroundRuleDependencies(size_t num_predicates) : fluent_precondition_to_rules(num_predicates) {}
 };
@@ -70,7 +70,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
-    PendingPredicateAchievers<GroundTag> pending_achievers;
+    PendingPredicateAchieverFamily<GroundTag> pending_achievers;
     Scheduler<GroundTag> scheduler;
     formalism::datalog::Builder datalog_builder;
 
@@ -82,14 +82,14 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
               cws.program.template get_fterm_values<formalism::FluentTag>(),
               cws.program.context()),
         annotation_policy(std::move(annotation_policy_)),
-        annotations(cws.program.template get_predicates<formalism::FluentTag>().size()),
+        annotations(cws.program),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
         scheduler(cws.program),
         datalog_builder()
     {
         if constexpr (AP::records_propositional_achievers)
-            annotation_policy.initialize(cws.program.template get_predicates<formalism::FluentTag>().size());
+            annotation_policy.initialize(cws.program);
     }
 
     explicit ProgramWorkspace(Program<GroundTag>& program, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP());

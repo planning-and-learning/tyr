@@ -32,6 +32,22 @@
 namespace tyr::datalog
 {
 
+namespace
+{
+/// The heads of a ground rule, of each mutable fact kind, as the keys of their rows, which key the predicate annotations.
+struct GroundRuleHeads
+{
+    formalism::datalog::RuleView<GroundTag> rule;
+
+    template<formalism::FactKind F>
+    [[nodiscard]] auto get() const noexcept
+    {
+        static_assert(std::same_as<F, formalism::FluentTag>, "Rules derive fluent heads only.");
+        return rule.get_heads() | std::views::transform([](auto head) { return head.get_row().index(); });
+    }
+};
+}
+
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 class SolverPolicy<GroundTag, AP, TP, CP>
 {
@@ -43,7 +59,7 @@ public:
 
     /// Fires every ready rule, each once: its conditions are all committed, so it fires with their aggregated cost, its
     /// support. Its heads go to the cost buckets; none is committed here, so no rule becomes ready while they fire.
-    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers<GroundTag>& pending_achievers)
+    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchieverFamily<GroundTag>& pending_achievers)
     {
         auto& ready = scheduler().ready();
         for (const auto rule : ready)
@@ -55,25 +71,21 @@ public:
     Scheduler<GroundTag>& scheduler() noexcept { return m_ctx->out().scheduler(); }
 
 private:
-    void fire(formalism::datalog::RuleView<GroundTag> rule, CostBuckets& pending_heads, PendingPredicateAchievers<GroundTag>& pending_achievers)
+    void fire(formalism::datalog::RuleView<GroundTag> rule, CostBuckets& pending_heads, PendingPredicateAchieverFamily<GroundTag>& pending_achievers)
     {
         auto& out = m_ctx->out();
         auto& scratch = scheduler().scratch();
         scratch.clear_updates();
-        auto input = make_rule_update_input(RuleInstance<GroundTag>(rule),
-                                            FactSets { m_ctx->in().facts().fact_sets, out.facts().fact_sets },
-                                            out.annotations(),
-                                            out.annotation_policy(),
-                                            out.cost_policy());
-        // The rule's heads as the keys of their rows, which key the predicate annotations.
-        const auto heads = input.rule_instance.get_heads() | std::views::transform([&](auto head) { return input.rule_instance.resolve(head).index(); });
+        const auto fact_sets = FactSets { m_ctx->in().facts().fact_sets, out.facts().fact_sets };
+        auto input = make_rule_update_input(RuleInstance<GroundTag>(rule), fact_sets, out.annotations(), out.annotation_policy(), out.cost_policy());
+        const auto heads = GroundRuleHeads { rule };
         const auto result = fire_propositional_update(heads, input, scratch.predicate_updates, scratch.delta_annotations, scheduler().support(rule));
         if (result.status == RuleUpdateStatus::Completed)
             ++scheduler().statistics().num_rules_fired;
 
         reduce_predicate_head_updates(scratch.predicate_updates,
                                       out.annotation_policy(),
-                                      out.facts().fact_sets,
+                                      fact_sets,
                                       scratch.delta_annotations,
                                       out.annotations(),
                                       pending_heads,

@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_COST_BUCKETS_HPP_
 #define TYR_DATALOG_COST_BUCKETS_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
@@ -39,20 +40,24 @@
 namespace tyr::datalog
 {
 
+/// The heads not committed yet, of each mutable fact kind, by cost.
 class CostBuckets
 {
 public:
-    using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    /// The heads of kind F at one cost.
+    template<typename F>
+    using PredicateBucket = urd::Store<urd::set<formalism::datalog::PredicateRowIndex<F>>>;
 
-private:
-    using PredicateBucket = urd::Store<urd::set<PredicateKey>>;
-
-public:
     struct Bucket
     {
-        PredicateBucket predicate;
+        MutableFamily<PredicateBucket> predicate;
 
-        [[nodiscard]] bool empty() const noexcept { return predicate.empty(); }
+        [[nodiscard]] bool empty() const noexcept
+        {
+            auto result = true;
+            predicate.for_each([&](const auto& heads) { result = result && heads.empty(); });
+            return result;
+        }
 
         /// Empties the bucket, keeping its storage for the next cost (CostBuckets' erased buckets are kept).
         void clear() { predicate.clear(); }
@@ -64,22 +69,25 @@ public:
 
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
 
-    bool insert(Cost cost, PredicateKey key) { return m_buckets[cost].predicate.insert(key).second; }
+    template<formalism::FactKind F>
+    bool insert(Cost cost, formalism::datalog::PredicateRowIndex<F> key)
+    { return m_buckets[cost].predicate.template get<F>().insert(key).second; }
 
-    bool erase(Cost cost, PredicateKey key)
+    template<formalism::FactKind F>
+    bool erase(Cost cost, formalism::datalog::PredicateRowIndex<F> key)
     {
         const auto it = m_buckets.find(cost);
         if (it == m_buckets.end())
             return false;
 
-        const auto erased = it->second.predicate.erase(key) > 0;
+        const auto erased = it->second.predicate.template get<F>().erase(key) > 0;
         if (it->second.empty())
             m_buckets.erase(it);
         return erased;
     }
 
-    template<typename Update>
-    void update(const Update& update, PredicateKey key)
+    template<typename Update, formalism::FactKind F>
+    void update(const Update& update, formalism::datalog::PredicateRowIndex<F> key)
     {
         if (update.old_cost.has_value())
             erase(*update.old_cost, key);
