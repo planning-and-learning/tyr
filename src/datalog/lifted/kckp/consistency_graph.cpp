@@ -27,7 +27,6 @@
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"

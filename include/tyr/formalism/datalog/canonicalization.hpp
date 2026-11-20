@@ -22,7 +22,6 @@
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -59,10 +58,6 @@ void canonicalize(urd::data<ConjunctiveCondition<T>>& data)
     canonicalize(data.fluent_literals);
     canonicalize(data.numeric_constraints);
 }
-
-template<TaskKind T>
-void canonicalize(urd::data<ConjunctiveEffect<T>>& data)
-{ canonicalize(data.numeric_effects); }
 
 template<TaskKind T>
 void canonicalize(urd::data<Rule<T>>& data)

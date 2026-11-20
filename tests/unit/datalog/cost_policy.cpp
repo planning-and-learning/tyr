@@ -21,7 +21,6 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/repository.hpp"

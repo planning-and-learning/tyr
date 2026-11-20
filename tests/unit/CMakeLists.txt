@@ -28,7 +28,6 @@ add_gtest(
     "formalism/datalog/atom.cpp"
     "formalism/datalog/binary_operator.cpp"
     "formalism/datalog/conjunctive_condition.cpp"
-    "formalism/datalog/conjunctive_effect.cpp"
     "formalism/datalog/function_term.cpp"
     "formalism/datalog/function_term_value.cpp"
     "formalism/datalog/literal.cpp"

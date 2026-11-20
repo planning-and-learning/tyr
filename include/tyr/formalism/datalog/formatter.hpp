@@ -133,15 +133,6 @@ struct fmt::formatter<urd::index_view<tyr::formalism::datalog::ConjunctiveCondit
                                          fmt::format_context& context) const;
 };
 
-/// An effect: its numeric effects, separated by commas.
-template<tyr::TaskKind T>
-struct fmt::formatter<urd::index_view<tyr::formalism::datalog::ConjunctiveEffect<T>, tyr::formalism::datalog::Repository>> :
-    tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::ConjunctiveEffect<T>, tyr::formalism::datalog::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
 /// A rule: heads :- body.  % cost c (its heads separated by commas; without a body, heads.).
 template<tyr::TaskKind T>
 struct fmt::formatter<urd::index_view<tyr::formalism::datalog::Rule<T>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec

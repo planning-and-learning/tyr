@@ -53,7 +53,6 @@ void bind_formalism(nb::module_& m)
     bind_multi_operator(m, repository);
     bind_conjunctive_condition(m, repository);
     bind_numeric_effect(m, repository);
-    bind_conjunctive_effect(m, repository);
     bind_rule(m, repository);
     bind_program(m, repository);
     bind_object(m, repository);

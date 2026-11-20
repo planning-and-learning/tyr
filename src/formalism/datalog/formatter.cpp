@@ -23,8 +23,6 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -243,12 +241,6 @@ fmt::formatter<urd::index_view<td::ConjunctiveCondition<T>, td::Repository>>::fo
 }
 
 template<tyr::TaskKind T>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<td::ConjunctiveEffect<T>, td::Repository>>::format(const urd::index_view<td::ConjunctiveEffect<T>, td::Repository>& value,
-                                                                                  fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "{}", fmt::join(value.get_numeric_effects(), ", ")); }
-
-template<tyr::TaskKind T>
 fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Repository>>::format(const urd::index_view<td::Rule<T>, td::Repository>& value,
                                                                                                    fmt::format_context& context) const
 {
@@ -395,8 +387,6 @@ template struct fmt::formatter<urd::index_view<tf::MultiOperator<GroundTag, tf::
 template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::FluentTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::ConjunctiveCondition<LiftedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::ConjunctiveCondition<GroundTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::ConjunctiveEffect<LiftedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::ConjunctiveEffect<GroundTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Rule<LiftedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Rule<GroundTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Program<LiftedTag>, td::Repository>>;

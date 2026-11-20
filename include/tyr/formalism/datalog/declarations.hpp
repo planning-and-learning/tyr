@@ -49,12 +49,6 @@ struct ConjunctiveCondition
     static constexpr std::string_view name = urd::joined_name<"ConjunctiveCondition", T::name>;
 };
 
-template<TaskKind T>
-struct ConjunctiveEffect
-{
-    static constexpr std::string_view name = urd::joined_name<"ConjunctiveEffect", T::name>;
-};
-
 /// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
 template<TaskKind T>
 struct Rule
@@ -92,9 +86,9 @@ using EffectTypes = boost::mp11::mp_append<NumericEffectTypes<LiftedTag>, Numeri
 template<TaskKind T>
 using RuleTypes = boost::mp11::mp_list<Rule<T>>;
 
-using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>>,
+using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>>,
                                              RuleTypes<LiftedTag>,
-                                             boost::mp11::mp_list<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>>,
+                                             boost::mp11::mp_list<ConjunctiveCondition<GroundTag>>,
                                              RuleTypes<GroundTag>,
                                              boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
 
@@ -210,8 +204,6 @@ template<TaskKind T, FactKind F>
 using AtomViewList = urd::Store<urd::sequence<AtomView<T, F>>>;
 template<TaskKind T>
 using ConjunctiveConditionView = urd::index_view<ConjunctiveCondition<T>, Repository>;
-template<TaskKind T>
-using ConjunctiveEffectView = urd::index_view<ConjunctiveEffect<T>, Repository>;
 template<TaskKind T, FactKind F>
 using FunctionTermListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTerm<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
