@@ -218,6 +218,7 @@ void bind_database_module_definitions(nb::module_& m)
     bind_database_optimization(m);
     bind_database_evaluation(m);
     bind_database_distance(m);
+    bind_database_datalog(m);
 }
 
 }  // namespace tyr

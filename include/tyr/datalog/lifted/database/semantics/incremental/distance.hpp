@@ -115,8 +115,6 @@ class DistanceEvaluator
     template<RelationChange S, RelationChange E, RelationChange T>
     void apply(const S& sources, const E& edges, const T& targets);
 
-    friend struct detail::NodeRules<QueryDistanceTag>;
-
 public:
     /// Its relations are drawn from `scratch`, which must outlive it.
     DistanceEvaluator(ygg::FreeScratchRelations& scratch, DistancePlan plan);

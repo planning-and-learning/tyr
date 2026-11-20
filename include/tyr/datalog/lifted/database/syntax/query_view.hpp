@@ -39,18 +39,6 @@ public:
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryBinaryTags, Tag>::value
     { return self().template member<&urd::record_of<V>::right_operand>(); }
 
-    [[nodiscard]] auto get_sources() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return self().template member<&urd::record_of<V>::sources>(); }
-
-    [[nodiscard]] auto get_edges() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return self().template member<&urd::record_of<V>::edges>(); }
-
-    [[nodiscard]] auto get_targets() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return self().template member<&urd::record_of<V>::targets>(); }
-
     [[nodiscard]] auto get_input_slot() const
         requires std::same_as<Tag, tyr::datalog::database::QueryInputTag>
     { return self().template member<&urd::record_of<V>::input_slot>(); }
@@ -86,10 +74,6 @@ public:
     [[nodiscard]] auto get_constant_type() const
         requires std::same_as<Tag, tyr::datalog::database::QuerySelectValueTag>
     { return self().template member<&urd::record_of<V>::constant_type>(); }
-
-    [[nodiscard]] auto get_distance_column() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return self().template member<&urd::record_of<V>::distance_column>(); }
 
     [[nodiscard]] auto get_inputs() const
         requires std::same_as<Tag, tyr::datalog::database::QueryGenericJoinTag>

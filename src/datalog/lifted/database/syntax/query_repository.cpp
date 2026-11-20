@@ -23,5 +23,5 @@ QueryRepository::~QueryRepository() = default;
 TYR_DATABASE_INTERNS()
 
 // The repository's symbols, which the library's other sources only declare (yggdrasil/formalism/symbol_context.hpp).
-YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::datalog::database::QueryRepository, 14)
-YGG_FORMALISM_BUILDER(, tyr::datalog::database::QueryBuilder, 14)
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::datalog::database::QueryRepository, 13)
+YGG_FORMALISM_BUILDER(, tyr::datalog::database::QueryBuilder, 13)

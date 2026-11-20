@@ -184,30 +184,6 @@ struct builder<tyr::datalog::database::Query<tyr::datalog::database::QuerySelect
 
 /// The builder of Query: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceTag>, C>
-{
-    urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceTag>> index;
-    urd::built_t<urd::index<tyr::datalog::database::Query<>>, C> sources;
-    urd::built_t<urd::index<tyr::datalog::database::Query<>>, C> edges;
-    urd::built_t<urd::index<tyr::datalog::database::Query<>>, C> targets;
-    urd::built_t<urd::index<ygg::Column>, C> distance_column;
-    urd::built_t<tyr::datalog::database::DistancePlan, C> plan;
-
-    static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"sources", &builder::sources>,
-                           urd::field<"edges", &builder::edges>,
-                           urd::field<"targets", &builder::targets>,
-                           urd::field<"distance_column", &builder::distance_column>,
-                           urd::field<"plan", &builder::plan>> {};
-    }
-
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::sources, &builder::edges, &builder::targets, &builder::distance_column> {}; }
-};
-
-/// The builder of Query: its record's members, each in its built form (urd::built_t).
-template<typename C>
 struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>, C>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>> index;

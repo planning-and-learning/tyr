@@ -5,7 +5,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_QUERY_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_QUERY_HPP_
 
-#include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/generic_join.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/projection.hpp"
@@ -60,11 +59,6 @@ struct QueryValue
             result->erase(row);
         }
     }
-};
-
-struct QueryDistance : DistanceEvaluator
-{
-    using DistanceEvaluator::DistanceEvaluator;
 };
 
 /// How a query node of one operator is maintained: its state, built from the operation,
@@ -212,22 +206,6 @@ struct NodeRules<QueryGenericJoinTag>
     {
         state.apply(operation.get_inputs() | std::views::transform([&](QueryView<> input) { return graph.delta(input.index()).change(); }));
     }
-};
-
-template<>
-struct NodeRules<QueryDistanceTag>
-{
-    using State = QueryDistance;
-
-    static State make(ygg::FreeScratchRelations& scratch, QueryView<QueryDistanceTag> operation) { return State(scratch, operation.get_plan()); }
-
-    template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
-    static void initialize(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
-    { state.initialize(graph.result(operation.get_sources()), graph.result(operation.get_edges()), graph.result(operation.get_targets())); }
-
-    template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
-    static void update(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
-    { state.apply(graph.delta(operation.get_sources()).change(), graph.delta(operation.get_edges()).change(), graph.delta(operation.get_targets()).change()); }
 };
 
 /// The node of one operator; the tag keeps the states of different operators distinct.

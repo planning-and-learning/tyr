@@ -125,8 +125,7 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
             }
             else
             {
-                static_assert(std::same_as<Tag, QueryDistanceTag>, "unhandled query operator");
-                throw std::invalid_argument("Union normal form: distances are not first-order queries.");
+                static_assert(!std::same_as<Tag, Tag>, "unhandled query operator");
             }
         },
         query.get_variant());

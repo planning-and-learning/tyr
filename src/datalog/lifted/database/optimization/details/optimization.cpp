@@ -63,8 +63,6 @@ bool Planner::known(QueryView<> plan)
     bool result = false;
     if (const auto caller = source(plan); caller && m_statistics->expressions.contains(*caller))
         result = true;
-    else if (is<QueryDistanceTag>(plan))
-        result = false;
     else if (is<QueryInputTag>(plan))
         result = m_statistics->inputs.contains(as<QueryInputTag>(plan).get_input_slot());
     else

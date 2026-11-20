@@ -85,6 +85,19 @@ add_library(
     datalog/lifted/database/optimization/details/structural.cpp
     datalog/lifted/database/semantics/bound/query_evaluation.cpp
     datalog/lifted/database/semantics/bound/union_normal_form.cpp
+    datalog/lifted/database/datalog/aggregate.cpp
+    datalog/lifted/database/datalog/construction.cpp
+    datalog/lifted/database/datalog/evaluator.cpp
+    datalog/lifted/database/datalog/formatter.cpp
+    datalog/lifted/database/datalog/goal_search.cpp
+    datalog/lifted/database/datalog/plain.cpp
+    datalog/lifted/database/datalog/planner.cpp
+    datalog/lifted/database/datalog/recursive.cpp
+    datalog/lifted/database/datalog/repository.cpp
+    datalog/lifted/database/datalog/strata.cpp
+    datalog/lifted/database/datalog/stratification.cpp
+    datalog/lifted/database/datalog/translation.cpp
+    datalog/lifted/database/datalog/weighted.cpp
     datalog/lifted/database/semantics/details/distance.cpp
     datalog/lifted/database/semantics/details/min_distance.cpp
     datalog/lifted/database/semantics/details/plans.cpp
@@ -95,7 +108,6 @@ add_library(
     datalog/lifted/database/semantics/incremental/join.cpp
     datalog/lifted/database/semantics/incremental/projection.cpp
     datalog/lifted/database/semantics/query_evaluation.cpp
-    datalog/lifted/database/semantics/search/backward_frontier.cpp
     datalog/lifted/database/syntax/copy.cpp
     datalog/lifted/database/syntax/formatter.cpp
     datalog/lifted/database/syntax/operator_builder.cpp

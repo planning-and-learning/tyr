@@ -65,14 +65,10 @@ concept HasOperands = requires(T view) {
     view.get_left_operand();
     view.get_right_operand();
 };
-template<typename T>
-concept HasSources = requires(T view) { view.get_sources(); };
 using JoinView = tyr::datalog::database::QueryView<tyr::datalog::database::QueryJoinTag>;
 using ProjectView = tyr::datalog::database::QueryView<tyr::datalog::database::QueryProjectTag>;
-using DistanceView = tyr::datalog::database::QueryView<tyr::datalog::database::QueryDistanceTag>;
-static_assert(HasOperands<JoinView> && !HasArgument<JoinView> && !HasSources<JoinView>);
+static_assert(HasOperands<JoinView> && !HasArgument<JoinView>);
 static_assert(HasArgument<ProjectView> && !HasOperands<ProjectView>);
-static_assert(HasSources<DistanceView> && !HasArgument<DistanceView> && !HasOperands<DistanceView>);
 static_assert(!HasArgument<tyr::datalog::database::QueryView<>> && !HasOperands<tyr::datalog::database::QueryView<>>);
 static_assert(!std::copy_constructible<tyr::datalog::database::QueryRepository>);
 static_assert(!std::convertible_to<urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>>,
@@ -91,9 +87,7 @@ TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
     const auto selected = tyr::datalog::tests::qb::select_value(repository, a, x, static_cast<ygg::uint_t>(7));
     const auto united = tyr::datalog::tests::qb::union_(repository, a, empty);
     const auto difference = tyr::datalog::tests::qb::difference(repository, a, empty);
-    const auto targets = tyr::datalog::tests::qb::project(repository, b, { z });
-    const auto distance = tyr::datalog::tests::qb::distance(repository, projected, a, targets, d);
-    const auto roots = std::array { a, empty, joined, projected, renamed, equal, selected, united, difference, distance };
+    const auto roots = std::array { a, empty, joined, projected, renamed, equal, selected, united, difference };
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryInputTag>(a).get_input_slot(), 0);
     EXPECT_TRUE(std::ranges::equal(tyr::datalog::database::as<tyr::datalog::database::QueryEmptyTag>(empty).columns(), columns_of(a)));
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_left_operand().index(), a.index());
@@ -107,12 +101,8 @@ TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>(tyr::datalog::database::as<tyr::datalog::database::QuerySelectValueTag>(selected).get_constant()), 7);
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryUnionTag>(united).get_right_operand().index(), empty.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDifferenceTag>(difference).get_left_operand().index(), a.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_sources().index(), projected.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_edges().index(), a.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_targets().index(), targets.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_distance_column(), d);
     const auto count = repository.size();
-    EXPECT_EQ(count, 12);
+    EXPECT_EQ(count, 10);
     const auto duplicate = tyr::datalog::tests::qb::join(repository, a, b);
     EXPECT_EQ(duplicate.index(), joined.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(duplicate).index(),
@@ -298,7 +288,7 @@ TEST(DatabaseQuery, IncrementalDagMatchesFullAndExactDeltasForwardBackward)
     EXPECT_GT(full.memory_usage(), 0);
 }
 
-TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
+TEST(DatabaseQuery, MixedTypesAndConstants)
 {
     using TypedRelation = Relation;
     const std::vector<urd::data<ygg::ColumnLayout>> schema { { x, ygg::type_id<std::uint32_t> }, { y, ygg::type_id<double> } };
@@ -317,41 +307,9 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
                                                      tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::project(mixed, selected, { y, x }) }));
     evaluator.evaluate(std::array { borrow(relation) });
     EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(0.0), ygg::encode_value(std::uint32_t(4)) }));
-
-    auto graph = tyr::datalog::tests::qb::repository();
-    const auto sources = tyr::datalog::tests::qb::input(graph, 0, { x });
-    const auto edges = tyr::datalog::tests::qb::input(graph, 1, { x, y });
-    const auto targets = tyr::datalog::tests::qb::input(graph, 2, { z });
-    const auto distance = tyr::datalog::tests::qb::distance(graph, sources, edges, targets, d);
-    const auto plan =
-        tyr::datalog::database::compile_plan({ distance, tyr::datalog::tests::qb::select_value(graph, distance, d, static_cast<ygg::uint_t>(2)) });
-    Relation s(tyr::datalog::tests::ops::cols({ x })), e(tyr::datalog::tests::ops::cols({ x, y })), t(tyr::datalog::tests::ops::cols({ z }));
-    s.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)) });
-    e.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
-    e.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
-    t.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)) });
-    const auto inputs = std::array { borrow(s), borrow(e), borrow(t) };
-    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
-    full.evaluate(inputs);
-    incremental.initialize(inputs);
-    EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
-    ASSERT_TRUE(incremental.get_result(1).contains(
-        std::array { ygg::encode_value(ygg::uint_t(1)), ygg::encode_value(ygg::uint_t(3)), ygg::encode_value(ygg::uint_t(2)) }));
-    Delta ds(s.columns()), de(e.columns()), dt(t.columns());
-    de.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
-    incremental.update(std::array { std::pair { borrow(ds.added), borrow(ds.removed) },
-                                    std::pair { borrow(de.added), borrow(de.removed) },
-                                    std::pair { borrow(dt.added), borrow(dt.removed) } });
-    apply(e, de);
-    full.evaluate(inputs);
-    EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
-    EXPECT_TRUE(incremental.get_result(1).get_rows().empty());
-    EXPECT_EQ(incremental.get_delta().added->view().get_rows().size(), 1);
-    EXPECT_EQ(incremental.get_delta().removed->view().get_rows().size(), 1);
 }
 
-TEST(DatabaseQuery, RejectsInvalidBatchesBeforeMutatingAndSupportsNonDistanceTypeFamilies)
+TEST(DatabaseQuery, RejectsInvalidBatchesBeforeMutatingAndSupportsOtherTypeFamilies)
 {
     const auto schema = tyr::datalog::tests::qb::columns_of<double>({ x });
     auto repository = tyr::datalog::tests::qb::repository();
@@ -550,11 +508,6 @@ TEST(DatabaseQuery, CachedPlansSurviveRepositoryGrowthAndCistaRelocation)
     const auto joined = tyr::datalog::tests::qb::join(repository, a, b);
     const auto projected = tyr::datalog::tests::qb::project(repository, joined, { z, x });
     const auto generic = tyr::datalog::tests::qb::generic_join(repository, { a, b }, { z, y, x }, { x, z, y });
-    const auto distance = tyr::datalog::tests::qb::distance(repository,
-                                                            tyr::datalog::tests::qb::project(repository, a, { x }),
-                                                            a,
-                                                            tyr::datalog::tests::qb::project(repository, b, { z }),
-                                                            d);
     const auto view = tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined);
     const auto* original = &view.get_plan();
     for (size_t slot = 2; slot < 260; ++slot)
@@ -587,7 +540,6 @@ TEST(DatabaseQuery, CachedPlansSurviveRepositoryGrowthAndCistaRelocation)
     round_trip(view);
     round_trip(tyr::datalog::database::as<tyr::datalog::database::QueryProjectTag>(projected));
     round_trip(tyr::datalog::database::as<tyr::datalog::database::QueryGenericJoinTag>(generic));
-    round_trip(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance));
 }
 
 TEST(DatabaseQuery, FactoriesRejectMalformedQueriesBeforePublishingPlans)

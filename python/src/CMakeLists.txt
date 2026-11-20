@@ -21,13 +21,13 @@ nanobind_add_module(
     module.cpp
     pytyr/module.cpp
     pytyr/serialization/module.cpp
+    pytyr/datalog/lifted/database/datalog.cpp
     pytyr/datalog/lifted/database/distance.cpp
     pytyr/datalog/lifted/database/evaluation.cpp
     pytyr/datalog/lifted/database/module.cpp
     pytyr/datalog/lifted/database/optimization.cpp
     pytyr/datalog/lifted/database/syntax/antijoin.cpp
     pytyr/datalog/lifted/database/syntax/difference.cpp
-    pytyr/datalog/lifted/database/syntax/distance.cpp
     pytyr/datalog/lifted/database/syntax/empty.cpp
     pytyr/datalog/lifted/database/syntax/generic_join.cpp
     pytyr/datalog/lifted/database/syntax/input.cpp

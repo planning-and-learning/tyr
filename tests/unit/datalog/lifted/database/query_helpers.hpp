@@ -263,20 +263,6 @@ database::QueryView<> select_value(database::QueryRepository& repository, databa
     return select_encoded(repository, arg, column, ygg::encode_value(value), ygg::type_id<T>);
 }
 
-inline database::QueryView<> distance(database::QueryRepository& repository,
-                                      database::QueryView<> sources,
-                                      database::QueryView<> edges,
-                                      database::QueryView<> targets,
-                                      urd::index<ygg::Column> distance_column)
-{
-    auto data = database::checkout<database::Query<database::QueryDistanceTag>>(builder());
-    urd::store(data->sources, require(repository, sources));
-    urd::store(data->edges, require(repository, edges));
-    urd::store(data->targets, require(repository, targets));
-    data->distance_column = distance_column;
-    return database::insert_query(repository, builder(), *data);
-}
-
 inline database::QueryView<> generic_join(database::QueryRepository& repository,
                                           std::span<const database::QueryView<>> inputs,
                                           std::span<const urd::index<ygg::Column>> variable_order,

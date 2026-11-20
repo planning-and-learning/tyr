@@ -28,8 +28,6 @@ template<ygg::RowValues R>
 bool query_accepts(QueryView<QuerySelectValueTag> selection, const R& row)
 { return field_value(row, selection.get_plan().position()) == selection.get_plan().value(); }
 
-/// Distances are evaluated only with uint_t columns.
-
 /// Validates each input binding of the plan; inputs must not alias the evaluator's storage.
 template<RelationViewRange R, typename IsInternal>
 void validate_bindings(const QueryPlan& plan, const R& bindings, IsInternal is_internal)
@@ -47,15 +45,6 @@ void validate_bindings(const QueryPlan& plan, const R& bindings, IsInternal is_i
         assert(std::ranges::equal(bindings[slot].columns(), columns_of(query)));
     }
 }
-
-struct QueryDistanceWorkspace
-{
-    DistanceWorkspace workspace;
-
-    explicit QueryDistanceWorkspace(const DistancePlan& plan) : workspace(plan) {}
-
-    [[nodiscard]] size_t memory_usage() const { return workspace.memory_usage(); }
-};
 
 /// Operators whose result is a function of the operands' results alone.
 template<class Tag>
@@ -93,8 +82,7 @@ void evaluate_stateless(QueryView<Tag> operation, const R& bindings, GetResult r
 class QueryEvaluator
 {
     using NodeId = urd::index<Query<>>;
-    using DistanceState = detail::QueryDistanceWorkspace;
-    using State = std::variant<std::monostate, GenericJoinWorkspace, DistanceState>;
+    using State = std::variant<std::monostate, GenericJoinWorkspace>;
 
     struct Node
     {
@@ -108,8 +96,6 @@ class QueryEvaluator
                 {
                     if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
                         return GenericJoinWorkspace(operation.get_plan());
-                    else if constexpr (std::same_as<Tag, QueryDistanceTag>)
-                        return DistanceState(operation.get_plan());
                     else
                         return std::monostate {};
                 },
@@ -159,21 +145,12 @@ public:
                         database::antijoin(child(operation.get_left_operand()), child(operation.get_right_operand()), operation.get_plan(), out, m_workspace);
                     else if constexpr (std::same_as<Tag, QueryProjectTag>)
                         database::project(child(operation.get_operand()), operation.get_plan(), out, m_workspace);
-                    else if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
+                    else
                     {
+                        static_assert(std::same_as<Tag, QueryGenericJoinTag>);
                         const auto inputs =
                             operation.get_inputs() | std::views::transform([&](QueryView<> input) { return m_nodes[input.index()].result->view(); });
                         generic_join(inputs, operation.get_plan(), out, std::get<GenericJoinWorkspace>(state.state));
-                    }
-                    else
-                    {
-                        static_assert(std::same_as<Tag, QueryDistanceTag>);
-                        database::distance(child(operation.get_sources()),
-                                           child(operation.get_edges()),
-                                           child(operation.get_targets()),
-                                           operation.get_plan(),
-                                           out,
-                                           std::get<DistanceState>(state.state).workspace);
                     }
                 },
                 m_plan[id].get_variant());

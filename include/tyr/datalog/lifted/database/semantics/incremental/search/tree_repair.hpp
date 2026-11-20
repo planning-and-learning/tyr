@@ -22,13 +22,16 @@ namespace tyr::datalog::database::incremental
 {
 
 /// Edges between vertices given by their values; each vertex is stored once.
-class EdgeList
+template<typename V = ygg::Value>
+class BasicEdgeList
 {
 public:
-    EdgeList() : m_vertices() {}
+    using Set = BasicVertexSet<V>;
+    using Handle = typename Set::handle_type;
 
-    void add(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
-    { m_edges.emplace_back(m_vertices.insert(from).first, m_vertices.insert(to).first); }
+    BasicEdgeList() : m_vertices() {}
+
+    void add(std::span<const V> from, std::span<const V> to) { m_edges.emplace_back(m_vertices.insert(from).first, m_vertices.insert(to).first); }
 
     void clear() noexcept
     {
@@ -40,13 +43,13 @@ public:
 
     [[nodiscard]] size_t size() const noexcept { return m_edges.size(); }
 
-    [[nodiscard]] std::span<const ygg::Value> from(size_t i) const { return m_vertices.at(m_edges[i].first); }
+    [[nodiscard]] std::span<const V> from(size_t i) const { return m_vertices.at(m_edges[i].first); }
 
-    [[nodiscard]] std::span<const ygg::Value> to(size_t i) const { return m_vertices.at(m_edges[i].second); }
+    [[nodiscard]] std::span<const V> to(size_t i) const { return m_vertices.at(m_edges[i].second); }
 
 private:
-    VertexSet m_vertices;
-    urd::Store<urd::sequence<std::pair<VertexSet::handle_type, VertexSet::handle_type>>> m_edges;
+    Set m_vertices;
+    urd::Store<urd::sequence<std::pair<Handle, Handle>>> m_edges;
 };
 
 /// Generalized Adaptive A*'s ReestablishConsistency (Sun, Koenig & Yeoh, "Generalized Adaptive A*", AAMAS 2008) on a
@@ -56,12 +59,15 @@ private:
 /// the vertex that lowered it, as with the support pointers of Multipath Generalized Adaptive A* (Hernández, Asín &
 /// Baier, AAAI 2015); SearchTree::on_valid_path() checks the link when it is used. The target of an added edge is
 /// stored only if it lowers the edge's source. Owns its queue, so repeated repairs do not allocate.
-class TreeRepair
+template<typename V = ygg::Value>
+class BasicTreeRepair
 {
+    using Handle = typename BasicVertexSet<V>::handle_type;
+
 public:
     /// Returns the number of lowered vertices.
-    template<PredecessorOracle Predecessors, DistanceHeuristic H>
-    size_t run(SearchTree& tree, const EdgeList& added, Predecessors& predecessors, const H& heuristic)
+    template<PredecessorOracle<V> Predecessors, DistanceHeuristic<V> H>
+    size_t run(BasicSearchTree<V>& tree, const BasicEdgeList<V>& added, Predecessors& predecessors, const H& heuristic)
     {
         m_queue.clear();
         for (size_t i = 0; i < added.size(); ++i)
@@ -77,7 +83,7 @@ public:
             ++lowered;
             m_vertex.assign(tree.vertex(id).begin(), tree.vertex(id).end());
             predecessors.predecessors(m_vertex,
-                                      [&](std::span<const ygg::Value> from)
+                                      [&](std::span<const V> from)
                                       {
                                           if (const auto stored = tree.find(from); !stored.is_none() && lowers(tree, stored, tree.learned(id)))
                                               lower(tree, stored, id);
@@ -88,19 +94,22 @@ public:
     }
 
 private:
-    urd::Store<urd::queue<std::pair<ygg::uint_t, VertexSet::handle_type>>, urd::by_priority> m_queue;  ///< (learned, vertex), the least first.
-    urd::Store<urd::sequence<ygg::Value>> m_vertex;  ///< A copy of the lowered vertex: storing vertices may move them.
+    urd::Store<urd::queue<std::pair<ygg::uint_t, Handle>>, urd::by_priority> m_queue;  ///< (learned, vertex), the least first.
+    urd::Store<urd::sequence<V>> m_vertex;                                             ///< A copy of the lowered vertex: storing vertices may move them.
 
-    static bool lowers(const SearchTree& tree, VertexSet::handle_type from, ygg::uint_t to_value) noexcept
+    static bool lowers(const BasicSearchTree<V>& tree, Handle from, ygg::uint_t to_value) noexcept
     { return to_value != infinity && tree.learned(from) > to_value + 1; }
 
-    void lower(SearchTree& tree, VertexSet::handle_type from, VertexSet::handle_type to)
+    void lower(BasicSearchTree<V>& tree, Handle from, Handle to)
     {
         tree.lower(from, tree.learned(to) + 1);
         tree.link(from, to);
         m_queue.emplace(tree.learned(from), from);
     }
 };
+
+using EdgeList = BasicEdgeList<>;
+using TreeRepair = BasicTreeRepair<>;
 
 }  // namespace tyr::datalog::database::incremental
 

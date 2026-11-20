@@ -106,7 +106,7 @@ private:
 ///    are pushed down through joins, projections, renames, unions, and differences,
 ///    projections through renames and unions, and empty relations are propagated.
 /// 2. Each maximal tree of joins forms a join block, planned as a whole. Unions,
-///    differences, distances, and selections spanning several join operands bound
+///    differences, and selections spanning several join operands bound
 ///    the blocks.
 /// 3. A block whose operands all have known cardinalities is planned cost-based:
 ///    DPccp [MN06] finds the bushy join order of least C_out [CM95, Leis15] under
@@ -122,8 +122,7 @@ private:
 ///
 /// Generic Join's variable order is fixed by column label: any order attains the
 /// worst-case bound, but [Freitag20] additionally optimizes it with the Tributary Join
-/// cost model, which is not implemented. Distances have no estimate in the literature
-/// and are only known when observed. Not modeled: distributing joins over unions,
+/// cost model, which is not implemented. Not modeled: distributing joins over unions,
 /// sharing-aware choices across roots, and costs of incremental maintenance.
 ///
 /// Steps 2 to 4 assume full evaluation. A root evaluated bound only gets step 1: the

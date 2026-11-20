@@ -53,8 +53,6 @@ void derive(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository& 
 
 void derive(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository);
 
-void derive(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository);
-
 /// An omitted output order is canonicalized to first occurrence order.
 void derive(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository);
 }  // namespace detail

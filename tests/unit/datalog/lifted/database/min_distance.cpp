@@ -343,7 +343,7 @@ TEST_P(DatabaseMinDistance, AStarPathIsAShortestPath)
             if (targets.insert(std::span<const ygg::Value>(target)).second)
                 ids.push_back(tree.ensure(target, heuristic));
         }
-        backward.start(ids);
+        backward.start(tree, ids);
         auto search =
             tyr::datalog::database::AStar<ListGraph, tyr::datalog::database::BlindDistanceHeuristic>(graph, tree, backward, heuristic, targets, storage, 0);
         const auto distance = search.run(sources);

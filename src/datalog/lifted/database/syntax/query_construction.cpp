@@ -54,17 +54,6 @@ void derive(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& 
 
 namespace tyr::datalog::database::detail
 {
-void derive(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository)
-{
-    data.plan = DistancePlan(child_columns(data.sources, repository),
-                             child_columns(data.edges, repository),
-                             child_columns(data.targets, repository),
-                             data.distance_column);
-}
-}
-
-namespace tyr::datalog::database::detail
-{
 void derive(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository)
 {
     urd::Store<urd::sequence<urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>>>> schemas;

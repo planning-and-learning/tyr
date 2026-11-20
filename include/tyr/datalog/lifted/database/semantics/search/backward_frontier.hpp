@@ -32,14 +32,34 @@ namespace tyr::datalog::database
 ///
 /// These bounds form a consistent heuristic of their own. Edges removed after a level keep the levels lower bounds;
 /// added edges invalidate them, and the caller restarts the search.
-class BackwardFrontier
+template<typename V = ygg::Value>
+class BasicBackwardFrontier
 {
 public:
-    void start(std::span<const VertexSet::handle_type> targets);
+    using Set = BasicVertexSet<V>;
+    using Handle = typename Set::handle_type;
+
+    /// Starts from the targets (stored vertices), which become their own paths of length 0 (SearchTree::mark_target).
+    /// The tree's learned distances are forgotten: A* learns them with the bounds of this frontier.
+    void start(BasicSearchTree<V>& tree, std::span<const Handle> targets)
+    {
+        // The learned distances may rest on the old frontier's bounds.
+        tree.forget_learned();
+        m_level.clear();
+        m_frontier.clear();
+        for (const auto target : targets)
+        {
+            level_slot(target) = 0;
+            tree.mark_target(target);
+            m_frontier.push_back(target);
+        }
+        m_depth = 0;
+        m_exhausted = false;
+    }
 
     /// Advances one level; returns the number of vertices found.
-    template<PredecessorOracle Predecessors, DistanceHeuristic H>
-    size_t step(SearchTree& tree, Predecessors& predecessors, const H& heuristic)
+    template<PredecessorOracle<V> Predecessors, DistanceHeuristic<V> H>
+    size_t step(BasicSearchTree<V>& tree, Predecessors& predecessors, const H& heuristic)
     {
         std::swap(m_frontier, m_expanding);
         m_frontier.clear();
@@ -49,7 +69,7 @@ public:
             // A copy: inserting predecessors into the tree may move its vertices.
             m_vertex.assign(tree.vertex(parent).begin(), tree.vertex(parent).end());
             predecessors.predecessors(m_vertex,
-                                      [&](std::span<const ygg::Value> from)
+                                      [&](std::span<const V> from)
                                       {
                                           const auto id = tree.ensure(from, heuristic);
                                           auto& found = level_slot(id);
@@ -72,11 +92,11 @@ public:
 
     /// The distance of a found vertex, or none: exact on the edges of the search that found it, a lower bound after
     /// edges are removed.
-    [[nodiscard]] ygg::uint_t level(VertexSet::handle_type id) const noexcept { return id < m_level.position(m_level.end()) ? m_level[id] : none; }
+    [[nodiscard]] ygg::uint_t level(Handle id) const noexcept { return id < m_level.position(m_level.end()) ? m_level[id] : none; }
 
     /// A lower bound on any vertex's distance (none: one not stored): its level if found, otherwise one beyond the last
     /// level, or infinity once the frontier is exhausted.
-    [[nodiscard]] ygg::uint_t bound(VertexSet::handle_type id) const noexcept
+    [[nodiscard]] ygg::uint_t bound(Handle id) const noexcept
     {
         if (const auto found = level(id); found != none)
             return found;
@@ -84,20 +104,22 @@ public:
     }
 
 private:
-    urd::Store<urd::sequence<ygg::uint_t, VertexSet::handle_type>> m_level;  ///< By the tree's vertex.
-    urd::Store<urd::sequence<VertexSet::handle_type>> m_frontier;
-    urd::Store<urd::sequence<VertexSet::handle_type>> m_expanding;  ///< The level step() expands; kept with m_vertex to avoid allocations.
-    urd::Store<urd::sequence<ygg::Value>> m_vertex;
+    urd::Store<urd::sequence<ygg::uint_t, Handle>> m_level;  ///< By the tree's vertex.
+    urd::Store<urd::sequence<Handle>> m_frontier;
+    urd::Store<urd::sequence<Handle>> m_expanding;  ///< The level step() expands; kept with m_vertex to avoid allocations.
+    urd::Store<urd::sequence<V>> m_vertex;
     ygg::uint_t m_depth = 0;
     bool m_exhausted = false;
 
-    ygg::uint_t& level_slot(VertexSet::handle_type id)
+    ygg::uint_t& level_slot(Handle id)
     {
         while (!(id < m_level.position(m_level.end())))
             m_level.push_back(none);
         return m_level[id];
     }
 };
+
+using BackwardFrontier = BasicBackwardFrontier<>;
 
 }  // namespace tyr::datalog::database
 

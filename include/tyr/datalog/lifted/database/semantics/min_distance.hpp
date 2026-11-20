@@ -80,7 +80,7 @@ public:
         m_edges.evaluator().bind(input);
         m_tree.clear();
         m_targets.assign(targets);
-        m_backward.start(m_targets.ensure_in(m_tree, heuristic));
+        m_backward.start(m_tree, m_targets.ensure_in(m_tree, heuristic));
         auto edges = m_edges.with_key({});
         auto search = AStar<typename Edges::Keyed, H>(edges, m_tree, m_backward, heuristic, m_targets.vertices(), m_search, m_edges.evaluator().version());
         const auto distance = search.run(sources);

@@ -18,7 +18,7 @@
 /// The instantiations (PREFIX extern: declarations).
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): it expands to explicit instantiations, declarations, which no function gives
 #define TYR_DATABASE_INTERNS(PREFIX) \
-    YGG_FORMALISM_INTERNS(PREFIX, 16, false, boost::mp11::mp_append<tyr::datalog::database::QuerySymbolTypes, ygg::FreeRelationRepository::SymbolTypes>)
+    YGG_FORMALISM_INTERNS(PREFIX, 15, false, boost::mp11::mp_append<tyr::datalog::database::QuerySymbolTypes, ygg::FreeRelationRepository::SymbolTypes>)
 
 TYR_DATABASE_INTERNS(extern)
 

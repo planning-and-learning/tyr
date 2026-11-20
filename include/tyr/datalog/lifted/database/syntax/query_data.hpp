@@ -331,52 +331,6 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
 };
 
 template<>
-struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceTag>>
-{
-    urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceTag>> index;
-    urd::index<tyr::datalog::database::Query<>> sources;
-    urd::index<tyr::datalog::database::Query<>> edges;
-    urd::index<tyr::datalog::database::Query<>> targets;
-    urd::index<ygg::Column> distance_column;
-    tyr::datalog::database::DistancePlan plan;
-
-    data() = default;
-
-    data(urd::index<tyr::datalog::database::Query<>> sources_,
-         urd::index<tyr::datalog::database::Query<>> edges_,
-         urd::index<tyr::datalog::database::Query<>> targets_,
-         urd::index<ygg::Column> distance_column_,
-         tyr::datalog::database::DistancePlan plan_) :
-        sources(sources_),
-        edges(edges_),
-        targets(targets_),
-        distance_column(distance_column_),
-        plan(std::move(plan_))
-    {
-    }
-
-    data(const data& other) = delete;
-    data& operator=(const data& other) = delete;
-    data(data&& other) = default;
-    data& operator=(data&& other) = default;
-    ~data() = default;
-
-    static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"sources", &data::sources>,
-                           urd::field<"edges", &data::edges>,
-                           urd::field<"targets", &data::targets>,
-                           urd::field<"distance_column", &data::distance_column>,
-                           urd::field<"plan", &data::plan>> {};
-    }
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::sources, &data::edges, &data::targets, &data::distance_column> {}; }
-
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::sources, &data::edges, &data::targets, &data::distance_column, &data::plan> {}; }
-};
-
-template<>
 struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>> index;
