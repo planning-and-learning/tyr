@@ -55,6 +55,7 @@ void bind_row(nb::module_& m, RepositoryBinding& repository)
     bind_row_view<Rule<LiftedTag>>(m, repository);
     bind_row_view<Predicate<StaticTag>>(m, repository);
     bind_row_view<Predicate<FluentTag>>(m, repository);
+    bind_row_view<Predicate<DerivedTag>>(m, repository);
     bind_row_view<Function<StaticTag>>(m, repository);
     bind_row_view<Function<FluentTag>>(m, repository);
     bind_row_view<Function<AuxiliaryTag>>(m, repository);

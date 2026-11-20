@@ -73,8 +73,10 @@ void bind_literal(nb::module_& m, RepositoryBinding& repository)
 {
     bind_literal_view<LiftedTag, StaticTag>(m, repository);
     bind_literal_view<LiftedTag, FluentTag>(m, repository);
+    bind_literal_view<LiftedTag, DerivedTag>(m, repository);
     bind_literal_view<GroundTag, StaticTag>(m, repository);
     bind_literal_view<GroundTag, FluentTag>(m, repository);
+    bind_literal_view<GroundTag, DerivedTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog

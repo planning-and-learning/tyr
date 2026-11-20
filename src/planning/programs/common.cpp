@@ -63,11 +63,11 @@ urd::flat_string create_applicability_name(formalism::planning::ActionView<Lifte
 urd::flat_string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff)
 { return urd::flat_string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.index().value) }; }
 
-std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
 create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
+    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
 
     predicate->name = create_applicability_name(action);
     predicate->arity = action.get_arity();
@@ -75,11 +75,11 @@ create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action
     return context.destination().insert(*predicate, context.builder());
 }
 
-std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
 create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(context.builder());
 
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -95,11 +95,11 @@ create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
     return context.destination().insert(*atom, context.builder());
 }
 
-std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
 create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
+    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
 
     predicate->name = create_applicability_name(axiom);
     predicate->arity = axiom.get_body().get_arity();
@@ -107,11 +107,11 @@ create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
     return context.destination().insert(*predicate, context.builder());
 }
 
-std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
 create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(context.builder());
 
     const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
 
@@ -144,10 +144,10 @@ TranslationContext<LiftedTag> remap_translation_context(const TranslationContext
 
     remap_keys(source.d2p.static_to_static_predicate, result.d2p.static_to_static_predicate);
     remap_keys(source.d2p.fluent_to_fluent_predicate, result.d2p.fluent_to_fluent_predicate);
-    remap_keys(source.d2p.fluent_to_derived_predicate, result.d2p.fluent_to_derived_predicate);
+    remap_keys(source.d2p.derived_to_derived_predicate, result.d2p.derived_to_derived_predicate);
     remap_values(source.p2d.static_to_static_predicate, result.p2d.static_to_static_predicate);
     remap_values(source.p2d.fluent_to_fluent_predicate, result.p2d.fluent_to_fluent_predicate);
-    remap_values(source.p2d.derived_to_fluent_predicate, result.p2d.derived_to_fluent_predicate);
+    remap_values(source.p2d.derived_to_derived_predicate, result.p2d.derived_to_derived_predicate);
     remap_values(source.p2d.fluent_to_fluent_function, result.p2d.fluent_to_fluent_function);
     return result;
 }
@@ -182,17 +182,17 @@ void translate_task_symbols(formalism::planning::TaskView<LiftedTag> task,
     {
         for (const auto predicate : task.get_domain().get_predicates<formalism::DerivedTag>())
         {
-            const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
-            translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
-            translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-            urd::append(program.fluent_predicates, new_predicate);
+            const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::DerivedTag>(predicate, context).first;
+            translation_context.d2p.derived_to_derived_predicate.emplace(new_predicate, predicate);
+            translation_context.p2d.derived_to_derived_predicate.emplace(predicate, new_predicate);
+            urd::append(program.derived_predicates, new_predicate);
         }
         for (const auto predicate : task.get_derived_predicates())
         {
-            const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
-            translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
-            translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-            urd::append(program.fluent_predicates, new_predicate);
+            const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::DerivedTag>(predicate, context).first;
+            translation_context.d2p.derived_to_derived_predicate.emplace(new_predicate, predicate);
+            translation_context.p2d.derived_to_derived_predicate.emplace(predicate, new_predicate);
+            urd::append(program.derived_predicates, new_predicate);
         }
     }
 

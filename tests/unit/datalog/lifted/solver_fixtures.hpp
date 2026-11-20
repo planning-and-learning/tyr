@@ -220,7 +220,8 @@ BottomUpCase parse_case(const boost::json::object& object)
     return result;
 }
 
-[[maybe_unused]] void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<tyr::formalism::FluentTag>& fact_sets, AtomsByPredicate& result)
+template<tyr::formalism::FactKind F>
+void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<F>& fact_sets, AtomsByPredicate& result)
 {
     for (ygg::uint_t set = 0; set < fact_sets.predicate.size(); ++set)
     {
@@ -232,7 +233,7 @@ BottomUpCase parse_case(const boost::json::object& object)
         }
         std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
-        const auto predicate = fact_sets.repository->view(urd::index<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(set));
+        const auto predicate = fact_sets.repository->view(urd::index<tyr::formalism::Predicate<F>>(set));
         result.push_back(PredicateAtoms { predicate.get_name().str(), predicate.get_arity(), std::move(bindings) });
     }
 }
@@ -242,6 +243,7 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 {
     auto result = AtomsByPredicate {};
     append_atoms_by_predicate(workspace.facts.fact_sets.template get<tyr::formalism::FluentTag>(), result);
+    append_atoms_by_predicate(workspace.facts.fact_sets.template get<tyr::formalism::DerivedTag>(), result);
     return result;
 }
 

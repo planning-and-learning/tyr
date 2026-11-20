@@ -62,9 +62,9 @@ void insert_fluent_atoms_to_fact_set(const StateContext<LiftedTag>& state,
 
 void insert_derived_atoms_to_fact_set(const StateContext<LiftedTag>& state,
                                       const formalism::planning::Repository& repository,
-                                      const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
+                                      const P2DTranslationContext<LiftedTag>::DerivedToDerivedPredicateMapping& derived_to_derived_predicate,
                                       formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
-                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
+                                      datalog::TaggedFactSets<formalism::DerivedTag>& fact_sets);
 
 void insert_numeric_variables_to_fact_set(const StateContext<LiftedTag>& state,
                                           const formalism::planning::Repository& repository,
@@ -74,10 +74,10 @@ void insert_numeric_variables_to_fact_set(const StateContext<LiftedTag>& state,
 
 void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
-                                      const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
+                                      const D2PTranslationContext<LiftedTag>::DerivedToDerivedPredicateMapping& derived_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
-                                      const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings);
+                                      const datalog::TaggedFactSets<formalism::DerivedTag>& fact_sets,
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::DerivedTag>>>& derived_bindings);
 
 }
 
@@ -131,9 +131,9 @@ void insert_extended_state(const StateContext<LiftedTag>& state,
     auto merge_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository };
     detail::insert_derived_atoms_to_fact_set(state,
                                              repository,
-                                             translation_context.derived_to_fluent_predicate,
+                                             translation_context.derived_to_derived_predicate,
                                              merge_context,
-                                             workspace.facts.fact_sets.template get<formalism::FluentTag>());
+                                             workspace.facts.fact_sets.template get<formalism::DerivedTag>());
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
@@ -141,13 +141,13 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateReposi
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>& translation_context,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings)
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::DerivedTag>>>& derived_bindings)
 {
     detail::read_derived_atoms_from_fact_set(state,
                                              repository,
-                                             translation_context.fluent_to_derived_predicate,
+                                             translation_context.derived_to_derived_predicate,
                                              workspace.planning_builder,
-                                             workspace.facts.fact_sets.template get<formalism::FluentTag>(),
+                                             workspace.facts.fact_sets.template get<formalism::DerivedTag>(),
                                              derived_bindings);
 }
 

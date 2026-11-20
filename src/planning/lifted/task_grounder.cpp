@@ -524,11 +524,18 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto ctx = datalog::ProgramExecutionContext(workspace);
     datalog::execute_model(ctx, execution_context);
 
-    auto predicate_bindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>> {};
+    // The reachable fluent atoms, and the derived ones: the task's derived atoms and the program's applicability and
+    // effect atoms.
+    auto fluent_bindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>> {};
     const auto& fluent_fact_sets = workspace.facts.fact_sets.get<formalism::FluentTag>();
     for (ygg::uint_t i = 0; i < fluent_fact_sets.predicate.size(); ++i)
         for (const auto binding : datalog::rows(fluent_fact_sets, i))
-            predicate_bindings.push_back(binding);
+            fluent_bindings.push_back(binding);
+    auto derived_bindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::DerivedTag>>> {};
+    const auto& derived_fact_sets = workspace.facts.fact_sets.get<formalism::DerivedTag>();
+    for (ygg::uint_t i = 0; i < derived_fact_sets.predicate.size(); ++i)
+        for (const auto binding : datalog::rows(derived_fact_sets, i))
+            derived_bindings.push_back(binding);
     /**
      * Create basic structures of task
      */
@@ -559,9 +566,10 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
      * Create ground atoms
      */
 
+    /// The derived bindings: those of the task's derived predicates and of the program's own (applicability, effects).
     const auto for_each_predicate_binding = [&](auto&& f)
     {
-        for (const auto binding : predicate_bindings)
+        for (const auto binding : derived_bindings)
             f(binding);
     };
 
@@ -569,30 +577,28 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto derived_atoms = formalism::planning::AtomViewList<GroundTag, formalism::DerivedTag> {};
     {
         auto merge_planning_context = formalism::WriteContext { builder, *repository };
-        for_each_predicate_binding(
-            [&](const auto binding)
-            {
-                if (ground_program.get_translation_context().d2p.fluent_to_fluent_predicate.contains(binding.get_relation()))
-                {
-                    auto fluent_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(builder);
-                    fluent_atom->row = formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(
-                                           binding,
-                                           ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
-                                           merge_planning_context)
-                                           .first.index();
-                    fluent_atoms.push_back(repository->insert(*fluent_atom, builder).first);
-                }
-                else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
-                {
-                    auto derived_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
-                    derived_atom->row = formalism::planning::merge_d2p<formalism::FluentTag, formalism::DerivedTag>(
-                                            binding,
-                                            ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
-                                            merge_planning_context)
-                                            .first.index();
-                    derived_atoms.push_back(repository->insert(*derived_atom, builder).first);
-                }
-            });
+        const auto& d2p = ground_program.get_translation_context().d2p;
+        for (const auto binding : fluent_bindings)
+        {
+            if (!d2p.fluent_to_fluent_predicate.contains(binding.get_relation()))
+                continue;
+            auto fluent_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(builder);
+            fluent_atom->row =
+                formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(binding, d2p.fluent_to_fluent_predicate, merge_planning_context)
+                    .first.index();
+            fluent_atoms.push_back(repository->insert(*fluent_atom, builder).first);
+        }
+        for (const auto binding : derived_bindings)
+        {
+            // The task's derived predicates only: the program's own are derived too.
+            if (!d2p.derived_to_derived_predicate.contains(binding.get_relation()))
+                continue;
+            auto derived_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
+            derived_atom->row =
+                formalism::planning::merge_d2p<formalism::DerivedTag, formalism::DerivedTag>(binding, d2p.derived_to_derived_predicate, merge_planning_context)
+                    .first.index();
+            derived_atoms.push_back(repository->insert(*derived_atom, builder).first);
+        }
     }
     std::sort(fluent_atoms.begin(), fluent_atoms.end());
     std::sort(derived_atoms.begin(), derived_atoms.end());
@@ -674,7 +680,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     // The atoms of the effect predicates are the relaxed reachable groundings of the conditional effects.
     auto effect_atom_index = EffectAtomIndex(ground_program.get_predicate_to_action_mapping(),
                                              ground_program.get_conditional_effect_to_predicate_mapping(),
-                                             workspace.facts.fact_sets.get<formalism::FluentTag>(),
+                                             workspace.facts.fact_sets.get<formalism::DerivedTag>(),
                                              *workspace.workspace_repository);
 
     for_each_predicate_binding(

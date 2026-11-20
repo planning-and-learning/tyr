@@ -75,8 +75,10 @@ void bind_atom(nb::module_& m, RepositoryBinding& repository)
 {
     bind_atom_view<LiftedTag, StaticTag>(m, repository);
     bind_atom_view<LiftedTag, FluentTag>(m, repository);
+    bind_atom_view<LiftedTag, DerivedTag>(m, repository);
     bind_atom_view<GroundTag, StaticTag>(m, repository);
     bind_atom_view<GroundTag, FluentTag>(m, repository);
+    bind_atom_view<GroundTag, DerivedTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog

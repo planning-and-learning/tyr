@@ -24,6 +24,7 @@
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <tuple>
 #include <urd/elements/flat.hpp>
@@ -47,19 +48,11 @@ struct FFRPGHeuristic<Kind>::Impl :
 {
     using Base =
         detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
-    using PredicateHead = formalism::datalog::PredicateRowView<formalism::FluentTag>;
 
-    Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
-        Base(std::move(task), std::move(execution_context), cost_mode),
-        m_predicate_markings(this->workspace().facts.fact_sets.template get<formalism::FluentTag>().predicate.size())
-    {
-    }
+    Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) : Base(std::move(task), std::move(execution_context), cost_mode)
+    { initialize_markings(); }
 
-    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
-        Base(source, std::move(execution_context)),
-        m_predicate_markings(this->workspace().facts.fact_sets.template get<formalism::FluentTag>().predicate.size())
-    {
-    }
+    Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) : Base(source, std::move(execution_context)) { initialize_markings(); }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
@@ -75,8 +68,12 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     ygg::float_t compute_result(const StateView<Kind>&)
     {
-        for (auto& markings : m_predicate_markings)
-            markings.clear();
+        boost::mp11::mp_for_each<datalog::MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (auto& markings : m_predicate_markings.template get<F>())
+                    markings.clear();
+            });
 
         if (const auto& goal = this->workspace().tp.get_goal())
         {
@@ -93,10 +90,19 @@ struct FFRPGHeuristic<Kind>::Impl :
     [[nodiscard]] const auto& get_relaxed_plan() const noexcept { return m_relaxed_plan; }
 
 private:
-    void extract_relaxed_plan(PredicateHead head)
+    /// One marking per predicate of each mutable kind: the fluent atoms and the derived ones (projections of split rules).
+    void initialize_markings()
     {
-        assert(static_cast<ygg::uint_t>(head.index().relation.value) < m_predicate_markings.size());
-        if (!m_predicate_markings[static_cast<ygg::uint_t>(head.index().relation.value)].insert(head.index().row).second)
+        boost::mp11::mp_for_each<datalog::MutableTags>(
+            [&]<typename F>(F) { m_predicate_markings.template get<F>().resize(this->workspace().facts.fact_sets.template get<F>().predicate.size()); });
+    }
+
+    template<formalism::FactKind F>
+    void extract_relaxed_plan(formalism::datalog::PredicateRowView<F> head)
+    {
+        auto& markings = m_predicate_markings.template get<F>();
+        assert(static_cast<ygg::uint_t>(head.index().relation.value) < markings.size());
+        if (!markings[static_cast<ygg::uint_t>(head.index().relation.value)].insert(head.index().row).second)
             return;
 
         const auto* annotation = this->workspace().annotations.find(head.index());
@@ -113,11 +119,17 @@ private:
         if (const auto action_binding = this->get_action_binding(witness))
             m_relaxed_plan.insert(*action_binding);
 
-        this->for_each_witness_precondition(witness, [&](const auto precondition) { extract_relaxed_plan(precondition); });
+        boost::mp11::mp_for_each<datalog::MutableTags>(
+            [&]<typename F>(F)
+            { this->template for_each_witness_precondition<F>(witness, [&](const auto precondition) { extract_relaxed_plan(precondition); }); });
     }
 
-    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>>
-        m_predicate_markings;
+    /// The marked atoms of each predicate of kind F.
+    template<typename F>
+    using PredicateMarkings =
+        urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<F>>>>, urd::dense, urd::proportional_clear>>>;
+
+    datalog::MutableFamily<PredicateMarkings> m_predicate_markings;
     urd::Store<urd::set<formalism::planning::ActionRowView>> m_relaxed_plan;
 };
 

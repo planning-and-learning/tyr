@@ -120,12 +120,12 @@ public:
                     formalism::datalog::collect_parameters(urd::resolve(head, m_context->destination()), head_parameters);
             });
 
-        auto projections = urd::Store<urd::sequence<std::pair<Body, FluentLiteral>>> {};
+        auto projections = urd::Store<urd::sequence<std::pair<Body, DerivedLiteral>>> {};
         while (auto projection = choose_projection(body, head_parameters, variables.size()))
         {
             restrict_kept_variables(projection->rest, projection->kept, projection->projected);
             const auto atom = create_projection_atom(projection->kept);
-            projection->rest.fluent_literals.push_back(atom);
+            projection->rest.derived_literals.push_back(atom);
             projections.emplace_back(std::move(projection->projected), atom);
             body = std::move(projection->rest);
         }
@@ -135,7 +135,7 @@ public:
         for (const auto& [projected, atom] : projections)
         {
             auto projection_heads = RuleHeads {};
-            projection_heads.template get<formalism::FluentTag>().push_back(urd::resolve(atom, m_context->destination()).get_atom().index());
+            projection_heads.template get<formalism::DerivedTag>().push_back(urd::resolve(atom, m_context->destination()).get_atom().index());
             const auto [projection_rule, positions] = emit_rule(variables, projected, projection_heads, static_cast<ygg::float_t>(0));
             urd::append(m_program->rules, m_context->destination().view(projection_rule));
             m_splitting->origins.emplace(projection_rule, RuleSplitting::Origin { variables.size(), positions });
@@ -303,14 +303,15 @@ private:
         return result;
     }
 
-    FluentLiteral create_projection_atom(const urd::Store<urd::sequence<formalism::ParameterIndex>>& kept)
+    /// A literal over a new derived predicate, the projection's, of the kept variables.
+    DerivedLiteral create_projection_atom(const urd::Store<urd::sequence<formalism::ParameterIndex>>& kept)
     {
-        auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(m_context->builder());
+        auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::DerivedTag>>(m_context->builder());
         predicate->name = "__tyr_projection_" + std::to_string(m_num_projections++);
         predicate->arity = kept.size();
         const auto new_predicate = m_context->destination().insert(*predicate, m_context->builder()).first.index();
-        urd::append(m_program->fluent_predicates, m_context->destination().view(new_predicate));
-        return create_literal<formalism::FluentTag>(new_predicate, kept);
+        urd::append(m_program->derived_predicates, m_context->destination().view(new_predicate));
+        return create_literal<formalism::DerivedTag>(new_predicate, kept);
     }
 
     template<formalism::FactKind F>

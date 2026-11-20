@@ -266,12 +266,10 @@ TranslationContext<GroundTag> remap_translation_context(const TranslationContext
 
     remap_keys(source.d2p.static_to_static_atom, result.d2p.static_to_static_atom);
     remap_keys(source.d2p.fluent_to_fluent_atom, result.d2p.fluent_to_fluent_atom);
-    remap_keys(source.d2p.fluent_to_derived_atom, result.d2p.fluent_to_derived_atom);
     remap_keys(source.d2p.static_to_static_fterm, result.d2p.static_to_static_fterm);
     remap_keys(source.d2p.fluent_to_fluent_fterm, result.d2p.fluent_to_fluent_fterm);
     remap_values(source.p2d.static_to_static_atom, result.p2d.static_to_static_atom);
     remap_values(source.p2d.fluent_to_fluent_atom, result.p2d.fluent_to_fluent_atom);
-    remap_values(source.p2d.derived_to_fluent_atom, result.p2d.derived_to_fluent_atom);
     remap_values(source.p2d.static_to_static_fterm, result.p2d.static_to_static_fterm);
     remap_values(source.p2d.fluent_to_fluent_fterm, result.p2d.fluent_to_fluent_fterm);
     return result;

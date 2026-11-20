@@ -79,7 +79,7 @@ public:
     /// Indexes the atoms of `facts`, interned in `repository`, of the program with the given mappings.
     EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
                     const ConditionalEffectToPredicateMapping& effect_to_predicate,
-                    const datalog::TaggedFactSets<formalism::FluentTag>& facts,
+                    const datalog::TaggedFactSets<formalism::DerivedTag>& facts,
                     const formalism::datalog::Repository& repository);
 
     /// Forgets the grouping after the facts changed; the storage is kept.
@@ -111,7 +111,7 @@ public:
     }
 
 private:
-    using AtomIndex = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using AtomIndex = formalism::datalog::PredicateRowIndex<formalism::DerivedTag>;
 
     /// The atoms of one effect predicate, grouped by the applicability row of their action binding, refilled in the
     /// storage held: clear keeps each row's.
@@ -130,23 +130,23 @@ private:
                                                                                      std::span<const urd::index<formalism::Object>> binding);
 
     void rebuild(Groups& groups,
-                 formalism::datalog::PredicateView<formalism::FluentTag> effect_predicate,
-                 formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
+                 formalism::datalog::PredicateView<formalism::DerivedTag> effect_predicate,
+                 formalism::datalog::PredicateView<formalism::DerivedTag> applicability_predicate,
                  size_t action_arity);
 
     /// The row of the applicability atom of `binding`, if it holds.
-    std::optional<ygg::uint_t> find_row(formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
+    std::optional<ygg::uint_t> find_row(formalism::datalog::PredicateView<formalism::DerivedTag> applicability_predicate,
                                         std::span<const urd::index<formalism::Object>> binding);
 
     const ConditionalEffectToPredicateMapping* m_effect_to_predicate;
-    const datalog::TaggedFactSets<formalism::FluentTag>* m_facts;
+    const datalog::TaggedFactSets<formalism::DerivedTag>* m_facts;
     const formalism::datalog::Repository* m_repository;
     /// The applicability predicate of each action, by the action's index: the actions are those of one domain.
-    urd::Store<urd::map<formalism::planning::ActionIndex<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>, urd::dense>
+    urd::Store<urd::map<formalism::planning::ActionIndex<LiftedTag>, formalism::datalog::PredicateView<formalism::DerivedTag>>, urd::dense>
         m_applicability_predicates;
-    urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, Groups>> m_groups;
+    urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, Groups>> m_groups;
     urd::flat_vector<urd::index<formalism::Object>> m_prefix;
-    urd::data<ygg::Row<formalism::Predicate<formalism::FluentTag>>> m_lookup;
+    urd::data<ygg::Row<formalism::Predicate<formalism::DerivedTag>>> m_lookup;
 };
 
 }

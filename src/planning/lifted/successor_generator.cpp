@@ -380,7 +380,7 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     static_extension_workspace(),
     effect_atom_index(definition.action_program.get_predicate_to_action_mapping(),
                       definition.action_program.get_conditional_effect_to_predicate_mapping(),
-                      workspace.facts.fact_sets.get<formalism::FluentTag>(),
+                      workspace.facts.fact_sets.get<formalism::DerivedTag>(),
                       *workspace.workspace_repository),
     executor()
 {
@@ -461,12 +461,12 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
 
     for (const auto rule : program.get_rules())
     {
-        const auto predicate = rule.get_fluent_heads().front().get_predicate();
+        const auto predicate = rule.get_derived_heads().front().get_predicate();
         const auto it = mapping.find(predicate);
         if (it == mapping.end())
             continue;  // A conditional effect's rule.
         const auto schema = it->second;
-        for (const auto& binding : datalog::rows(evaluator.workspace.facts.fact_sets.get<formalism::FluentTag>(), predicate.index().value))
+        for (const auto& binding : datalog::rows(evaluator.workspace.facts.fact_sets.get<formalism::DerivedTag>(), predicate.index().value))
         {
             if (stop())
                 return false;
@@ -1158,7 +1158,8 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
                     return;
                 }
                 const auto rule =
-                    *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.get_fluent_heads().front().get_predicate() == it->second; });
+                    *std::ranges::find_if(schema_rules,
+                                          [&](auto schema_rule) { return schema_rule.get_derived_heads().front().get_predicate() == it->second; });
                 datalog::for_each_static_extension(*rules[static_cast<ygg::uint_t>(rule.index().value)],
                                                    std::span<const urd::index<formalism::Object>>(objects.data(), objects.size()),
                                                    m_impl->evaluator.static_extension_workspace,

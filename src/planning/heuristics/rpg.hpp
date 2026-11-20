@@ -204,7 +204,8 @@ protected:
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
     { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
 
-    [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateRowView<formalism::FluentTag> head) const noexcept
+    template<formalism::FactKind F>
+    [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateRowView<F> head) const noexcept
     {
         const auto* annotation = m_workspace.annotations.find(head.index());
         return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
@@ -244,14 +245,16 @@ protected:
             atoms.push_back(*atom);
     }
 
-    template<typename Callback>
+    /// Calls back the positive preconditions of kind F of the witness's rule instance: fluent atoms, or derived ones (the
+    /// atoms of split rules' projections).
+    template<formalism::FactKind F, typename Callback>
     void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind>& witness, Callback callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,
                                             [&](const auto& instance)
                                             {
-                                                for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
+                                                for (const auto literal : instance.get_body().template get_literals<F>())
                                                     if (literal.get_polarity())
                                                         callback(instance.resolve(literal.get_atom()));
                                             });

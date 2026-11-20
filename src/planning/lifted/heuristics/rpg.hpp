@@ -132,7 +132,7 @@ struct RPGPolicy<LiftedTag>
                                     witness,
                                     [&](const auto& instance)
                                     {
-                                        for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
+                                        for (const auto literal : instance.get_body().template get_literals<formalism::DerivedTag>())
                                         {
                                             if (!projection_rules.contains(literal.get_atom().get_predicate().index()))
                                                 continue;

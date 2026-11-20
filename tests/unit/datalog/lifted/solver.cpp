@@ -166,10 +166,14 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                     solve_workspace(axiom_workspace);
 
                     auto merge_context = tyr::formalism::WriteContext { action_workspace.datalog_builder, *action_workspace.workspace_repository };
-                    const auto& axiom_facts = axiom_workspace.facts.fact_sets.get<tyr::formalism::FluentTag>();
-                    for (ygg::uint_t set = 0; set < axiom_facts.predicate.size(); ++set)
-                        for (const auto binding : tyr::datalog::rows(axiom_facts, set))
-                            tyr::datalog::insert(action_workspace.facts.fact_sets, tyr::formalism::copy(binding, merge_context).first.index());
+                    const auto copy_facts = [&](const auto& axiom_facts)
+                    {
+                        for (ygg::uint_t set = 0; set < axiom_facts.predicate.size(); ++set)
+                            for (const auto binding : tyr::datalog::rows(axiom_facts, set))
+                                tyr::datalog::insert(action_workspace.facts.fact_sets, tyr::formalism::copy(binding, merge_context).first.index());
+                    };
+                    copy_facts(axiom_workspace.facts.fact_sets.get<tyr::formalism::FluentTag>());
+                    copy_facts(axiom_workspace.facts.fact_sets.get<tyr::formalism::DerivedTag>());
                 }
 
                 solve_workspace(action_workspace);

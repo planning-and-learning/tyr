@@ -88,7 +88,7 @@ formalism task's repository afterwards.
             [](const ApplicableProgram& self)
             {
                 using Key = std::pair<const formalism::planning::ActionView<LiftedTag>*, const formalism::planning::ConditionalEffectView<LiftedTag>*>;
-                using Entry = std::pair<Key, const formalism::datalog::PredicateView<formalism::FluentTag>*>;
+                using Entry = std::pair<Key, const formalism::datalog::PredicateView<formalism::DerivedTag>*>;
                 auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [key, predicate] : self.get_conditional_effect_to_predicate_mapping())
                     result.emplace_back(Key { &key.first, &key.second }, &predicate);
@@ -99,7 +99,7 @@ formalism task's repository afterwards.
             "get_predicate_to_action_mapping",
             [](const ApplicableProgram& self)
             {
-                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, const formalism::planning::ActionView<LiftedTag>*>;
+                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::DerivedTag>*, const formalism::planning::ActionView<LiftedTag>*>;
                 auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
@@ -139,7 +139,7 @@ formalism task's repository afterwards.
             [](const GroundTaskProgram& self)
             {
                 using Key = std::pair<const formalism::planning::ActionView<LiftedTag>*, const formalism::planning::ConditionalEffectView<LiftedTag>*>;
-                using Entry = std::pair<Key, const formalism::datalog::PredicateView<formalism::FluentTag>*>;
+                using Entry = std::pair<Key, const formalism::datalog::PredicateView<formalism::DerivedTag>*>;
                 auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [key, predicate] : self.get_conditional_effect_to_predicate_mapping())
                     result.emplace_back(Key { &key.first, &key.second }, &predicate);
@@ -150,7 +150,7 @@ formalism task's repository afterwards.
             "get_predicate_to_action_mapping",
             [](const GroundTaskProgram& self)
             {
-                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, const formalism::planning::ActionView<LiftedTag>*>;
+                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::DerivedTag>*, const formalism::planning::ActionView<LiftedTag>*>;
                 auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
@@ -162,7 +162,7 @@ formalism task's repository afterwards.
             [](const GroundTaskProgram& self)
             {
                 using Axioms = urd::Store<urd::sequence<const formalism::planning::AxiomView<LiftedTag>*>>;
-                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, Axioms>;
+                using Entry = std::pair<const formalism::datalog::PredicateView<formalism::DerivedTag>*, Axioms>;
                 auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [predicate, axioms] : self.get_predicate_to_axiom_mapping())
                 {

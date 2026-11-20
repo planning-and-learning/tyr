@@ -90,10 +90,7 @@ void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag>
         urd::append(conj_cond.fluent_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 
     for (const auto literal : axiom_body.get_literals<formalism::DerivedTag>())
-        urd::append(
-            conj_cond.fluent_literals,
-            formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context)
-                .first);
+        urd::append(conj_cond.derived_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.derived_to_derived_predicate, context).first);
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
         urd::append(conj_cond.numeric_constraints, formalism::planning::merge_p2d(numeric_constraint, context).first);
@@ -116,12 +113,9 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 
     urd::store(rule->body, new_conj_cond);
 
-    const auto new_head = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(axiom.get_head(),
-                                                                                                      translation_context.p2d.derived_to_fluent_predicate,
-                                                                                                      context)
-                              .first;
+    const auto new_head = formalism::planning::merge_p2d(axiom.get_head(), translation_context.p2d.derived_to_derived_predicate, context).first;
 
-    urd::append(rule->fluent_heads, new_head);
+    urd::append(rule->derived_heads, new_head);
 
     return context.destination().insert(*rule, context.builder());
 }

@@ -38,18 +38,18 @@ extern urd::flat_string create_triggered_name(formalism::planning::ActionView<Li
 
 extern urd::flat_string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
 
-/// The fluent predicate that holds where the action (the axiom) is applicable, and its atom over the action's (the
+/// The derived predicate that holds where the action (the axiom) is applicable, and its atom over the action's (the
 /// axiom's) parameters, interned into the context's repository.
-std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
 create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
-std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
 create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
-std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
 create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
-std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
 create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
 
@@ -57,7 +57,7 @@ create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
 TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source,
                                                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
 
-/// Translates the task's predicates (with its derived predicates as fluent ones where `with_derived`), functions, objects,
+/// Translates the task's predicates (with its derived predicates where `with_derived`), functions, objects,
 /// atoms and function term values into `program`, and records the predicate and function mappings in `translation_context`.
 void translate_task_symbols(formalism::planning::TaskView<LiftedTag> task,
                             bool with_derived,

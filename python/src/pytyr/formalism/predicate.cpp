@@ -33,6 +33,8 @@ void bind_predicate(nb::module_& m)
     urd::python::bind_data<Predicate<StaticTag>>(m);
     urd::python::bind_index<Predicate<FluentTag>>(m);
     urd::python::bind_data<Predicate<FluentTag>>(m);
+    urd::python::bind_index<Predicate<DerivedTag>>(m);
+    urd::python::bind_data<Predicate<DerivedTag>>(m);
 }
 
 }  // namespace tyr::formalism

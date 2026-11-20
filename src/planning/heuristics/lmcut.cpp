@@ -189,16 +189,17 @@ typename LMCutImplementation<Kind>::Arc LMCutImplementation<Kind>::get_arc(const
 {
     auto arc = Arc {};
     auto body_cost = static_cast<datalog::Cost>(0);
-    this->for_each_witness_precondition(witness,
-                                        [&](const auto precondition)
-                                        {
-                                            const auto cost = this->get_predicate_cost(precondition);
-                                            if (!arc.source || cost > body_cost)
-                                            {
-                                                body_cost = cost;
-                                                arc.source = precondition;
-                                            }
-                                        });
+    // LM-cut's program does not split rules: its preconditions are fluent atoms.
+    this->template for_each_witness_precondition<formalism::FluentTag>(witness,
+                                                                       [&](const auto precondition)
+                                                                       {
+                                                                           const auto cost = this->get_predicate_cost(precondition);
+                                                                           if (!arc.source || cost > body_cost)
+                                                                           {
+                                                                               body_cost = cost;
+                                                                               arc.source = precondition;
+                                                                           }
+                                                                       });
     arc.cost = witness.get_cost() > body_cost ? witness.get_cost() - body_cost : static_cast<datalog::Cost>(0);
     return arc;
 }

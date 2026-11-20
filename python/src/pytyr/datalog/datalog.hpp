@@ -290,6 +290,14 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 },
                 "binding"_a)
             .def(
+                "insert_derived_binding",
+                [](Workspace& self, formalism::datalog::PredicateRowView<formalism::DerivedTag> binding)
+                {
+                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index());
+                },
+                "binding"_a)
+            .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {

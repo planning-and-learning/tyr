@@ -44,8 +44,6 @@ void bind_predicate_view(nb::module_& m, RepositoryBinding& repository)
 
 void bind_predicate(nb::module_& m, RepositoryBinding& repository)
 {
-    urd::python::bind_index<Predicate<DerivedTag>>(m);
-    urd::python::bind_data<Predicate<DerivedTag>>(m);
     bind_predicate_view<StaticTag>(m, repository);
     bind_predicate_view<FluentTag>(m, repository);
     bind_predicate_view<DerivedTag>(m, repository);

@@ -5,8 +5,10 @@
 # Import all classes for better IDE support
 
 from pytyr._pytyr.formalism.datalog import (
+    AtomGroundDerived as AtomGroundDerived,
     AtomGroundFluent as AtomGroundFluent,
     AtomGroundStatic as AtomGroundStatic,
+    AtomLiftedDerived as AtomLiftedDerived,
     AtomLiftedFluent as AtomLiftedFluent,
     AtomLiftedStatic as AtomLiftedStatic,
     BinaryOperatorGroundArithmetic as BinaryOperatorGroundArithmetic,
@@ -26,8 +28,10 @@ from pytyr._pytyr.formalism.datalog import (
     FunctionTermValueGroundAuxiliary as FunctionTermValueGroundAuxiliary,
     FunctionTermValueGroundFluent as FunctionTermValueGroundFluent,
     FunctionTermValueGroundStatic as FunctionTermValueGroundStatic,
+    LiteralGroundDerived as LiteralGroundDerived,
     LiteralGroundFluent as LiteralGroundFluent,
     LiteralGroundStatic as LiteralGroundStatic,
+    LiteralLiftedDerived as LiteralLiftedDerived,
     LiteralLiftedFluent as LiteralLiftedFluent,
     LiteralLiftedStatic as LiteralLiftedStatic,
     MultiOperatorGroundArithmetic as MultiOperatorGroundArithmetic,
@@ -36,6 +40,7 @@ from pytyr._pytyr.formalism.datalog import (
     NumericEffectLiftedFluent as NumericEffectLiftedFluent,
     Object as Object,
     Parameters as Parameters,
+    PredicateDerived as PredicateDerived,
     PredicateFluent as PredicateFluent,
     PredicateStatic as PredicateStatic,
     ProgramGround as ProgramGround,
@@ -49,6 +54,7 @@ from pytyr._pytyr.formalism.datalog import (
     RowFunctionFluent as RowFunctionFluent,
     RowFunctionStatic as RowFunctionStatic,
     RowIndexRuleLifted as RowIndexRuleLifted,
+    RowPredicateDerived as RowPredicateDerived,
     RowPredicateFluent as RowPredicateFluent,
     RowPredicateStatic as RowPredicateStatic,
     RowRuleLifted as RowRuleLifted,

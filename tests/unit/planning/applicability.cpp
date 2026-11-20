@@ -152,7 +152,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto& action_mapping = action_program.get_predicate_to_action_mapping();
     const auto& effect_mapping = action_program.get_conditional_effect_to_predicate_mapping();
     const auto rule_of = [&](auto predicate)
-    { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_fluent_heads().front().get_predicate() == predicate; }); };
+    { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_derived_heads().front().get_predicate() == predicate; }); };
     auto expected_rules =
         urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::datalog::RuleView<LiftedTag>>>>> {};
     auto num_rules = static_cast<size_t>(0);
@@ -225,7 +225,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
     {
         const auto enabling = action.get_name().str() == "enable";
         EXPECT_EQ(schema.input_translation.fluent_to_fluent_predicate.size(), enabling ? 1 : 0);
-        EXPECT_EQ(schema.input_translation.derived_to_fluent_predicate.size(), 1);
+        EXPECT_EQ(schema.input_translation.derived_to_derived_predicate.size(), 1);
         EXPECT_EQ(schema.input_translation.fluent_to_fluent_function.size(), enabling ? 0 : 2);
     }
     const auto initial_node = source->get_initial_node(*state_repository, *axiom_evaluator);

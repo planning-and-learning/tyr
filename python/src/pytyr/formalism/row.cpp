@@ -42,6 +42,7 @@ void bind_row(nb::module_& m)
 {
     bind_row_of<Predicate<StaticTag>>(m);
     bind_row_of<Predicate<FluentTag>>(m);
+    bind_row_of<Predicate<DerivedTag>>(m);
     bind_row_of<Function<StaticTag>>(m);
     bind_row_of<Function<FluentTag>>(m);
     bind_row_of<Function<AuxiliaryTag>>(m);

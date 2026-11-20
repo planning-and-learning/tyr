@@ -70,7 +70,7 @@ class GroundTaskProgram
 {
 public:
     using AppPredicateToAxiomMapping =
-        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::Store<urd::sequence<formalism::planning::AxiomView<LiftedTag>>>>>;
+        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, urd::Store<urd::sequence<formalism::planning::AxiomView<LiftedTag>>>>>;
 
     explicit GroundTaskProgram(formalism::planning::TaskView<LiftedTag> task);
 

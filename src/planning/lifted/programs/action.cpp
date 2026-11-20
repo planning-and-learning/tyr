@@ -85,11 +85,8 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
             urd::append(conj_cond.fluent_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 
         for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
-            urd::append(conj_cond.fluent_literals,
-                        formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal,
-                                                                                                    translation_context.p2d.derived_to_fluent_predicate,
-                                                                                                    context)
-                            .first);
+            urd::append(conj_cond.derived_literals,
+                        formalism::planning::merge_p2d(literal, translation_context.p2d.derived_to_derived_predicate, context).first);
 
         for (const auto numeric_constraint : condition.get_numeric_constraints())
             urd::append(conj_cond.numeric_constraints, formalism::planning::merge_p2d(numeric_constraint, context).first);
@@ -102,7 +99,7 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
         [[maybe_unused]] const auto [it, inserted] = predicate_to_actions.emplace(applicability_predicate, action);
         assert(inserted);
 
-        urd::append(program->fluent_predicates, applicability_predicate);
+        urd::append(program->derived_predicates, applicability_predicate);
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
 
@@ -122,7 +119,7 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
 
         const auto applicability_atom = create_applicability_atom(action, context).first;
 
-        urd::append(rule->fluent_heads, applicability_atom);
+        urd::append(rule->derived_heads, applicability_atom);
 
         const auto new_rule = repository.insert(*rule, builder).first;
 
@@ -136,11 +133,11 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
                 continue;
             const auto condition = cond_eff.get_condition();
 
-            auto effect_predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(builder);
+            auto effect_predicate = formalism::datalog::checkout<formalism::Predicate<formalism::DerivedTag>>(builder);
             effect_predicate->name = create_triggered_name(action, cond_eff);
             effect_predicate->arity = action.get_arity() + cond_eff.get_arity();
             const auto new_effect_predicate = repository.insert(*effect_predicate, builder).first;
-            urd::append(program->fluent_predicates, new_effect_predicate);
+            urd::append(program->derived_predicates, new_effect_predicate);
 
             auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
             auto effect_condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
@@ -155,12 +152,12 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
 
             auto effect_parameters = formalism::datalog::checkout<formalism::Parameters>(builder);
             urd::build_member(effect_parameters->variables, effect_condition->variables, repository);
-            auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(builder);
+            auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(builder);
             urd::store(effect_atom->parameters, repository.insert(*effect_parameters, builder).first);
             urd::store(effect_atom->predicate, new_effect_predicate);
             for (ygg::uint_t i = 0; i < new_effect_predicate.get_arity(); ++i)
                 urd::build_member(effect_atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), repository);
-            urd::append(effect_rule->fluent_heads, repository.insert(*effect_atom, builder).first);
+            urd::append(effect_rule->derived_heads, repository.insert(*effect_atom, builder).first);
 
             urd::append(program->rules, repository.insert(*effect_rule, builder).first);
             effect_to_predicate.emplace(std::pair(action, cond_eff), new_effect_predicate);
@@ -210,9 +207,9 @@ auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task
     auto context = formalism::WriteContext { builder, *repository };
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
-    auto rule_of = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::index<formalism::datalog::Rule<LiftedTag>>>> {};
+    auto rule_of = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, urd::index<formalism::datalog::Rule<LiftedTag>>>> {};
     for (const auto rule : program.get_rules())
-        rule_of.emplace(rule.get_fluent_heads().front().get_predicate(), rule.index());
+        rule_of.emplace(rule.get_derived_heads().front().get_predicate(), rule.index());
     auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *schema, context);
     for (const auto& [predicate, action] : mapping)
@@ -236,22 +233,22 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::Progra
     listeners(analysis::compute_listeners(strata, program.context()))
 {
     const auto rules = program.get_rules();
-    const auto reads_predicate = [&](auto predicate)
+    const auto reads_predicate = [&]<typename F>(formalism::datalog::PredicateView<F> predicate)
     {
         // Negative literals also need the complete relation to check absence.
         return std::ranges::any_of(rules,
                                    [&](auto rule)
                                    {
-                                       return std::ranges::any_of(rule.get_body().template get_literals<formalism::FluentTag>(),
+                                       return std::ranges::any_of(rule.get_body().template get_literals<F>(),
                                                                   [&](auto literal) { return literal.get_atom().get_predicate() == predicate; });
                                    });
     };
     for (const auto& [source, target] : translation_context.fluent_to_fluent_predicate)
         if (reads_predicate(target))
             input_translation.fluent_to_fluent_predicate.emplace(source, target);
-    for (const auto& [source, target] : translation_context.derived_to_fluent_predicate)
+    for (const auto& [source, target] : translation_context.derived_to_derived_predicate)
         if (reads_predicate(target))
-            input_translation.derived_to_fluent_predicate.emplace(source, target);
+            input_translation.derived_to_derived_predicate.emplace(source, target);
 
     for (const auto rule : rules)
     {

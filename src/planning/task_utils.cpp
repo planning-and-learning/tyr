@@ -96,14 +96,14 @@ void insert_fluent_atoms_to_fact_set(const StateContext<LiftedTag>& state,
 
 void insert_derived_atoms_to_fact_set(const StateContext<LiftedTag>& state,
                                       const formalism::planning::Repository& repository,
-                                      const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
+                                      const P2DTranslationContext<LiftedTag>::DerivedToDerivedPredicateMapping& derived_to_derived_predicate,
                                       formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
-                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
+                                      datalog::TaggedFactSets<formalism::DerivedTag>& fact_sets)
 {
     for (const auto atom_index : state.atom_storage().atoms())
     {
         const auto atom = urd::resolve(atom_index, repository);
-        if (const auto it = derived_to_fluent_predicate.find(atom.get_predicate()); it != derived_to_fluent_predicate.end())
+        if (const auto it = derived_to_derived_predicate.find(atom.get_predicate()); it != derived_to_derived_predicate.end())
             datalog::insert(fact_sets, formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first.index());
     }
 }
@@ -126,19 +126,21 @@ void insert_numeric_variables_to_fact_set(const StateContext<LiftedTag>& state,
 
 void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
-                                      const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
+                                      const D2PTranslationContext<LiftedTag>::DerivedToDerivedPredicateMapping& derived_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
-                                      const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings)
+                                      const datalog::TaggedFactSets<formalism::DerivedTag>& fact_sets,
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::DerivedTag>>>& derived_bindings)
 {
+    // The task's derived predicates: the program's own (applicability, ...) are derived too.
     derived_bindings.clear();
     for (ygg::uint_t i = 0; i < fact_sets.predicate.size(); ++i)
         for (const auto binding : datalog::rows(fact_sets, i))
-            if (fluent_to_derived_predicate.contains(binding.get_relation()))
+            if (derived_to_derived_predicate.contains(binding.get_relation()))
                 derived_bindings.push_back(binding);
 
     auto merge_context = formalism::WriteContext { planning_builder, repository };
     for (const auto binding : derived_bindings)
-        state.set(formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::DerivedTag>(binding, fluent_to_derived_predicate, merge_context).first);
+        state.set(
+            formalism::planning::merge_atom_d2p<formalism::DerivedTag, formalism::DerivedTag>(binding, derived_to_derived_predicate, merge_context).first);
 }
 }

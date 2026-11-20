@@ -38,25 +38,26 @@ namespace tyr::planning
 template<>
 struct D2PTranslationContext<LiftedTag>
 {
-    using FluentToDerivedPredicateMapping =
-        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::PredicateView<formalism::DerivedTag>>>;
+    using DerivedToDerivedPredicateMapping =
+        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, formalism::planning::PredicateView<formalism::DerivedTag>>>;
 
     urd::Store<urd::map<formalism::datalog::PredicateView<formalism::StaticTag>, formalism::planning::PredicateView<formalism::StaticTag>>>
         static_to_static_predicate;
     urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::PredicateView<formalism::FluentTag>>>
         fluent_to_fluent_predicate;
-    FluentToDerivedPredicateMapping fluent_to_derived_predicate;
+    /// The task's derived predicates (not the predicates programs invent, which are derived too).
+    DerivedToDerivedPredicateMapping derived_to_derived_predicate;
 };
 
-/// The action whose applicability atoms each predicate holds (action and ground task programs).
-using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>>;
+/// The action whose applicability atoms each (derived) predicate holds (action and ground task programs).
+using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, formalism::planning::ActionView<LiftedTag>>>;
 
 /// The predicate of each conditional effect with variables or a condition, whose atoms are the bindings of its action
 /// followed by the objects of the effect's variables for which the effect fires.
 /// Keyed by the action too, since actions can share an interned conditional effect.
 using ConditionalEffectToPredicateMapping =
     urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
-                        formalism::datalog::PredicateView<formalism::FluentTag>>>;
+                        formalism::datalog::PredicateView<formalism::DerivedTag>>>;
 
 /// Mappings select which state inputs are translated; omitted symbols are not inserted.
 template<>
@@ -64,8 +65,8 @@ struct P2DTranslationContext<LiftedTag>
 {
     using FluentToFluentPredicateMapping =
         urd::Store<urd::map<formalism::planning::PredicateView<formalism::FluentTag>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
-    using DerivedToFluentPredicateMapping =
-        urd::Store<urd::map<formalism::planning::PredicateView<formalism::DerivedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
+    using DerivedToDerivedPredicateMapping =
+        urd::Store<urd::map<formalism::planning::PredicateView<formalism::DerivedTag>, formalism::datalog::PredicateView<formalism::DerivedTag>>>;
 
     using FluentToFluentFunctionMapping =
         urd::Store<urd::map<formalism::planning::FunctionView<formalism::FluentTag>, formalism::datalog::FunctionView<formalism::FluentTag>>>;
@@ -73,7 +74,7 @@ struct P2DTranslationContext<LiftedTag>
     urd::Store<urd::map<formalism::planning::PredicateView<formalism::StaticTag>, formalism::datalog::PredicateView<formalism::StaticTag>>>
         static_to_static_predicate;
     FluentToFluentPredicateMapping fluent_to_fluent_predicate;
-    DerivedToFluentPredicateMapping derived_to_fluent_predicate;
+    DerivedToDerivedPredicateMapping derived_to_derived_predicate;
     FluentToFluentFunctionMapping fluent_to_fluent_function;
 };
 }

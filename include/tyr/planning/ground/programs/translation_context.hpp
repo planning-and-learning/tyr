@@ -41,8 +41,6 @@ struct D2PTranslationContext<GroundTag>
         static_to_static_atom;
     urd::Store<urd::map<formalism::datalog::PredicateRowView<formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>
         fluent_to_fluent_atom;
-    urd::Store<urd::map<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>
-        fluent_to_derived_atom;
     urd::Store<
         urd::map<formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag>, formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>>
         static_to_static_fterm;
@@ -62,8 +60,6 @@ struct P2DTranslationContext<GroundTag>
     urd::Store<urd::map<formalism::planning::AtomView<GroundTag, formalism::StaticTag>, formalism::datalog::AtomView<GroundTag, formalism::StaticTag>>>
         static_to_static_atom;
     FluentToFluentAtomMapping fluent_to_fluent_atom;
-    urd::Store<urd::map<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>, formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>>
-        derived_to_fluent_atom;
     urd::Store<
         urd::map<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>, formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag>>>
         static_to_static_fterm;

@@ -49,7 +49,7 @@ struct RuleSplitting
     /// The origin of every rule that splitting created, main rules and projection rules alike.
     urd::Store<urd::map<Rule, Origin>> origins;
     /// The projection rule that derives each projection predicate.
-    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, Rule>> projection_rules;
+    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::DerivedTag>>, Rule>> projection_rules;
 };
 
 /// Copies the program into the repository and projects the variables of its predicate rules that occur in no head and only
