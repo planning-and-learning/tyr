@@ -260,8 +260,8 @@ protected:
                                             });
     }
 
-    template<typename Callback>
-    void for_each_achiever(formalism::datalog::PredicateRowView<formalism::FluentTag> head, Callback callback)
+    template<formalism::FactKind F, typename Callback>
+    void for_each_achiever(formalism::datalog::PredicateRowView<F> head, Callback callback)
         requires AP::records_propositional_achievers
     {
         const auto* achievers = m_workspace.annotation_policy.find_achievers(head.index());

@@ -25,6 +25,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -81,9 +82,95 @@ struct LMCutImplementation :
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = formalism::planning::ActionRowView;
-    using Node = formalism::datalog::PredicateRowView<formalism::FluentTag>;
+    /// A fact: a fluent atom, or a derived one (the atom of a split rule's projection, were LM-cut's rules split).
+    using Node = std::variant<formalism::datalog::PredicateRowView<formalism::FluentTag>, formalism::datalog::PredicateRowView<formalism::DerivedTag>>;
     using Witness = datalog::WitnessAnnotation<Kind>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
+
+    /// A set of nodes: a set of facts per kind, of plain keys, so that the fluent facts are kept as one kind's would be.
+    class NodeSet
+    {
+    public:
+        /// Whether the node was new.
+        bool insert(Node node)
+        {
+            return std::visit([&](const auto fact) { return get(fact).insert(fact).second; }, node);
+        }
+
+        [[nodiscard]] bool contains(Node node) const
+        {
+            return std::visit([&](const auto fact) { return get(fact).contains(fact); }, node);
+        }
+
+        void clear() noexcept { m_sets.clear(); }
+
+        /// Calls `callback` with each node, of each kind in turn.
+        template<typename Callback>
+        void for_each(Callback callback) const
+        {
+            boost::mp11::mp_for_each<datalog::MutableTags>(
+                [&]<typename F>(F)
+                {
+                    for (const auto fact : m_sets.template get<F>())
+                        callback(Node(fact));
+                });
+        }
+
+    private:
+        template<typename F>
+        using Set = urd::Store<urd::set<formalism::datalog::PredicateRowView<F>>>;
+
+        template<formalism::FactKind F>
+        Set<F>& get(formalism::datalog::PredicateRowView<F>)
+        { return m_sets.template get<F>(); }
+
+        template<formalism::FactKind F>
+        [[nodiscard]] const Set<F>& get(formalism::datalog::PredicateRowView<F>) const
+        { return m_sets.template get<F>(); }
+
+        datalog::MutableFamily<Set> m_sets;
+    };
+
+    /// A map from nodes: a map per kind, of plain keys.
+    template<typename Value>
+    class NodeMap
+    {
+    public:
+        /// The value of the node, `value` where it had none.
+        Value& try_emplace(Node node, Value value)
+        {
+            return std::visit([&](const auto fact) -> Value& { return get(fact).try_emplace(fact, value).first->second; }, node);
+        }
+
+        /// The value of the node, if it has one.
+        [[nodiscard]] const Value* find(Node node) const
+        {
+            return std::visit(
+                [&](const auto fact) -> const Value*
+                {
+                    const auto& map = get(fact);
+                    const auto it = map.find(fact);
+                    return it != map.end() ? &it->second : nullptr;
+                },
+                node);
+        }
+
+        void clear() noexcept { m_maps.clear(); }
+
+    private:
+        template<typename F>
+        using Map = urd::Store<urd::map<formalism::datalog::PredicateRowView<F>, Value>>;
+
+        template<formalism::FactKind F>
+        Map<F>& get(formalism::datalog::PredicateRowView<F>)
+        { return m_maps.template get<F>(); }
+
+        template<formalism::FactKind F>
+        [[nodiscard]] const Map<F>& get(formalism::datalog::PredicateRowView<F>) const
+        { return m_maps.template get<F>(); }
+
+        datalog::MutableFamily<Map> m_maps;
+    };
 
     /// The arc of an achiever: its residual cost and its source, none for a rule without preconditions.
     struct Arc
@@ -110,7 +197,11 @@ private:
     };
 
     Arc get_arc(const Witness& witness);
+    [[nodiscard]] datalog::Cost get_node_cost(Node node) const;
     [[nodiscard]] bool is_state_node(Node node) const;
+    template<typename Callback>
+    void for_each_node_achiever(Node node, Callback callback);
+    void append_cut_frontier_atom(Node node, CutFrontierAtoms& atoms);
     void mark_goal_zone();
     void mark_before_goal_zone();
     void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
@@ -119,10 +210,10 @@ private:
     urd::Store<urd::map<ActionBinding, datalog::Cost>> m_action_credits;
     /// The zones of the current round. The dependents of a node are the explored nodes with an arc from it, a list: the
     /// node's first dependent, and with each dependent the next one of that node.
-    urd::Store<urd::set<Node>> m_goal_zone;
-    urd::Store<urd::set<Node>> m_before_goal_zone;
-    urd::Store<urd::set<Node>> m_explored;
-    urd::Store<urd::map<Node, std::size_t>> m_first_dependent;
+    NodeSet m_goal_zone;
+    NodeSet m_before_goal_zone;
+    NodeSet m_explored;
+    NodeMap<std::size_t> m_first_dependent;
     urd::Store<urd::sequence<std::pair<Node, std::size_t>>> m_dependents;
     urd::Store<urd::sequence<Node>> m_stack;
     urd::Store<urd::sequence<Node>> m_base;
@@ -189,17 +280,21 @@ typename LMCutImplementation<Kind>::Arc LMCutImplementation<Kind>::get_arc(const
 {
     auto arc = Arc {};
     auto body_cost = static_cast<datalog::Cost>(0);
-    // LM-cut's program does not split rules: its preconditions are fluent atoms.
-    this->template for_each_witness_precondition<formalism::FluentTag>(witness,
-                                                                       [&](const auto precondition)
-                                                                       {
-                                                                           const auto cost = this->get_predicate_cost(precondition);
-                                                                           if (!arc.source || cost > body_cost)
-                                                                           {
-                                                                               body_cost = cost;
-                                                                               arc.source = precondition;
-                                                                           }
-                                                                       });
+    // The preconditions of every mutable kind, as FF walks them.
+    boost::mp11::mp_for_each<datalog::MutableTags>(
+        [&]<typename F>(F)
+        {
+            this->template for_each_witness_precondition<F>(witness,
+                                                            [&](const auto precondition)
+                                                            {
+                                                                const auto cost = this->get_predicate_cost(precondition);
+                                                                if (!arc.source || cost > body_cost)
+                                                                {
+                                                                    body_cost = cost;
+                                                                    arc.source = Node(precondition);
+                                                                }
+                                                            });
+        });
     arc.cost = witness.get_cost() > body_cost ? witness.get_cost() - body_cost : static_cast<datalog::Cost>(0);
     return arc;
 }
@@ -208,8 +303,34 @@ typename LMCutImplementation<Kind>::Arc LMCutImplementation<Kind>::get_arc(const
 template<TaskKind Kind>
 bool LMCutImplementation<Kind>::is_state_node(Node node) const
 {
-    const auto* annotation = this->workspace().annotations.find(node.index());
-    return annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation);
+    return std::visit(
+        [&](const auto fact)
+        {
+            const auto* annotation = this->workspace().annotations.find(fact.index());
+            return annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation);
+        },
+        node);
+}
+
+template<TaskKind Kind>
+datalog::Cost LMCutImplementation<Kind>::get_node_cost(Node node) const
+{
+    return std::visit([&](const auto fact) { return this->get_predicate_cost(fact); }, node);
+}
+
+template<TaskKind Kind>
+template<typename Callback>
+void LMCutImplementation<Kind>::for_each_node_achiever(Node node, Callback callback)
+{
+    std::visit([&](const auto fact) { this->for_each_achiever(fact, callback); }, node);
+}
+
+/// The planning atom of a fluent node; a derived node, an atom of the program's own, has none.
+template<TaskKind Kind>
+void LMCutImplementation<Kind>::append_cut_frontier_atom(Node node, CutFrontierAtoms& atoms)
+{
+    if (const auto* fact = std::get_if<formalism::datalog::PredicateRowView<formalism::FluentTag>>(&node))
+        this->append_planning_cut_frontier_atom(*fact, atoms);
 }
 
 /// The goal zone: the goal's precondition choice, the first goal fact of maximal cost, closed backwards over the zero-cost
@@ -219,25 +340,32 @@ void LMCutImplementation<Kind>::mark_goal_zone()
 {
     const auto goal_cost = this->get_goal_cost();
     if (const auto& goal = this->workspace().tp.get_goal())
-        for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-            if (const auto head = literal.get_atom().get_row(); literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
+    {
+        auto seeded = false;
+        boost::mp11::mp_for_each<datalog::MutableTags>(
+            [&]<typename F>(F)
             {
-                m_goal_zone.insert(head);
-                m_stack.push_back(head);
-                break;
-            }
+                for (const auto literal : goal->template get_literals<F>())
+                    if (const auto head = literal.get_atom().get_row(); !seeded && literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
+                    {
+                        m_goal_zone.insert(Node(head));
+                        m_stack.push_back(Node(head));
+                        seeded = true;
+                    }
+            });
+    }
 
     while (!m_stack.empty())
     {
         const auto node = m_stack.back();
         m_stack.pop_back();
-        this->for_each_achiever(node,
-                                [&](const Witness& witness)
-                                {
-                                    const auto arc = get_arc(witness);
-                                    if (arc.cost == 0 && arc.source && m_goal_zone.insert(*arc.source).second)
-                                        m_stack.push_back(*arc.source);
-                                });
+        for_each_node_achiever(node,
+                               [&](const Witness& witness)
+                               {
+                                   const auto arc = get_arc(witness);
+                                   if (arc.cost == 0 && arc.source && m_goal_zone.insert(*arc.source))
+                                       m_stack.push_back(*arc.source);
+                               });
     }
 }
 
@@ -247,22 +375,25 @@ void LMCutImplementation<Kind>::mark_goal_zone()
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::mark_before_goal_zone()
 {
-    for (const auto& head : m_goal_zone)
-        this->for_each_achiever(head,
-                                [&](const Witness& witness)
-                                {
-                                    if (!this->is_action_witness(witness))
-                                        return;
-                                    const auto arc = get_arc(witness);
-                                    if (arc.cost > 0 && arc.source && !m_goal_zone.contains(*arc.source))
-                                        m_stack.push_back(*arc.source);
-                                });
+    m_goal_zone.for_each(
+        [&](const Node head)
+        {
+            for_each_node_achiever(head,
+                                   [&](const Witness& witness)
+                                   {
+                                       if (!this->is_action_witness(witness))
+                                           return;
+                                       const auto arc = get_arc(witness);
+                                       if (arc.cost > 0 && arc.source && !m_goal_zone.contains(*arc.source))
+                                           m_stack.push_back(*arc.source);
+                                   });
+        });
 
     while (!m_stack.empty())
     {
         const auto node = m_stack.back();
         m_stack.pop_back();
-        if (!m_explored.insert(node).second)
+        if (!m_explored.insert(node))
             continue;
         if (is_state_node(node))
         {
@@ -271,22 +402,22 @@ void LMCutImplementation<Kind>::mark_before_goal_zone()
         }
 
         auto has_arc = false;
-        this->for_each_achiever(node,
-                                [&](const Witness& witness)
-                                {
-                                    has_arc = true;
-                                    const auto arc = get_arc(witness);
-                                    if (!arc.source)
-                                    {
-                                        m_base.push_back(node);
-                                        return;
-                                    }
-                                    if (m_goal_zone.contains(*arc.source))
-                                        return;
-                                    const auto first = m_first_dependent.try_emplace(*arc.source, m_dependents.size()).first;
-                                    m_dependents.emplace_back(node, std::exchange(first->second, m_dependents.size()));
-                                    m_stack.push_back(*arc.source);
-                                });
+        for_each_node_achiever(node,
+                               [&](const Witness& witness)
+                               {
+                                   has_arc = true;
+                                   const auto arc = get_arc(witness);
+                                   if (!arc.source)
+                                   {
+                                       m_base.push_back(node);
+                                       return;
+                                   }
+                                   if (m_goal_zone.contains(*arc.source))
+                                       return;
+                                   auto& first = m_first_dependent.try_emplace(*arc.source, m_dependents.size());
+                                   m_dependents.emplace_back(node, std::exchange(first, m_dependents.size()));
+                                   m_stack.push_back(*arc.source);
+                               });
         if (!has_arc)
             m_base.push_back(node);
     }
@@ -295,10 +426,10 @@ void LMCutImplementation<Kind>::mark_before_goal_zone()
     {
         const auto node = m_base.back();
         m_base.pop_back();
-        if (!m_before_goal_zone.insert(node).second)
+        if (!m_before_goal_zone.insert(node))
             continue;
-        if (const auto first = m_first_dependent.find(node); first != m_first_dependent.end())
-            for (auto dependent = first->second;; dependent = m_dependents[dependent].second)
+        if (const auto* first = m_first_dependent.find(node))
+            for (auto dependent = *first;; dependent = m_dependents[dependent].second)
             {
                 m_base.push_back(m_dependents[dependent].first);
                 if (m_dependents[dependent].second == dependent)  // the last names itself
@@ -330,21 +461,24 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
     }
 
     const auto stopwatch = ygg::StopwatchScope(m_statistics.cut_time);
-    for (const auto& head : m_goal_zone)
-        this->for_each_achiever(head,
-                                [&](const Witness& witness)
-                                {
-                                    if (!this->is_action_witness(witness))
-                                        return;
-                                    const auto arc = get_arc(witness);
-                                    if (arc.cost == 0 || (arc.source && !m_before_goal_zone.contains(*arc.source)))
-                                        return;
+    m_goal_zone.for_each(
+        [&](const Node head)
+        {
+            for_each_node_achiever(head,
+                                   [&](const Witness& witness)
+                                   {
+                                       if (!this->is_action_witness(witness))
+                                           return;
+                                       const auto arc = get_arc(witness);
+                                       if (arc.cost == 0 || (arc.source && !m_before_goal_zone.contains(*arc.source)))
+                                           return;
 
-                                    m_cut_cost = std::min(m_cut_cost, arc.cost);
-                                    this->for_each_action_binding(witness, [&](const auto action_binding) { m_cut.insert(action_binding); });
-                                    if (cut_frontier_atoms)
-                                        this->append_planning_cut_frontier_atom(head, *cut_frontier_atoms);
-                                });
+                                       m_cut_cost = std::min(m_cut_cost, arc.cost);
+                                       this->for_each_action_binding(witness, [&](const auto action_binding) { m_cut.insert(action_binding); });
+                                       if (cut_frontier_atoms)
+                                           append_cut_frontier_atom(head, *cut_frontier_atoms);
+                                   });
+        });
 }
 
 template<TaskKind Kind>
