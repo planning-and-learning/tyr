@@ -85,7 +85,7 @@ struct AxiomDefinition<LiftedTag>
     explicit AxiomDefinition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), program()
     {
         if (task->has_axioms())
-            program = std::make_unique<AxiomEvaluatorProgram>(task->get_task());
+            program = std::make_unique<AxiomEvaluatorProgram>(task->get_formalism_task());
     }
 
     TaskPtr<LiftedTag> task;

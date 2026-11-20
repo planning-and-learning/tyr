@@ -519,7 +519,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
      * Execute datalog program.
      */
 
-    auto ground_program = GroundTaskProgram(lifted_task.get_task());
+    auto ground_program = GroundTaskProgram(lifted_task.get_formalism_task());
     auto workspace = datalog::ProgramWorkspace<LiftedTag>(ground_program.get_datalog_program());
     auto ctx = datalog::ProgramExecutionContext(workspace);
     datalog::execute_model(ctx, execution_context);

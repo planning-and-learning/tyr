@@ -89,7 +89,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl");
-    auto action_program = tyr::planning::ApplicableActionProgram(task.get_task());
+    auto action_program = tyr::planning::ApplicableActionProgram(task);
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -216,7 +216,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/visitall/domain.pddl").parse_task(root / "classical/tests/visitall/test-1.pddl");
-    auto action_program = tyr::planning::ApplicableActionProgram(task.get_task());
+    auto action_program = tyr::planning::ApplicableActionProgram(task);
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -342,7 +342,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/transport/domain.pddl").parse_task(root / "classical/tests/transport/test-1.pddl");
-    auto action_program = tyr::planning::ApplicableActionProgram(task.get_task());
+    auto action_program = tyr::planning::ApplicableActionProgram(task);
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
@@ -506,7 +506,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     using Termination = tyr::datalog::TerminationPolicy<tyr::datalog::SumAggregation>;
     using Workspace = tyr::datalog::ProgramWorkspace<LiftedTag, AnnotationPolicy, Termination>;
 
-    auto program = tyr::planning::RPGProgram<LiftedTag>(task->get_task());
+    auto program = tyr::planning::RPGProgram<LiftedTag>(task->get_formalism_task());
     auto sequential = Workspace(program.get_datalog_program(), AnnotationPolicy {}, Termination {});
     auto parallel = Workspace(program.get_datalog_program(), AnnotationPolicy {}, Termination {});
 

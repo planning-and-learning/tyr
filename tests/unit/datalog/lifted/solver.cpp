@@ -151,17 +151,17 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         {
             if (config == "axiom_evaluator")
             {
-                const auto program = tyr::planning::AxiomEvaluatorProgram(task->get_task());
+                const auto program = tyr::planning::AxiomEvaluatorProgram(task->get_formalism_task());
                 return solve_program(program.get_datalog_program());
             }
 
             if (config == "applicable_action")
             {
-                const auto action_program = tyr::planning::ApplicableActionProgram(task->get_task());
+                const auto action_program = tyr::planning::ApplicableActionProgram(task->get_formalism_task());
                 auto action_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(action_program.get_datalog_program());
                 if (task->has_axioms())
                 {
-                    const auto axiom_program = tyr::planning::AxiomEvaluatorProgram(task->get_task());
+                    const auto axiom_program = tyr::planning::AxiomEvaluatorProgram(task->get_formalism_task());
                     auto axiom_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(axiom_program.get_datalog_program());
                     solve_workspace(axiom_workspace);
 
@@ -182,7 +182,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
 
             if (config == "ground_task")
             {
-                auto program = tyr::planning::GroundTaskProgram(task->get_task());
+                auto program = tyr::planning::GroundTaskProgram(task->get_formalism_task());
                 auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(program.get_datalog_program());
                 auto context = tyr::datalog::ProgramExecutionContext(workspace);
                 tyr::datalog::execute_model(context, *execution_context);

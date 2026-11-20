@@ -72,7 +72,7 @@ public:
     using AppPredicateToAxiomMapping =
         urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, urd::Store<urd::sequence<formalism::planning::AxiomView<LiftedTag>>>>>;
 
-    explicit GroundTaskProgram(formalism::planning::TaskView<LiftedTag> task);
+    explicit GroundTaskProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
 
     [[nodiscard]] const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;

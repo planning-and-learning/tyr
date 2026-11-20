@@ -80,7 +80,7 @@ formalism task's repository afterwards.
 
     using ApplicableProgram = ApplicableActionProgram;
     nb::class_<ApplicableProgram>(m, "ApplicableActionProgram")
-        .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())
+        .def(nb::init<const formalism::planning::PlanningTask<LiftedTag>&>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&ApplicableProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ApplicableProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
         .def(
@@ -109,13 +109,13 @@ formalism task's repository afterwards.
 
     using AxiomProgram = AxiomEvaluatorProgram;
     nb::class_<AxiomProgram>(m, "AxiomEvaluatorProgram")
-        .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())
+        .def(nb::init<const formalism::planning::PlanningTask<LiftedTag>&>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&AxiomProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &AxiomProgram::get_const_program_workspace, nb::rv_policy::reference_internal);
 
     using RelaxedProgram = RPGProgram<LiftedTag>;
     nb::class_<RelaxedProgram>(m, "RPGProgram")
-        .def(nb::init<formalism::planning::TaskView<LiftedTag>, CostMode>(), "task"_a, "cost_mode"_a = CostMode::UNIT, nb::keep_alive<1, 2>())
+        .def(nb::init<const formalism::planning::PlanningTask<LiftedTag>&, CostMode>(), "task"_a, "cost_mode"_a = CostMode::UNIT, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_goal", &RelaxedProgram::get_goal)
         .def("get_rule_to_action_mapping",
@@ -131,7 +131,7 @@ formalism task's repository afterwards.
              });
 
     nb::class_<GroundTaskProgram>(m, "GroundTaskProgram")
-        .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())
+        .def(nb::init<const formalism::planning::PlanningTask<LiftedTag>&>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&GroundTaskProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &GroundTaskProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
         .def(

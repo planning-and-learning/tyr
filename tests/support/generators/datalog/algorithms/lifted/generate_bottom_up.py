@@ -149,25 +149,25 @@ def solve_program(
 def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
     match config:
         case "axiom_evaluator":
-            program = planning.AxiomEvaluatorProgram(context.task.get_task())
+            program = planning.AxiomEvaluatorProgram(context.task.get_formalism_task())
             datalog_program = program.get_datalog_program()
             if len(datalog_program.get_program().get_rules()) == 0:
                 return []
             return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program))
         case "applicable_action":
-            axiom_program = planning.AxiomEvaluatorProgram(context.task.get_task())
+            axiom_program = planning.AxiomEvaluatorProgram(context.task.get_formalism_task())
             axiom_datalog_program = axiom_program.get_datalog_program()
             axiom_rows: list[Row] = []
             if len(axiom_datalog_program.get_program().get_rules()) != 0:
                 axiom_workspace = solve_program(context.execution_context, axiom_datalog_program)
                 axiom_rows = [row for _, rows in predicate_rows(axiom_datalog_program, axiom_workspace) for row in rows]
-            program = planning.ApplicableActionProgram(context.task.get_task())
+            program = planning.ApplicableActionProgram(context.task.get_formalism_task())
             datalog_program = program.get_datalog_program()
             return atoms_by_predicate(
                 datalog_program, solve_program(context.execution_context, datalog_program, axiom_rows), program
             )
         case "ground_task":
-            program = planning.GroundTaskProgram(context.task.get_task())
+            program = planning.GroundTaskProgram(context.task.get_formalism_task())
             datalog_program = program.get_datalog_program()
             workspace = solve_program(context.execution_context, datalog_program)
             return atoms_by_predicate(datalog_program, workspace, program)

@@ -46,6 +46,7 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -323,13 +324,13 @@ static auto create_ground_datalog_program(formalism::planning::TaskView<LiftedTa
 
 }
 
-GroundTaskProgram::GroundTaskProgram(formalism::planning::TaskView<LiftedTag> task) :
+GroundTaskProgram::GroundTaskProgram(const formalism::planning::PlanningTask<LiftedTag>& task) :
     m_translation_context(),
     m_predicate_to_actions(),
     m_predicate_to_axioms(),
     m_conditional_effect_to_predicate(),
     m_datalog_program(
-        create_ground_datalog_program(task, m_translation_context, m_predicate_to_actions, m_predicate_to_axioms, m_conditional_effect_to_predicate))
+        create_ground_datalog_program(task.get_task(), m_translation_context, m_predicate_to_actions, m_predicate_to_axioms, m_conditional_effect_to_predicate))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

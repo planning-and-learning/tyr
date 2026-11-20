@@ -50,6 +50,7 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -227,11 +228,11 @@ auto create_rpg_datalog_program(formalism::planning::TaskView<LiftedTag> task,
 }
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode, bool split_rules) :
+RPGProgram<LiftedTag>::RPGProgram(const formalism::planning::PlanningTask<LiftedTag>& task, CostMode cost_mode, bool split_rules) :
     m_translation_context(),
     m_rule_to_action(),
     m_rule_splitting(),
-    m_datalog_program(create_rpg_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
+    m_datalog_program(create_rpg_datalog_program(task.get_task(), cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

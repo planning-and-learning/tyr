@@ -46,6 +46,7 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -328,10 +329,10 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
 }  // namespace
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode, bool) :
+RPGProgram<GroundTag>::RPGProgram(const formalism::planning::PlanningTask<GroundTag>& task, CostMode cost_mode, bool) :
     m_translation_context(),
     m_rule_to_action(),
-    m_datalog_program(create_rpg_datalog_program(task, cost_mode, m_translation_context, m_rule_to_action))
+    m_datalog_program(create_rpg_datalog_program(task.get_task(), cost_mode, m_translation_context, m_rule_to_action))
 {
 }
 

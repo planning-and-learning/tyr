@@ -71,7 +71,7 @@ template<TaskKind Kind>
 class RPGProgram
 {
 public:
-    using Task = formalism::planning::TaskView<Kind>;
+    using Task = formalism::planning::PlanningTask<Kind>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
     using Rule = urd::index<formalism::datalog::Rule<Kind>>;
     /// Rules are hash-consed, so actions with identical relaxed rules share one rule.
@@ -79,7 +79,7 @@ public:
     using RuleToActionMapping = urd::Store<urd::map<Rule, Actions>>;
 
     /// With split_rules, action rules project away the variables that only some of their preconditions use (lifted tasks only).
-    explicit RPGProgram(Task task, CostMode cost_mode = CostMode::UNIT, bool split_rules = false);
+    explicit RPGProgram(const Task& task, CostMode cost_mode = CostMode::UNIT, bool split_rules = false);
 
     [[nodiscard]] const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
 
@@ -104,10 +104,10 @@ private:
 };
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(formalism::planning::TaskView<GroundTag> task, CostMode cost_mode, bool split_rules);
+RPGProgram<GroundTag>::RPGProgram(const formalism::planning::PlanningTask<GroundTag>& task, CostMode cost_mode, bool split_rules);
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task, CostMode cost_mode, bool split_rules);
+RPGProgram<LiftedTag>::RPGProgram(const formalism::planning::PlanningTask<LiftedTag>& task, CostMode cost_mode, bool split_rules);
 }
 
 #endif

@@ -62,6 +62,7 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_data.hpp"
@@ -159,9 +160,9 @@ auto create_axiom_datalog_program(formalism::planning::TaskView<LiftedTag> task,
 }
 }
 
-AxiomEvaluatorProgram::AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task) :
+AxiomEvaluatorProgram::AxiomEvaluatorProgram(const formalism::planning::PlanningTask<LiftedTag>& task) :
     m_translation_context(),
-    m_datalog_program(create_axiom_datalog_program(task, m_translation_context))
+    m_datalog_program(create_axiom_datalog_program(task.get_task(), m_translation_context))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

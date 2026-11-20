@@ -76,7 +76,7 @@ public:
     /// A program per action schema with its action rule and the rules of its conditional effects.
     using SchemaPrograms = urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, SchemaProgram>>;
 
-    explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
+    explicit ApplicableActionProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
 
     [[nodiscard]] const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;

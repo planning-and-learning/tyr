@@ -63,7 +63,7 @@ def test_lifted_tasks_of_one_formalism_task_write_into_their_own_layers() -> Non
 
 def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
     task = _lifted_task()
-    translated_program = planning.lifted.GroundTaskProgram(task.get_task())
+    translated_program = planning.lifted.GroundTaskProgram(task.get_formalism_task())
     program = translated_program.get_datalog_program()
     first = datalog.lifted.UnannotatedProgramWorkspace(program)
     second = datalog.lifted.UnannotatedProgramWorkspace(program)
@@ -87,7 +87,7 @@ def test_fact_sets_give_a_predicates_rows() -> None:
             str(fixture / "iw_goal_before_novelty_problem.pddl"), options
         )
     )
-    program = planning.lifted.RPGProgram(task.get_task()).get_datalog_program()
+    program = planning.lifted.RPGProgram(task.get_formalism_task()).get_datalog_program()
     workspace = datalog.lifted.UnannotatedProgramWorkspace(program)
     facts = workspace.get_fluent_fact_sets()
 

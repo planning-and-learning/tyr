@@ -369,7 +369,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     Evaluator evaluator;
 };
 
-SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), action_program(task->get_task()) {}
+SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), action_program(task->get_formalism_task()) {}
 
 SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
     execution_context(std::move(execution_context_)),
