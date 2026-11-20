@@ -76,7 +76,7 @@ Forest make_forest(const tyr::planning::Task<GroundTag>& task)
         groups.at(action.get_action()).push_back(action);
     auto forest = Forest {};
     for (auto& [schema, actions] : groups)
-        forest.emplace(schema, Tree::create(std::move(actions), task.get_task().context()));
+        forest.emplace(schema, Tree::create(std::move(actions), task.get_repository()));
     return forest;
 }
 
@@ -116,8 +116,7 @@ try
         if (prepared.task)
         {
             const auto actions = prepared.task->get_task().get_ground_actions();
-            prepared.tree =
-                Tree::create(tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_task().context());
+            prepared.tree = Tree::create(tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_repository());
             prepared.forest = make_forest(*prepared.task);
             prepared.generator = std::make_shared<tyr::planning::SuccessorGenerator<GroundTag>>(prepared.task, execution_context);
         }
@@ -183,7 +182,7 @@ try
             }
             else
             {
-                auto result = Tree::create(all_actions, task->get_task().context());
+                auto result = Tree::create(all_actions, task->get_repository());
                 benchmark::DoNotOptimize(result);
             }
         }

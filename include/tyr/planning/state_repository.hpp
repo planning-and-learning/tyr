@@ -24,6 +24,7 @@
 #include "tyr/planning/task.hpp"
 
 #include <atomic>
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <memory>
 #include <stdexcept>
@@ -59,6 +60,9 @@ public:
 
     StateView<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
 
+    /// The kind of record it holds: a repository nesting it resolves states here (ygg::formalism::Nests).
+    using SymbolTypes = boost::mp11::mp_list<State<Kind>>;
+
     /// The stored record of a registered state (urd's resolves contract; a PackedStateView is the usual handle).
     [[nodiscard]] const urd::data<State<Kind>>& operator[](urd::index<State<Kind>> state_index) const;
 
@@ -75,6 +79,24 @@ public:
 
     [[nodiscard]] NumericStorageView<Kind> view(const urd::builder<NumericStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
     { return { &storage, get_task()->get_repository().get() }; }
+
+    /// A state record or a storage record held outside the repository, as its view here (a storage record's packed key
+    /// is unpacked here: StateRepository::unpack); never a temporary.
+    [[nodiscard]] urd::borrowed_view<State<Kind>, StateRepository> view(const urd::data<State<Kind>>& state URD_LIFETIMEBOUND) const noexcept
+    { return { &state, this }; }
+
+    [[nodiscard]] urd::borrowed_view<FactStorage<Kind>, StateRepository> view(const urd::data<FactStorage<Kind>>& storage URD_LIFETIMEBOUND) const noexcept
+    { return { &storage, this }; }
+
+    [[nodiscard]] urd::borrowed_view<AtomStorage<Kind>, StateRepository> view(const urd::data<AtomStorage<Kind>>& storage URD_LIFETIMEBOUND) const noexcept
+    { return { &storage, this }; }
+
+    [[nodiscard]] urd::borrowed_view<NumericStorage<Kind>, StateRepository>
+    view(const urd::data<NumericStorage<Kind>>& storage URD_LIFETIMEBOUND) const noexcept
+    { return { &storage, this }; }
+
+    template<typename T>
+    void view(const urd::data<T>&& record) const = delete;
 
     /// Const: the state's builder comes from the repository's pool of scratch builders.
     StateView<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
@@ -114,6 +136,13 @@ public:
     StateView<Kind> register_extended_state(std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state);
     /// Copies an already extended state of this task into repository-owned storage; source storage remains borrowed and unchanged.
     StateView<Kind> register_extended_state(const StateBuilderView<Kind>& source);
+
+    /// Interns a state built elsewhere (a program state's, through a repository nesting this one): registered as an
+    /// already extended state (register_extended_state), its index. Storage: the builder storage of the interning, unused.
+    template<typename Storage>
+    urd::index<State<Kind>> insert(const urd::builder<State<Kind>, StateRepository<Kind>>& built, Storage& /*storage*/)
+    { return register_extended_state(urd::resolve(built, *this)).pack().index(); }
+
     [[nodiscard]] StateRepositoryPtr<Kind> make_worker() const;
 
     /// All repositories sharing this storage must be quiescent while inspecting memory usage.

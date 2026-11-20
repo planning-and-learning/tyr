@@ -36,11 +36,13 @@
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
 #include <boost/mp11.hpp>
+#include <memory>
 #include <urd/elements/flat.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>
+#include <yggdrasil/formalism/nested.hpp>
 #include <yggdrasil/formalism/symbol_context.hpp>
 
 namespace tyr::planning::match_tree
@@ -58,16 +60,23 @@ using GroundAxiomBuilder = BuilderOf<formalism::planning::Axiom<GroundTag>>;
 using ygg::formalism::checkout;
 using ygg::formalism::insert;
 
+/// A match tree's nodes, over the planning repository holding the formalism elements they refer to (its atoms,
+/// constraints, facts and variables: nested, read only).
 template<typename Tag>
-class Repository : public ygg::formalism::SymbolContext<Repository<Tag>, RepositoryTypes<Tag>>
+class Repository :
+    public ygg::formalism::SymbolContext<Repository<Tag>, RepositoryTypes<Tag>>,
+    public ygg::formalism::Nests<Repository<Tag>, ygg::formalism::Nested<const formalism::planning::Repository>>
 {
 private:
-    const formalism::planning::Repository* m_formalism_repository;
+    using Base = ygg::formalism::SymbolContext<Repository<Tag>, RepositoryTypes<Tag>>;
+    using NestsBase = ygg::formalism::Nests<Repository<Tag>, ygg::formalism::Nested<const formalism::planning::Repository>>;
+
     ygg::uint_t m_index;
 
 public:
-    explicit Repository(ygg::uint_t index, const formalism::planning::Repository& formalism_repository) :
-        m_formalism_repository(&formalism_repository),
+    explicit Repository(ygg::uint_t index, std::shared_ptr<const formalism::planning::Repository> formalism_repository) :
+        Base(),
+        NestsBase(std::move(formalism_repository)),
         m_index(index)
     {
     }
@@ -81,21 +90,14 @@ public:
     /// The repository's number, as urd's views ask of a context.
     [[nodiscard]] std::size_t layer() const noexcept { return m_index; }
 
-    [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return *m_formalism_repository; }
-
-    /// A node's index as its view here (urd's resolves contract): what compositions of indices are read through
-    /// (urd::resolve).
-    template<typename T>
-        requires ygg::formalism::SupportsSymbol<Repository, T>
-    [[nodiscard]] urd::index_view<T, Repository> view(urd::index<T> index) const noexcept
-    { return { index, this }; }
-
-    /// A formalism element a node refers to (an atom, a constraint, a fact, a variable): its view in the formalism
-    /// repository, which owns it.
-    template<typename T>
-        requires(!ygg::formalism::SupportsSymbol<Repository, T>)
-    [[nodiscard]] auto view(urd::index<T> index) const
-    { return get_formalism_repository().view(index); }
+    using Base::find;
+    using Base::insert;
+    using Base::view;
+    using NestsBase::find;
+    using NestsBase::get;
+    using NestsBase::insert;
+    using NestsBase::repository_for;
+    using NestsBase::view;
 };
 
 template<typename Tag, typename T>

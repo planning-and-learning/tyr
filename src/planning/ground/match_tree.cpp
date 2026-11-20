@@ -163,7 +163,7 @@ struct AtomStackEntry
         false_elements(false_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
-    { urd::build_member(result->atom, atom, repository.get_formalism_repository()); }
+    { urd::build_member(result->atom, atom, repository.template get<formalism::planning::Repository>()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -226,7 +226,7 @@ struct NegativeFactStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
-    { urd::build_member(result->fact, fact, repository.get_formalism_repository()); }
+    { urd::build_member(result->fact, fact, repository.template get<formalism::planning::Repository>()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -253,7 +253,7 @@ struct ConstraintStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    { urd::build_member(result->constraint, constraint, repository.get_formalism_repository()); }
+    { urd::build_member(result->constraint, constraint, repository.template get<formalism::planning::Repository>()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -658,12 +658,12 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 
 template<typename Tag>
 MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements_,
-                          const formalism::planning::Repository& context_) :
+                          std::shared_ptr<const formalism::planning::Repository> context_) :
     m_definition(),
     m_evaluator()
 {
     using namespace match_tree_details;  // its steps, in this function only
-    auto definition = std::make_shared<Definition>(context_);
+    auto definition = std::make_shared<Definition>(std::move(context_));
     m_definition = definition;
 
     auto occurrences = PreconditionOccurrences<Tag> {};
@@ -798,8 +798,8 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
-                                         const formalism::planning::Repository& context)
-{ return std::make_unique<MatchTree<Tag>>(std::move(elements), context); }
+                                         std::shared_ptr<const formalism::planning::Repository> context)
+{ return std::make_unique<MatchTree<Tag>>(std::move(elements), std::move(context)); }
 
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const

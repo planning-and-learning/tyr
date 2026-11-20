@@ -43,7 +43,7 @@ private:
 
     struct Definition
     {
-        explicit Definition(const formalism::planning::Repository& context) : repository(static_cast<ygg::uint_t>(0), context) {}
+        explicit Definition(std::shared_ptr<const formalism::planning::Repository> context) : repository(static_cast<ygg::uint_t>(0), std::move(context)) {}
 
         Repository<Tag> repository;  // Constant index 0 is sufficient because match-tree node views are never compared.
         std::optional<Node<Tag>> root;
@@ -60,11 +60,12 @@ private:
     Evaluator m_evaluator;
 
 public:
-    MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements, const formalism::planning::Repository& context);
+    MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
+              std::shared_ptr<const formalism::planning::Repository> context);
     ~MatchTree();
 
     static MatchTreePtr<Tag> create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
-                                    const formalism::planning::Repository& context);
+                                    std::shared_ptr<const formalism::planning::Repository> context);
 
     [[nodiscard]] MatchTreePtr<Tag> make_worker() const;
 

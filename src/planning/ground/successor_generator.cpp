@@ -282,7 +282,7 @@ SuccessorGenerator<GroundTag>::Impl::Definition::Definition(TaskPtr<GroundTag> t
     task(std::move(task_)),
     action_match_tree_prototype(match_tree::MatchTree<formalism::planning::Action<GroundTag>>::create(
         formalism::planning::ActionViewList<GroundTag>(task->get_task().get_ground_actions().begin(), task->get_task().get_ground_actions().end()),
-        task->get_task().context())),
+        task->get_repository())),
     action_binding_to_ground_action()
 {
     auto schema_actions = urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, formalism::planning::ActionViewList<GroundTag>>> {};
@@ -294,9 +294,8 @@ SuccessorGenerator<GroundTag>::Impl::Definition::Definition(TaskPtr<GroundTag> t
         schema_actions.at(action.get_action()).push_back(action);
     }
     for (auto& [schema, actions] : schema_actions)
-        schema_match_tree_prototypes.emplace(
-            schema,
-            match_tree::MatchTree<formalism::planning::Action<GroundTag>>::create(std::move(actions), task->get_task().context()));
+        schema_match_tree_prototypes.emplace(schema,
+                                             match_tree::MatchTree<formalism::planning::Action<GroundTag>>::create(std::move(actions), task->get_repository()));
 }
 
 SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& definition) :

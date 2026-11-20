@@ -71,7 +71,7 @@ struct AxiomDefinition<GroundTag>
         auto axiom_strata = compute_ground_axiom_stratification(task->get_task());
         match_tree_prototypes.reserve(axiom_strata.data.size());
         for (const auto& stratum : axiom_strata.data)
-            match_tree_prototypes.emplace_back(match_tree::MatchTree<formalism::planning::Axiom<GroundTag>>::create(stratum, task->get_task().context()));
+            match_tree_prototypes.emplace_back(match_tree::MatchTree<formalism::planning::Axiom<GroundTag>>::create(stratum, task->get_repository()));
     }
 
     TaskPtr<GroundTag> task;
