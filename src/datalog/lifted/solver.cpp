@@ -207,7 +207,7 @@ private:
 
     static void create_nullary_binding(urd::flat_vector<urd::index<formalism::Object>>& binding) { binding.clear(); }
 
-    static void create_general_binding(std::span<const kckp::Vertex> clique,
+    static void create_general_binding(std::span<const urd::data<kckp::Vertex>> clique,
                                        const StaticConsistencyGraph& consistency_graph,
                                        urd::flat_vector<urd::index<formalism::Object>>& binding)
     {
@@ -395,7 +395,7 @@ private:
             ++wrctx.out().statistics().num_rejected_rules;
     }
 
-    void process_clique(RuleWorkerExecutionContext<AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
+    void process_clique(RuleWorkerExecutionContext<AP, TP, CP>& wrctx, std::span<const urd::data<kckp::Vertex>> clique, bool require_novel_binding)
     {
         create_general_binding(clique, wrctx.in().cws_rule().get_static_consistency_graph(), wrctx.out().ground_context().binding());
         process_binding(wrctx, require_novel_binding);
@@ -521,7 +521,7 @@ private:
                              const details::Literals<formalism::FluentTag>& literals,
                              size_t literal,
                              const auto& objects,
-                             urd::Store<urd::sequence<kckp::Vertex>>& vertices)
+                             urd::Store<urd::sequence<urd::data<kckp::Vertex>>>& vertices)
     {
         const auto terms = literals.terms[literal];
         for (const auto& term : terms)

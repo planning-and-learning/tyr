@@ -55,7 +55,7 @@ template<typename Evaluator>
 class EdgeQuery
 {
 public:
-    EdgeQuery(Evaluator edges, std::span<const ygg::ColumnLayout> /*edge_columns*/, size_t keys, size_t arity) :
+    EdgeQuery(Evaluator edges, std::span<const urd::data<ygg::ColumnLayout>> /*edge_columns*/, size_t keys, size_t arity) :
         m_key_size(keys),
         m_target_offset(keys + arity),
         m_vertex_size(arity),

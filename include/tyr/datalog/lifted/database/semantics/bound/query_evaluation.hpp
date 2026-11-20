@@ -58,7 +58,7 @@ public:
     {
         m_frame.resize(m_query.variables.size());
         for (const auto& columns : m_query.input_columns)
-            m_inputs.push_back(scratch.draw(std::span<const ygg::ColumnLayout>(columns)));
+            m_inputs.push_back(scratch.draw(std::span<const urd::data<ygg::ColumnLayout>>(columns)));
     }
 
     // Its snapshots are its own: shared with no copy.
@@ -70,7 +70,7 @@ public:
 
     [[nodiscard]] size_t input_count() const noexcept { return m_query.input_columns.size(); }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_columns; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> columns() const noexcept { return m_columns; }
 
     [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_inputs.at(slot)->view(); }
 
@@ -132,7 +132,8 @@ public:
                                                 [&](KeyIndex& entry)
                                                 {
                                                     const auto matches = entry.rows.equal_range(database::detail::join_key_hash(values, entry.keys));
-                                                    const auto match = std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == row; });
+                                                    const auto match =
+                                                        std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == row; });
                                                     URD_ASSUME(match != matches.second);  // every indexed row is in its key's entries
                                                     entry.rows.erase(match);
                                                 });
@@ -144,7 +145,8 @@ public:
                              {
                                  snapshot.insert(values);
                                  const auto row = snapshot.slot(values);
-                                 for_each_index(slot, [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(values, entry.keys), row }); });
+                                 for_each_index(slot,
+                                                [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(values, entry.keys), row }); });
                              });
         ++m_version;
     }
@@ -218,7 +220,7 @@ private:
     {
         size_t slot = 0;
         urd::Store<urd::sequence<size_t>> positions;
-        urd::Store<urd::sequence<ColumnSlice>> keys;                                    ///< The key columns in the slot's rows.
+        urd::Store<urd::sequence<ColumnSlice>> keys;                                                       ///< The key columns in the slot's rows.
         urd::Store<urd::map<ygg::hash_t, ygg::FreeScratchRelation::Slot>, urd::multi, urd::retains> rows;  ///< Row slots by key hash, once built.
         bool built = false;
     };
@@ -231,11 +233,11 @@ private:
     };
 
     UnionNormalForm m_query;
-    urd::Store<urd::sequence<ygg::ColumnLayout>> m_columns;
-    urd::Store<urd::sequence<ygg::Value>> m_frame;                                  ///< The variables' values while a branch runs, by variable.
-    urd::Store<urd::set<size_t>, urd::dense> m_static;                              ///< The input slots that never change after the first bind().
+    urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>> m_columns;
+    urd::Store<urd::sequence<ygg::Value>> m_frame;                              ///< The variables' values while a branch runs, by variable.
+    urd::Store<urd::set<size_t>, urd::dense> m_static;                          ///< The input slots that never change after the first bind().
     urd::Store<urd::sequence<urd::handle<ygg::FreeScratchRelation>>> m_inputs;  ///< The input snapshots.
-    urd::Store<urd::set<size_t>, urd::dense> m_bound;                               ///< The input slots bound so far.
+    urd::Store<urd::set<size_t>, urd::dense> m_bound;                           ///< The input slots bound so far.
     urd::Store<urd::sequence<KeyIndex>, urd::stable_refs> m_indexes;
     urd::Store<urd::sequence<Lookup>, urd::stable_refs> m_lookups;  ///< By ConjunctiveStep::index.
     urd::Store<urd::sequence<Binding>> m_bindings;
@@ -324,9 +326,11 @@ private:
         if (!entry.built)
         {
             entry.rows.clear();
-            entry.rows.reserve(snapshot.view().size());
+            entry.rows.reserve(snapshot.view().get_rows().size());
             for (const auto& held : snapshot.view().get_rows())
-                ygg::with_values(held, [&](const auto& values) { entry.rows.insert({ database::detail::join_key_hash(values, entry.keys), snapshot.slot(values) }); });
+                ygg::with_values(held,
+                                 [&](const auto& values)
+                                 { entry.rows.insert({ database::detail::join_key_hash(values, entry.keys), snapshot.slot(values) }); });
             entry.built = true;
         }
         // The key's variables stay bound while this step iterates, so the frame is the probe.

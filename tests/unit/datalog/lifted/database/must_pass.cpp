@@ -25,10 +25,8 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
-using tyr::datalog::tests::values_of;
-using tyr::datalog::tests::Change;
 using ygg::uint_t;
+using ygg::value_of;
 namespace qb = tyr::datalog::tests::qb;
 
 const Column key(20), u(0), v(1);

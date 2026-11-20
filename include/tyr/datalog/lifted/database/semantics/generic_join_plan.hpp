@@ -21,8 +21,8 @@ namespace tyr::datalog::database
 /// independently preserves the caller's schema. Projection is a separate operator.
 class GenericJoinPlan
 {
-    urd::flat_vector<urd::flat_vector<ygg::ColumnLayout>> m_inputs;
-    urd::flat_vector<ygg::ColumnLayout> m_output;
+    urd::flat_vector<urd::flat_vector<urd::data<ygg::ColumnLayout>>> m_inputs;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_output;
     urd::flat_vector<urd::index<ygg::Column>> m_order;
     urd::flat_vector<urd::flat_vector<ColumnSlice>> m_keys;
     urd::flat_vector<urd::flat_vector<size_t>> m_occurrences;
@@ -30,19 +30,19 @@ class GenericJoinPlan
 
 public:
     GenericJoinPlan() = default;
-    GenericJoinPlan(std::span<const urd::Store<urd::sequence<ygg::ColumnLayout>>> inputs,
+    GenericJoinPlan(std::span<const urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>>> inputs,
                     std::span<const urd::index<ygg::Column>> variable_order,
                     std::span<const urd::index<ygg::Column>> output_order);
 
     [[nodiscard]] size_t input_count() const noexcept { return m_inputs.size(); }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> input_columns(size_t input) const
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> input_columns(size_t input) const
     {
         const auto& columns = m_inputs.at(input);
         return { columns.data(), columns.size() };
     }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
 
     [[nodiscard]] std::span<const urd::index<ygg::Column>> variable_order() const noexcept { return { m_order.data(), m_order.size() }; }
 

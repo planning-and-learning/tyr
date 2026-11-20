@@ -29,7 +29,7 @@ template<ygg::RelationViewConcept<ygg::Schema> V>
 void insert_rows(const V& input, ygg::FreeScratchRelation& rows, std::span<const ColumnSlice> keys, RowsByKey& index)
 {
     if (!keys.empty())
-        index.reserve(rows.view().size() + input.size());
+        index.reserve(rows.view().get_rows().size() + input.get_rows().size());
     for (const auto& held : input.get_rows())
         ygg::with_values(held,
                          [&](const auto& values)
@@ -113,7 +113,7 @@ public:
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
     /// Retained inputs, result, delta and indexes; excludes plan and caller workspace.
-    [[nodiscard]] size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const;
 };
 
 template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
@@ -143,7 +143,7 @@ void JoinEvaluator::initialize(const L& left_operand, const R& right_operand, Wo
     // Both indexes are ready, so probe the smaller input.
     const auto left = m_left_operand->view();
     const auto right = m_right_operand->view();
-    join(left, right, left.size() >= right.size(), *m_result, workspace);
+    join(left, right, left.get_rows().size() >= right.get_rows().size(), *m_result, workspace);
     m_initialized = true;
 }
 

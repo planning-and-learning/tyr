@@ -26,20 +26,20 @@ namespace tyr::datalog::database
 /// output has the key columns followed by the probe column.
 class MustPassPlan
 {
-    urd::flat_vector<ygg::ColumnLayout> m_sources;
-    urd::flat_vector<ygg::ColumnLayout> m_edges;
-    urd::flat_vector<ygg::ColumnLayout> m_targets;
-    urd::flat_vector<ygg::ColumnLayout> m_probes;
-    urd::flat_vector<ygg::ColumnLayout> m_output;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_sources;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_edges;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_targets;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_probes;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_output;
     size_t m_keys = 0;
 
 public:
     MustPassPlan() = default;
 
-    MustPassPlan(std::span<const ygg::ColumnLayout> sources,
-                 std::span<const ygg::ColumnLayout> edges,
-                 std::span<const ygg::ColumnLayout> targets,
-                 std::span<const ygg::ColumnLayout> probes,
+    MustPassPlan(std::span<const urd::data<ygg::ColumnLayout>> sources,
+                 std::span<const urd::data<ygg::ColumnLayout>> edges,
+                 std::span<const urd::data<ygg::ColumnLayout>> targets,
+                 std::span<const urd::data<ygg::ColumnLayout>> probes,
                  size_t keys) :
         m_keys(keys)
     {
@@ -66,15 +66,15 @@ public:
         ygg::validate_columns(output_columns());
     }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> source_columns() const noexcept { return { m_sources.data(), m_sources.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> source_columns() const noexcept { return { m_sources.data(), m_sources.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> edge_columns() const noexcept { return { m_edges.data(), m_edges.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> edge_columns() const noexcept { return { m_edges.data(), m_edges.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> target_columns() const noexcept { return { m_targets.data(), m_targets.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> target_columns() const noexcept { return { m_targets.data(), m_targets.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> probe_columns() const noexcept { return { m_probes.data(), m_probes.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> probe_columns() const noexcept { return { m_probes.data(), m_probes.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
 
     [[nodiscard]] size_t keys() const noexcept { return m_keys; }
 

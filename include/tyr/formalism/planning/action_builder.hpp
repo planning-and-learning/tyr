@@ -56,9 +56,7 @@ struct builder<::tyr::formalism::planning::Action<::tyr::LiftedTag>, C>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::original_name, &builder::variables, &builder::original_arity, &builder::condition, &builder::effects> {};
-    }
+    { return urd::Members<&builder::original_name, &builder::variables, &builder::original_arity, &builder::condition, &builder::effects> {}; }
 };
 
 /// The builder of Action: its record's members, each in its built form (urd::built_t).
@@ -71,9 +69,7 @@ struct builder<::tyr::formalism::planning::Action<::tyr::GroundTag>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>>, C> effects;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"row", &builder::row>, urd::field<"condition", &builder::condition>, urd::field<"effects", &builder::effects>> {};
-    }
+    { return urd::Fields<urd::field<"row", &builder::row>, urd::field<"condition", &builder::condition>, urd::field<"effects", &builder::effects>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::row, &builder::condition, &builder::effects> {}; }
 };

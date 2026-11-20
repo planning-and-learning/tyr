@@ -55,7 +55,7 @@ PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const Graph& graph, std::
         }
         for (const auto vertex : graph.part(source_partition))
         {
-            m_first_rows[vertex.index] = next_row;
+            m_first_rows[vertex.number] = next_row;
             next_row += rows_per_vertex;
         }
     }
@@ -82,7 +82,7 @@ PartitionedAdjacencyMatrix::PartitionedAdjacencyMatrix(const Graph& graph,
                 }
 }
 
-void PartitionedAdjacencyMatrix::add_edge(Vertex u, Vertex v)
+void PartitionedAdjacencyMatrix::add_edge(urd::data<Vertex> u, urd::data<Vertex> v)
 {
     const auto u_partition = m_graph->part_of(u);
     const auto v_partition = m_graph->part_of(v);
@@ -101,7 +101,7 @@ void PartitionedAdjacencyMatrix::reset() noexcept
     m_touched.clear();
 }
 
-void PartitionedAdjacencyMatrix::copy_adjacency_to(Vertex vertex, size_t partition, VertexSet& destination) const
+void PartitionedAdjacencyMatrix::copy_adjacency_to(urd::data<Vertex> vertex, size_t partition, VertexSet& destination) const
 {
     switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
     {
@@ -118,7 +118,7 @@ void PartitionedAdjacencyMatrix::copy_adjacency_to(Vertex vertex, size_t partiti
     }
 }
 
-void PartitionedAdjacencyMatrix::intersect_adjacency(Vertex vertex, size_t partition, const VertexSet& source, VertexSet& destination) const
+void PartitionedAdjacencyMatrix::intersect_adjacency(urd::data<Vertex> vertex, size_t partition, const VertexSet& source, VertexSet& destination) const
 {
     switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
     {
@@ -135,7 +135,7 @@ void PartitionedAdjacencyMatrix::intersect_adjacency(Vertex vertex, size_t parti
     }
 }
 
-void PartitionedAdjacencyMatrix::subtract_adjacency_from(Vertex vertex, size_t partition, VertexSet& destination, VertexSet& scratch) const
+void PartitionedAdjacencyMatrix::subtract_adjacency_from(urd::data<Vertex> vertex, size_t partition, VertexSet& destination, VertexSet& scratch) const
 {
     switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
     {
@@ -153,7 +153,7 @@ void PartitionedAdjacencyMatrix::subtract_adjacency_from(Vertex vertex, size_t p
     }
 }
 
-bool PartitionedAdjacencyMatrix::is_adjacent(Vertex vertex, Vertex target) const
+bool PartitionedAdjacencyMatrix::is_adjacent(urd::data<Vertex> vertex, urd::data<Vertex> target) const
 {
     const auto target_partition = m_graph->part_of(target);
     switch (m_adjacency_layout->kind(m_graph->part_of(vertex), target_partition))
@@ -205,7 +205,7 @@ void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
 bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 { return prepare_anchor_source(edge.src, m_graph->part_of(edge.dst), workspace) && seed_from_prepared_anchor(edge, workspace); }
 
-bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const
+bool DeltaKCKP::prepare_anchor_source(urd::data<Vertex> source, ygg::uint_t target_partition, Workspace& workspace) const
 {
     workspace.prepare(*m_graph);
     const auto source_partition = m_graph->part_of(source);
@@ -254,7 +254,7 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
     return true;
 }
 
-bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const
+bool DeltaKCKP::seed_from_vertices(std::span<const urd::data<Vertex>> vertices, Workspace& workspace) const
 {
     assert(!vertices.empty());
     workspace.prepare(*m_graph);

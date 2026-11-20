@@ -45,14 +45,19 @@ void bind_numeric_effect_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<NumericEffect<T, F>, C>>(m);
     ygg::bind_insert<NumericEffect<T, F>>(repository);
+    urd::python::bind_builder<NumericEffect<T, F>, C>(m);
 }
 }  // namespace
 
 void bind_numeric_effect(nb::module_& m)
 {
+    urd::python::bind_index<NumericEffect<LiftedTag, FluentTag>>(m);
     urd::python::bind_data<NumericEffect<LiftedTag, FluentTag>>(m);
+    urd::python::bind_index<NumericEffect<LiftedTag, AuxiliaryTag>>(m);
     urd::python::bind_data<NumericEffect<LiftedTag, AuxiliaryTag>>(m);
+    urd::python::bind_index<NumericEffect<GroundTag, FluentTag>>(m);
     urd::python::bind_data<NumericEffect<GroundTag, FluentTag>>(m);
+    urd::python::bind_index<NumericEffect<GroundTag, AuxiliaryTag>>(m);
     urd::python::bind_data<NumericEffect<GroundTag, AuxiliaryTag>>(m);
 }
 

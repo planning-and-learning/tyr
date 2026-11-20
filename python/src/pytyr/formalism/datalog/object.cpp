@@ -36,6 +36,7 @@ void bind_object(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<ObjectView>(m);
     ygg::bind_insert<Object>(repository);
+    urd::python::bind_builder<Object, Repository>(m);
 }
 
 }  // namespace tyr::formalism::datalog

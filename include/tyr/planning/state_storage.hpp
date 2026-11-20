@@ -20,6 +20,7 @@
 
 #include "tyr/containers.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/planning/state_storage/config.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <cmath>
@@ -27,9 +28,13 @@
 #include <cstddef>
 #include <limits>
 #include <ranges>
+#include <string_view>
 #include <tuple>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
@@ -73,18 +78,76 @@ struct StateLayout
 /// their words.
 using StateBits = urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::sorted>;
 
+/// A state's storage S packed: a key, its handle in the pool of its component repository by the state storage policy.
+/// Only its pool makes it (StateComponentRepository::insert); it reads as S unpacked, through its state repository
+/// (urd::resolution<PackedStorage<S>>, StateRepository::unpack), and is built as S unpacked (urd::built_form).
+template<typename S>
+struct PackedStorage
+{
+    static constexpr std::string_view name = urd::joined_name<"Packed", S::name>;
+
+    typename StateComponentRepository<S, StateStoragePolicyTag>::Handle handle;
+
+    friend constexpr auto operator<=>(const PackedStorage&, const PackedStorage&) = default;
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"handle", &PackedStorage::handle>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+};
+
 }
 
 namespace urd
 {
 
+/// A packed storage reads as its storage unpacked, through its state repository (StateRepository::unpack).
+template<typename S>
+struct resolution<::tyr::planning::PackedStorage<S>>
+{
+    template<typename C>
+    static auto of(const ::tyr::planning::PackedStorage<S>& key, const C& context)
+    { return context.unpack(key); }
+
+    template<std::same_as<::tyr::planning::PackedStorage<S>> R>
+    static ::tyr::planning::PackedStorage<S> stored(const R& readout) noexcept
+    { return readout; }
+};
+
+/// A packed storage is built as its storage unpacked: a ground state's fluent facts as a value per FDR variable, a lifted
+/// state's as their bits, derived atoms as their bits, numeric values as a value per function term. Its pool packs and
+/// unpacks it, so it has no from(): a builder sets it through its mutators, never from a record's.
+template<typename C>
+struct built_form<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>>, C>
+{
+    using type = urd::Store<urd::sequence<ygg::uint_t>>;
+};
+
+template<typename C>
+struct built_form<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>>, C>
+{
+    using type = ::tyr::planning::StateBits;
+};
+
+template<::tyr::TaskKind Kind, typename C>
+struct built_form<::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>>, C>
+{
+    using type = ::tyr::planning::StateBits;
+};
+
+template<::tyr::TaskKind Kind, typename C>
+struct built_form<::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>>, C>
+{
+    using type = urd::Store<urd::sequence<ygg::float_t>>;
+};
+
 /// A state's derived atoms being built, unpacked: their bits (its record holds them packed, state_data.hpp).
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::AtomStorage<Kind>, C>
 {
-    ::tyr::planning::StateBits indices;
+    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>>, C> indices;
 
-    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) { indices.insert(static_cast<ygg::uint_t>(index.value)); }
+    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index)
+    { indices.insert(static_cast<ygg::uint_t>(index.value)); }
 
     void clear() { indices.clear(); }
 
@@ -95,6 +158,14 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
 
+    static constexpr auto functions() noexcept
+    {
+        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">>,
+                              urd::function<"clear", &builder::clear>,
+                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
+                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+    }
+
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
@@ -103,7 +174,7 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::NumericStorage<Kind>, C>
 {
-    urd::Store<urd::sequence<ygg::float_t>> values;
+    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>>, C> values;
 
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value)
     {
@@ -121,6 +192,14 @@ struct builder<::tyr::planning::NumericStorage<Kind>, C>
     void swap(builder& other) noexcept { values.swap(other.values); }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
+
+    static constexpr auto functions() noexcept
+    {
+        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">, urd::arg<"value">>,
+                              urd::function<"clear", &builder::clear>,
+                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
+                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+    }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };

@@ -43,11 +43,10 @@
 namespace
 {
 using tyr::datalog::tests::borrow;
-using tyr::datalog::tests::Change;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
+using ygg::value_of;
 using Column = urd::index<ygg::Column>;
 using View = ygg::FreeRelationBuilderView;
 using ygg::uint_t;
@@ -346,10 +345,10 @@ int run(std::span<char*> args)
         const auto evaluated = std::chrono::steady_clock::now();
         evaluator.evaluate(views);
         const auto result = evaluator.get_result();
-        for (size_t r = 0; r < result.size(); ++r)
+        for (size_t r = 0; r < result.get_rows().size(); ++r)
             loops += value_at(result, r, 1) == value_at(result, r, 2);
         fmt::print("projected edges, full: {} rows ({} self loops), optimize {:.3f} s, evaluate {:.3f} s\n",
-                   result.size(),
+                   result.get_rows().size(),
                    loops,
                    compiled,
                    seconds_since(evaluated));

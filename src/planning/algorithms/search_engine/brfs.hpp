@@ -159,7 +159,7 @@ public:
     }
 
     static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionRowView)
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().pack().index() }, node.get_metric() }; }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
     { m_openlist.push(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
@@ -206,7 +206,7 @@ public:
             return AcceptanceResult::TERMINAL;
         }
 
-        open_successor(successor_state.index(), g_value, 0, SearchNodeStatus::OPEN, false);
+        open_successor(successor_state.pack().index(), g_value, 0, SearchNodeStatus::OPEN, false);
         emit_transition(TransitionOutcome::OPENED);
         return AcceptanceResult::QUEUED;
     }

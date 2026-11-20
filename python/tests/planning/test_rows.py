@@ -931,7 +931,10 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
     retained_snapshots: list[
-        tuple[planning.ground.StateBuilderShared | planning.ground.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
+        tuple[
+            planning.ground.StateBuilderShared | planning.ground.StateBuilderBorrowed,
+            tuple[formalism_planning.FDRValue, ...],
+        ]
     ] = []
 
     class PythonGoalStrategy(planning.ground.GoalStrategy):
@@ -953,7 +956,9 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.ground.StateBuilderShared, state: planning.ground.StateBuilderShared | planning.ground.StateBuilder
+            self,
+            seed_state: planning.ground.StateBuilderShared,
+            state: planning.ground.StateBuilderShared | planning.ground.StateBuilderBorrowed,
         ) -> bool:
             callback_indices["goal"].append(self.worker_index)
             if len(callback_indices["goal"]) > 2 and not retained_snapshots:
@@ -979,7 +984,10 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
 
         @override
         def should_prune_successor_state(
-            self, state: planning.ground.StateBuilderShared, succ_state: planning.ground.StateBuilderShared, is_new_succ_state: bool
+            self,
+            state: planning.ground.StateBuilderShared,
+            succ_state: planning.ground.StateBuilderShared,
+            is_new_succ_state: bool,
         ) -> bool:
             callback_indices["pruning"].append(self.worker_index)
             return False
@@ -1013,7 +1021,10 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
     retained_snapshots: list[
-        tuple[planning.lifted.StateBuilderShared | planning.lifted.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
+        tuple[
+            planning.lifted.StateBuilderShared | planning.lifted.StateBuilderBorrowed,
+            tuple[formalism_planning.FDRValue, ...],
+        ]
     ] = []
 
     class PythonGoalStrategy(planning.lifted.GoalStrategy):
@@ -1035,7 +1046,9 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.lifted.StateBuilderShared, state: planning.lifted.StateBuilderShared | planning.lifted.StateBuilder
+            self,
+            seed_state: planning.lifted.StateBuilderShared,
+            state: planning.lifted.StateBuilderShared | planning.lifted.StateBuilderBorrowed,
         ) -> bool:
             callback_indices["goal"].append(self.worker_index)
             if len(callback_indices["goal"]) > 2 and not retained_snapshots:
@@ -1061,7 +1074,10 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
 
         @override
         def should_prune_successor_state(
-            self, state: planning.lifted.StateBuilderShared, succ_state: planning.lifted.StateBuilderShared, is_new_succ_state: bool
+            self,
+            state: planning.lifted.StateBuilderShared,
+            succ_state: planning.lifted.StateBuilderShared,
+            is_new_succ_state: bool,
         ) -> bool:
             callback_indices["pruning"].append(self.worker_index)
             return False
@@ -1101,7 +1117,9 @@ def _check_missing_or_null_python_strategy_workers_ground(task: planning.ground.
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.ground.StateBuilderShared, state: planning.ground.StateBuilderShared | planning.ground.StateBuilder
+            self,
+            seed_state: planning.ground.StateBuilderShared,
+            state: planning.ground.StateBuilderShared | planning.ground.StateBuilderBorrowed,
         ) -> bool:
             return False
 
@@ -1136,7 +1154,9 @@ def _check_missing_or_null_python_strategy_workers_lifted(task: planning.lifted.
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.lifted.StateBuilderShared, state: planning.lifted.StateBuilderShared | planning.lifted.StateBuilder
+            self,
+            seed_state: planning.lifted.StateBuilderShared,
+            state: planning.lifted.StateBuilderShared | planning.lifted.StateBuilderBorrowed,
         ) -> bool:
             return False
 
@@ -1356,7 +1376,7 @@ def test_state_reads_return_lists() -> None:
 def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
     state = state_repository.get_initial_state(axiom_evaluator)
-    state_index = state.index()
+    state_index = state.pack().index()
     state_text = str(state)
     packed = state.pack()
 
@@ -1372,7 +1392,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
 
     unpacked = packed.unpack()
     assert type(unpacked) is planning.ground.StateBuilderShared
-    assert unpacked.index() == state_index
+    assert unpacked.pack().index() == state_index
     assert str(unpacked) == state_text
     assert unpacked.pack() == packed
 
@@ -1384,7 +1404,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
 def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
     state = state_repository.get_initial_state(axiom_evaluator)
-    state_index = state.index()
+    state_index = state.pack().index()
     state_text = str(state)
     packed = state.pack()
 
@@ -1400,7 +1420,7 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
 
     unpacked = packed.unpack()
     assert type(unpacked) is planning.lifted.StateBuilderShared
-    assert unpacked.index() == state_index
+    assert unpacked.pack().index() == state_index
     assert str(unpacked) == state_text
     assert unpacked.pack() == packed
 
@@ -1576,14 +1596,14 @@ def _check_create_state_ground(task: planning.ground.Task) -> None:
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
     )
 
-    registered_state = state_repository.get_registered_state(initial_state.index())
+    registered_state = state_repository.get_registered_state(initial_state.pack().index())
 
     assert registered_state == initial_state
-    assert registered_state.index() == initial_state.index()
+    assert registered_state.pack().index() == initial_state.pack().index()
     assert recreated_state == initial_state
-    assert recreated_state.index() == initial_state.index()
+    assert recreated_state.pack().index() == initial_state.pack().index()
     assert value_recreated_state == initial_state
-    assert value_recreated_state.index() == initial_state.index()
+    assert value_recreated_state.pack().index() == initial_state.pack().index()
     assert state_repository.num_states() == 1
 
 
@@ -1608,14 +1628,14 @@ def _check_create_state_lifted(task: planning.lifted.Task) -> None:
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
     )
 
-    registered_state = state_repository.get_registered_state(initial_state.index())
+    registered_state = state_repository.get_registered_state(initial_state.pack().index())
 
     assert registered_state == initial_state
-    assert registered_state.index() == initial_state.index()
+    assert registered_state.pack().index() == initial_state.pack().index()
     assert recreated_state == initial_state
-    assert recreated_state.index() == initial_state.index()
+    assert recreated_state.pack().index() == initial_state.pack().index()
     assert value_recreated_state == initial_state
-    assert value_recreated_state.index() == initial_state.index()
+    assert value_recreated_state.pack().index() == initial_state.pack().index()
     assert state_repository.num_states() == 1
 
 
@@ -1696,26 +1716,28 @@ def test_node_python_equality_and_hash_follow_state_and_metric() -> None:
 def _check_node_lookup_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
-    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().index())
+    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().pack().index())
 
     assert not hasattr(successor_generator, "get_state_repository")
     assert looked_up_node == initial_node
     assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
     assert (
-        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack() == initial_node
+        successor_generator.get_packed_node(state_repository, initial_node.get_state().pack().index()).unpack()
+        == initial_node
     )
 
 
 def _check_node_lookup_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
-    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().index())
+    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().pack().index())
 
     assert not hasattr(successor_generator, "get_state_repository")
     assert looked_up_node == initial_node
     assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
     assert (
-        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack() == initial_node
+        successor_generator.get_packed_node(state_repository, initial_node.get_state().pack().index()).unpack()
+        == initial_node
     )
 
 
@@ -2263,7 +2285,7 @@ def test_state_views_from_independent_repository_factories_use_distinct_storage_
 
         assert first_repository.get_worker_index() == 0
         assert second_repository.get_worker_index() == 0
-        assert first_state.index() == second_state.index()
+        assert first_state.pack().index() == second_state.pack().index()
         assert first_state != second_state
         assert len({first_state, second_state}) == 2
         assert first_state.pack().index() == second_state.pack().index()

@@ -46,6 +46,7 @@ void bind_binary_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<BinaryOperator<T, O>, C>>(m);
     ygg::bind_insert<BinaryOperator<T, O>>(repository);
+    urd::python::bind_builder<BinaryOperator<T, O>, C>(m);
 }
 
 template<typename C>
@@ -60,9 +61,13 @@ void bind_binary_operator_views(nb::module_& m, nb::class_<C>& repository)
 
 void bind_binary_operator(nb::module_& m)
 {
+    urd::python::bind_index<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(m);
     urd::python::bind_data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_index<BinaryOperator<LiftedTag, BooleanOperatorKind>>(m);
     urd::python::bind_data<BinaryOperator<LiftedTag, BooleanOperatorKind>>(m);
+    urd::python::bind_index<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(m);
     urd::python::bind_data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_index<BinaryOperator<GroundTag, BooleanOperatorKind>>(m);
     urd::python::bind_data<BinaryOperator<GroundTag, BooleanOperatorKind>>(m);
 }
 

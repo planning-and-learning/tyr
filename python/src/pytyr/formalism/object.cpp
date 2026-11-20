@@ -28,6 +28,10 @@
 namespace tyr::formalism
 {
 
-void bind_object(nb::module_& m) { urd::python::bind_data<Object>(m); }
+void bind_object(nb::module_& m)
+{
+    urd::python::bind_index<Object>(m);
+    urd::python::bind_data<Object>(m);
+}
 
 }  // namespace tyr::formalism

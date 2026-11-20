@@ -9,7 +9,7 @@ namespace tyr::datalog::database::detail
 {
 QueryView<> Normalizer::project(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
 {
-    if (std::ranges::equal(columns_of(arg), columns, {}, &ygg::ColumnLayout::label))
+    if (std::ranges::equal(columns_of(arg), columns, {}, &urd::data<ygg::ColumnLayout>::label))
         return arg;
     if (is<QueryProjectTag>(arg))
         return project(as<QueryProjectTag>(arg).get_operand(), columns);

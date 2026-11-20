@@ -71,7 +71,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto worker_initial = worker->get_initial_node(*worker_repository, *worker_axiom_evaluator);
     const auto dist_hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(17);
 
-    const auto expected_source_index = initial.get_state().index();
+    const auto expected_source_index = initial.get_state().pack().index();
     const auto expected_source_hash =
         dist_hash.hash(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } });
     auto source = std::optional<tyr::planning::StateView<Kind>>(repository->get_registered_state(expected_source_index));
@@ -80,7 +80,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto source_reader = std::jthread(
         [source = std::move(transferred_source), expected_source_index, expected_source_hash, &dist_hash]() mutable
         {
-            EXPECT_EQ(source->index(), expected_source_index);
+            EXPECT_EQ(source->pack().index(), expected_source_index);
             EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *source->context().get_task(), *source, ygg::float_t { 0 } }), expected_source_hash);
             source.reset();
         });
@@ -92,7 +92,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto thread_release_worker = generator->make_worker(thread_release_context);
     auto thread_released_state = thread_release_worker->get_initial_node(*thread_release_repository, *thread_release_evaluator).get_state();
     {
-        auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.index().is_none()); });
+        auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.pack().index().is_none()); });
     }
 
     auto copy_assignment_context = ygg::ExecutionContext::create(1);
@@ -139,7 +139,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *first_numeric, ygg::float_t { 0 } }),
               dist_hash.hash(tyr::planning::StateContext { *task, *second_numeric, ygg::float_t { 0 } }));
     EXPECT_EQ(urd::resolve(first_numeric->numeric_storage, *task->get_repository()).get(numeric_index), first_value);
-    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *task->get_repository()).get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
+    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *task->get_repository()).get(numeric_index),
+              ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
     second_numeric->set(numeric_index, ygg::float_t { 2 });
     EXPECT_NE(dist_hash.hash(tyr::planning::StateContext { *task, *first_numeric, ygg::float_t { 0 } }),
               dist_hash.hash(tyr::planning::StateContext { *task, *second_numeric, ygg::float_t { 0 } }));
@@ -207,10 +208,11 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);
-    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { (*worker_repository->get_registered_state(owner_node.get_state().index()).context().get_task()),
-                                                           worker_repository->get_registered_state(owner_node.get_state().index()),
-                                                           ygg::float_t { 0 } }),
-              remote_hash);
+    EXPECT_EQ(
+        dist_hash.hash(tyr::planning::StateContext { (*worker_repository->get_registered_state(owner_node.get_state().pack().index()).context().get_task()),
+                                                     worker_repository->get_registered_state(owner_node.get_state().pack().index()),
+                                                     ygg::float_t { 0 } }),
+        remote_hash);
 }
 
 template<TaskKind Kind>

@@ -33,7 +33,7 @@ namespace
 template<typename Relation>
 void bind_row_of(nb::module_& m)
 {
-    urd::python::bind_value<ygg::RowIndex<Relation>>(m);
+    urd::python::bind_index<ygg::RowIndex<Relation>>(m);
     urd::python::bind_data<ygg::Row<Relation>>(m);
 }
 }  // namespace

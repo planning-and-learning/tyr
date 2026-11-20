@@ -13,7 +13,7 @@ QueryView<> OperatorBuilder::generic_join(std::span<const QueryView<>> atoms, st
         [&](auto& data)
         {
             for (const auto atom : atoms)
-                data.inputs.push_back(atom);
+                urd::append(data.inputs, atom);
             data.variable_order.assign(order.begin(), order.end());
             data.output_order.assign(order.begin(), order.end());
         });

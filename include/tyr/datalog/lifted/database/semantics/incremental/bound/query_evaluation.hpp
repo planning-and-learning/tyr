@@ -58,7 +58,7 @@ public:
     {
         for (size_t slot = 0; slot < input_count(); ++slot)
         {
-            const auto columns = std::span<const ygg::ColumnLayout>(m_base.query().input_columns[slot]);
+            const auto columns = std::span<const urd::data<ygg::ColumnLayout>>(m_base.query().input_columns[slot]);
             m_changes.push_back(InputChange { slot, scratch.draw(columns), scratch.draw(columns), SetPlan(columns, columns) });
         }
         m_changed.reserve(input_count());
@@ -76,7 +76,7 @@ public:
 
     [[nodiscard]] size_t input_count() const noexcept { return m_base.input_count(); }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_base.columns(); }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> columns() const noexcept { return m_base.columns(); }
 
     [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_base.input(slot); }
 
@@ -122,7 +122,7 @@ public:
                 continue;
             auto& change = m_changes[slot];
             diff(input(slot), change);
-            if (change.added->view().empty() && change.removed->view().empty())
+            if (change.added->view().get_rows().empty() && change.removed->view().get_rows().empty())
                 continue;
             apply(slot, change.added->view(), change.removed->view());
             m_changed.push_back(slot);

@@ -42,16 +42,16 @@ class StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
     using Unpacked = urd::builder<FactStorage<Kind>, formalism::planning::Repository>;
-    using Packed = typename Context::BitsetSet::handle_type;
+    using Handle = typename Context::BitsetSet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);
 
-    Packed insert(const Unpacked& unpacked);
+    Handle insert(const Unpacked& unpacked);
 
     /// Inserts `unpacked` as the exact `changes` to the stored `parent`. Only the tree paths to changed blocks are rebuilt.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::FluentChange> changes);
+    Handle insert(const Unpacked& unpacked, const Handle& parent, std::span<const StateDelta::FluentChange> changes);
 
-    void unpack(const Packed& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
     Context* m_context;

@@ -163,9 +163,7 @@ struct AtomStackEntry
         false_elements(false_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
-    {
-        urd::build_member(result->atom, atom, repository.get_formalism_repository());
-    }
+    { urd::build_member(result->atom, atom, repository.get_formalism_repository()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -187,7 +185,6 @@ struct VariableStackEntry
     urd::handle<urd::builder<VariableSelectorNode<Tag>, Repository<Tag>>> result;
 
     VariableStackEntry(Builder<Tag>& builder,
-                       const Repository<Tag>& repository,
                        BaseEntry<Tag> base_,
                        formalism::planning::FDRVariableView<formalism::FluentTag> variable,
                        urd::Store<urd::sequence<ElementSpan<Tag>>> domain_elements_,
@@ -200,7 +197,7 @@ struct VariableStackEntry
 
         result(planning::match_tree::checkout<VariableSelectorNode<Tag>>(builder))
     {
-        result->variable = variable;
+        urd::store(result->variable, variable);
         result->domain_children.resize(domain_elements.size());
     }
 
@@ -229,9 +226,7 @@ struct NegativeFactStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
-    {
-        urd::build_member(result->fact, fact, repository.get_formalism_repository());
-    }
+    { urd::build_member(result->fact, fact, repository.get_formalism_repository()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -258,9 +253,7 @@ struct ConstraintStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    {
-        urd::build_member(result->constraint, constraint, repository.get_formalism_repository());
-    }
+    { urd::build_member(result->constraint, constraint, repository.get_formalism_repository()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -279,7 +272,7 @@ struct GeneratorStackEntry
         result(planning::match_tree::checkout<planning::match_tree::ElementGeneratorNode<Tag>>(builder))
     {
         for (const auto element : base_.elements)
-            result->elements.push_back(element);
+            urd::append(result->elements, element);
 
         // std::cout << "Num elements in generator node: " << result->elements.size() << std::endl;
     }
@@ -294,9 +287,7 @@ auto store_result(Entry& entry, Repository<Tag>& repository, Builder<Tag>& build
 
 template<typename Tag>
 bool explored(const AtomStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& el,
@@ -330,9 +321,7 @@ void push_result(AtomStackEntry<Tag>& el, const Node<Tag>& node, const Repositor
 
 template<typename Tag>
 bool explored(const VariableStackEntry<Tag>& el) noexcept
-{
-    return el.explored_children() && el.explored_dontcare_child();
-}
+{ return el.explored_children() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
@@ -369,9 +358,7 @@ void push_result(VariableStackEntry<Tag>& el, const Node<Tag>& node, const Repos
 
 template<typename Tag>
 bool explored(const NegativeFactStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
@@ -401,9 +388,7 @@ void push_result(NegativeFactStackEntry<Tag>& el, const Node<Tag>& node, const R
 
 template<typename Tag>
 bool explored(const ConstraintStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
@@ -433,22 +418,16 @@ void push_result(ConstraintStackEntry<Tag>& el, const Node<Tag>& node, const Rep
 
 template<typename Tag>
 bool explored(const GeneratorStackEntry<Tag>&) noexcept
-{
-    return true;
-}
+{ return true; }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>>
 next_entry(const GeneratorStackEntry<Tag>&, const SortedPreconditions<Tag>&, const PreconditionDetails<Tag>&, Builder<Tag>&, const Repository<Tag>&)
-{
-    return std::nullopt;
-}
+{ return std::nullopt; }
 
 template<typename Tag>
 void push_result(GeneratorStackEntry<Tag>&, const Node<Tag>&, const Repository<Tag>&)
-{
-    throw std::logic_error("Unexpected case.");
-}
+{ throw std::logic_error("Unexpected case."); }
 
 inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return el.get_body(); }
 
@@ -502,8 +481,7 @@ template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism::planning::FDRVariableView<formalism::FluentTag> variable,
                                                                       BaseEntry<Tag> base,
                                                                       const PreconditionDetails<Tag>& details,
-                                                                      Builder<Tag>& builder,
-                                                                      const Repository<Tag>& repository)
+                                                                      Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
 
@@ -554,7 +532,7 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism:
     if (forward.empty())
         return std::nullopt;  ///< no element cares about the atom
 
-    return VariableStackEntry<Tag>(builder, repository, base, variable, std::move(children_elements), std::move(forward), dontcare_elements);
+    return VariableStackEntry<Tag>(builder, base, variable, std::move(children_elements), std::move(forward), dontcare_elements);
 }
 
 template<typename Tag>
@@ -642,7 +620,7 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
         [&]<typename Alternative>(const Alternative& arg)
         {
             if constexpr (std::same_as<Alternative, formalism::planning::FDRVariableView<formalism::FluentTag>>)
-                return try_create_variable_stack_entry(arg, base, details, builder, repository);
+                return try_create_variable_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<Alternative, urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>)
                 return try_create_negative_fact_stack_entry(arg, base, details, builder, repository);
             else if constexpr (std::same_as<Alternative, urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>>)
@@ -821,15 +799,11 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
                                          const formalism::planning::Repository& context)
-{
-    return std::make_unique<MatchTree<Tag>>(std::move(elements), context);
-}
+{ return std::make_unique<MatchTree<Tag>>(std::move(elements), context); }
 
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
-{
-    return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition));
-}
+{ return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition)); }
 
 template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,

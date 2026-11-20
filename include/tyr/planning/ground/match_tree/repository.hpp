@@ -88,26 +88,20 @@ public:
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
     [[nodiscard]] urd::index_view<T, Repository> view(urd::index<T> index) const noexcept
-    {
-        return { index, this };
-    }
+    { return { index, this }; }
 
     /// A formalism element a node refers to (an atom, a constraint, a fact, a variable): its view in the formalism
     /// repository, which owns it.
     template<typename T>
         requires(!ygg::formalism::SupportsSymbol<Repository, T>)
     [[nodiscard]] auto view(urd::index<T> index) const
-    {
-        return get_formalism_repository().view(index);
-    }
+    { return get_formalism_repository().view(index); }
 };
 
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
 void prepare_for_insert(Repository<Tag>&, urd::data<T>& data)
-{
-    canonicalize(data);
-}
+{ canonicalize(data); }
 
 }
 

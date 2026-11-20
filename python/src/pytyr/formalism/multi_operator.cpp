@@ -46,6 +46,7 @@ void bind_multi_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<MultiOperator<T, ArithmeticOperatorKind>, C>>(m);
     ygg::bind_insert<MultiOperator<T, ArithmeticOperatorKind>>(repository);
+    urd::python::bind_builder<MultiOperator<T, ArithmeticOperatorKind>, C>(m);
 }
 
 template<typename C>
@@ -58,7 +59,9 @@ void bind_multi_operator_views(nb::module_& m, nb::class_<C>& repository)
 
 void bind_multi_operator(nb::module_& m)
 {
+    urd::python::bind_index<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(m);
     urd::python::bind_data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_index<MultiOperator<GroundTag, ArithmeticOperatorKind>>(m);
     urd::python::bind_data<MultiOperator<GroundTag, ArithmeticOperatorKind>>(m);
 }
 

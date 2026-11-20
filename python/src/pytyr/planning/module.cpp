@@ -49,7 +49,7 @@ namespace tyr::planning
 void bind_module_definitions(nb::module_& m)
 {
     using namespace nb::literals;
-    urd::python::bind_index<urd::index<Worker>>(m, "WorkerIndex");
+    urd::python::bind_index<Worker>(m);
 
     nb::class_<SearchBudget>(m, "SearchBudget")
         .def(nb::init<std::optional<ygg::uint_t>, std::optional<std::chrono::steady_clock::duration>>(),

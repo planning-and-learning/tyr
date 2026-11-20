@@ -46,6 +46,7 @@ void bind_unary_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<UnaryOperator<T, ArithmeticOperatorKind>, C>>(m);
     ygg::bind_insert<UnaryOperator<T, ArithmeticOperatorKind>>(repository);
+    urd::python::bind_builder<UnaryOperator<T, ArithmeticOperatorKind>, C>(m);
 }
 
 template<typename C>
@@ -58,7 +59,9 @@ void bind_unary_operator_views(nb::module_& m, nb::class_<C>& repository)
 
 void bind_unary_operator(nb::module_& m)
 {
+    urd::python::bind_index<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(m);
     urd::python::bind_data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_index<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(m);
     urd::python::bind_data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(m);
 }
 

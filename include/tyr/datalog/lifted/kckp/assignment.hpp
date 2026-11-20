@@ -58,10 +58,7 @@ struct VertexAssignment
     static constexpr std::string_view name = "VertexAssignment";
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"index", &VertexAssignment::index>,
-                           urd::field<"object", &VertexAssignment::object>> {};
-    }
+    { return urd::Fields<urd::field<"index", &VertexAssignment::index>, urd::field<"object", &VertexAssignment::object>> {}; }
 };
 
 /**

@@ -41,17 +41,17 @@ class StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
     using Unpacked = urd::builder<AtomStorage<Kind>, formalism::planning::Repository>;
-    using Packed = typename Context::BitsetSet::handle_type;
+    using Handle = typename Context::BitsetSet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);
 
-    Packed insert(const Unpacked& unpacked);
+    Handle insert(const Unpacked& unpacked);
 
     /// Inserts `unpacked` as a delta to the stored `parent`, whose derived atoms `parent_atoms` are.
     /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both rows' words.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<Kind>& parent_atoms);
+    Handle insert(const Unpacked& unpacked, const Handle& parent, const AtomStorageView<Kind>& parent_atoms);
 
-    void unpack(const Packed& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
     Context* m_context;

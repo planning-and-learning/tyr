@@ -75,13 +75,15 @@ public:
     /// Each fact's atom, through the repository, which owns its variable.
     [[nodiscard]] auto fluent_atoms() const noexcept
     {
-        return facts()
-               | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
+        return facts() | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
     }
 
     static constexpr auto functions() noexcept
     {
-        return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>, urd::function<"num_variables", &view_mixin::num_variables>> {};
+        return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>,
+                              urd::function<"num_variables", &view_mixin::num_variables>,
+                              urd::function<"facts", &view_mixin::facts>,
+                              urd::function<"fluent_atoms", &view_mixin::fluent_atoms>> {};
     }
 };
 
@@ -117,13 +119,15 @@ public:
     /// Each fact's atom, through the repository, which owns its variable.
     [[nodiscard]] auto fluent_atoms() const noexcept
     {
-        return facts()
-               | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
+        return facts() | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
     }
 
     static constexpr auto functions() noexcept
     {
-        return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>, urd::function<"num_variables", &view_mixin::num_variables>> {};
+        return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>,
+                              urd::function<"num_variables", &view_mixin::num_variables>,
+                              urd::function<"facts", &view_mixin::facts>,
+                              urd::function<"fluent_atoms", &view_mixin::fluent_atoms>> {};
     }
 };
 
@@ -147,7 +151,8 @@ public:
                               [](ygg::uint_t i) { return urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> { i }; });
     }
 
-    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"test", &view_mixin::test, urd::arg<"index">>> {}; }
+    static constexpr auto functions() noexcept
+    { return urd::Functions<urd::function<"test", &view_mixin::test, urd::arg<"index">>, urd::function<"atoms", &view_mixin::atoms>> {}; }
 };
 
 /// A state's numeric values (a view of their builder, read through the formalism repository): a value per function term, NaN where it
@@ -177,7 +182,8 @@ public:
                    });
     }
 
-    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>> {}; }
+    static constexpr auto functions() noexcept
+    { return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>, urd::function<"fterm_values", &view_mixin::fterm_values>> {}; }
 };
 
 #endif

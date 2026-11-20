@@ -48,7 +48,7 @@ struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryInputT
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>> index;
     urd::built_t<size_t, C> input_slot = 0;
-    urd::built_t<urd::flat_vector<ygg::ColumnLayout>, C> columns;
+    urd::built_t<urd::flat_vector<urd::data<ygg::ColumnLayout>>, C> columns;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"input_slot", &builder::input_slot>, urd::field<"columns", &builder::columns>> {}; }
 
@@ -60,7 +60,7 @@ template<typename C>
 struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryEmptyTag>, C>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryEmptyTag>> index;
-    urd::built_t<urd::flat_vector<ygg::ColumnLayout>, C> columns;
+    urd::built_t<urd::flat_vector<urd::data<ygg::ColumnLayout>>, C> columns;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"columns", &builder::columns>> {}; }
 
@@ -117,9 +117,7 @@ struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryProjec
     urd::built_t<tyr::datalog::database::ProjectionPlan, C> plan;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operand", &builder::operand>, urd::field<"labels", &builder::labels>, urd::field<"plan", &builder::plan>> {};
-    }
+    { return urd::Fields<urd::field<"operand", &builder::operand>, urd::field<"labels", &builder::labels>, urd::field<"plan", &builder::plan>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operand, &builder::labels> {}; }
 };
@@ -131,12 +129,10 @@ struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryRename
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag>> index;
     urd::built_t<urd::index<tyr::datalog::database::Query<>>, C> operand;
     urd::built_t<urd::flat_vector<urd::index<ygg::Column>>, C> labels;
-    urd::built_t<urd::flat_vector<ygg::ColumnLayout>, C> columns;
+    urd::built_t<urd::flat_vector<urd::data<ygg::ColumnLayout>>, C> columns;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operand", &builder::operand>, urd::field<"labels", &builder::labels>, urd::field<"columns", &builder::columns>> {};
-    }
+    { return urd::Fields<urd::field<"operand", &builder::operand>, urd::field<"labels", &builder::labels>, urd::field<"columns", &builder::columns>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operand, &builder::labels> {}; }
 };
@@ -183,9 +179,7 @@ struct builder<tyr::datalog::database::Query<tyr::datalog::database::QuerySelect
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::operand, &builder::column, &builder::constant, &builder::constant_type> {};
-    }
+    { return urd::Members<&builder::operand, &builder::column, &builder::constant, &builder::constant_type> {}; }
 };
 
 /// The builder of Query: its record's members, each in its built form (urd::built_t).
@@ -209,9 +203,7 @@ struct builder<tyr::datalog::database::Query<tyr::datalog::database::QueryDistan
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::sources, &builder::edges, &builder::targets, &builder::distance_column> {};
-    }
+    { return urd::Members<&builder::sources, &builder::edges, &builder::targets, &builder::distance_column> {}; }
 };
 
 /// The builder of Query: its record's members, each in its built form (urd::built_t).

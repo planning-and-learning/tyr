@@ -37,7 +37,7 @@ const Delta& JoinEvaluator::get_delta() const&
 
 namespace tyr::datalog::database::incremental
 {
-size_t JoinEvaluator::memory_usage() const noexcept
+size_t JoinEvaluator::memory_usage() const
 {
     return urd::memory_usage(m_left_operand->relation) + urd::memory_usage(m_right_operand->relation) + urd::memory_usage(m_result->relation)
            + m_delta.memory_usage() + urd::memory_usage(m_left_index) + urd::memory_usage(m_right_index);

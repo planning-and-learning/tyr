@@ -109,7 +109,7 @@ struct RuleWorkspace<LiftedTag>
         kckp::Workspace kckp_workspace;
 
         /// Hyperedge anchors
-        urd::Store<urd::sequence<kckp::Vertex>> anchor_vertices;
+        urd::Store<urd::sequence<urd::data<kckp::Vertex>>> anchor_vertices;
 
         /// Heads of the current binding that the rule updates
         urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<formalism::FluentTag>>> head_bindings;

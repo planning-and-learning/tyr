@@ -21,6 +21,7 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
 
 #include <fmt/format.h>
 #include <utility>
@@ -276,6 +277,14 @@ template<>
 struct fmt::formatter<tyr::formalism::OptimizationDirection, char> : tyr::formalism::detail::without_format_spec
 {
     fmt::format_context::iterator format(tyr::formalism::OptimizationDirection value, fmt::format_context& ctx) const;
+};
+
+/// A substitution: each parameter of its domain with its value, `_` where it has none, in the order its parameters were
+/// given.
+template<typename T>
+struct fmt::formatter<tyr::formalism::unification::SubstitutionFunction<T>, char> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::unification::SubstitutionFunction<T>& value, fmt::format_context& ctx) const;
 };
 
 #endif

@@ -16,10 +16,10 @@
 #include <cstddef>
 #include <cstdlib>
 #include <gtest/gtest.h>
-#include <optional>
 #include <limits>
 #include <memory>
 #include <new>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <tuple>
@@ -105,9 +105,9 @@ struct Evaluation
 {
     Relation left_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     Relation right_operand { cols({ ColumnIndex(1), ColumnIndex(3) }) };
-    std::vector<ygg::ColumnLayout> joined_columns = cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) });
-    std::vector<ygg::ColumnLayout> renamed_columns = cols({ ColumnIndex(4), ColumnIndex(5), ColumnIndex(6) });
-    std::vector<ygg::ColumnLayout> key_columns = cols({ ColumnIndex(1) });
+    std::vector<urd::data<ygg::ColumnLayout>> joined_columns = cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) });
+    std::vector<urd::data<ygg::ColumnLayout>> renamed_columns = cols({ ColumnIndex(4), ColumnIndex(5), ColumnIndex(6) });
+    std::vector<urd::data<ygg::ColumnLayout>> key_columns = cols({ ColumnIndex(1) });
     database::JoinPlan joining { left_operand.columns(), right_operand.columns() };
     database::ProjectionPlan projecting { joined_columns, std::array { ColumnIndex(3) } };
     database::ProjectionPlan projecting_renamed { renamed_columns, std::array { ColumnIndex(6) } };
@@ -169,7 +169,7 @@ struct PooledEvaluation
     Relation right_operand { cols({ ColumnIndex(1), ColumnIndex(3) }) };
     ygg::FreeRelationRepository builders;
     database::Workspace workspace;
-    std::vector<ygg::ColumnLayout> key_columns = cols({ ColumnIndex(1) });
+    std::vector<urd::data<ygg::ColumnLayout>> key_columns = cols({ ColumnIndex(1) });
     database::JoinPlan joining { left_operand.columns(), right_operand.columns() };
     database::ProjectionPlan projecting_left_keys { left_operand.columns(), std::array { ColumnIndex(1) } };
     database::ProjectionPlan projecting_right_keys { right_operand.columns(), std::array { ColumnIndex(1) } };
@@ -217,7 +217,7 @@ struct PreparedPooledEvaluation
     database::ProjectionPlan projecting_right_keys { right_operand.columns(), std::array { key_column } };
     database::ProjectionPlan testing_existence { joining.output_columns(), std::array<ColumnIndex, 0> {} };
     database::SetPlan keys { projecting_left_keys.output_columns(), projecting_right_keys.output_columns() };
-    std::vector<ygg::ColumnLayout> alternate_join_columns = cols({ ColumnIndex(7), ColumnIndex(8), ColumnIndex(9) });
+    std::vector<urd::data<ygg::ColumnLayout>> alternate_join_columns = cols({ ColumnIndex(7), ColumnIndex(8), ColumnIndex(9) });
     ygg::FreeRelationRepository builders;
     database::Workspace workspace;
 
@@ -243,7 +243,7 @@ struct PreparedPooledEvaluation
                 valid &= relabeled->empty();
                 relabeled->insert(cells(offset, offset + 1, offset + 2));
                 const auto borrowed = borrow(*relabeled);
-                valid &= borrowed.size() == 1;
+                valid &= borrowed.get_rows().size() == 1;
                 valid &= std::ranges::equal(borrowed.columns(), alternate_join_columns);
             }
             auto joined = std::optional<Relation>(std::in_place, joining.output_columns());
@@ -287,8 +287,8 @@ struct InterningEvaluation
     ygg::FreeRelationRepository repository;
     ygg::FreeRelationRepository copied_repository;
     urd::data<ygg::Columns> schema_data;
-    const std::vector<ygg::ColumnLayout> columns = cols({ ColumnIndex(11), ColumnIndex(12), ColumnIndex(13) });
-    const std::vector<ygg::ColumnLayout> renamed_columns = cols({ ColumnIndex(21), ColumnIndex(22), ColumnIndex(23) });
+    const std::vector<urd::data<ygg::ColumnLayout>> columns = cols({ ColumnIndex(11), ColumnIndex(12), ColumnIndex(13) });
+    const std::vector<urd::data<ygg::ColumnLayout>> renamed_columns = cols({ ColumnIndex(21), ColumnIndex(22), ColumnIndex(23) });
 
     bool evaluate(bool reverse, ygg::uint_t generation)
     {
@@ -301,8 +301,8 @@ struct InterningEvaluation
             // Vary row lengths and registration order across repository clears.
             const auto logical_index = reverse ? count - i - 1 : i;
             const auto arity = 1 + logical_index % 3;
-            const auto schema = std::span<const ygg::ColumnLayout>(columns).first(arity);
-            const auto renamed_schema = std::span<const ygg::ColumnLayout>(renamed_columns).first(arity);
+            const auto schema = std::span<const urd::data<ygg::ColumnLayout>>(columns).first(arity);
+            const auto renamed_schema = std::span<const urd::data<ygg::ColumnLayout>>(renamed_columns).first(arity);
             schema_data.values.set(schema.begin(), schema.end());
             const auto interned_schema = repository.insert(schema_data).first;
             const auto [duplicate_schema, schema_created] = repository.insert(schema_data);
@@ -603,12 +603,12 @@ struct IncrementalEvaluation
             joining.update(delta.change(), std::pair { borrow(unchanged), borrow(unchanged) }, workspace);
             const auto& joined_delta = joining.get_delta();
             projecting.update(joined_delta.change(), workspace);
-            valid &= joining.get_result().size() == rows * fanout;
-            valid &= projecting.get_result().size() == rows;
-            valid &= joined_delta.added->view().size() == changed_rows * fanout;
-            valid &= joined_delta.removed->view().size() == changed_rows * fanout;
-            valid &= projecting.get_delta().added->view().size() == changed_rows;
-            valid &= projecting.get_delta().removed->view().size() == changed_rows;
+            valid &= joining.get_result().get_rows().size() == rows * fanout;
+            valid &= projecting.get_result().get_rows().size() == rows;
+            valid &= joined_delta.added->view().get_rows().size() == changed_rows * fanout;
+            valid &= joined_delta.removed->view().get_rows().size() == changed_rows * fanout;
+            valid &= projecting.get_delta().added->view().get_rows().size() == changed_rows;
+            valid &= projecting.get_delta().removed->view().get_rows().size() == changed_rows;
             for (size_t i = begin; i < begin + changed_rows; ++i)
                 valid &= projecting.get_result().contains(cells(values[i]));
         };
@@ -708,7 +708,7 @@ struct ChangingJoinEvaluation
                         ++expected;
                         valid &= joining.get_result().contains(cells(left[0], left[1], right[1]));
                     }
-            valid &= joining.get_result().size() == expected;
+            valid &= joining.get_result().get_rows().size() == expected;
         };
         replace(0, 1);
         replace(changed_rows, 2);
@@ -750,10 +750,10 @@ TEST(YggdrasilTests, DatabaseWarmedChangingJoinReusesStorageAcrossNovelKeysAndCo
 
 TEST(YggdrasilTests, DatabaseWarmedMixedWidthTuplesAndOperationsRetainStorage)
 {
-    const std::vector<ygg::ColumnLayout> left_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
-                                                        { ColumnIndex(2), ygg::type_id<double> },
-                                                        { ColumnIndex(3), ygg::type_id<bool> } };
-    const std::vector<ygg::ColumnLayout> right_columns { { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(4), ygg::type_id<ygg::uint_t> } };
+    const std::vector<urd::data<ygg::ColumnLayout>> left_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
+                                                                   { ColumnIndex(2), ygg::type_id<double> },
+                                                                   { ColumnIndex(3), ygg::type_id<bool> } };
+    const std::vector<urd::data<ygg::ColumnLayout>> right_columns { { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(4), ygg::type_id<ygg::uint_t> } };
     Relation left_operand(left_columns), right_operand(right_columns);
     const database::JoinPlan joining(left_operand.columns(), right_operand.columns());
     const database::ProjectionPlan projecting(joining.output_columns(), std::array { ColumnIndex(2), ColumnIndex(3) });
@@ -844,9 +844,9 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceSourceChurnReusesFiniteUniverseStorag
         {
             evaluator.update(changes[vertex].change(), std::pair { borrow(no_edges), borrow(no_edges) }, std::pair { borrow(no_targets), borrow(no_targets) });
             const auto source = (vertex + 1) % vertices;
-            valid &= evaluator.get_result().size() == vertices;
+            valid &= evaluator.get_result().get_rows().size() == vertices;
             valid &= evaluator.get_result().contains(cells(source, 0, (vertices - source) % vertices));
-            valid &= evaluator.get_delta().added->view().size() == vertices && evaluator.get_delta().removed->view().size() == vertices;
+            valid &= evaluator.get_delta().added->view().get_rows().size() == vertices && evaluator.get_delta().removed->view().get_rows().size() == vertices;
         }
         return valid;
     };
@@ -884,15 +884,15 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceEdgeRepairAndUndoRetainStorage)
     const auto cycle = [&]
     {
         evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) }, change.change(), std::pair { borrow(no_targets), borrow(no_targets) });
-        bool valid = evaluator.get_result().size() == std::size_t { 2 } * vertices;
+        bool valid = evaluator.get_result().get_rows().size() == std::size_t { 2 } * vertices;
         valid &= evaluator.get_result().contains(cells(0, 8, 1));
-        valid &= evaluator.get_delta().added->view().size() == 8 && evaluator.get_delta().removed->view().size() == 8;
+        valid &= evaluator.get_delta().added->view().get_rows().size() == 8 && evaluator.get_delta().removed->view().get_rows().size() == 8;
         evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) },
                          std::pair { borrow(change.removed), borrow(change.added) },
                          std::pair { borrow(no_targets), borrow(no_targets) });
-        valid &= evaluator.get_result().size() == std::size_t { 2 } * vertices;
+        valid &= evaluator.get_result().get_rows().size() == std::size_t { 2 } * vertices;
         valid &= evaluator.get_result().contains(cells(0, 8, 8));
-        valid &= evaluator.get_delta().added->view().size() == 8 && evaluator.get_delta().removed->view().size() == 8;
+        valid &= evaluator.get_delta().added->view().get_rows().size() == 8 && evaluator.get_delta().removed->view().get_rows().size() == 8;
         return valid;
     };
     for (size_t i = 0; i < 32; ++i)
@@ -937,17 +937,19 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceDenseLocalHeapChurnRetainsStorage)
     const auto cycle = [&]
     {
         evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) }, change.change(), std::pair { borrow(no_targets), borrow(no_targets) });
-        bool valid = evaluator.get_result().size() == std::size_t { 4 } * width;
+        bool valid = evaluator.get_result().get_rows().size() == std::size_t { 4 } * width;
         valid &= evaluator.get_result().contains(cells(0, first_parent, 1));
         valid &= evaluator.get_result().contains(cells(3, first_child, 2));
-        valid &= evaluator.get_delta().added->view().size() == std::size_t { 4 } * width && evaluator.get_delta().removed->view().size() == std::size_t { 4 } * width;
+        valid &= evaluator.get_delta().added->view().get_rows().size() == std::size_t { 4 } * width
+                 && evaluator.get_delta().removed->view().get_rows().size() == std::size_t { 4 } * width;
         evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) },
                          std::pair { borrow(change.removed), borrow(change.added) },
                          std::pair { borrow(no_targets), borrow(no_targets) });
-        valid &= evaluator.get_result().size() == std::size_t { 4 } * width;
+        valid &= evaluator.get_result().get_rows().size() == std::size_t { 4 } * width;
         valid &= evaluator.get_result().contains(cells(0, first_parent, first_parent));
         valid &= evaluator.get_result().contains(cells(3, first_child, first_parent - 2));
-        valid &= evaluator.get_delta().added->view().size() == std::size_t { 4 } * width && evaluator.get_delta().removed->view().size() == std::size_t { 4 } * width;
+        valid &= evaluator.get_delta().added->view().get_rows().size() == std::size_t { 4 } * width
+                 && evaluator.get_delta().removed->view().get_rows().size() == std::size_t { 4 } * width;
         return valid;
     };
     for (size_t i = 0; i < 32; ++i)

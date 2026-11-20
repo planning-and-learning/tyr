@@ -153,14 +153,12 @@ template<FactKind T>
 struct Predicate
 {
     static constexpr std::string_view name = urd::joined_name<"Predicate", T::name>;
-    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<FactKind T>
 struct Function
 {
     static constexpr std::string_view name = urd::joined_name<"Function", T::name>;
-    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 /**

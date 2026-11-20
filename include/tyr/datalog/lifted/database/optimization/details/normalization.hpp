@@ -75,13 +75,13 @@ class Normalizer
         const auto before = columns_of(rename.get_operand()), after = rename.columns();
         urd::Store<urd::sequence<urd::index<ygg::Column>>> result;
         for (const auto label : renamed)
-            result.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &ygg::ColumnLayout::label) - after.begin())].label);
+            result.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &urd::data<ygg::ColumnLayout>::label) - after.begin())].label);
         return result;
     }
 
     QueryView<> rename(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
     {
-        if (std::ranges::equal(columns_of(arg), columns, {}, &ygg::ColumnLayout::label))
+        if (std::ranges::equal(columns_of(arg), columns, {}, &urd::data<ygg::ColumnLayout>::label))
             return arg;
         const auto result = m_build.template relabel<QueryRenameTag>(arg, columns);
         return is<QueryEmptyTag>(arg) ? m_build.empty(columns_of(result)) : result;
@@ -97,11 +97,12 @@ class Normalizer
 
     /// The labels of `arg` in `columns` or in `extra`, in the order of `arg`.
     static urd::Store<urd::sequence<urd::index<ygg::Column>>>
-    kept_labels(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns, std::span<const ygg::ColumnLayout> extra)
+    kept_labels(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns, std::span<const urd::data<ygg::ColumnLayout>> extra)
     {
         urd::Store<urd::sequence<urd::index<ygg::Column>>> labels;
         for (const auto& column : columns_of(arg))
-            if (std::ranges::find(columns, column.label) != columns.end() || std::ranges::find(extra, column.label, &ygg::ColumnLayout::label) != extra.end())
+            if (std::ranges::find(columns, column.label) != columns.end()
+                || std::ranges::find(extra, column.label, &urd::data<ygg::ColumnLayout>::label) != extra.end())
                 labels.push_back(column.label);
         return labels;
     }
@@ -177,7 +178,7 @@ class Normalizer
                                        [&](urd::index<ygg::Column> label)
                                        {
                                            const auto schema = columns_of(query);
-                                           return std::ranges::find(schema, label, &ygg::ColumnLayout::label) != schema.end();
+                                           return std::ranges::find(schema, label, &urd::data<ygg::ColumnLayout>::label) != schema.end();
                                        });
         };
         if (is<QueryEmptyTag>(arg))
@@ -227,7 +228,7 @@ class Normalizer
             [&](auto& filtered)
             {
                 urd::build_member(filtered, condition(data), m_build.repository());
-                filtered.operand = arg;
+                urd::store(filtered.operand, arg);
             });
     }
 

@@ -22,9 +22,7 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
-using tyr::datalog::tests::Change;
 using View = tyr::datalog::database::QueryView<>;
 namespace qb = tyr::datalog::tests::qb;
 const Column x(0), y(1), z(2);
@@ -73,7 +71,7 @@ void expect_superset(View query, const tyr::datalog::database::Relaxation& relax
     for (const auto& column : columns_of(*relaxed_query))
     {
         labels.push_back(column.label);
-        EXPECT_TRUE(std::ranges::find(schema, column.label, &ygg::ColumnLayout::label) != schema.end());
+        EXPECT_TRUE(std::ranges::find(schema, column.label, &urd::data<ygg::ColumnLayout>::label) != schema.end());
     }
     const auto projected = tyr::datalog::tests::ops::projected(borrow(full), std::span<const Column>(labels));
     for (size_t i = 0; i < projected.size(); ++i)
@@ -189,8 +187,8 @@ TEST(DatabaseRelaxation, RandomExpressionsAreOverApproximatedAndExactWhenKnown)
             continue;
         const auto all_known = relax(root, { true, true, true, true });
         ASSERT_TRUE(all_known->relaxation.queries[0].has_value());
-        EXPECT_TRUE(
-            std::ranges::equal(columns_of(all_known->relaxation.queries[0].value()) | std::views::transform(&ygg::ColumnLayout::label), labels_of(root)));
+        EXPECT_TRUE(std::ranges::equal(columns_of(all_known->relaxation.queries[0].value()) | std::views::transform(&urd::data<ygg::ColumnLayout>::label),
+                                       labels_of(root)));
         auto all = urd::Store<urd::sequence<const Relation*>>();
         for (const auto slot : all_known->relaxation.slots)
             all.push_back(&inputs[slot]);
@@ -213,7 +211,7 @@ TEST(DatabaseRelaxation, UnknownInputsDropConstraints)
     // An unknown conjunct drops out of a join; its label z is unconstrained.
     const auto joined = relax(qb::join(queries, known_edges, unknown), both_known);
     ASSERT_TRUE(joined->relaxation.queries[0].has_value());
-    EXPECT_TRUE(std::ranges::equal(columns_of(joined->relaxation.queries[0].value()) | std::views::transform(&ygg::ColumnLayout::label),
+    EXPECT_TRUE(std::ranges::equal(columns_of(joined->relaxation.queries[0].value()) | std::views::transform(&urd::data<ygg::ColumnLayout>::label),
                                    (urd::Store<urd::sequence<Column>> { x, y })));
     EXPECT_EQ(joined->relaxation.slots, (urd::Store<urd::sequence<size_t>> { 0 }));
 
@@ -224,7 +222,7 @@ TEST(DatabaseRelaxation, UnknownInputsDropConstraints)
     // A semijoin with an unknown left operand still constrains the shared label y by its known right operand: ⊤ ⋉ B̂ = B̂ on y.
     const auto semi = relax(qb::semijoin(queries, unknown, known_edges), both_known);
     ASSERT_TRUE(semi->relaxation.queries[0].has_value());
-    EXPECT_TRUE(std::ranges::equal(columns_of(semi->relaxation.queries[0].value()) | std::views::transform(&ygg::ColumnLayout::label),
+    EXPECT_TRUE(std::ranges::equal(columns_of(semi->relaxation.queries[0].value()) | std::views::transform(&urd::data<ygg::ColumnLayout>::label),
                                    (urd::Store<urd::sequence<Column>> { y })));
 
     // A known antijoin right operand stays: the result is exact.
@@ -290,8 +288,8 @@ TEST(DatabaseRelaxation, RootsShareOneInputNumbering)
     const auto plan = tyr::datalog::database::compile_plan({ relaxed->relaxation.queries[0].value(), relaxed->relaxation.queries[1].value() });
     auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), plan);
     evaluator.evaluate(std::array { borrow(inputs[0]), borrow(inputs[2]) });
-    EXPECT_EQ(evaluator.get_result(0).size(), 1);
-    EXPECT_EQ(evaluator.get_result(1).size(), 1);
+    EXPECT_EQ(evaluator.get_result(0).get_rows().size(), 1);
+    EXPECT_EQ(evaluator.get_result(1).get_rows().size(), 1);
 }
 
 TEST(DatabaseRelaxation, ProjectedAwayConjunctsAreTestedOnceByBoundEvaluation)
@@ -428,7 +426,7 @@ TEST(DatabaseRelaxation, SharedSubqueriesKeepTheRequestedColumnOrder)
     const auto roots = std::array { qb::project(queries, qb::select_value(queries, r, x, static_cast<ygg::uint_t>(0)), { y }), r };
     const auto relaxed = relax(roots, { true, true, true, true });
     ASSERT_TRUE(relaxed->relaxation.queries[1].has_value());
-    EXPECT_TRUE(std::ranges::equal(columns_of(relaxed->relaxation.queries[1].value()) | std::views::transform(&ygg::ColumnLayout::label),
+    EXPECT_TRUE(std::ranges::equal(columns_of(relaxed->relaxation.queries[1].value()) | std::views::transform(&urd::data<ygg::ColumnLayout>::label),
                                    (urd::Store<urd::sequence<Column>> { x, y })));
 }
 

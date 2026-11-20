@@ -18,8 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
@@ -41,7 +42,6 @@ public:
     InvariantMatchData(InvariantView invariant, urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings);
 
     [[nodiscard]] auto invariant() const noexcept { return m_invariant; }
-
 
     [[nodiscard]] const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
 
@@ -82,8 +82,7 @@ class Matcher
 public:
     Matcher(InvariantMatchDataList invariant_match_data);
 
-
-    void query(AtomView<GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const;
+    void query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& result, QueryWorkspace& workspace) const;
 
     [[nodiscard]] QueryResult query(AtomView<GroundTag, FluentTag> atom) const;
 

@@ -87,9 +87,9 @@ create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
     // Its terms are the action's variables, in order: they are its parameters.
     auto parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
     for (const auto variable : action.get_condition().get_variables())
-        parameters->variables.push_back(formalism::copy(variable, context).first);
-    atom->parameters = context.destination().insert(*parameters, context.builder()).first;
-    atom->predicate = applicability_predicate;
+        urd::append(parameters->variables, formalism::copy(variable, context).first);
+    urd::store(atom->parameters, context.destination().insert(*parameters, context.builder()).first);
+    urd::store(atom->predicate, applicability_predicate);
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         urd::build_member(atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), context.destination());
 
@@ -119,9 +119,9 @@ create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
     // Its terms are the axiom's variables, in order: they are its parameters.
     auto parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
     for (const auto variable : axiom.get_body().get_variables())
-        parameters->variables.push_back(formalism::copy(variable, context).first);
-    atom->parameters = context.destination().insert(*parameters, context.builder()).first;
-    atom->predicate = applicability_predicate;
+        urd::append(parameters->variables, formalism::copy(variable, context).first);
+    urd::store(atom->parameters, context.destination().insert(*parameters, context.builder()).first);
+    urd::store(atom->predicate, applicability_predicate);
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         urd::build_member(atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), context.destination());
 
@@ -170,14 +170,14 @@ void translate_task_symbols(formalism::planning::TaskView<LiftedTag> task,
         const auto new_predicate = formalism::copy(predicate, context).first;
         translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
-        program.static_predicates.push_back(new_predicate);
+        urd::append(program.static_predicates, new_predicate);
     }
     for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
     {
         const auto new_predicate = formalism::copy(predicate, context).first;
         translation_context.d2p.fluent_to_fluent_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
-        program.fluent_predicates.push_back(new_predicate);
+        urd::append(program.fluent_predicates, new_predicate);
     }
     if (with_derived)
     {
@@ -186,40 +186,40 @@ void translate_task_symbols(formalism::planning::TaskView<LiftedTag> task,
             const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
             translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
             translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-            program.fluent_predicates.push_back(new_predicate);
+            urd::append(program.fluent_predicates, new_predicate);
         }
         for (const auto predicate : task.get_derived_predicates())
         {
             const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
             translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
             translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-            program.fluent_predicates.push_back(new_predicate);
+            urd::append(program.fluent_predicates, new_predicate);
         }
     }
 
     for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
-        program.static_functions.push_back(formalism::copy(function, context).first);
+        urd::append(program.static_functions, formalism::copy(function, context).first);
     for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
     {
         const auto new_function = formalism::copy(function, context).first;
         translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
-        program.fluent_functions.push_back(new_function);
+        urd::append(program.fluent_functions, new_function);
     }
 
     for (const auto object : task.get_domain().get_constants())
-        program.objects.push_back(formalism::copy(object, context).first);
+        urd::append(program.objects, formalism::copy(object, context).first);
     for (const auto object : task.get_objects())
-        program.objects.push_back(formalism::copy(object, context).first);
+        urd::append(program.objects, formalism::copy(object, context).first);
 
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
-        program.static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first);
+        urd::append(program.static_atoms, formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first);
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
-        program.fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first);
+        urd::append(program.fluent_atoms, formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 
     for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
-        program.static_fterm_values.push_back(formalism::copy(fterm_value, context).first);
+        urd::append(program.static_fterm_values, formalism::copy(fterm_value, context).first);
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
-        program.fluent_fterm_values.push_back(formalism::copy(fterm_value, context).first);
+        urd::append(program.fluent_fterm_values, formalism::copy(fterm_value, context).first);
 }
 
 }

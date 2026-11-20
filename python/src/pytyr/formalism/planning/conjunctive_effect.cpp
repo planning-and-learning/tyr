@@ -39,13 +39,16 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<ConjunctiveEffectView<T>>(m);
     ygg::bind_insert<ConjunctiveEffect<T>>(repository);
+    urd::python::bind_builder<ConjunctiveEffect<T>, Repository>(m);
 }
 }  // namespace
 
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<ConjunctiveEffect<LiftedTag>>(m);
     urd::python::bind_data<ConjunctiveEffect<LiftedTag>>(m);
     bind_conjunctive_effect_kind<LiftedTag>(m, repository);
+    urd::python::bind_index<ConjunctiveEffect<GroundTag>>(m);
     urd::python::bind_data<ConjunctiveEffect<GroundTag>>(m);
     bind_conjunctive_effect_kind<GroundTag>(m, repository);
 }

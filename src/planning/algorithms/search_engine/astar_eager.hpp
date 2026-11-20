@@ -195,7 +195,7 @@ public:
     }
 
     [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionRowView) const
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().pack().index() }, node.get_metric() }; }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
     {
@@ -238,7 +238,7 @@ public:
                 return *result;
 
             successor_search_node.status = SearchNodeStatus::GOAL;
-            open_successor(successor_state.index(), g_value, 0, successor_search_node.status, false);
+            open_successor(successor_state.pack().index(), g_value, 0, successor_search_node.status, false);
             emit_transition(TransitionOutcome::GOAL);
             return AcceptanceResult::QUEUED;
         }
@@ -273,7 +273,7 @@ public:
         if (!engine.m_execution.running())
             return AcceptanceResult::TERMINAL;
 
-        auto& accepted_search_node = worker.get_search_node(successor_state.index());
+        auto& accepted_search_node = worker.get_search_node(successor_state.pack().index());
         accepted_search_node.h_value = h_value;
         if (h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
@@ -285,7 +285,7 @@ public:
         }
 
         accepted_search_node.status = SearchNodeStatus::OPEN;
-        open_successor(successor_state.index(), accepted_search_node.g_value, h_value, accepted_search_node.status, false);
+        open_successor(successor_state.pack().index(), accepted_search_node.g_value, h_value, accepted_search_node.status, false);
 
         emit_transition(is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED);
         return AcceptanceResult::QUEUED;

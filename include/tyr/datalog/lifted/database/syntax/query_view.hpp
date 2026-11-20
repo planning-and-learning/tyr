@@ -62,7 +62,7 @@ public:
                                                         self().template member<&urd::record_of<V>::labels>().size());
     }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> get_columns() const
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> get_columns() const
         requires(std::same_as<Tag, tyr::datalog::database::QueryInputTag> || std::same_as<Tag, tyr::datalog::database::QueryEmptyTag>
                  || std::same_as<Tag, tyr::datalog::database::QueryRenameTag>)
     { return { self().template member<&urd::record_of<V>::columns>().data(), self().template member<&urd::record_of<V>::columns>().size() }; }
@@ -113,7 +113,7 @@ public:
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryPlannedTags, Tag>::value
     { return self().template member<&urd::record_of<V>::plan>(); }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> columns() const
         requires(!std::same_as<Tag, void>)
     {
         if constexpr (std::same_as<Tag, tyr::datalog::database::QuerySemijoinTag> || std::same_as<Tag, tyr::datalog::database::QueryAntijoinTag>)
@@ -148,7 +148,7 @@ void for_each_child(QueryView<Tag> view, F f)
 
 /// The columns of a query, read through its variant for a query of any operation (its operation's).
 template<typename Tag>
-[[nodiscard]] std::span<const ygg::ColumnLayout> columns_of(QueryView<Tag> view)
+[[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> columns_of(QueryView<Tag> view)
 {
     if constexpr (std::same_as<Tag, void>)
         return std::visit([](auto concrete) { return concrete.columns(); }, view.get_variant());

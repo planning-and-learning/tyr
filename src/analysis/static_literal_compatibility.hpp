@@ -397,7 +397,8 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
     }
 
     const auto num_partitions = static_cast<ygg::uint_t>(domains.size());
-    auto adjacency = kckp::CompatibilityMatrix(urd::graph_data<std::pair<kckp::Vertex, kckp::Vertex>> { vertex_labels.size(), {}, partition_sizes });
+    auto adjacency =
+        kckp::CompatibilityMatrix(urd::graph_data<std::pair<urd::data<kckp::Vertex>, urd::data<kckp::Vertex>>> { vertex_labels.size(), {}, partition_sizes });
     auto first_vertex_of = urd::Store<urd::sequence<ygg::uint_t>>(num_partitions + 1, 0);
     for (ygg::uint_t partition = 0; partition < num_partitions; ++partition)
         first_vertex_of[partition + 1] = first_vertex_of[partition] + static_cast<ygg::uint_t>(partition_sizes[partition]);
@@ -444,8 +445,8 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
                                                 { return compatibility->binary_compatible(first_partition, first_object, second_partition, second_object); }))
                         return;
 
-                    num_compatible += adjacency.add_edge(kckp::Vertex(first_vertex_of[first_partition] + first_bit->second),
-                                                         kckp::Vertex(first_vertex_of[second_partition] + second_bit->second)) ?
+                    num_compatible += adjacency.add_edge(urd::data<kckp::Vertex>(first_vertex_of[first_partition] + first_bit->second),
+                                                         urd::data<kckp::Vertex>(first_vertex_of[second_partition] + second_bit->second)) ?
                                           1 :
                                           0;
                 });

@@ -34,8 +34,8 @@ TEST(YggdrasilTests, DatabaseQueryPlanFormatterPreservesExplanation)
 {
     using Column = urd::index<ygg::Column>;
     auto repository = qb::repository();
-    const std::array<ygg::ColumnLayout, 2> columns { ygg::ColumnLayout { Column(3), ygg::type_id<double> },
-                                                     ygg::ColumnLayout { Column(8), ygg::type_id<std::int32_t> } };
+    const std::array<urd::data<ygg::ColumnLayout>, 2> columns { urd::data<ygg::ColumnLayout> { Column(3), ygg::type_id<double> },
+                                                                urd::data<ygg::ColumnLayout> { Column(8), ygg::type_id<std::int32_t> } };
     const auto input = qb::input(repository, 7, columns);
     const auto nullary = qb::input(repository, 2, std::initializer_list<Column> {});
     const auto join = qb::generic_join(repository, { input, nullary }, { Column(3), Column(8) }, { Column(8), Column(3) });

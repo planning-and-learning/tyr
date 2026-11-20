@@ -43,6 +43,7 @@ void bind_fdr_fact_view(nb::module_& m)
 void bind_fdr_fact(nb::module_& m, RepositoryBinding& /*repository*/)
 {
     urd::python::bind_data<FDRFact<FluentTag>>(m);
+    urd::python::bind_builder<FDRFact<FluentTag>, Repository>(m);
     bind_fdr_fact_view<FDRFactView<FluentTag>>(m);
     bind_fdr_fact_view<urd::owning_view<FDRFact<FluentTag>, Repository>>(m);
 }

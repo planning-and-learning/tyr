@@ -9,6 +9,7 @@
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
 
+#include <iterator>
 #include <optional>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
@@ -46,7 +47,7 @@ RelationStatistics measure_relation(const Relation& relation)
     {
         seen.clear();
         for (const auto& held : relation.get_rows())
-            ygg::with_values(held, [&](const auto& values) { seen.insert(std::ranges::begin(values)[static_cast<std::ptrdiff_t>(c)]); });
+            ygg::with_values(held, [&](const auto& values) { seen.insert(*std::ranges::next(std::ranges::begin(values), static_cast<std::ptrdiff_t>(c))); });
         stats.distinct[columns[c].label] = static_cast<double>(seen.size());
     }
     return stats;

@@ -10,11 +10,12 @@
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
 #include <cstddef>
+#include <iterator>
 #include <ranges>
 #include <span>
 #include <urd/elements/hash.hpp>
-#include <urd/repr/containers/schema_rows.hpp>
 #include <urd/memory.hpp>
+#include <urd/repr/containers/schema_rows.hpp>
 #include <urd/repr/maps/postings.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
@@ -30,7 +31,7 @@ inline ygg::Value field_value(const urd::packed_row<false>& row, size_t position
 
 template<ygg::RowValues R>
 ygg::Value field_value(const R& values, size_t position) noexcept
-{ return std::ranges::begin(values)[static_cast<std::ptrdiff_t>(position)]; }
+{ return *std::ranges::next(std::ranges::begin(values), static_cast<std::ptrdiff_t>(position)); }
 
 /// Hash the key fields' canonical values in logical key order, without materializing a key: as urd::hash_range of them.
 template<typename R>

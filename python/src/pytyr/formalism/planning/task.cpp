@@ -39,13 +39,16 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<TaskView<T>>(m);
     ygg::bind_insert<Task<T>>(repository);
+    urd::python::bind_builder<Task<T>, Repository>(m);
 }
 }  // namespace
 
 void bind_task(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<Task<LiftedTag>>(m);
     urd::python::bind_data<Task<LiftedTag>>(m);
     bind_task_kind<LiftedTag>(m, repository);
+    urd::python::bind_index<Task<GroundTag>>(m);
     urd::python::bind_data<Task<GroundTag>>(m);
     bind_task_kind<GroundTag>(m, repository);
 }

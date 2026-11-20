@@ -69,7 +69,7 @@ def backtrack_plan(
     successor_generator: SuccessorGenerator,
 ) -> Plan:
     """Backtracks from the goal search node to compute the labeled state trajectory."""
-    cur_state_index = goal_node.get_state().index()
+    cur_state_index = goal_node.get_state().pack().index()
     backward_state_trajectory: list[StateIndex] = []
 
     while cur_state_index is not None:
@@ -90,7 +90,7 @@ def backtrack_plan(
         ):
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
-            succ_state_index = succ_state.index()
+            succ_state_index = succ_state.pack().index()
 
             if succ_state_index == forward_state_trajectory[i + 1]:
                 labeled_succ_nodes.append(labeled_succ_node)
@@ -134,7 +134,7 @@ def find_solution(
 
     initial_h_value = heuristic.evaluate(initial_state)
     initial_g_value = initial_node.get_metric()
-    initial_state_index = initial_state.index()
+    initial_state_index = initial_state.pack().index()
 
     search_nodes: dict[StateIndex, SearchNode] = {}
     search_nodes[initial_state_index] = SearchNode(initial_g_value, None, SearchNodeStatus.NEW)
@@ -165,7 +165,7 @@ def find_solution(
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
             succ_g_value = succ_node.get_metric()
-            succ_state_index = succ_state.index()
+            succ_state_index = succ_state.pack().index()
 
             if succ_state_index not in search_nodes:
                 search_nodes[succ_state_index] = SearchNode(succ_g_value, state_index, SearchNodeStatus.NEW)

@@ -34,13 +34,18 @@ namespace tyr::formalism::planning
 
 void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<ConditionalEffect<LiftedTag>>(m);
     urd::python::bind_data<ConditionalEffect<LiftedTag>>(m);
     urd::python::bind_view<ConditionalEffectView<LiftedTag>>(m);
     ygg::bind_insert<ConditionalEffect<LiftedTag>>(repository);
+    urd::python::bind_builder<ConditionalEffect<LiftedTag>, Repository>(m);
+
+    urd::python::bind_index<ConditionalEffect<GroundTag>>(m);
 
     urd::python::bind_data<ConditionalEffect<GroundTag>>(m);
     urd::python::bind_view<ConditionalEffectView<GroundTag>>(m);
     ygg::bind_insert<ConditionalEffect<GroundTag>>(repository);
+    urd::python::bind_builder<ConditionalEffect<GroundTag>, Repository>(m);
 }
 
 }  // namespace tyr::formalism::planning

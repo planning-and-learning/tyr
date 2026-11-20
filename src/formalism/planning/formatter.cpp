@@ -582,8 +582,31 @@ template struct fmt::formatter<ygg::RowView<tp::Axiom<LiftedTag>, tp::Repository
 template struct fmt::formatter<tp::PlanningTask<LiftedTag>>;
 template struct fmt::formatter<tp::PlanningTask<GroundTag>>;
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::planning::FDRValue>::format(const tyr::formalism::planning::FDRValue& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::formalism::planning::FDRValue>::format(const tyr::formalism::planning::FDRValue& value,
+                                                                                         fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.value); }
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::OptimizationDirection>::format(tyr::formalism::OptimizationDirection value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::formalism::OptimizationDirection>::format(tyr::formalism::OptimizationDirection value,
+                                                                                            fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+
+template<typename T>
+fmt::format_context::iterator
+fmt::formatter<tyr::formalism::unification::SubstitutionFunction<T>>::format(const tyr::formalism::unification::SubstitutionFunction<T>& value,
+                                                                             fmt::format_context& ctx) const
+{
+    auto out = fmt::format_to(ctx.out(), "SubstitutionFunction(");
+    auto separator = "";
+    for (const auto parameter : value.parameters())
+    {
+        if (const auto& bound = *value.try_get(parameter); bound.has_value())
+            out = fmt::format_to(out, "{}{}={}", separator, parameter, *bound);
+        else
+            out = fmt::format_to(out, "{}{}=_", separator, parameter);
+        separator = ", ";
+    }
+    return fmt::format_to(out, ")");
+}
+
+template struct fmt::formatter<tyr::formalism::unification::SubstitutionFunction<tyr::formalism::Term>>;
+template struct fmt::formatter<tyr::formalism::unification::SubstitutionFunction<urd::index<tyr::formalism::Object>>>;

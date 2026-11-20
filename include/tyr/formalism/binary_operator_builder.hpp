@@ -41,9 +41,7 @@ struct builder<::tyr::formalism::BinaryOperator<T, O>, C>
     urd::built_t<::tyr::formalism::FunctionExpression<T>, C> rhs;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"lhs", &builder::lhs>, urd::field<"rhs", &builder::rhs>> {};
-    }
+    { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"lhs", &builder::lhs>, urd::field<"rhs", &builder::rhs>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operation, &builder::lhs, &builder::rhs> {}; }
 };

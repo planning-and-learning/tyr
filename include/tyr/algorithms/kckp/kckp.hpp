@@ -24,7 +24,9 @@
 #include <optional>
 #include <span>
 #include <string_view>
+#include <type_traits>
 #include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/graphs.hpp>
 #include <urd/key_range.hpp>
 #include <urd/repr/graphs/bit_matrix.hpp>
@@ -37,33 +39,48 @@
 namespace tyr::kckp
 {
 
+/// A vertex of a k-partite graph: its number (data<Vertex>, a value; none is the largest number).
 struct Vertex
 {
-    ygg::uint_t index;
-
-    constexpr Vertex() noexcept : index(std::numeric_limits<ygg::uint_t>::max()) {}
-
-    constexpr explicit Vertex(ygg::uint_t index_) noexcept : index(index_) {}
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&Vertex::index> {}; }
-
-    friend constexpr bool operator==(Vertex, Vertex) noexcept = default;
-
     static constexpr std::string_view name = "Vertex";
+};
+}  // namespace tyr::kckp
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"index", &Vertex::index>> {}; }
+template<>
+struct urd::data<tyr::kckp::Vertex>
+{
+    ygg::uint_t number = std::numeric_limits<ygg::uint_t>::max();
+
+    data() = default;
+
+    constexpr explicit data(ygg::uint_t number_) noexcept : number(number_) {}
+
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"number", &data::number>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::number> {}; }
 };
 
+namespace tyr::kckp
+{
+
 /// A set of vertices: over the window of one part (Graph::empty_parts), or over all vertices.
-using VertexSet = urd::Store<urd::set<Vertex>, urd::dense>;
+using VertexSet = urd::Store<urd::set<urd::data<Vertex>>, urd::dense>;
 /// A vertex set per part, say, each kept whole.
 using VertexSets = urd::Store<urd::sequence<VertexSet>, urd::retains>;
 /// The pairs of parts whose vertices are all adjacent: first * num_parts + second, both ways.
 using PartPairs = urd::Store<urd::set<size_t>, urd::dense>;
 /// The compatible pairs of a k-partite graph as they are found: rows of bits that grow.
-using CompatibilityMatrix = urd::Store<urd::graph<Vertex>, urd::monotone, urd::partitioned, urd::undirected, urd::constant_adjacency>;
+using CompatibilityMatrix = urd::Store<urd::graph<urd::data<Vertex>>, urd::monotone, urd::partitioned, urd::undirected, urd::constant_adjacency>;
 /// The compatible pairs once pruned: equal rows stored once.
-using StaticRows = urd::Store<urd::graph<Vertex>, urd::frozen, urd::partitioned, urd::undirected, urd::constant_adjacency>;
+using StaticRows = urd::Store<urd::graph<urd::data<Vertex>>, urd::frozen, urd::partitioned, urd::undirected, urd::constant_adjacency>;
 
 /// A k-partite graph of compatible pairs, pruned to arc consistency, whose vertices carry labels (objects): a part's
 /// vertices are numbered in the order of their labels.
@@ -82,16 +99,16 @@ public:
 
     [[nodiscard]] size_t num_parts() const { return m_rows.num_parts(); }
 
-    [[nodiscard]] ygg::uint_t part_of(Vertex v) const { return static_cast<ygg::uint_t>(m_rows.part_of(v)); }
+    [[nodiscard]] ygg::uint_t part_of(urd::data<Vertex> v) const { return static_cast<ygg::uint_t>(m_rows.part_of(v)); }
 
     [[nodiscard]] auto part(size_t p) const { return m_rows.part(p); }
 
-    [[nodiscard]] ygg::uint_t label(Vertex v) const { return m_labels[v.index]; }
+    [[nodiscard]] ygg::uint_t label(urd::data<Vertex> v) const { return m_labels[v.number]; }
 
     /// The vertex with `label` in part p, if any.
-    [[nodiscard]] std::optional<Vertex> find_vertex(size_t p, ygg::uint_t label) const;
+    [[nodiscard]] std::optional<urd::data<Vertex>> find_vertex(size_t p, ygg::uint_t label) const;
 
-    [[nodiscard]] bool adjacent(Vertex u, Vertex v) const { return m_rows.adjacent(u, v); }
+    [[nodiscard]] bool adjacent(urd::data<Vertex> u, urd::data<Vertex> v) const { return m_rows.adjacent(u, v); }
 
     [[nodiscard]] const StaticRows& rows() const noexcept { return m_rows; }
 
@@ -118,7 +135,7 @@ struct Workspace
     VertexSets anchor_source;  ///< per part, the rows of the prepared anchor source, see DeltaKCKP::prepare_anchor_source
     VertexSets scratch;        ///< per part
     urd::Store<urd::set<ygg::uint_t>, urd::dense> partition_bits;
-    urd::Store<urd::sequence<Vertex>> partial_solution;
+    urd::Store<urd::sequence<urd::data<Vertex>>> partial_solution;
     ygg::uint_t partial_solution_size { 0 };
     ygg::uint_t anchor_pi { std::numeric_limits<ygg::uint_t>::max() };
     ygg::uint_t anchor_pj { std::numeric_limits<ygg::uint_t>::max() };
@@ -180,7 +197,7 @@ public:
     template<typename Callback>
     void for_each_clique(Callback callback, Workspace& workspace) const
     {
-        if (!m_graph->is_satisfiable() || !seed_from_prefix(std::span<const Vertex> {}, workspace))
+        if (!m_graph->is_satisfiable() || !seed_from_prefix(std::span<const urd::data<Vertex>> {}, workspace))
             return;
 
         if (m_graph->num_parts() == 0)
@@ -193,7 +210,7 @@ public:
     }
 
     template<typename Callback>
-    void for_each_compatible_extension(std::span<const Vertex> prefix, Workspace& workspace, Callback callback) const
+    void for_each_compatible_extension(std::span<const urd::data<Vertex>> prefix, Workspace& workspace, Callback callback) const
     {
         assert(prefix.size() <= m_graph->num_parts());
         if (!m_graph->is_satisfiable() || !seed_from_prefix(prefix, workspace))
@@ -201,29 +218,31 @@ public:
 
         if (prefix.size() == m_graph->num_parts())
         {
-            callback(std::span<const Vertex> {});
+            callback(std::span<const urd::data<Vertex>> {});
             return;
         }
 
         const auto first_partition = static_cast<ygg::uint_t>(prefix.size());
-        auto emit = [&](const urd::Store<urd::sequence<Vertex>>& clique) { callback(std::span<const Vertex>(clique).subspan(first_partition)); };
+        auto emit = [&](const urd::Store<urd::sequence<urd::data<Vertex>>>& clique)
+        { callback(std::span<const urd::data<Vertex>>(clique).subspan(first_partition)); };
         complete_from_prefix(first_partition, workspace, emit);
     }
 
     [[nodiscard]] const Graph& get_graph() const noexcept { return *m_graph; }
 
 private:
-    bool seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace) const;
+    bool seed_from_prefix(std::span<const urd::data<Vertex>> prefix, Workspace& workspace) const;
 
     [[nodiscard]] ygg::uint_t choose_next_partition(ygg::uint_t first_partition, const Workspace& workspace) const noexcept;
 
-    bool update_candidates(ygg::uint_t first_partition, Vertex source, size_t depth, Workspace& workspace) const;
+    bool update_candidates(ygg::uint_t first_partition, urd::data<Vertex> source, size_t depth, Workspace& workspace) const;
 
     template<typename Callback>
     void complete_from_prefix(ygg::uint_t first_partition, Workspace& workspace, Callback& callback) const
     {
         auto select_partition = [&](size_t, const Workspace& current) { return choose_next_partition(first_partition, current); };
-        auto update_compatible = [&](Vertex source, size_t depth, Workspace& current) { return update_candidates(first_partition, source, depth, current); };
+        auto update_compatible = [&](urd::data<Vertex> source, size_t depth, Workspace& current)
+        { return update_candidates(first_partition, source, depth, current); };
         detail::complete_clique(*m_graph, 0, workspace, select_partition, update_compatible, callback);
     }
 

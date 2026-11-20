@@ -26,7 +26,7 @@ BitPositionsRepository<U, Context>::BitPositionsRepository(Context& ctx) : m_uin
 }
 
 template<typename U, typename Context>
-auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked) -> Packed
+auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked) -> Handle
 {
     m_buffer.clear();
     for (const auto i : unpacked.indices)
@@ -36,7 +36,7 @@ auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked) -> Pac
 }
 
 template<typename U, typename Context>
-auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const Packed& parent) -> Packed
+auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const Handle& parent) -> Handle
 {
     // A write cannot grow or shrink a stored row, so only rows with as many true positions as the parent go in as writes.
     const auto& bits = unpacked.indices;
@@ -59,7 +59,7 @@ auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const 
 }
 
 template<typename U, typename Context>
-void BitPositionsRepository<U, Context>::unpack(const Packed& packed, Unpacked& unpacked)
+void BitPositionsRepository<U, Context>::unpack(const Handle& packed, Unpacked& unpacked)
 {
     m_buffer.resize(m_uint_vectors->row_size(packed));
     m_uint_vectors->copy(packed, m_buffer);

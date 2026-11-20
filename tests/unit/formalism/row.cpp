@@ -178,7 +178,7 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     const auto predicate = tyr::formalism::planning::insert(repository, predicate_data).first;
 
     auto data = tyr::formalism::planning::checkout<ygg::Row<Predicate>>(builder);
-    data->relation = predicate;
+    urd::store(data->relation, predicate);
     data->values.push_back(b.index().value);
     data->values.push_back(a.index().value);
     const auto [binding, inserted] = repository.insert(*data, builder);

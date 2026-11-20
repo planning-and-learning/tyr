@@ -11,9 +11,9 @@
 namespace
 {
 /// The position of the column labeled `label`; std::out_of_range where there is none.
-size_t column_position(std::span<const ygg::ColumnLayout> columns, urd::index<ygg::Column> label)
+size_t column_position(std::span<const urd::data<ygg::ColumnLayout>> columns, urd::index<ygg::Column> label)
 {
-    const auto found = std::ranges::find(columns, label, &ygg::ColumnLayout::label);
+    const auto found = std::ranges::find(columns, label, &urd::data<ygg::ColumnLayout>::label);
     if (found == columns.end())
         throw std::out_of_range("Columns: unknown column label.");
     return static_cast<size_t>(found - columns.begin());
@@ -22,7 +22,7 @@ size_t column_position(std::span<const ygg::ColumnLayout> columns, urd::index<yg
 
 namespace tyr::datalog::database
 {
-ProjectionPlan::ProjectionPlan(std::span<const ygg::ColumnLayout> input, std::span<const urd::index<ygg::Column>> columns)
+ProjectionPlan::ProjectionPlan(std::span<const urd::data<ygg::ColumnLayout>> input, std::span<const urd::index<ygg::Column>> columns)
 {
     ygg::validate_columns(input);
     m_input.set(input.begin(), input.end());
@@ -35,7 +35,7 @@ ProjectionPlan::ProjectionPlan(std::span<const ygg::ColumnLayout> input, std::sp
     ygg::validate_columns(output_columns());
 }
 
-JoinPlan::JoinPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right)
+JoinPlan::JoinPlan(std::span<const urd::data<ygg::ColumnLayout>> left, std::span<const urd::data<ygg::ColumnLayout>> right)
 {
     ygg::validate_columns(left);
     ygg::validate_columns(right);
@@ -45,7 +45,7 @@ JoinPlan::JoinPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg:
     for (size_t position = 0; position < right.size(); ++position)
     {
         const auto& column = right[position];
-        const auto it = std::ranges::find(left, column.label, &ygg::ColumnLayout::label);
+        const auto it = std::ranges::find(left, column.label, &urd::data<ygg::ColumnLayout>::label);
         if (it == left.end())
         {
             m_output.push_back(column);
@@ -61,7 +61,7 @@ JoinPlan::JoinPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg:
     }
 }
 
-SetPlan::SetPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right)
+SetPlan::SetPlan(std::span<const urd::data<ygg::ColumnLayout>> left, std::span<const urd::data<ygg::ColumnLayout>> right)
 {
     ygg::validate_columns(left);
     if (!std::ranges::equal(left, right))
@@ -69,7 +69,7 @@ SetPlan::SetPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::C
     m_columns.set(left.begin(), left.end());
 }
 
-SelectEqualPlan::SelectEqualPlan(std::span<const ygg::ColumnLayout> input, urd::index<ygg::Column> left, urd::index<ygg::Column> right) :
+SelectEqualPlan::SelectEqualPlan(std::span<const urd::data<ygg::ColumnLayout>> input, urd::index<ygg::Column> left, urd::index<ygg::Column> right) :
     m_left(column_position(input, left)),
     m_right(column_position(input, right))
 {
@@ -79,7 +79,7 @@ SelectEqualPlan::SelectEqualPlan(std::span<const ygg::ColumnLayout> input, urd::
     m_columns.set(input.begin(), input.end());
 }
 
-SelectValuePlan::SelectValuePlan(std::span<const ygg::ColumnLayout> input, urd::index<ygg::Column> column, ygg::TypeId type, ygg::Value value) :
+SelectValuePlan::SelectValuePlan(std::span<const urd::data<ygg::ColumnLayout>> input, urd::index<ygg::Column> column, ygg::TypeId type, ygg::Value value) :
     m_position(column_position(input, column)),
     m_value(value)
 {

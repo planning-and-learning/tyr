@@ -39,7 +39,7 @@ public:
         return insert_query(*m_repository, *m_builder, *data);
     }
 
-    QueryView<> empty(std::span<const ygg::ColumnLayout> columns)
+    QueryView<> empty(std::span<const urd::data<ygg::ColumnLayout>> columns)
     {
         return make<QueryEmptyTag>([&](auto& data) { data.columns.assign(columns.begin(), columns.end()); });
     }
@@ -50,8 +50,8 @@ public:
         return make<Tag>(
             [&](auto& data)
             {
-                data.left_operand = left_operand;
-                data.right_operand = right_operand;
+                urd::store(data.left_operand, left_operand);
+                urd::store(data.right_operand, right_operand);
             });
     }
 
@@ -61,7 +61,7 @@ public:
         return make<Tag>(
             [&](auto& data)
             {
-                data.operand = arg;
+                urd::store(data.operand, arg);
                 data.labels.assign(labels.begin(), labels.end());
             });
     }
@@ -74,7 +74,7 @@ public:
     /// Keeps the query's columns with the given labels, in that order.
     QueryView<> project(QueryView<> query, std::span<const urd::index<ygg::Column>> labels)
     {
-        if (std::ranges::equal(columns_of(query), labels, {}, &ygg::ColumnLayout::label))
+        if (std::ranges::equal(columns_of(query), labels, {}, &urd::data<ygg::ColumnLayout>::label))
             return query;
         return relabel<QueryProjectTag>(query, labels);
     }

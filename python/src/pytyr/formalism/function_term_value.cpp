@@ -44,6 +44,7 @@ void bind_function_term_value_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<FunctionTermValue<GroundTag, F>, C>>(m);
     ygg::bind_insert<FunctionTermValue<GroundTag, F>>(repository);
+    urd::python::bind_builder<FunctionTermValue<GroundTag, F>, C>(m);
 }
 
 template<typename C>
@@ -57,8 +58,11 @@ void bind_function_term_value_views(nb::module_& m, nb::class_<C>& repository)
 
 void bind_function_term_value(nb::module_& m)
 {
+    urd::python::bind_index<FunctionTermValue<GroundTag, StaticTag>>(m);
     urd::python::bind_data<FunctionTermValue<GroundTag, StaticTag>>(m);
+    urd::python::bind_index<FunctionTermValue<GroundTag, FluentTag>>(m);
     urd::python::bind_data<FunctionTermValue<GroundTag, FluentTag>>(m);
+    urd::python::bind_index<FunctionTermValue<GroundTag, AuxiliaryTag>>(m);
     urd::python::bind_data<FunctionTermValue<GroundTag, AuxiliaryTag>>(m);
 }
 

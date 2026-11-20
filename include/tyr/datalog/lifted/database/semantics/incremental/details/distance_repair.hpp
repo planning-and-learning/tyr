@@ -118,7 +118,7 @@ public:
                             &DistanceRepairWorkspace::m_edges> {};
     }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return sizeof(*this) + urd::memory_usage(*this); }
+    [[nodiscard]] size_t memory_usage() const { return sizeof(*this) + urd::memory_usage(*this); }
 };
 }  // namespace tyr::datalog::database::incremental::detail
 

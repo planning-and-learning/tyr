@@ -62,9 +62,11 @@ struct formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>, char> : tyr:
 };
 
 template<>
-struct formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>, char> : tyr::formalism::detail::without_format_spec
+struct formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>, char> :
+    tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>&, fmt::format_context& ctx) const;
+    fmt::format_context::iterator format(const urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>&,
+                                         fmt::format_context& ctx) const;
 };
 
 template<>
@@ -74,9 +76,11 @@ struct formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>, char> : tyr:
 };
 
 template<>
-struct formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>, char> : tyr::formalism::detail::without_format_spec
+struct formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>, char> :
+    tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>&, fmt::format_context& ctx) const;
+    fmt::format_context::iterator format(const urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>&,
+                                         fmt::format_context& ctx) const;
 };
 
 template<>

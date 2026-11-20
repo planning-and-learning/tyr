@@ -31,13 +31,17 @@ struct QueryValue
     urd::handle<ygg::FreeScratchRelation> result;
     Delta delta;
 
-    QueryValue(ygg::FreeScratchRelations& scratch, std::span<const ygg::ColumnLayout> columns) : result(scratch.draw(columns)), delta(scratch, columns) {}
+    QueryValue(ygg::FreeScratchRelations& scratch, std::span<const urd::data<ygg::ColumnLayout>> columns) :
+        result(scratch.draw(columns)),
+        delta(scratch, columns)
+    {
+    }
 
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const { return result->view(); }
 
     [[nodiscard]] const auto& get_delta() const noexcept { return delta; }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(result->relation) + delta.memory_usage(); }
+    [[nodiscard]] size_t memory_usage() const { return urd::memory_usage(result->relation) + delta.memory_usage(); }
 
     /// Adds the row to the result and delta where `present` and absent, removes it where not `present` and present: a
     /// row's values (a stored row's, or contiguous).
@@ -366,11 +370,11 @@ public:
     [[nodiscard]] const Delta& get_delta(size_t = 0) const&& = delete;
 
     /// Retained runtime storage; excludes the immutable query plan.
-    [[nodiscard]] size_t memory_usage() const noexcept
+    [[nodiscard]] size_t memory_usage() const
     {
         size_t result = m_workspace.memory_usage() + urd::memory_usage(m_contexts);
         // get_if rather than std::visit, which throws for a valueless variant; nodes are never valueless.
-        const auto node_usage = []<typename... Nodes>(const std::variant<Nodes...>& node) noexcept
+        const auto node_usage = []<typename... Nodes>(const std::variant<Nodes...>& node)
         { return ((std::get_if<Nodes>(&node) ? std::get_if<Nodes>(&node)->state.memory_usage() : size_t { 0 }) + ...); };
         for (const auto& node : m_nodes)
             result += node_usage(node);

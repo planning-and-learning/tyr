@@ -231,24 +231,27 @@ void expect_packed_state_identity()
     using AtomStorage = urd::data<tyr::planning::AtomStorage<Kind>>;
     using NumericStorage = urd::data<tyr::planning::NumericStorage<Kind>>;
     using Policy = tyr::planning::StateStoragePolicyTag;
-    using FactHandle = typename tyr::planning::StateComponentRepository<tyr::planning::FactStorage<Kind>, Policy>::Packed;
-    using AtomHandle = typename tyr::planning::StateComponentRepository<tyr::planning::AtomStorage<Kind>, Policy>::Packed;
-    using NumericHandle = typename tyr::planning::StateComponentRepository<tyr::planning::NumericStorage<Kind>, Policy>::Packed;
+    using FactPacked = tyr::planning::PackedStorage<tyr::planning::FactStorage<Kind>>;
+    using FactHandle = typename tyr::planning::StateComponentRepository<tyr::planning::FactStorage<Kind>, Policy>::Handle;
+    using AtomPacked = tyr::planning::PackedStorage<tyr::planning::AtomStorage<Kind>>;
+    using AtomHandle = typename tyr::planning::StateComponentRepository<tyr::planning::AtomStorage<Kind>, Policy>::Handle;
+    using NumericPacked = tyr::planning::PackedStorage<tyr::planning::NumericStorage<Kind>>;
+    using NumericHandle = typename tyr::planning::StateComponentRepository<tyr::planning::NumericStorage<Kind>, Policy>::Handle;
     auto facts = FactStorage {};
     auto derived = AtomStorage {};
     auto numeric = NumericStorage {};
     const auto base = Data(facts, derived, numeric);
     const auto hash = urd::Hash<Data> {};
-    derived = AtomStorage(AtomHandle(1));
+    derived = AtomStorage(AtomPacked { AtomHandle(1, 0) });
     const auto extended = Data(facts, derived, numeric);
     EXPECT_NE(base.atom_storage, extended.atom_storage);
     EXPECT_EQ(base, extended);
     EXPECT_EQ(hash(base), hash(extended));
 
-    facts = FactStorage(FactHandle(1));
+    facts = FactStorage(FactPacked { FactHandle(1, 0) });
     const auto changed_facts = Data(facts, derived, numeric);
     EXPECT_NE(base, changed_facts);
-    numeric = NumericStorage(NumericHandle(1));
+    numeric = NumericStorage(NumericPacked { NumericHandle(1, 0) });
     const auto changed_numeric = Data(base.fact_storage, derived, numeric);
     EXPECT_NE(base, changed_numeric);
 }
@@ -324,7 +327,7 @@ void expect_state_builder_lifecycle()
     source.set(Fact(variable, tyr::formalism::planning::FDRValue::none()));
     source.set(Numeric(2), 4);
     using std::swap;
-    swap(source, target);
+    source.swap(target);
     EXPECT_EQ(source.index, urd::index<tyr::planning::State<Kind>>(8));
     EXPECT_EQ(facts(source).get(variable), tyr::formalism::planning::FDRValue(1));
     EXPECT_EQ(numerics(source).get(Numeric(2)), 3);
@@ -391,7 +394,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto labeled_nodes = tyr::planning::LabeledNodeList<Kind, tyr::planning::StateBuilderView<Kind>> { labeled };
 
     auto binding_data = urd::builder<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>, tyr::formalism::planning::Repository> {};
-    binding_data.relation = label.get_relation();
+    urd::store(binding_data.relation, label.get_relation());
     for (const auto object : label.template get<urd::index<tyr::formalism::Object>>())
         binding_data.values.push_back(object.value);
     const auto borrowed_label = label.context().view(binding_data);
@@ -399,7 +402,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         tyr::planning::LabeledNode<Kind, tyr::planning::StateBuilderView<Kind>, tyr::formalism::planning::ActionRowBuilderView> { borrowed_label, node };
     const auto indexed_labeled = tyr::planning::LabeledNode<Kind> { label, tyr::planning::Node<Kind>(registered, 3) };
     const auto borrowed_indexed_labeled =
-        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowBuilderView> { borrowed_label, indexed_labeled.node };
+        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowBuilderView> { borrowed_label,
+                                                                                                                           indexed_labeled.node };
     static_assert(Packable<decltype(indexed_labeled)>);
     static_assert(!Packable<decltype(borrowed_labeled)> && !Packable<decltype(borrowed_indexed_labeled)>);
     const auto borrowed_labeled_nodes =
@@ -460,7 +464,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
             auto expected = urd::Store<urd::sequence<tyr::formalism::planning::AtomView<GroundTag, F>>> {};
             for (const auto candidate : registered.template get_atoms<F>())
                 if (candidate.get_predicate() == atom.get_predicate())
-                    expected.push_back(candidate);
+                    urd::append(expected, candidate);
             // The temporary state and predicate wrappers expire before traversal.
             auto borrowed = urd::resolve(*owned, registered.context()).get_atoms(atom.get_predicate());
             auto indexed = tyr::planning::StateView<Kind>(registered).get_atoms(atom.get_predicate());
@@ -641,7 +645,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     {
         const auto packed_state = state.pack();
         const auto unpacked = packed_state.unpack();
-        EXPECT_EQ(packed_state.index(), state.index());
+        EXPECT_EQ(packed_state.index(), state.pack().index());
         EXPECT_EQ(&packed_state.context(), repository.get());
         EXPECT_EQ(unpacked, state);
         EXPECT_EQ(unpacked.pack(), packed_state);
@@ -657,13 +661,17 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         const auto duplicate = repository->register_state(*axioms, std::move(builder));
         EXPECT_EQ(duplicate, state);
         EXPECT_EQ(derived_names(duplicate), derived_names(state));
-        EXPECT_EQ(derived_names(repository->get_registered_state(duplicate.index())), derived_names(state));
+        EXPECT_EQ(derived_names(repository->get_registered_state(duplicate.pack().index())), derived_names(state));
 
         // A copy of its record, held outside the repository (not registered), unpacks to the same state without an index.
-        const auto held = (*repository)[state.index()];
+        const auto held = (*repository)[state.pack().index()];
         const auto unpacked_held = urd::resolve(held, *repository).unpack();
         EXPECT_TRUE(std::ranges::equal(unpacked_held.get_fluent_fact_index_values(), state.get_fluent_fact_index_values()));
         EXPECT_EQ(derived_names(unpacked_held), derived_names(state));
+
+        // Its packed storages read as its storages unpacked, through the repository (urd::resolution<PackedStorage<S>>).
+        EXPECT_EQ(urd::resolve(held.atom_storage.indices, *repository).indices, state.get_atom_storage().get_indices());
+        EXPECT_EQ(urd::resolve(held.numeric_storage.values, *repository).values, state.get_numeric_storage().get_values());
     };
     expect_duplicate(cheap->node.get_state());
 

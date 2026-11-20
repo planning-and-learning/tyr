@@ -76,17 +76,17 @@ namespace
 {
 
 /// The handle a storage's record holds, in the storage of its policy.
-const auto& handle_of(const urd::data<FactStorage<GroundTag>>& record) noexcept { return record.values; }
+const auto& handle_of(const urd::data<FactStorage<GroundTag>>& record) noexcept { return record.values.handle; }
 
-const auto& handle_of(const urd::data<FactStorage<LiftedTag>>& record) noexcept { return record.indices; }
+const auto& handle_of(const urd::data<FactStorage<LiftedTag>>& record) noexcept { return record.indices.handle; }
 
 template<TaskKind Kind>
 const auto& handle_of(const urd::data<AtomStorage<Kind>>& record) noexcept
-{ return record.indices; }
+{ return record.indices.handle; }
 
 template<TaskKind Kind>
 const auto& handle_of(const urd::data<NumericStorage<Kind>>& record) noexcept
-{ return record.values; }
+{ return record.values.handle; }
 
 /// Identifies the storage cohorts of a task kind; repositories share storage iff their identities match.
 template<TaskKind Kind>
@@ -162,25 +162,32 @@ struct StateRepository<Kind>::Impl
         auto insert_fluents(const urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateDelta* delta)
         {
             const auto& unpacked = state.fact_storage;
-            return urd::data<FactStorage<Kind>>(parent ? fact_repository.insert(unpacked, handle_of(parent->fact_storage), std::span(delta->fluents))
-                                                       : fact_repository.insert(unpacked));
+            using Packed = PackedStorage<FactStorage<Kind>>;
+            return urd::data<FactStorage<Kind>>(parent ?
+                                                    Packed { fact_repository.insert(unpacked, handle_of(parent->fact_storage), std::span(delta->fluents)) } :
+                                                    Packed { fact_repository.insert(unpacked) });
         }
 
         /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given.
         /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
-        auto insert_derived(const urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateView<Kind>* parent_state)
+        auto
+        insert_derived(const urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateView<Kind>* parent_state)
         {
             const auto& unpacked = state.atom_storage;
-            return urd::data<AtomStorage<Kind>>(parent ? atom_repository.insert(unpacked, handle_of(parent->atom_storage), parent_state->get_atom_storage())
-                                                       : atom_repository.insert(unpacked));
+            using Packed = PackedStorage<AtomStorage<Kind>>;
+            return urd::data<AtomStorage<Kind>>(
+                parent ? Packed { atom_repository.insert(unpacked, handle_of(parent->atom_storage), parent_state->get_atom_storage()) } :
+                         Packed { atom_repository.insert(unpacked) });
         }
 
         /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
         auto insert_numeric(urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateDelta* delta)
         {
             auto& unpacked = state.numeric_storage;
-            return urd::data<NumericStorage<Kind>>(parent ? numeric_repository.insert(unpacked, handle_of(parent->numeric_storage), std::span(delta->numerics))
-                                                          : numeric_repository.insert(unpacked));
+            using Packed = PackedStorage<NumericStorage<Kind>>;
+            return urd::data<NumericStorage<Kind>>(
+                parent ? Packed { numeric_repository.insert(unpacked, handle_of(parent->numeric_storage), std::span(delta->numerics)) } :
+                         Packed { numeric_repository.insert(unpacked) });
         }
 
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
@@ -202,7 +209,7 @@ struct StateRepository<Kind>::Impl
             }
 #endif
             auto& packed_states = storage->packed_states;
-            const auto* parent = parent_state ? &packed_states[parent_state->index()] : nullptr;
+            const auto* parent = parent_state ? &packed_states[parent_state->pack().index()] : nullptr;
             const auto fluent = insert_fluents(state, parent, delta);
             const auto numeric = insert_numeric(state, parent, delta);
             const auto key = urd::data<State<Kind>>(fluent, {}, numeric);
@@ -334,6 +341,30 @@ StateView<Kind> StateRepository<Kind>::unpack(const urd::data<State<Kind>>& pack
 }
 
 template<TaskKind Kind>
+urd::builder<FactStorage<Kind>, formalism::planning::Repository> StateRepository<Kind>::unpack(const PackedStorage<FactStorage<Kind>>& packed) const
+{
+    auto unpacked = urd::builder<FactStorage<Kind>, formalism::planning::Repository> {};
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.fact_repository.unpack(packed.handle, unpacked); });
+    return unpacked;
+}
+
+template<TaskKind Kind>
+urd::builder<AtomStorage<Kind>, formalism::planning::Repository> StateRepository<Kind>::unpack(const PackedStorage<AtomStorage<Kind>>& packed) const
+{
+    auto unpacked = urd::builder<AtomStorage<Kind>, formalism::planning::Repository> {};
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.atom_repository.unpack(packed.handle, unpacked); });
+    return unpacked;
+}
+
+template<TaskKind Kind>
+urd::builder<NumericStorage<Kind>, formalism::planning::Repository> StateRepository<Kind>::unpack(const PackedStorage<NumericStorage<Kind>>& packed) const
+{
+    auto unpacked = urd::builder<NumericStorage<Kind>, formalism::planning::Repository> {};
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.numeric_repository.unpack(packed.handle, unpacked); });
+    return unpacked;
+}
+
+template<TaskKind Kind>
 void StateRepository<Kind>::unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const
 {
     m_impl->visit_evaluator(
@@ -382,8 +413,7 @@ StateView<Kind> StateRepository<Kind>::create_state(
 template<TaskKind Kind>
 const urd::data<State<Kind>>& StateRepository<Kind>::operator[](urd::index<State<Kind>> state_index) const
 {
-    return m_impl->visit_evaluator([&](const auto& evaluator) -> const urd::data<State<Kind>>&
-                                   { return evaluator.storage->packed_states[state_index]; });
+    return m_impl->visit_evaluator([&](const auto& evaluator) -> const urd::data<State<Kind>>& { return evaluator.storage->packed_states[state_index]; });
 }
 
 template<TaskKind Kind>

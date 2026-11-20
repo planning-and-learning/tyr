@@ -17,7 +17,7 @@ namespace tyr::database_python
 namespace nb = nanobind;
 
 using Column = urd::index<ygg::Column>;
-using ColumnIndices = std::span<const ygg::ColumnLayout>;
+using ColumnIndices = std::span<const urd::data<ygg::ColumnLayout>>;
 using QueryView = tyr::datalog::database::QueryView<>;
 using QueryRepositoryBinding = nb::class_<tyr::datalog::database::QueryRepository>;
 

@@ -48,7 +48,7 @@ struct Workspace
     Workspace& operator=(Workspace&&) = default;
 
     /// Retained scratch storage.
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(join_index); }
+    [[nodiscard]] size_t memory_usage() const { return urd::memory_usage(join_index); }
 };
 
 /// The operations take their inputs (relation views: a row is read as it is held, ygg::with_values, urd::visit_view), a
@@ -155,7 +155,7 @@ ygg::FreeScratchRelation& assign(ygg::FreeScratchRelation& destination, const V&
 {
     if (reads(source, destination))
         return destination;
-    destination.relation.initialize(destination.rows, source.columns());
+    destination.relation.initialize(destination.rows, destination.rows.schema(source.columns()), source.columns());
     for (const auto& held : source.get_rows())
         ygg::with_values(held, [&](const auto& values) { detail::insert(destination, values); });
     return destination;
@@ -260,8 +260,9 @@ void join_rows(const L& left_operand,
 }
 
 template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
-// NOLINTNEXTLINE(bugprone-exception-escape): reads the operands' columns in place (a builder's, built or interned in its layer); nothing is allocated or
-// checked by throwing
+// Reads the operands' columns in place (a builder's, built or interned in its layer): nothing is allocated or checked by
+// throwing.
+// NOLINTNEXTLINE(bugprone-exception-escape)
 void assert_planned(const L& left_operand, const R& right_operand, const JoinPlan& plan) noexcept
 {
     assert(std::ranges::equal(left_operand.columns(), plan.left_columns()) && std::ranges::equal(right_operand.columns(), plan.right_columns()));

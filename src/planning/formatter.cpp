@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include "tyr/planning/formatter.hpp"
 
 #include <fmt/format.h>
@@ -61,22 +60,32 @@ fmt::format_context::iterator write_state(const State& value, fmt::format_contex
 }
 }
 
-fmt::format_context::iterator fmt::formatter<tyr::planning::Task<::tyr::LiftedTag>>::format(const tyr::planning::Task<::tyr::LiftedTag>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::Task<::tyr::LiftedTag>>::format(const tyr::planning::Task<::tyr::LiftedTag>& value,
+                                                                                            fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
 
-fmt::format_context::iterator fmt::formatter<tyr::planning::Task<::tyr::GroundTag>>::format(const tyr::planning::Task<::tyr::GroundTag>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::Task<::tyr::GroundTag>>::format(const tyr::planning::Task<::tyr::GroundTag>& value,
+                                                                                            fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
 
-fmt::format_context::iterator fmt::formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>>::format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, fmt::format_context& ctx) const
+fmt::format_context::iterator
+fmt::formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>>::format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&,
+                                                                          fmt::format_context& ctx) const
 { return ctx.out(); }
 
-fmt::format_context::iterator fmt::formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>>::format(const urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>&, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>>::format(
+    const urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>&,
+    fmt::format_context& ctx) const
 { return ctx.out(); }
 
-fmt::format_context::iterator fmt::formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>>::format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, fmt::format_context& ctx) const
+fmt::format_context::iterator
+fmt::formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>>::format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&,
+                                                                          fmt::format_context& ctx) const
 { return ctx.out(); }
 
-fmt::format_context::iterator fmt::formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>>::format(const urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>&, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>>::format(
+    const urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>&,
+    fmt::format_context& ctx) const
 { return ctx.out(); }
 
 fmt::format_context::iterator fmt::formatter<tyr::planning::Statistics>::format(const tyr::planning::Statistics& value, fmt::format_context& ctx) const
@@ -124,7 +133,8 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::Statistics>::format(
                           ygg::to_ns(value.get_destination_lock_hold_time()));
 }
 
-fmt::format_context::iterator fmt::formatter<tyr::planning::ProgressStatistics>::format(const tyr::planning::ProgressStatistics& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::ProgressStatistics>::format(const tyr::planning::ProgressStatistics& value,
+                                                                                        fmt::format_context& ctx) const
 {
     if (value.empty())
     {
@@ -148,7 +158,8 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::ProgressStatistics>:
 }
 
 template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::iw::Statistics<Kind>>::format(const tyr::planning::iw::Statistics<Kind>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::iw::Statistics<Kind>>::format(const tyr::planning::iw::Statistics<Kind>& value,
+                                                                                          fmt::format_context& ctx) const
 {
     if (const auto solution_arity = value.get_solution_arity())
         return fmt::format_to(ctx.out(), "[IW] Solution arity: {}", *solution_arity);
@@ -156,7 +167,8 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::iw::Statistics<Kind>
 }
 
 template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::siw::Statistics<Kind>>::format(const tyr::planning::siw::Statistics<Kind>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::siw::Statistics<Kind>>::format(const tyr::planning::siw::Statistics<Kind>& value,
+                                                                                           fmt::format_context& ctx) const
 {
     const auto maximum_effective_width = value.get_maximum_effective_width();
     const auto average_effective_width = value.get_average_effective_width();
@@ -181,7 +193,8 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::Plan<Kind>>::format(
 }
 
 template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::PackedPlan<Kind>>::format(const tyr::planning::PackedPlan<Kind>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::PackedPlan<Kind>>::format(const tyr::planning::PackedPlan<Kind>& value,
+                                                                                      fmt::format_context& ctx) const
 {
     auto out = ctx.out();
     for (const auto& labeled_node : value.get_labeled_succ_nodes())
@@ -192,21 +205,23 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::PackedPlan<Kind>>::f
 }
 
 template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<::tyr::planning::StateView<Kind>>::format(const ::tyr::planning::StateView<Kind>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<::tyr::planning::StateView<Kind>>::format(const ::tyr::planning::StateView<Kind>& value,
+                                                                                       fmt::format_context& ctx) const
 { return write_state(value, ctx); }
 
 template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBuilderView<Kind>>::format(const ::tyr::planning::StateBuilderView<Kind>& value,
-                                                                                               fmt::format_context& ctx) const
+                                                                                              fmt::format_context& ctx) const
 { return write_state(value, ctx); }
 
 template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::PackedNode<Kind>>::format(const tyr::planning::PackedNode<Kind>& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::planning::PackedNode<Kind>>::format(const tyr::planning::PackedNode<Kind>& value,
+                                                                                      fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.unpack()); }
 
 template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<tyr::planning::PackedLabeledNode<Kind>>::format(const tyr::planning::PackedLabeledNode<Kind>& value,
-                                                                                              fmt::format_context& ctx) const
+                                                                                             fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.unpack()); }
 
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::GroundTag>>;

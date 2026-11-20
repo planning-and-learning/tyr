@@ -60,7 +60,6 @@ template<TaskKind T>
 struct Rule
 {
     static constexpr std::string_view name = urd::joined_name<"Rule", T::name>;
-    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>

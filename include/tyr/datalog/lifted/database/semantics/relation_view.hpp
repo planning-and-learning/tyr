@@ -29,8 +29,8 @@ namespace tyr::datalog::database
 {
 /// Sized random-access inputs whose elements, possibly references, are relation views.
 template<typename R>
-concept RelationViewRange =
-    std::ranges::random_access_range<const R> && std::ranges::sized_range<const R> && ygg::RelationViewConcept<std::ranges::range_reference_t<const R>, ygg::Schema>;
+concept RelationViewRange = std::ranges::random_access_range<const R> && std::ranges::sized_range<const R>
+                            && ygg::RelationViewConcept<std::ranges::range_reference_t<const R>, ygg::Schema>;
 
 /// A row consumer: called with the canonical values of each row, one per column; returning false stops the
 /// enumeration.

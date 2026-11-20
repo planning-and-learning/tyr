@@ -54,7 +54,7 @@ struct QueryDistanceWorkspace
 
     explicit QueryDistanceWorkspace(const DistancePlan& plan) : workspace(plan) {}
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return workspace.memory_usage(); }
+    [[nodiscard]] size_t memory_usage() const { return workspace.memory_usage(); }
 };
 
 /// Operators whose result is a function of the operands' results alone.
@@ -192,7 +192,7 @@ public:
 
     [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t = 0) const&& = delete;
     /// Retained runtime storage; excludes the immutable query plan.
-    [[nodiscard]] size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const;
 };
 }  // namespace tyr::datalog::database
 #endif

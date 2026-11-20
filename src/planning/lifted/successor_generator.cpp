@@ -67,9 +67,10 @@ using BuilderNode = Node<LiftedTag, StateBuilderView<LiftedTag>>;
 using Bindings = urd::Store<urd::sequence<formalism::planning::ActionRowView>>;
 using BindingData = urd::builder<ygg::Row<formalism::planning::Action<LiftedTag>>, formalism::planning::Repository>;
 
-/// The action a binding names: interned (a binding's relation is an interned action schema, as its rows' relation).
-formalism::planning::ActionView<LiftedTag> action_of(const BindingData& binding)
-{ return std::get<urd::interned_child<formalism::planning::Action<LiftedTag>, formalism::planning::Repository>>(binding.relation); }
+/// The action a binding names, read through `repository`: interned (a binding's relation is an interned action schema,
+/// as its rows' relation).
+formalism::planning::ActionView<LiftedTag> action_of(const BindingData& binding, const formalism::planning::Repository& repository)
+{ return repository.view(std::get<urd::interned_child<formalism::planning::Action<LiftedTag>, formalism::planning::Repository>>(binding.relation)); }
 
 void validate_task(const TaskPtr<LiftedTag>& task, const StateRepository<LiftedTag>& state_repository)
 {
@@ -189,7 +190,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     static StateKey state_key(const Source& node)
     {
         if (const auto* state = node.registered())
-            return { static_cast<const void*>(&state->context()), static_cast<ygg::uint_t>(state->index().value) };
+            return { static_cast<const void*>(&state->context()), static_cast<ygg::uint_t>(state->pack().index().value) };
         return { static_cast<const void*>(&node.state().numeric_storage().get_values()), std::numeric_limits<ygg::uint_t>::max() };
     }
 
@@ -269,10 +270,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
                                             Stop stop);
 
     /// The core: writes the successor of `node` by binding data into `out_state`, without axiom closure.
-    ygg::float_t generate(const Source& node,
-                          const BindingData& binding,
-                          urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& out_state,
-                          StateDelta& out_delta);
+    ygg::float_t
+    generate(const Source& node, const BindingData& binding, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& out_state, StateDelta& out_delta);
 
     /// Like generate(), by a ground action.
     ygg::float_t generate(const Source& node, formalism::planning::ActionView<GroundTag> action, Builder& out_state, StateDelta& out_delta)
@@ -286,7 +285,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     const BindingData& stage(const Binding& binding)
     {
         auto& data = evaluator.checked_binding;
-        data.relation = action_of(binding);
+        urd::store(data.relation, action_of(binding));
         data.values.clear();
         for (const auto value : binding.get_values())
             data.values.push_back(value);
@@ -475,7 +474,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         {
             if (stop())
                 return false;
-            scratch_binding.relation = schema;
+            urd::store(scratch_binding.relation, schema);
             scratch_binding.values.clear();
             evaluator.scratch_objects.clear();
             for (const auto object : binding.template get<urd::index<formalism::Object>>())
@@ -515,7 +514,7 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node,
 
     auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = node.state();
-    const auto action = action_of(binding);
+    const auto action = action_of(binding, *definition->task->get_repository());
 
     require_action_facts(node, action);
     const auto auxiliary_value = evaluator.executor.apply_action_unregistered(
@@ -967,7 +966,7 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Source& node, fo
     // Single-binding work has separate scratch from the tuple held by an outer enumeration callback.
     auto& workspace = evaluator.workspace;
     auto& binding = evaluator.checked_binding;
-    binding.relation = action;
+    urd::store(binding.relation, action);
     binding.values.clear();
     evaluator.checked_objects.clear();
     for (const auto object : indices)
@@ -1019,7 +1018,8 @@ ActionBindingResult SuccessorGenerator<LiftedTag>::try_get_applicable_action_bin
     const auto status = check_action_binding(node, binding);
     if (status != ActionBindingStatus::APPLICABLE)
         return { status, std::nullopt };
-    return { status, m_impl->definition->task->get_repository()->insert(m_impl->evaluator.checked_binding, m_impl->evaluator.workspace.planning_builder).first };
+    return { status,
+             m_impl->definition->task->get_repository()->insert(m_impl->evaluator.checked_binding, m_impl->evaluator.workspace.planning_builder).first };
 }
 
 Bindings SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Source& node)
@@ -1069,7 +1069,8 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Sou
     return m_impl->for_each_applicable_action_binding(
         node,
         std::nullopt,
-        [&](auto& binding) { return callback(m_impl->definition->task->get_repository()->insert(binding, m_impl->evaluator.workspace.planning_builder).first); });
+        [&](auto& binding)
+        { return callback(m_impl->definition->task->get_repository()->insert(binding, m_impl->evaluator.workspace.planning_builder).first); });
 }
 
 bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Source& node,
@@ -1080,7 +1081,8 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Sou
     return m_impl->for_each_applicable_action_binding(
         node,
         action,
-        [&](auto& binding) { return callback(m_impl->definition->task->get_repository()->insert(binding, m_impl->evaluator.workspace.planning_builder).first); });
+        [&](auto& binding)
+        { return callback(m_impl->definition->task->get_repository()->insert(binding, m_impl->evaluator.workspace.planning_builder).first); });
 }
 
 bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(const Source& node,

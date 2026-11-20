@@ -116,8 +116,8 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
 
     const auto source_initial = source->get_initial_node(*source_state_repository, *source_axiom_evaluator);
     EXPECT_EQ(source_state_repository->num_states(), 1);
-    EXPECT_EQ(source_initial.get_state().index(), worker_initial.get_state().index());
-    EXPECT_EQ(source_initial.get_state().index(), nested_initial.get_state().index());
+    EXPECT_EQ(source_initial.get_state().pack().index(), worker_initial.get_state().pack().index());
+    EXPECT_EQ(source_initial.get_state().pack().index(), nested_initial.get_state().pack().index());
     EXPECT_NE(source_initial.get_state(), worker_initial.get_state());
     EXPECT_NE(source_initial.get_state(), nested_initial.get_state());
     EXPECT_EQ(source_initial.get_metric(), worker_initial.get_metric());
@@ -231,7 +231,7 @@ void expect_independent_repository_identity(const tyr::planning::TaskPtr<Kind>& 
 
     EXPECT_EQ(first_repository->get_worker_index(), 0);
     EXPECT_EQ(second_repository->get_worker_index(), 0);
-    EXPECT_EQ(first_state.index(), second_state.index());
+    EXPECT_EQ(first_state.pack().index(), second_state.pack().index());
     EXPECT_NE(first_state, second_state);
     EXPECT_NE(first_state.pack(), second_state.pack());
 
@@ -327,13 +327,13 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     const auto first_successor = first_future.get();
     const auto second_successor = second_future.get();
 
-    EXPECT_EQ(first_successor.get_state().index(), urd::index<tyr::planning::State<Kind>>(1));
+    EXPECT_EQ(first_successor.get_state().pack().index(), urd::index<tyr::planning::State<Kind>>(1));
     EXPECT_EQ(first_successor.get_state(), second_successor.get_state());
     EXPECT_EQ(first_successor.get_metric(), second_successor.get_metric());
     EXPECT_EQ(first_repository->num_states(), 2);
     EXPECT_EQ(second_repository->num_states(), 2);
-    EXPECT_EQ(first_repository->get_registered_state(first_successor.get_state().index()),
-              second_repository->get_registered_state(second_successor.get_state().index()));
+    EXPECT_EQ(first_repository->get_registered_state(first_successor.get_state().pack().index()),
+              second_repository->get_registered_state(second_successor.get_state().pack().index()));
 }
 }
 

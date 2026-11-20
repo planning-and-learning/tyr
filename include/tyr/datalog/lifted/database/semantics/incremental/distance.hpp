@@ -134,7 +134,7 @@ public:
     [[nodiscard]] const Delta& get_delta() const&;
     [[nodiscard]] const Delta& get_delta() const&& = delete;
     /// Retained storage, including inactive reusable source arrays; excludes the plan.
-    [[nodiscard]] size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const;
 };
 
 inline auto DistanceEvaluator::add_source(VertexSet::handle_type root) -> SourceState&
@@ -400,7 +400,7 @@ public:
         return it == m_counts.end() ? std::numeric_limits<ygg::uint_t>::max() : static_cast<ygg::uint_t>(it - m_counts.begin());
     }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return m_evaluator.memory_usage() + urd::memory_usage(m_counts); }
+    [[nodiscard]] size_t memory_usage() const { return m_evaluator.memory_usage() + urd::memory_usage(m_counts); }
 };
 
 }  // namespace tyr::datalog::database::incremental

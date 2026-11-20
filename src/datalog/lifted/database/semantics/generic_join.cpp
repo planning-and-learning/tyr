@@ -14,7 +14,7 @@
 
 namespace tyr::datalog::database
 {
-GenericJoinPlan::GenericJoinPlan(std::span<const urd::Store<urd::sequence<ygg::ColumnLayout>>> inputs,
+GenericJoinPlan::GenericJoinPlan(std::span<const urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>>> inputs,
                                  std::span<const urd::index<ygg::Column>> variable_order,
                                  std::span<const urd::index<ygg::Column>> output_order) :
     m_inputs(inputs.size()),
@@ -24,13 +24,13 @@ GenericJoinPlan::GenericJoinPlan(std::span<const urd::Store<urd::sequence<ygg::C
 {
     for (size_t i = 0; i < inputs.size(); ++i)
         m_inputs[i].set(inputs[i].begin(), inputs[i].end());
-    urd::Store<urd::sequence<ygg::ColumnLayout>> combined;
+    urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>> combined;
     for (const auto& input : inputs)
     {
         ygg::validate_columns(input);
         for (const auto column : input)
         {
-            const auto found = std::ranges::find(combined, column.label, &ygg::ColumnLayout::label);
+            const auto found = std::ranges::find(combined, column.label, &urd::data<ygg::ColumnLayout>::label);
             if (found == combined.end())
                 combined.push_back(column);
             else if (found->type != column.type)
@@ -42,23 +42,24 @@ GenericJoinPlan::GenericJoinPlan(std::span<const urd::Store<urd::sequence<ygg::C
         if (order.size() != combined.size())
             throw std::invalid_argument("Generic join: orders must contain every output column exactly once.");
         for (size_t i = 0; i < order.size(); ++i)
-            if (std::ranges::find(combined, order[i], &ygg::ColumnLayout::label) == combined.end()
+            if (std::ranges::find(combined, order[i], &urd::data<ygg::ColumnLayout>::label) == combined.end()
                 || std::ranges::find(order.first(i), order[i]) != order.first(i).end())
                 throw std::invalid_argument("Generic join: orders must contain every output column exactly once.");
     };
     require_order(variable_order);
     require_order(output_order);
-    urd::Store<urd::sequence<ygg::ColumnLayout>> output;
+    urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>> output;
     for (const auto label : output_order)
-        output.push_back(*std::ranges::find(combined, label, &ygg::ColumnLayout::label));
+        output.push_back(*std::ranges::find(combined, label, &urd::data<ygg::ColumnLayout>::label));
     m_output.set(output.begin(), output.end());
     for (size_t depth = 0; depth < variable_order.size(); ++depth)
     {
         const auto label = variable_order[depth];
-        m_output_positions.push_back(ColumnSlice { static_cast<size_t>(std::ranges::find(output, label, &ygg::ColumnLayout::label) - output.begin()) });
+        m_output_positions.push_back(
+            ColumnSlice { static_cast<size_t>(std::ranges::find(output, label, &urd::data<ygg::ColumnLayout>::label) - output.begin()) });
         for (size_t input = 0; input < inputs.size(); ++input)
         {
-            const auto found = std::ranges::find(inputs[input], label, &ygg::ColumnLayout::label);
+            const auto found = std::ranges::find(inputs[input], label, &urd::data<ygg::ColumnLayout>::label);
             if (found != inputs[input].end())
             {
                 m_keys[input].push_back(ColumnSlice { static_cast<size_t>(found - inputs[input].begin()) });
@@ -135,10 +136,15 @@ bool trie_erase(GenericJoinTrie& trie, const Row& row, std::span<const ColumnSli
 }  // namespace
 
 bool GenericJoinTrie::contains(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) const { return trie_contains(*this, row, keys); }
+
 bool GenericJoinTrie::contains(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) const { return trie_contains(*this, row, keys); }
+
 bool GenericJoinTrie::insert(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) { return trie_insert(*this, row, keys); }
+
 bool GenericJoinTrie::insert(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) { return trie_insert(*this, row, keys); }
+
 bool GenericJoinTrie::erase(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) { return trie_erase(*this, row, keys); }
+
 bool GenericJoinTrie::erase(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) { return trie_erase(*this, row, keys); }
 }
 

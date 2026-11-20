@@ -74,6 +74,7 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
     urd::built_t<urd::data<::tyr::planning::FactStorage<Kind>>, ::tyr::formalism::planning::Repository> fact_storage;
     urd::built_t<urd::data<::tyr::planning::AtomStorage<Kind>>, ::tyr::formalism::planning::Repository> atom_storage;
     urd::built_t<urd::data<::tyr::planning::NumericStorage<Kind>>, ::tyr::formalism::planning::Repository> numeric_storage;
+
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { index = state; }
@@ -122,7 +123,7 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
     void assign(const ::tyr::planning::StateView<Kind>& state)
     {
         assign_storages(state);
-        index = state.index();
+        index = state.pack().index();
     }
 
     /// Takes a state being built whole: its storages (it has no index).
@@ -141,8 +142,6 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
         numeric_storage.swap(other.numeric_storage);
     }
 
-    friend void swap(builder& lhs, builder& rhs) noexcept { lhs.swap(rhs); }
-
     void resize_fluent_facts(size_t size)
         requires std::same_as<Kind, ::tyr::GroundTag>
     { fact_storage.resize(size); }
@@ -155,6 +154,40 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
     }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::fact_storage, &builder::numeric_storage> {}; }
+
+    static constexpr auto functions() noexcept
+    {
+        using FluentTerm = ::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>;
+        using DerivedAtom = ::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>;
+        constexpr auto mutators = urd::Functions<
+            urd::function<"set", static_cast<void (builder::*)(urd::index<::tyr::planning::State<Kind>>)>(&builder::set), urd::arg<"state">>,
+            urd::function<"set",
+                          static_cast<void (builder::*)(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>)>(&builder::set),
+                          urd::arg<"fact">>,
+            urd::function<"set", static_cast<void (builder::*)(urd::index<FluentTerm>, ygg::float_t)>(&builder::set), urd::arg<"fterm">, urd::arg<"value">>,
+            urd::function<"set", static_cast<void (builder::*)(urd::index<DerivedAtom>)>(&builder::set), urd::arg<"atom">>,
+            urd::function<"set",
+                          static_cast<void (builder::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>,
+                                                        ygg::float_t)>(&builder::set),
+                          urd::arg<"fterm">,
+                          urd::arg<"value">>,
+            urd::function<"set",
+                          static_cast<void (builder::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>)>(&builder::set),
+                          urd::arg<"atom">>,
+            urd::function<"clear", &builder::clear>,
+            urd::function<"clear_unextended_part", &builder::clear_unextended_part>,
+            urd::function<"clear_extended_part", &builder::clear_extended_part>,
+            urd::function<"assign_unextended_part", &builder::template assign_unextended_part<::tyr::planning::StateView<Kind>>, urd::arg<"state">>,
+            urd::function<"assign_unextended_part", &builder::template assign_unextended_part<::tyr::planning::StateBuilderView<Kind>>, urd::arg<"state">>,
+            urd::function<"assign", static_cast<void (builder::*)(const ::tyr::planning::StateView<Kind>&)>(&builder::assign), urd::arg<"state">>,
+            urd::function<"assign", static_cast<void (builder::*)(const ::tyr::planning::StateBuilderView<Kind>&)>(&builder::assign), urd::arg<"state">>,
+            urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+        // resize_fluent_facts, where it has it (a ground state: a value per FDR variable).
+        if constexpr (std::same_as<Kind, ::tyr::GroundTag>)
+            return mutators + urd::Functions<urd::function<"resize_fluent_facts", &builder::resize_fluent_facts, urd::arg<"size">>> {};
+        else
+            return mutators;
+    }
 
 private:
     /// The storages of a state's view.

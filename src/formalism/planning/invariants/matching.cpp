@@ -17,12 +17,12 @@
 
 #include "matching.hpp"
 
-#include "utils.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <urd/config.hpp>
@@ -81,8 +81,7 @@ bool covers(std::size_t num_rigid_variables,
 
 bool covers(const urd::builder<Invariant, Repository>& inv, const urd::data<Atom<LiftedTag, FluentTag>>& element)
 {
-    return std::ranges::any_of(inv.atoms,
-                               [&](const auto& part) { return covers(inv.num_rigid_variables, inv.num_counted_variables, atom_of(part), element); });
+    return std::ranges::any_of(inv.atoms, [&](const auto& part) { return covers(inv.num_rigid_variables, inv.num_counted_variables, atom_of(part), element); });
 }
 
 std::optional<InvariantSubstitution> match_invariant_against_ground_atom(std::size_t num_rigid_variables,

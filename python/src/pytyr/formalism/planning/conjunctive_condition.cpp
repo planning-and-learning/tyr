@@ -34,13 +34,18 @@ namespace tyr::formalism::planning
 
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<ConjunctiveCondition<LiftedTag>>(m);
     urd::python::bind_data<ConjunctiveCondition<LiftedTag>>(m);
     urd::python::bind_view<ConjunctiveConditionView<LiftedTag>>(m);
     ygg::bind_insert<ConjunctiveCondition<LiftedTag>>(repository);
+    urd::python::bind_builder<ConjunctiveCondition<LiftedTag>, Repository>(m);
+
+    urd::python::bind_index<ConjunctiveCondition<GroundTag>>(m);
 
     urd::python::bind_data<ConjunctiveCondition<GroundTag>>(m);
     urd::python::bind_view<ConjunctiveConditionView<GroundTag>>(m);
     ygg::bind_insert<ConjunctiveCondition<GroundTag>>(repository);
+    urd::python::bind_builder<ConjunctiveCondition<GroundTag>, Repository>(m);
 }
 
 }  // namespace tyr::formalism::planning

@@ -22,9 +22,9 @@
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
-#include "utils.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -58,7 +58,7 @@ InvariantView intern(urd::builder<Invariant, Repository>& invariant, Builder& bu
     {
         auto variable = checkout<Variable>(builder);
         variable->name = fmt::format("?v{}", position);
-        parameters->variables.push_back(repository.insert(*variable, builder).first);
+        urd::append(parameters->variables, repository.insert(*variable, builder).first);
     }
     const auto parameters_index = repository.insert(*parameters, builder).first.index();
     for (auto& part : invariant.atoms)

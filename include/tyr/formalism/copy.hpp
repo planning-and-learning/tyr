@@ -41,7 +41,7 @@ std::pair<ygg::RowView<Rel, R>, bool> copy(ygg::RowView<Rel, S> element, WriteCo
 {
     auto binding = ygg::formalism::checkout<ygg::Row<Rel>>(context.builder());
 
-    binding->relation = copy(element.get_relation(), context).first;
+    urd::store(binding->relation, copy(element.get_relation(), context).first);
     for (const auto object : element.get_objects())
         binding->values.push_back(copy(object, context).first.index().value);
 

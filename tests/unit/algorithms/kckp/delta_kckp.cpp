@@ -56,7 +56,7 @@ TEST(TyrKCKPPartitionedAdjacency, ClassifiesPartitionPairsAndRejectsInvalidTable
 {
     const auto parts = urd::Store<urd::sequence<size_t>> { 2, 1 };
     const auto labels = urd::Store<urd::sequence<ygg::uint_t>> { 0, 1, 2 };
-    const auto matrix = tyr::kckp::CompatibilityMatrix(urd::graph_data<std::pair<tyr::kckp::Vertex, tyr::kckp::Vertex>> { 3, {}, parts });
+    const auto matrix = tyr::kckp::CompatibilityMatrix(urd::graph_data<std::pair<urd::data<tyr::kckp::Vertex>, urd::data<tyr::kckp::Vertex>>> { 3, {}, parts });
     const auto layout = tyr::kckp::Graph::create(true, matrix, labels, tyr::kckp::PartPairs { 1, 2 });
     const auto kinds = std::array {
         tyr::kckp::AdjacencyKind::IMPLICIT,
@@ -69,7 +69,7 @@ TEST(TyrKCKPPartitionedAdjacency, ClassifiesPartitionPairsAndRejectsInvalidTable
     EXPECT_TRUE(adjacency.is_implicit(0, 0));
     EXPECT_TRUE(adjacency.is_static_only(0, 1));
     EXPECT_TRUE(adjacency.is_runtime(1, 0));
-    EXPECT_EQ(adjacency.row(tyr::kckp::Vertex(2), 1, 0), 0);
+    EXPECT_EQ(adjacency.row(urd::data<tyr::kckp::Vertex>(2), 1, 0), 0);
 
     EXPECT_THROW((tyr::kckp::PartitionedAdjacencyLayout(layout, std::span<const tyr::kckp::AdjacencyKind>(kinds).first(3))), std::invalid_argument);
 }
@@ -173,7 +173,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
             auto indices = Clique {};
             indices.reserve(clique.size());
             for (const auto vertex : clique)
-                indices.push_back(vertex.index);
+                indices.push_back(vertex.number);
             output.push_back(std::move(indices));
         };
     };
@@ -259,7 +259,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
             [&](const tyr::kckp::Edge edge)
             {
                 auto binding = Binding {};
-                const auto insert = [&](const tyr::kckp::Vertex vertex)
+                const auto insert = [&](const urd::data<tyr::kckp::Vertex> vertex)
                 {
                     const auto parameter = layout.part_of(vertex);
                     const auto object = urd::index<tyr::formalism::Object>(layout.label(vertex));

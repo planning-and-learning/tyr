@@ -171,8 +171,8 @@ merge_p2d(AtomView<LiftedTag, T_SRC> element,  //
 {
     auto atom = datalog::checkout<Atom<LiftedTag, T_DST>>(context.builder());
 
-    atom->parameters = copy(element.get_parameters(), context).first;
-    atom->predicate = predicate_mapping.at(element.get_predicate());
+    urd::store(atom->parameters, copy(element.get_parameters(), context).first);
+    urd::store(atom->predicate, predicate_mapping.at(element.get_predicate()));
     for (const auto term : element.get_terms())
         urd::build_member(atom->terms.emplace_back(), merge_p2d(term, context), context.destination());
 
@@ -191,7 +191,7 @@ merge_p2d(PredicateRowView<T_SRC> element, datalog::PredicateView<T_DST> predica
 {
     auto binding = datalog::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
-    binding->relation = predicate;
+    urd::store(binding->relation, predicate);
     for (const auto object : element.template get<urd::index<Object>>())
         binding->values.push_back(object.value);
 
@@ -235,7 +235,7 @@ merge_p2d(LiteralView<LiftedTag, T_SRC> element,  //
     auto literal = datalog::checkout<Literal<LiftedTag, T_DST>>(context.builder());
 
     literal->polarity = element.get_polarity();
-    literal->atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first;
+    urd::store(literal->atom, merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first);
 
     return context.destination().insert(*literal, context.builder());
 }
@@ -252,7 +252,7 @@ merge_p2d(FDRFactView<FluentTag> element,
 
     auto literal = datalog::checkout<Literal<GroundTag, FluentTag>>(context.builder());
     literal->polarity = polarity;
-    literal->atom = merge_p2d(*atom, predicate_mapping, context).first;
+    urd::store(literal->atom, merge_p2d(*atom, predicate_mapping, context).first);
 
     return context.destination().insert(*literal, context.builder()).first;
 }
@@ -270,7 +270,7 @@ merge_p2d(FDRFactView<FluentTag> element,
 
     auto literal = datalog::checkout<Literal<GroundTag, FluentTag>>(context.builder());
     literal->polarity = polarity;
-    literal->atom = merge_p2d(*atom, atom_mapping, predicate_mapping, context).first;
+    urd::store(literal->atom, merge_p2d(*atom, atom_mapping, predicate_mapping, context).first);
 
     return context.destination().insert(*literal, context.builder()).first;
 }
@@ -294,8 +294,8 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 {
     auto fterm = datalog::checkout<FunctionTerm<LiftedTag, T_DST>>(context.builder());
 
-    fterm->parameters = copy(element.get_parameters(), context).first;
-    fterm->function = merge_p2d<T_SRC, T_DST>(element.get_function(), context).first;
+    urd::store(fterm->parameters, copy(element.get_parameters(), context).first);
+    urd::store(fterm->function, merge_p2d<T_SRC, T_DST>(element.get_function(), context).first);
     for (const auto term : element.get_terms())
         urd::build_member(fterm->terms.emplace_back(), merge_p2d(term, context), context.destination());
 
@@ -312,7 +312,7 @@ merge_p2d(FunctionRowView<T_SRC> element, datalog::FunctionView<T_DST> function,
 {
     auto binding = datalog::checkout<ygg::Row<Function<T_DST>>>(context.builder());
 
-    binding->relation = function;
+    urd::store(binding->relation, function);
     for (const auto object : element.template get<urd::index<Object>>())
         binding->values.push_back(object.value);
 
@@ -338,7 +338,7 @@ std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffect
     auto numeric_effect = datalog::checkout<NumericEffect<Kind, T_DST>>(context.builder());
 
     numeric_effect->operation = element.get_operation();
-    numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first;
+    urd::store(numeric_effect->fterm, merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first);
     urd::build_member(numeric_effect->fexpr, merge_p2d(element.get_fexpr(), context), context.destination());
 
     return context.destination().insert(*numeric_effect, context.builder());

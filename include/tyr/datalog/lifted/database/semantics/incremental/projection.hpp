@@ -80,7 +80,7 @@ public:
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
     /// Retained working storage; excludes the immutable plan and caller workspace.
-    [[nodiscard]] size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const;
 };
 
 template<ygg::RelationViewConcept<ygg::Schema> V>

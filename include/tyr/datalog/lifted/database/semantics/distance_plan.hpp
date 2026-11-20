@@ -18,25 +18,25 @@ namespace tyr::datalog::database
 /// Output columns are the edge columns followed by a fresh uint_t distance column.
 class DistancePlan
 {
-    urd::flat_vector<ygg::ColumnLayout> m_sources;
-    urd::flat_vector<ygg::ColumnLayout> m_edges;
-    urd::flat_vector<ygg::ColumnLayout> m_targets;
-    urd::flat_vector<ygg::ColumnLayout> m_output;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_sources;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_edges;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_targets;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> m_output;
 
 public:
     DistancePlan() = default;
-    DistancePlan(std::span<const ygg::ColumnLayout> sources,
-                 std::span<const ygg::ColumnLayout> edges,
-                 std::span<const ygg::ColumnLayout> targets,
+    DistancePlan(std::span<const urd::data<ygg::ColumnLayout>> sources,
+                 std::span<const urd::data<ygg::ColumnLayout>> edges,
+                 std::span<const urd::data<ygg::ColumnLayout>> targets,
                  urd::index<ygg::Column> distance_column);
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> source_columns() const noexcept { return { m_sources.data(), m_sources.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> source_columns() const noexcept { return { m_sources.data(), m_sources.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> edge_columns() const noexcept { return { m_edges.data(), m_edges.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> edge_columns() const noexcept { return { m_edges.data(), m_edges.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> target_columns() const noexcept { return { m_targets.data(), m_targets.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> target_columns() const noexcept { return { m_targets.data(), m_targets.size() }; }
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+    [[nodiscard]] std::span<const urd::data<ygg::ColumnLayout>> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
 
     [[nodiscard]] size_t tuple_size() const noexcept { return m_sources.size(); }
 

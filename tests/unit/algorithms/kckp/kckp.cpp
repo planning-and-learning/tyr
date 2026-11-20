@@ -114,9 +114,9 @@ public:
 
     [[nodiscard]] const tyr::analysis::VariableDomainList& get_domains() const noexcept { return m_domains; }
 
-    [[nodiscard]] Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.label(vertex)); }
+    [[nodiscard]] Object get_object(urd::data<tyr::kckp::Vertex> vertex) const noexcept { return Object(m_graph.label(vertex)); }
 
-    [[nodiscard]] tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const
+    [[nodiscard]] urd::data<tyr::kckp::Vertex> find_vertex(ygg::uint_t partition, Object object) const
     {
         if (partition >= m_graph.num_parts())
             return {};
@@ -145,8 +145,8 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
     }
 
     const auto num_partitions = static_cast<ygg::uint_t>(domains.size());
-    auto adjacency =
-        tyr::kckp::CompatibilityMatrix(urd::graph_data<std::pair<tyr::kckp::Vertex, tyr::kckp::Vertex>> { vertex_labels.size(), {}, partition_sizes });
+    auto adjacency = tyr::kckp::CompatibilityMatrix(
+        urd::graph_data<std::pair<urd::data<tyr::kckp::Vertex>, urd::data<tyr::kckp::Vertex>>> { vertex_labels.size(), {}, partition_sizes });
     auto first_vertex_of = urd::Store<urd::sequence<ygg::uint_t>>(num_partitions + 1, 0);
     for (ygg::uint_t partition = 0; partition < num_partitions; ++partition)
         first_vertex_of[partition + 1] = first_vertex_of[partition] + static_cast<ygg::uint_t>(partition_sizes[partition]);
@@ -168,8 +168,8 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
                         continue;
                     }
 
-                    adjacency.add_edge(tyr::kckp::Vertex(first_vertex_of[first_partition] + first_bit),
-                                       tyr::kckp::Vertex(first_vertex_of[second_partition] + second_bit));
+                    adjacency.add_edge(urd::data<tyr::kckp::Vertex>(first_vertex_of[first_partition] + first_bit),
+                                       urd::data<tyr::kckp::Vertex>(first_vertex_of[second_partition] + second_bit));
                 }
 
             if (universal)
@@ -184,16 +184,16 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
 
 Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, tyr::kckp::Workspace& workspace)
 {
-    auto prefix = urd::Store<urd::sequence<tyr::kckp::Vertex>> {};
+    auto prefix = urd::Store<urd::sequence<urd::data<tyr::kckp::Vertex>>> {};
     auto partition = ygg::uint_t { 0 };
     for (const auto value : prefix_values)
         prefix.push_back(graph.find_vertex(partition++, Object(value)));
 
     auto result = Extensions {};
     tyr::kckp::KCKP(graph.get_graph())
-        .for_each_compatible_extension(std::span<const tyr::kckp::Vertex>(prefix),
+        .for_each_compatible_extension(std::span<const urd::data<tyr::kckp::Vertex>>(prefix),
                                        workspace,
-                                       [&](std::span<const tyr::kckp::Vertex> extension)
+                                       [&](std::span<const urd::data<tyr::kckp::Vertex>> extension)
                                        {
                                            auto values = Extension {};
                                            for (const auto vertex : extension)
@@ -346,18 +346,18 @@ TEST(TyrKCKP, ValidatesVertexPrefixes)
                    [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second.value) == static_cast<ygg::uint_t>(first.value) + 2; });
     const auto& raw_graph = graph.get_graph();
     auto workspace = tyr::kckp::Workspace {};
-    const auto count_extensions = [&](std::initializer_list<tyr::kckp::Vertex> prefix)
+    const auto count_extensions = [&](std::initializer_list<urd::data<tyr::kckp::Vertex>> prefix)
     {
         auto count = size_t { 0 };
-        tyr::kckp::KCKP(raw_graph).for_each_compatible_extension(std::span<const tyr::kckp::Vertex>(prefix.begin(), prefix.size()),
+        tyr::kckp::KCKP(raw_graph).for_each_compatible_extension(std::span<const urd::data<tyr::kckp::Vertex>>(prefix.begin(), prefix.size()),
                                                                  workspace,
-                                                                 [&](std::span<const tyr::kckp::Vertex>) { ++count; });
+                                                                 [&](std::span<const urd::data<tyr::kckp::Vertex>>) { ++count; });
         return count;
     };
 
     EXPECT_EQ(count_extensions({ graph.find_vertex(0, Object(0)) }), 1);
     EXPECT_EQ(count_extensions({ graph.find_vertex(1, Object(2)) }), 0);
-    EXPECT_EQ(count_extensions({ tyr::kckp::Vertex(static_cast<ygg::uint_t>(raw_graph.num_vertices())) }), 0);
+    EXPECT_EQ(count_extensions({ urd::data<tyr::kckp::Vertex>(static_cast<ygg::uint_t>(raw_graph.num_vertices())) }), 0);
     EXPECT_EQ(count_extensions({ graph.find_vertex(0, Object(0)), graph.find_vertex(1, Object(3)) }), 0);
 }
 

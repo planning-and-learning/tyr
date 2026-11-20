@@ -186,14 +186,15 @@ private:
             const auto after = concrete.columns();
             auto inner = Labels();
             for (const auto label : needed)
-                inner.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &ygg::ColumnLayout::label) - after.begin())].label);
+                inner.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &urd::data<ygg::ColumnLayout>::label) - after.begin())].label);
             const auto arg = relax(concrete.get_operand(), inner, polarity);
             if (!arg)
                 return std::nullopt;
             // The relaxed columns keep their labels' positions in the argument's schema.
             auto renamed = Labels();
             for (const auto& column : columns_of(*arg))
-                renamed.push_back(after[static_cast<size_t>(std::ranges::find(before, column.label, &ygg::ColumnLayout::label) - before.begin())].label);
+                renamed.push_back(
+                    after[static_cast<size_t>(std::ranges::find(before, column.label, &urd::data<ygg::ColumnLayout>::label) - before.begin())].label);
             return m_build.template relabel<QueryRenameTag>(*arg, renamed);
         }
         else if constexpr (std::same_as<Tag, QuerySelectEqualTag> || std::same_as<Tag, QuerySelectValueTag>)

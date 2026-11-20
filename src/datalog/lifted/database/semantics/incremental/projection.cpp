@@ -67,6 +67,6 @@ const Delta& ProjectionEvaluator::get_delta() const&
 
 namespace tyr::datalog::database::incremental
 {
-size_t ProjectionEvaluator::memory_usage() const noexcept
+size_t ProjectionEvaluator::memory_usage() const
 { return urd::memory_usage(m_result->relation) + m_delta.memory_usage() + urd::memory_usage(m_supports) + urd::memory_usage(m_pending_removals); }
 }

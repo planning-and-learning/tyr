@@ -52,7 +52,7 @@ void copy_except_rules(ProgramView<T> element, urd::builder<Program<T>, Reposito
     const auto copy_all = [&](const auto elements, auto& destination)
     {
         for (const auto e : elements)
-            destination.push_back(copy(e, context).first);
+            urd::append(destination, copy(e, context).first);
     };
 
     copy_all(element.template get_predicates<StaticTag>(), result.static_predicates);
@@ -66,7 +66,7 @@ void copy_except_rules(ProgramView<T> element, urd::builder<Program<T>, Reposito
     copy_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
 
     if (const auto goal = element.get_goal())
-        result.goal = copy(*goal, context).first;
+        urd::store(result.goal, copy(*goal, context).first);
 }
 
 }

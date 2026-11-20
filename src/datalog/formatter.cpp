@@ -15,23 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include "tyr/datalog/formatter.hpp"
 
 #include <fmt/format.h>
 #include <limits>
 #include <yggdrasil/core/chrono.hpp>
 
-fmt::format_context::iterator fmt::formatter<tyr::datalog::StaticConsistencyGraph>::format(const tyr::datalog::StaticConsistencyGraph&, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::datalog::StaticConsistencyGraph>::format(const tyr::datalog::StaticConsistencyGraph&,
+                                                                                           fmt::format_context& ctx) const
 { return ctx.out(); }
 
-fmt::format_context::iterator fmt::formatter<tyr::datalog::ProgramStatistics>::format(const tyr::datalog::ProgramStatistics& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::datalog::ProgramStatistics>::format(const tyr::datalog::ProgramStatistics& value,
+                                                                                      fmt::format_context& ctx) const
 {
     const double parallel_ns = static_cast<double>(ygg::to_ns(value.parallel_time));
     const double total_ns = static_cast<double>(ygg::to_ns(value.total_time));
     const double frac = parallel_ns > 0.0 && total_ns > 0.0 ? parallel_ns / total_ns : 1.0;
-    const auto avg_total_us =
-        value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
+    const auto avg_total_us = value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
 
     return fmt::format_to(ctx.out(),
                           "[ProgramStatistics] N_exec = {:>10}    | executions\n"
@@ -50,8 +50,7 @@ fmt::format_context::iterator fmt::formatter<tyr::datalog::ProgramStatistics>::f
 
 fmt::format_context::iterator fmt::formatter<tyr::datalog::RuleStatistics>::format(const tyr::datalog::RuleStatistics& value, fmt::format_context& ctx) const
 {
-    const auto avg_total_us =
-        value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
+    const auto avg_total_us = value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
     return fmt::format_to(ctx.out(),
                           "[RuleStatistics] N_exec = {:>10}    | executions\n"
                           "[RuleStatistics] T_seq  = {:>10} ms | sequential time\n"
@@ -65,10 +64,10 @@ fmt::format_context::iterator fmt::formatter<tyr::datalog::RuleStatistics>::form
                           avg_total_us);
 }
 
-fmt::format_context::iterator fmt::formatter<tyr::datalog::AggregatedRuleStatistics>::format(const tyr::datalog::AggregatedRuleStatistics& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::datalog::AggregatedRuleStatistics>::format(const tyr::datalog::AggregatedRuleStatistics& value,
+                                                                                             fmt::format_context& ctx) const
 {
-    const auto avg_total_us =
-        value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
+    const auto avg_total_us = value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
     const double tot_max_ns = static_cast<double>(ygg::to_ns(value.tot_time_max));
     const double tot_med_ns = static_cast<double>(ygg::to_ns(value.tot_time_median));
     const double tot_skew = tot_max_ns > 0.0 && tot_med_ns > 0.0 ? tot_max_ns / tot_med_ns : 1.0;
@@ -112,7 +111,8 @@ fmt::format_context::iterator fmt::formatter<tyr::datalog::AggregatedRuleStatist
                           avg_skew);
 }
 
-fmt::format_context::iterator fmt::formatter<tyr::datalog::RuleWorkerStatistics>::format(const tyr::datalog::RuleWorkerStatistics& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::datalog::RuleWorkerStatistics>::format(const tyr::datalog::RuleWorkerStatistics& value,
+                                                                                         fmt::format_context& ctx) const
 {
     const auto rej = static_cast<ygg::float_t>(value.num_rejected_rules);
     const auto gen = static_cast<ygg::float_t>(value.num_generated_rules);
@@ -129,7 +129,8 @@ fmt::format_context::iterator fmt::formatter<tyr::datalog::RuleWorkerStatistics>
                           overapproximation_ratio);
 }
 
-fmt::format_context::iterator fmt::formatter<tyr::datalog::AggregatedRuleWorkerStatistics>::format(const tyr::datalog::AggregatedRuleWorkerStatistics& value, fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::datalog::AggregatedRuleWorkerStatistics>::format(const tyr::datalog::AggregatedRuleWorkerStatistics& value,
+                                                                                                   fmt::format_context& ctx) const
 {
     const auto rej = static_cast<ygg::float_t>(value.num_rejected_rules);
     const auto gen = static_cast<ygg::float_t>(value.num_generated_rules);

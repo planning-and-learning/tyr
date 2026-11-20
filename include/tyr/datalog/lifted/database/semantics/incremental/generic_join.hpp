@@ -139,7 +139,7 @@ public:
 
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
-    [[nodiscard]] size_t memory_usage() const noexcept
+    [[nodiscard]] size_t memory_usage() const
     { return m_workspace.memory_usage() + m_changed.memory_usage() + urd::memory_usage(m_result->relation) + m_delta.memory_usage(); }
 };
 }  // namespace tyr::datalog::database::incremental

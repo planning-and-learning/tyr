@@ -80,22 +80,20 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
     const auto append_condition = [&](auto condition, auto& conj_cond)
     {
         for (const auto literal : condition.template get_literals<formalism::StaticTag>())
-            conj_cond.static_literals.push_back(
-                formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
+            urd::append(conj_cond.static_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
 
         for (const auto literal : condition.template get_literals<formalism::FluentTag>())
-            conj_cond.fluent_literals.push_back(
-                formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
+            urd::append(conj_cond.fluent_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
 
         for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
-            conj_cond.fluent_literals.push_back(
-                formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal,
-                                                                                            translation_context.p2d.derived_to_fluent_predicate,
-                                                                                            context)
-                    .first);
+            urd::append(conj_cond.fluent_literals,
+                        formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal,
+                                                                                                    translation_context.p2d.derived_to_fluent_predicate,
+                                                                                                    context)
+                            .first);
 
         for (const auto numeric_constraint : condition.get_numeric_constraints())
-            conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context).first);
+            urd::append(conj_cond.numeric_constraints, formalism::planning::merge_p2d(numeric_constraint, context).first);
     };
 
     for (const auto action : task.get_domain().get_actions())
@@ -105,31 +103,31 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
         [[maybe_unused]] const auto [it, inserted] = predicate_to_actions.emplace(applicability_predicate, action);
         assert(inserted);
 
-        program->fluent_predicates.push_back(applicability_predicate);
+        urd::append(program->fluent_predicates, applicability_predicate);
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
 
         auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
         for (const auto variable : action.get_variables())
-            rule->variables.push_back(formalism::copy(variable, context).first);
+            urd::append(rule->variables, formalism::copy(variable, context).first);
 
         for (const auto variable : action.get_condition().get_variables())
-            conj_cond->variables.push_back(formalism::copy(variable, context).first);
+            urd::append(conj_cond->variables, formalism::copy(variable, context).first);
 
         append_condition(action.get_condition(), *conj_cond);
 
         const auto new_conj_cond = repository.insert(*conj_cond, builder).first;
 
-        rule->body = new_conj_cond;
+        urd::store(rule->body, new_conj_cond);
 
         const auto applicability_atom = create_applicability_atom(action, context).first;
 
-        rule->heads.push_back(applicability_atom);
+        urd::append(rule->heads, applicability_atom);
 
         const auto new_rule = repository.insert(*rule, builder).first;
 
-        program->rules.push_back(new_rule);
+        urd::append(program->rules, new_rule);
 
         // A rule per conditional effect with variables or a condition: its atoms are the bindings for which the effect fires.
         for (const auto cond_eff : action.get_effects())
@@ -143,29 +141,29 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
             effect_predicate->name = create_triggered_name(action, cond_eff);
             effect_predicate->arity = action.get_arity() + cond_eff.get_arity();
             const auto new_effect_predicate = repository.insert(*effect_predicate, builder).first;
-            program->fluent_predicates.push_back(new_effect_predicate);
+            urd::append(program->fluent_predicates, new_effect_predicate);
 
             auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
             auto effect_condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
             for (const auto variable : action.get_variables())
-                effect_condition->variables.push_back(formalism::copy(variable, context).first);
+                urd::append(effect_condition->variables, formalism::copy(variable, context).first);
             for (const auto variable : cond_eff.get_variables())
-                effect_condition->variables.push_back(formalism::copy(variable, context).first);
+                urd::append(effect_condition->variables, formalism::copy(variable, context).first);
             urd::build_member(effect_rule->variables, effect_condition->variables, repository);
             append_condition(action.get_condition(), *effect_condition);
             append_condition(condition, *effect_condition);
-            effect_rule->body = repository.insert(*effect_condition, builder).first;
+            urd::store(effect_rule->body, repository.insert(*effect_condition, builder).first);
 
             auto effect_parameters = formalism::datalog::checkout<formalism::Parameters>(builder);
             urd::build_member(effect_parameters->variables, effect_condition->variables, repository);
             auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(builder);
-            effect_atom->parameters = repository.insert(*effect_parameters, builder).first;
-            effect_atom->predicate = new_effect_predicate;
+            urd::store(effect_atom->parameters, repository.insert(*effect_parameters, builder).first);
+            urd::store(effect_atom->predicate, new_effect_predicate);
             for (ygg::uint_t i = 0; i < new_effect_predicate.get_arity(); ++i)
                 urd::build_member(effect_atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), repository);
-            effect_rule->heads.push_back(repository.insert(*effect_atom, builder).first);
+            urd::append(effect_rule->heads, repository.insert(*effect_atom, builder).first);
 
-            program->rules.push_back(repository.insert(*effect_rule, builder).first);
+            urd::append(program->rules, repository.insert(*effect_rule, builder).first);
             effect_to_predicate.emplace(std::pair(action, cond_eff), new_effect_predicate);
         }
     }
@@ -221,10 +219,10 @@ auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task
     for (const auto& [predicate, action] : mapping)
     {
         schema->rules.clear();
-        schema->rules.push_back(repository->view(rule_of.at(predicate)));
+        urd::append(schema->rules, repository->view(rule_of.at(predicate)));
         for (const auto effect : action.get_effects())
             if (const auto it = effect_to_predicate.find(std::pair(action, effect)); it != effect_to_predicate.end())
-                schema->rules.push_back(repository->view(rule_of.at(it->second)));
+                urd::append(schema->rules, repository->view(rule_of.at(it->second)));
         schema_programs.try_emplace(action, repository->insert(*schema, builder).first, translation_context.p2d);
     }
     return datalog::Program<LiftedTag>(program, std::move(repository));

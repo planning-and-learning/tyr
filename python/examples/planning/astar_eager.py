@@ -39,8 +39,8 @@ from pytyr.planning.lifted import (
     Node,
     Plan,
     PruningStrategy,
+    StateBuilderBorrowed,
     StateBuilderShared,
-    StateBuilder,
     StateRepository,
     SuccessorGenerator,
     Task,
@@ -78,7 +78,9 @@ class CustomPruningStrategy(PruningStrategy):
         raise NotImplementedError
 
     @override
-    def should_prune_successor_state(self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool) -> bool:
+    def should_prune_successor_state(
+        self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool
+    ) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 
@@ -96,7 +98,9 @@ class CustomGoalStrategy(GoalStrategy):
         raise NotImplementedError
 
     @override
-    def is_dynamic_goal_satisfied(self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilder) -> bool:
+    def is_dynamic_goal_satisfied(
+        self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilderBorrowed
+    ) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 

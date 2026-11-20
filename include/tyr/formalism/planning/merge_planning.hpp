@@ -45,7 +45,7 @@ std::pair<PredicateRowView<T_DST>, bool> merge_d2p(datalog::PredicateRowView<T_S
     auto binding = planning::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
     // The mapped predicate may be the lifted task's (a derived predicate): the destination's copy at its index.
-    binding->relation = schema_in_destination(predicate_mapping.at(element.get_relation()), context);
+    urd::store(binding->relation, schema_in_destination(predicate_mapping.at(element.get_relation()), context));
     for (const auto object : element.template get<urd::index<Object>>())
         binding->values.push_back(object.value);
 

@@ -99,9 +99,9 @@ std::span<const ygg::Value> make_distance_row(const DistanceGraph& graph,
 
 namespace tyr::datalog::database
 {
-DistancePlan::DistancePlan(std::span<const ygg::ColumnLayout> sources,
-                           std::span<const ygg::ColumnLayout> edges,
-                           std::span<const ygg::ColumnLayout> targets,
+DistancePlan::DistancePlan(std::span<const urd::data<ygg::ColumnLayout>> sources,
+                           std::span<const urd::data<ygg::ColumnLayout>> edges,
+                           std::span<const urd::data<ygg::ColumnLayout>> targets,
                            urd::index<ygg::Column> distance_column)
 {
     for (const auto columns : { sources, edges, targets })
@@ -116,7 +116,7 @@ DistancePlan::DistancePlan(std::span<const ygg::ColumnLayout> sources,
     for (size_t i = 0; i < k; ++i)
         if (m_sources[i].type != m_targets[i].type || m_sources[i].type != m_edges[i].type || m_sources[i].type != m_edges[k + i].type)
             throw std::invalid_argument("Distance: vertex field types must agree by position.");
-    m_output.push_back(ygg::ColumnLayout { distance_column, ygg::type_id<ygg::uint_t> });
+    m_output.push_back(urd::data<ygg::ColumnLayout> { distance_column, ygg::type_id<ygg::uint_t> });
     ygg::validate_columns(output_columns());
 }
 }
@@ -133,5 +133,5 @@ bool DistanceWorkspace::matches(const DistancePlan& plan) const noexcept { retur
 
 namespace tyr::datalog::database
 {
-size_t DistanceWorkspace::memory_usage() const noexcept { return urd::memory_usage(*this); }
+size_t DistanceWorkspace::memory_usage() const { return urd::memory_usage(*this); }
 }

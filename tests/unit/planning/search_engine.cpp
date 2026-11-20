@@ -480,7 +480,7 @@ public:
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return true; }
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const tyr::planning::StateView<Kind>& state) override
-    { return seed_state.index() != state.index(); }
+    { return seed_state.pack().index() != state.pack().index(); }
 
     // A state being built is no seed: the seed is registered.
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateBuilderView<Kind>&) override { return true; }
@@ -1543,7 +1543,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
     auto policy = Policy(heuristic, options);
     auto execution = Execution(0);
     execution.initialize_best_h(1);
-    auto& search_node = policy.initialize_start(start.get_state().index(), start.get_metric(), 1);
+    auto& search_node = policy.initialize_start(start.get_state().pack().index(), start.get_metric(), 1);
     auto statistics = tyr::planning::Statistics {};
 
     const auto result =
@@ -1551,7 +1551,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
                                    [&](auto&& evaluate_unlocked)
                                    {
                                        return policy.prepare_expansion(
-                                           Policy::PoppedEntry { start.get_state().index() },
+                                           Policy::PoppedEntry { start.get_state().pack().index() },
                                            start,
                                            search_node,
                                            statistics,

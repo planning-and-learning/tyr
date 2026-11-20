@@ -44,16 +44,23 @@ void bind_literal_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<Literal<T, F>, C>>(m);
     ygg::bind_insert<Literal<T, F>>(repository);
+    urd::python::bind_builder<Literal<T, F>, C>(m);
 }
 }  // namespace
 
 void bind_literal(nb::module_& m)
 {
+    urd::python::bind_index<Literal<LiftedTag, StaticTag>>(m);
     urd::python::bind_data<Literal<LiftedTag, StaticTag>>(m);
+    urd::python::bind_index<Literal<LiftedTag, FluentTag>>(m);
     urd::python::bind_data<Literal<LiftedTag, FluentTag>>(m);
+    urd::python::bind_index<Literal<LiftedTag, DerivedTag>>(m);
     urd::python::bind_data<Literal<LiftedTag, DerivedTag>>(m);
+    urd::python::bind_index<Literal<GroundTag, StaticTag>>(m);
     urd::python::bind_data<Literal<GroundTag, StaticTag>>(m);
+    urd::python::bind_index<Literal<GroundTag, FluentTag>>(m);
     urd::python::bind_data<Literal<GroundTag, FluentTag>>(m);
+    urd::python::bind_index<Literal<GroundTag, DerivedTag>>(m);
     urd::python::bind_data<Literal<GroundTag, DerivedTag>>(m);
 }
 

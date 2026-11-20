@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <span>
@@ -59,9 +60,10 @@ struct DistanceGraph
     template<typename R>
     std::pair<VertexSet::handle_type, VertexSet::handle_type> insert_endpoints(const R& edge)
     { return insert_endpoints(vertex_values(edge, scratch)); }
+
     [[nodiscard]] bool contains_edge(VertexSet::handle_type from, VertexSet::handle_type to) const;
     void clear();
-    [[nodiscard]] size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const;
 
     /// The members it owns memory through (urd::memory_of).
     static constexpr auto memory_members() noexcept { return urd::Members<&DistanceGraph::vertices, &DistanceGraph::outgoing, &DistanceGraph::scratch> {}; }
@@ -86,7 +88,7 @@ public:
     /// Appends the distances of the inputs, which match the plan, to out.
     template<ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> E, ygg::RelationViewConcept<ygg::Schema> T>
     void append_distances(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, ygg::FreeScratchRelation& out);
-    [[nodiscard]] size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const;
 
     /// The members it owns memory through (urd::memory_of).
     static constexpr auto memory_members() noexcept
@@ -122,7 +124,7 @@ inline constexpr ygg::uint_t distance_infinity = std::numeric_limits<ygg::uint_t
 
 inline DistanceGraph::DistanceGraph(size_t tuple_size_) : tuple_size(tuple_size_) {}
 
-inline size_t DistanceGraph::memory_usage() const noexcept { return urd::memory_usage(*this); }
+inline size_t DistanceGraph::memory_usage() const { return urd::memory_usage(*this); }
 
 void breadth_first_search(const DistanceGraph& graph,
                           VertexSet::handle_type root,
@@ -187,7 +189,9 @@ min_distance(const S& sources, const E& edges, const T& targets, const DistanceP
     const auto position = static_cast<std::ptrdiff_t>(view.arity() - 1);  // The distance column follows the edge columns.
     auto best = std::numeric_limits<ygg::uint_t>::max();
     for (const auto& held : view.get_rows())
-        ygg::with_values(held, [&](const auto& values) { best = std::min(best, ygg::decode_value<ygg::uint_t>(std::ranges::begin(values)[position])); });
+        ygg::with_values(held,
+                         [&](const auto& values)
+                         { best = std::min(best, ygg::decode_value<ygg::uint_t>(*std::ranges::next(std::ranges::begin(values), position))); });
     return best;
 }
 

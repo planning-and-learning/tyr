@@ -25,7 +25,6 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
 using ygg::uint_t;
 
@@ -51,7 +50,7 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
     auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), tyr::datalog::database::compile_plan({ edges }));
     evaluator.evaluate(borrow_all(maximal));
     auto supergraph = Relation(evaluator.get_result().columns());
-    for (size_t i = 0; i < evaluator.get_result().size(); ++i)
+    for (size_t i = 0; i < evaluator.get_result().get_rows().size(); ++i)
         supergraph.insert(values_of(evaluator.get_result().row(i)));
     auto heuristic = HalfDistance {};
     heuristic.columns = sources.columns();
@@ -65,10 +64,9 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
         evaluator.evaluate(views);
         const auto materialized = evaluator.get_result();
         auto edge_relation = Relation(materialized.columns());
-        for (size_t i = 0; i < materialized.size(); ++i)
+        for (size_t i = 0; i < materialized.get_rows().size(); ++i)
             edge_relation.insert(values_of(materialized.row(i)));
-        const auto expected =
-            tyr::datalog::database::min_distance(borrow(sources), borrow(edge_relation), borrow(targets), plan, result, workspace);
+        const auto expected = tyr::datalog::database::min_distance(borrow(sources), borrow(edge_relation), borrow(targets), plan, result, workspace);
         const auto input = [&](size_t slot) { return views[slot]; };
         heuristic.distances = distances_to(borrow(supergraph), borrow(targets), k);
         ASSERT_EQ(blind.min_distance(input, borrow(sources), borrow(targets)), expected) << "step " << step;
@@ -258,8 +256,7 @@ TEST_P(DatabaseMinDistance, RelationEdgesUnderChanges)
                 else
                     edges.insert(edge);
             }
-        const auto expected =
-            tyr::datalog::database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace);
+        const auto expected = tyr::datalog::database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace);
         const auto edge_view = borrow(edges);
         const auto edge_input = [&](size_t) -> const auto& { return edge_view; };
         ASSERT_EQ(blind.min_distance(edge_input, borrow(sources), borrow(targets)), expected) << "step " << step;

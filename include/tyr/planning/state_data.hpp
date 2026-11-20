@@ -45,11 +45,11 @@ namespace urd
 template<>
 struct data<::tyr::planning::FactStorage<::tyr::GroundTag>>
 {
-    ::tyr::planning::StateComponentRepository<::tyr::planning::FactStorage<::tyr::GroundTag>, ::tyr::planning::StateStoragePolicyTag>::Packed values;
+    ::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>> values;
 
     data() = default;
 
-    data(::tyr::planning::StateComponentRepository<::tyr::planning::FactStorage<::tyr::GroundTag>, ::tyr::planning::StateStoragePolicyTag>::Packed values_) : values(values_) {}
+    data(::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>> values_) : values(values_) {}
 
     static constexpr bool copyable() noexcept
     {
@@ -68,11 +68,11 @@ struct data<::tyr::planning::FactStorage<::tyr::GroundTag>>
 template<>
 struct data<::tyr::planning::FactStorage<::tyr::LiftedTag>>
 {
-    ::tyr::planning::StateComponentRepository<::tyr::planning::FactStorage<::tyr::LiftedTag>, ::tyr::planning::StateStoragePolicyTag>::Packed indices;
+    ::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>> indices;
 
     data() = default;
 
-    data(::tyr::planning::StateComponentRepository<::tyr::planning::FactStorage<::tyr::LiftedTag>, ::tyr::planning::StateStoragePolicyTag>::Packed indices_) : indices(indices_) {}
+    data(::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>> indices_) : indices(indices_) {}
 
     static constexpr bool copyable() noexcept
     {
@@ -91,11 +91,11 @@ struct data<::tyr::planning::FactStorage<::tyr::LiftedTag>>
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::AtomStorage<Kind>>
 {
-    typename ::tyr::planning::StateComponentRepository<::tyr::planning::AtomStorage<Kind>, ::tyr::planning::StateStoragePolicyTag>::Packed indices;
+    ::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>> indices;
 
     data() = default;
 
-    data(typename ::tyr::planning::StateComponentRepository<::tyr::planning::AtomStorage<Kind>, ::tyr::planning::StateStoragePolicyTag>::Packed indices_) : indices(indices_) {}
+    data(::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>> indices_) : indices(indices_) {}
 
     static constexpr bool copyable() noexcept
     {
@@ -114,11 +114,11 @@ struct data<::tyr::planning::AtomStorage<Kind>>
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::NumericStorage<Kind>>
 {
-    typename ::tyr::planning::StateComponentRepository<::tyr::planning::NumericStorage<Kind>, ::tyr::planning::StateStoragePolicyTag>::Packed values;
+    ::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>> values;
 
     data() = default;
 
-    data(typename ::tyr::planning::StateComponentRepository<::tyr::planning::NumericStorage<Kind>, ::tyr::planning::StateStoragePolicyTag>::Packed values_) : values(values_) {}
+    data(::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>> values_) : values(values_) {}
 
     static constexpr bool copyable() noexcept
     {

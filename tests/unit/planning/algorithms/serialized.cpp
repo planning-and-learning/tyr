@@ -140,7 +140,7 @@ public:
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const tyr::planning::StateView<GroundTag>&) override
     {
         seed_repositories.push_back(&seed_state.context());
-        seed_indices.push_back(seed_state.index());
+        seed_indices.push_back(seed_state.pack().index());
         return false;
     }
 
@@ -808,7 +808,7 @@ TEST(TyrPlanningSerialized, FinalGoalUsesNormalizedStartAsStableSeed)
     ASSERT_EQ(goal_strategy->seed_repositories.size(), 2);
     EXPECT_EQ(goal_strategy->seed_repositories[0], context.state_repository.get());
     EXPECT_EQ(goal_strategy->seed_repositories[1], goal_strategy->seed_repositories[0]);
-    EXPECT_EQ(goal_strategy->seed_indices[0], initial_node.get_state().index());
+    EXPECT_EQ(goal_strategy->seed_indices[0], initial_node.get_state().pack().index());
     EXPECT_EQ(goal_strategy->seed_indices[1], goal_strategy->seed_indices[0]);
 }
 
@@ -865,7 +865,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     const auto first_labeled_succ_node_it =
         std::find_if(labeled_succ_nodes.begin(),
                      labeled_succ_nodes.end(),
-                     [&](const auto& labeled_succ_node) { return labeled_succ_node.node.get_state().index() != start_node.get_state().index(); });
+                     [&](const auto& labeled_succ_node) { return labeled_succ_node.node.get_state().pack().index() != start_node.get_state().pack().index(); });
     ASSERT_NE(first_labeled_succ_node_it, labeled_succ_nodes.end());
     const auto& first_labeled_succ_node = *first_labeled_succ_node_it;
     const auto first_goal_node = first_labeled_succ_node.node;
@@ -939,13 +939,14 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
     const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto successor_it =
-        std::ranges::find_if(successors, [&](const auto& successor) { return successor.node.get_state().index() != initial_node.get_state().index(); });
+        std::ranges::find_if(successors,
+                             [&](const auto& successor) { return successor.node.get_state().pack().index() != initial_node.get_state().pack().index(); });
     ASSERT_NE(successor_it, successors.end());
     const auto& successor = *successor_it;
 
     auto foreign = make_worker_context(context);
     const auto foreign_start = foreign.successor_generator->get_initial_node(*foreign.state_repository, *foreign.axiom_evaluator);
-    ASSERT_EQ(foreign_start.get_state().index(), initial_node.get_state().index());
+    ASSERT_EQ(foreign_start.get_state().pack().index(), initial_node.get_state().pack().index());
     ASSERT_NE(foreign_start.get_state(), initial_node.get_state());
     const auto foreign_successor_state = tyr::planning::materialize_state(successor.node.get_state(), *foreign.state_repository, *foreign.axiom_evaluator);
     ASSERT_NE(foreign_successor_state, successor.node.get_state());

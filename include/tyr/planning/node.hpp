@@ -26,6 +26,7 @@
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
+#include <fmt/format.h>
 #include <memory>
 #include <ranges>
 #include <string_view>
@@ -63,9 +64,6 @@ private:
     ygg::float_t m_metric;
 
 public:
-    static constexpr std::string_view name = "Node";
-
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"state", &Node::m_state>, urd::field<"metric", &Node::m_metric>> {}; }
 };
 
 /// A node whose state is packed. It keeps the state's repository alive (the view borrows it), so that it can be held
@@ -116,5 +114,15 @@ struct PackedLabeledNode
     [[nodiscard]] LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };
 }
+
+/// A node: its state and its metric (a template over its state's view, written as that view writes it).
+template<tyr::TaskKind Kind, tyr::planning::StateViewConcept<Kind> State>
+struct fmt::formatter<tyr::planning::Node<Kind, State>, char>
+{
+    constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
+
+    fmt::format_context::iterator format(const tyr::planning::Node<Kind, State>& value, fmt::format_context& ctx) const
+    { return fmt::format_to(ctx.out(), "Node(\n    state={}\n    metric={}\n)", value.get_state(), value.get_metric()); }
+};
 
 #endif

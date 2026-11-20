@@ -178,24 +178,10 @@ public:
         requires std::same_as<V, ::tyr::planning::StateView<Kind>>
     { return self().template member<&urd::record_of<V>::index>(); }
 
-    /// Its index, a registered state's only (StateView).
-    [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept
-        requires std::same_as<V, ::tyr::planning::StateView<Kind>>
-    { return pack().index(); }
-
-    /// pack() and index(), where it has them (a registered state).
-    static constexpr auto identity_functions() noexcept
-    {
-        if constexpr (std::same_as<V, ::tyr::planning::StateView<Kind>>)
-            return urd::Functions<urd::function<"pack", &view_mixin::pack>, urd::function<"index", &view_mixin::index>> {};
-        else
-            return urd::Functions<> {};
-    }
-
     static constexpr auto functions() noexcept
     {
         using Self = const view_mixin&;
-        return identity_functions() + urd::Functions<
+        constexpr auto read = urd::Functions<
             urd::function<"get_formalism_repository", &view_mixin::get_formalism_repository>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>) const>(
@@ -276,6 +262,11 @@ public:
                               ::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>) const>(
                               &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>),
                           urd::arg<"predicate">>> {};
+        // pack(), where it has it (a registered state).
+        if constexpr (std::same_as<V, ::tyr::planning::StateView<Kind>>)
+            return urd::Functions<urd::function<"pack", &view_mixin::pack>> {} + read;
+        else
+            return read;
     }
 };
 

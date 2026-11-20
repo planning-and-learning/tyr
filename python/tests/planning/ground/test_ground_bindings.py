@@ -12,7 +12,7 @@ from pytyr.formalism.planning import Parser
 
 Node = planning.ground.Node
 StateBuilderShared = planning.ground.StateBuilderShared
-StateBuilder = planning.ground.StateBuilder
+StateBuilderBorrowed = planning.ground.StateBuilderBorrowed
 Plan = planning.ground.Plan
 IwStatistics = planning.algorithms.iw.ground.Statistics
 SearchStatus = planning.SearchStatus
@@ -173,7 +173,9 @@ def test_pruning_strategy_subclasses_can_call_super_constructor() -> None:
             return False
 
         @override
-        def should_prune_successor_state(self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool) -> bool:
+        def should_prune_successor_state(
+            self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool
+        ) -> bool:
             return is_new_succ_state
 
     pruning_strategy = PythonPruningStrategy()
@@ -197,7 +199,9 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilder) -> bool:
+        def is_dynamic_goal_satisfied(
+            self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilderBorrowed
+        ) -> bool:
             self.saw_state = isinstance(state, planning.ground.StateBuilderShared)
             return False
 

@@ -65,7 +65,7 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
             else if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
             {
                 // Labels outside the output are shared by all inputs that name them.
-                urd::Store<urd::sequence<ygg::ColumnLayout>> labels(columns.begin(), columns.end());
+                urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>> labels(columns.begin(), columns.end());
                 urd::Store<urd::sequence<uint32_t>> variables(mapping.begin(), mapping.end());
                 auto result = urd::Store<urd::sequence<ConjunctiveBranch>>(1);
                 const auto& repository = get_repository(concrete.context());
@@ -73,7 +73,7 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 {
                     const auto child = input;
                     for (const auto& column : columns_of(child))
-                        if (std::ranges::find(labels, column.label, &ygg::ColumnLayout::label) == labels.end())
+                        if (std::ranges::find(labels, column.label, &urd::data<ygg::ColumnLayout>::label) == labels.end())
                         {
                             labels.push_back(column);
                             variables.push_back(fresh(column));

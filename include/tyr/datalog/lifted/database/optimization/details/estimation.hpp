@@ -81,21 +81,21 @@ inline double bounded(double value) { return std::clamp(value, 0.0, max_estimate
 
 inline double multiply(double a, double b) { return a == 0 || b == 0 ? 0 : bounded(a * b); }
 
-Estimate factor(const RelationStatistics& stats, std::span<const ygg::ColumnLayout> columns, FactorIdentity identity);
+Estimate factor(const RelationStatistics& stats, std::span<const urd::data<ygg::ColumnLayout>> columns, FactorIdentity identity);
 
 /// The conjunction's rows: the product of distinct factors divided, per column class,
 /// by all but the smallest distinct count (one factor of a constant class), as in
 /// System R's |R ⋈ S| = |R|·|S| / max(V(R,A), V(S,A)).
 Estimate conjunction(Estimate result, std::span<const urd::index<ygg::Column>> labels);
 /// The conjunction over the labels of `columns`.
-Estimate conjunction(Estimate result, std::span<const ygg::ColumnLayout> columns);
+Estimate conjunction(Estimate result, std::span<const urd::data<ygg::ColumnLayout>> columns);
 
 Estimate combine(Estimate left, const Estimate& right);
 
-void validate_statistics(const RelationStatistics& stats, std::span<const ygg::ColumnLayout> columns);
+void validate_statistics(const RelationStatistics& stats, std::span<const urd::data<ygg::ColumnLayout>> columns);
 
 /// A missing distinct count is the row count, capped by a bounded domain.
-RelationStatistics with_default_distinct(RelationStatistics stats, std::span<const ygg::ColumnLayout> columns, std::optional<size_t> objects);
+RelationStatistics with_default_distinct(RelationStatistics stats, std::span<const urd::data<ygg::ColumnLayout>> columns, std::optional<size_t> objects);
 
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryInputTag> query, FactorIdentity, GetEstimate&&, const Statistics& statistics)

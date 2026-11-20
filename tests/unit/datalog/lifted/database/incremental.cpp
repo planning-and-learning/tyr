@@ -119,8 +119,8 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionTracksSupportAcrossCompactionA
     evaluator.initialize(borrow(input), workspace);
     database::project(borrow(input), plan, reference, workspace);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), rows<ygg::uint_t>(borrow(reference)));
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
 
     Change replacement(input.columns());
     replacement.removed.insert(cells(1, 10, 7));
@@ -163,8 +163,8 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionTracksSupportAcrossCompactionA
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>(value_of(replaced_row, 1)), 1);
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>(value_of(untouched_row, 0)), 9);
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>(value_of(untouched_row, 1)), 3);
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     update(erase_first.added, erase_first.removed);
     update(erase_moved.added, erase_moved.removed);
     update(erase_moved.removed, erase_moved.added);
@@ -173,8 +173,8 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionTracksSupportAcrossCompactionA
     const auto retained = evaluator.memory_usage();
     evaluator.initialize(borrow(input), workspace);
     EXPECT_EQ(evaluator.memory_usage(), retained);
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
 }
 
 TEST(YggdrasilTests, DatabaseIncrementalProjectionConsolidatesMixedChangesAndUndo)
@@ -216,9 +216,9 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionConsolidatesMixedChangesAndUnd
         expect_update(evaluator, before, reference);
     };
     update(delta.added, delta.removed);
-    EXPECT_EQ(evaluator.get_delta().added->view().size(), 1);
+    EXPECT_EQ(evaluator.get_delta().added->view().get_rows().size(), 1);
     EXPECT_TRUE(evaluator.get_delta().added->view().contains(cells(6)));
-    EXPECT_EQ(evaluator.get_delta().removed->view().size(), 1);
+    EXPECT_EQ(evaluator.get_delta().removed->view().get_rows().size(), 1);
     EXPECT_TRUE(evaluator.get_delta().removed->view().contains(cells(3)));
     update(delta.removed, delta.added);
     EXPECT_EQ(rows<ygg::uint_t>(borrow(input)), initial);
@@ -255,8 +255,8 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionDoesNotHideRemovalUnderflowWit
     valid.added.insert(cells(7, 12));
     evaluator.update(valid.change(), workspace);
     EXPECT_TRUE(evaluator.get_result().contains(cells(7)));
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     evaluator.update(std::pair { borrow(empty), borrow(valid.added) }, workspace);
     EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     EXPECT_TRUE(evaluator.get_delta().removed->view().contains(cells(7)));
@@ -287,15 +287,15 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionHandlesEmptyAndNullaryRelation
     delta.clear();
     delta.removed.insert(cells(1));
     update();
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     delta.clear();
     delta.removed.insert(cells(2));
     update();
     EXPECT_TRUE(evaluator.get_delta().removed->view().contains(cells()));
     delta.clear();
     update();
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
 
     Relation nullary;
     Change nullary_delta({});
@@ -333,8 +333,8 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinUpdatesEitherSideIndependently)
         evaluator.initialize(left_operand.view(), right_operand.view(), workspace);
         database::join(borrow(left_operand), borrow(right_operand), plan, reference, workspace);
         EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), rows<ygg::uint_t>(borrow(reference)));
-        EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-        EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+        EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+        EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
         Change delta(dynamic.columns());
         delta.removed.insert(values_of(borrow(dynamic).row(0)));
         if (!change_left)
@@ -404,8 +404,8 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionValidationPrecedesMutation)
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), before);
     evaluator.update(std::pair { borrow(empty), borrow(empty) }, workspace);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), before);
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     Change delta(input.columns());
     delta.added.insert(cells(1));
     delta.removed.insert(cells(2));
@@ -443,17 +443,15 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinUpdatesBothInputsAndRestoresBranches
     database::join(borrow(left_operand), borrow(right_operand), plan, reference, workspace);
     database::project(borrow(reference), projection_plan, reference_projection, workspace);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), rows<ygg::uint_t>(borrow(reference)));
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     const auto update = [&](const auto& left_added, const auto& left_removed, const auto& right_added, const auto& right_removed)
     {
         const auto before = rows<ygg::uint_t>(borrow(reference));
         const auto projection_before = rows<ygg::uint_t>(borrow(reference_projection));
         apply_batch(left_operand, left_added, left_removed);
         apply_batch(right_operand, right_added, right_removed);
-        evaluator.update(std::pair(borrow(left_added), borrow(left_removed)),
-                         std::pair(borrow(right_added), borrow(right_removed)),
-                         workspace);
+        evaluator.update(std::pair(borrow(left_added), borrow(left_removed)), std::pair(borrow(right_added), borrow(right_removed)), workspace);
         projected.update(evaluator.get_delta().change(), workspace);
         database::join(borrow(left_operand), borrow(right_operand), plan, reference, workspace);
         database::project(borrow(reference), projection_plan, reference_projection, workspace);
@@ -496,8 +494,8 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinUpdatesBothInputsAndRestoresBranches
     EXPECT_EQ(rows<ygg::uint_t>(borrow(right_operand)), initial_right);
     evaluator.initialize(borrow(left_operand), borrow(right_operand), workspace);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), rows<ygg::uint_t>(borrow(reference)));
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
 }
 
 TEST(YggdrasilTests, DatabaseIncrementalJoinMaintainsWideIndexesAcrossRowCompaction)
@@ -593,12 +591,12 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinHandlesCartesianAndNullaryChangesOnB
         EXPECT_TRUE(left_operand.empty());
         EXPECT_TRUE(right_operand.empty());
         update(left_remove.added, left_remove.added, right_remove.added, right_remove.added);
-        EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-        EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+        EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+        EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
         // Changing one input while the other remains empty emits no rows.
         update(left_delta.added, left_delta.removed, right_delta.removed, right_delta.removed);
         EXPECT_TRUE(evaluator.get_result().get_rows().empty());
-        EXPECT_TRUE(evaluator.get_delta().added->view().empty());
+        EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
         update(left_delta.removed, left_delta.removed, right_delta.added, right_delta.removed);
         update(left_delta.removed, left_delta.added, right_delta.removed, right_delta.removed);
         EXPECT_TRUE(evaluator.get_result().get_rows().empty());
@@ -629,8 +627,8 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinValidatesAllInputsBeforeMutation)
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_delta().change().first), added_before);
     evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(empty), borrow(empty) }, workspace);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), before);
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
 }
 
 TEST(YggdrasilTests, DatabaseIncrementalJoinRequiresReinitializationAfterMutationFailure)
@@ -657,14 +655,14 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinRequiresReinitializationAfterMutatio
         EXPECT_THROW(evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(empty), borrow(empty) }, workspace), std::logic_error);
         evaluator.initialize(borrow(input), borrow(input), workspace);
         EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), rows<ygg::uint_t>(borrow(input)));
-        EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-        EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+        EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+        EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
         evaluator.update(std::pair { borrow(addition), borrow(empty) }, std::pair { borrow(addition), borrow(empty) }, workspace);
-        EXPECT_EQ(evaluator.get_result().size(), 2);
+        EXPECT_EQ(evaluator.get_result().get_rows().size(), 2);
         EXPECT_TRUE(evaluator.get_result().contains(cells(1)));
         EXPECT_TRUE(evaluator.get_result().contains(cells(2)));
         EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_delta().change().first), rows<ygg::uint_t>(borrow(addition)));
-        EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+        EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     }
 }
 
@@ -688,9 +686,8 @@ TEST(YggdrasilTests, DatabaseIncrementalEvaluatorsShareAccessAndAliasingContract
     join_evaluator.update(std::pair { borrow(none), borrow(none) }, std::pair { borrow(none), borrow(none) }, workspace);
     EXPECT_EQ(rows<ygg::uint_t>(join_evaluator.get_result()), (std::set<urd::Store<urd::sequence<ygg::uint_t>>> { { 1, 2 } }));
 
-    database::incremental::ProjectionEvaluator projection(
-        scratch(),
-        database::ProjectionPlan(left_operand.columns(), std::array { ColumnIndex(0), ColumnIndex(1) }));
+    database::incremental::ProjectionEvaluator projection(scratch(),
+                                                          database::ProjectionPlan(left_operand.columns(), std::array { ColumnIndex(0), ColumnIndex(1) }));
     EXPECT_THROW(static_cast<void>(projection.get_result()), std::logic_error);
     projection.initialize(borrow(left_operand), workspace);
     EXPECT_THROW(projection.update(std::pair { projection.get_delta().added->view(), borrow(none) }, workspace), std::invalid_argument);

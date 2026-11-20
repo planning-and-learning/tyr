@@ -90,7 +90,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
     auto context = tyr::formalism::WriteContext { builder, *fixture.repository, indices };
     auto prepared = tyr::formalism::datalog::checkout<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
-    prepared->relation = atom.get_predicate();
+    urd::store(prepared->relation, atom.get_predicate());
     tyr::formalism::datalog::ground(atom.get_terms(), context, prepared->values);
 
     indices[0] = objects[1].index();

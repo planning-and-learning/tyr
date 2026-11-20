@@ -18,10 +18,10 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 
-#include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/atom_data.hpp"
-#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <map>
 #include <optional>

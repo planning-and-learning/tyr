@@ -46,16 +46,23 @@ void bind_atom_view(nb::module_& m, nb::class_<C>& repository)
     using V = urd::index_view<Atom<T, F>, C>;
     urd::python::bind_view<V>(m);
     ygg::bind_insert<Atom<T, F>>(repository);
+    urd::python::bind_builder<Atom<T, F>, C>(m);
 }
 }  // namespace
 
 void bind_atom(nb::module_& m)
 {
+    urd::python::bind_index<Atom<LiftedTag, StaticTag>>(m);
     urd::python::bind_data<Atom<LiftedTag, StaticTag>>(m);
+    urd::python::bind_index<Atom<LiftedTag, FluentTag>>(m);
     urd::python::bind_data<Atom<LiftedTag, FluentTag>>(m);
+    urd::python::bind_index<Atom<LiftedTag, DerivedTag>>(m);
     urd::python::bind_data<Atom<LiftedTag, DerivedTag>>(m);
+    urd::python::bind_index<Atom<GroundTag, StaticTag>>(m);
     urd::python::bind_data<Atom<GroundTag, StaticTag>>(m);
+    urd::python::bind_index<Atom<GroundTag, FluentTag>>(m);
     urd::python::bind_data<Atom<GroundTag, FluentTag>>(m);
+    urd::python::bind_index<Atom<GroundTag, DerivedTag>>(m);
     urd::python::bind_data<Atom<GroundTag, DerivedTag>>(m);
 }
 

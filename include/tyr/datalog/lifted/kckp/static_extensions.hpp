@@ -32,7 +32,7 @@ namespace tyr::datalog
 /// Scratch of for_each_static_extension.
 struct StaticExtensionWorkspace
 {
-    urd::Store<urd::sequence<kckp::Vertex>> prefix;
+    urd::Store<urd::sequence<urd::data<kckp::Vertex>>> prefix;
     kckp::Workspace kckp;
     urd::flat_vector<urd::index<formalism::Object>> extension;
 };
@@ -60,7 +60,7 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag>& rule,
     kckp::KCKP(graph).for_each_compatible_extension(
         workspace.prefix,
         workspace.kckp,
-        [&](std::span<const kckp::Vertex> extension)
+        [&](std::span<const urd::data<kckp::Vertex>> extension)
         {
             workspace.extension.clear();
             for (const auto vertex : extension)

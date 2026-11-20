@@ -25,7 +25,7 @@ using ::ygg::formalism::insert;
 
 namespace detail
 {
-std::span<const ygg::ColumnLayout> child_columns(urd::index<Query<>> child, const QueryRepository& repository);
+std::span<const urd::data<ygg::ColumnLayout>> child_columns(urd::index<Query<>> child, const QueryRepository& repository);
 
 /// The derived field of a query (its plan, or a rename's columns) from its other fields and its children's columns:
 /// what its creator computes before it is interned. Inputs and empty relations derive nothing.
@@ -78,7 +78,7 @@ template<typename Tag>
 QueryView<> insert_query(QueryRepository& repository, QueryBuilder& builder, const urd::builder<Query<Tag>, QueryRepository>& built)
 {
     auto root = checkout<Query<>>(builder);
-    root->variant = repository.insert(built, builder).first;
+    urd::store(root->variant, repository.insert(built, builder).first);
     return repository.insert(*root, builder).first;
 }
 }  // namespace tyr::datalog::database

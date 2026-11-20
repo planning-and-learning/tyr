@@ -13,10 +13,10 @@
 #include <cista/containers/vector.h>
 #include <memory>
 #include <tuple>
-#include <vector>
 #include <urd/memory.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <vector>
 
 namespace tyr::datalog::database::detail
 {
@@ -77,7 +77,7 @@ struct GenericJoinTrie
     }
 
     /// Its table, and each key's bytes and child node.
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(children); }
+    [[nodiscard]] size_t memory_usage() const { return urd::memory_usage(children); }
 };
 }  // namespace tyr::datalog::database::detail
 
@@ -157,7 +157,7 @@ public:
         append(out);
     }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(m_tries) + urd::memory_usage(m_cursors); }
+    [[nodiscard]] size_t memory_usage() const { return urd::memory_usage(m_tries) + urd::memory_usage(m_cursors); }
 };
 
 /// Generic Join (Ngo, Re, Rudra, 2013, Section 4): intersect one variable at a

@@ -75,14 +75,12 @@ template<TaskKind T>
 struct Action
 {
     static constexpr std::string_view name = urd::joined_name<"Action", T::name>;
-    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Axiom
 {
     static constexpr std::string_view name = urd::joined_name<"Axiom", T::name>;
-    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 struct Metric

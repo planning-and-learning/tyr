@@ -32,9 +32,11 @@ namespace tyr::formalism::planning
 
 void bind_invariant(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<Invariant>(m);
     urd::python::bind_data<Invariant>(m);
     urd::python::bind_view<InvariantView>(m);
     ygg::bind_insert<Invariant>(repository);
+    urd::python::bind_builder<Invariant, Repository>(m);
 }
 
 }  // namespace tyr::formalism::planning

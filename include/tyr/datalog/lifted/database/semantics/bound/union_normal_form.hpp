@@ -57,9 +57,9 @@ struct QueryVariable
 /// only filters rows once its outer variables are bound (relational algebra is safe-range).
 struct UnionNormalForm
 {
-    urd::Store<urd::sequence<QueryVariable>> variables;                                     ///< The variables, one value each in a frame.
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::ColumnLayout>>>> input_columns;  ///< The schema of each input slot.
-    urd::Store<urd::sequence<uint32_t>> output;                                             ///< The variable of each of the query's columns.
+    urd::Store<urd::sequence<QueryVariable>> variables;                                                ///< The variables, one value each in a frame.
+    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>>>> input_columns;  ///< The schema of each input slot.
+    urd::Store<urd::sequence<uint32_t>> output;                                                        ///< The variable of each of the query's columns.
     urd::Store<urd::sequence<ConjunctiveBranch>> branches;
 };
 
@@ -76,12 +76,12 @@ class UnionNormalFormBuilder
 
     /// The child's variables: its columns found in `parent` take the parent's variable, others a fresh one.
     urd::Store<urd::sequence<uint32_t>>
-    by_label(std::span<const ygg::ColumnLayout> child, std::span<const ygg::ColumnLayout> parent, std::span<const uint32_t> mapping)
+    by_label(std::span<const urd::data<ygg::ColumnLayout>> child, std::span<const urd::data<ygg::ColumnLayout>> parent, std::span<const uint32_t> mapping)
     {
         urd::Store<urd::sequence<uint32_t>> result;
         for (const auto& column : child)
         {
-            const auto found = std::ranges::find(parent, column.label, &ygg::ColumnLayout::label);
+            const auto found = std::ranges::find(parent, column.label, &urd::data<ygg::ColumnLayout>::label);
             result.push_back(found != parent.end() ? mapping[static_cast<size_t>(found - parent.begin())] : fresh(column));
         }
         return result;
@@ -97,7 +97,7 @@ public:
         return std::move(m_result);
     }
 
-    uint32_t fresh(const ygg::ColumnLayout& column)
+    uint32_t fresh(const urd::data<ygg::ColumnLayout>& column)
     {
         m_result.variables.push_back(QueryVariable { column.type });
         return static_cast<uint32_t>(m_result.variables.size() - 1);

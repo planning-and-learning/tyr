@@ -53,7 +53,7 @@ StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
 {
     const auto& infos = m_layout->fluent_infos;
 
@@ -66,8 +66,8 @@ auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 
 template<typename... Tags, bool ThreadSafe>
 auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked&,
-                                                                         const Packed& parent,
-                                                                         std::span<const StateDelta::FluentChange> changes) -> Packed
+                                                                                            const Handle& parent,
+                                                                                            std::span<const StateDelta::FluentChange> changes) -> Handle
 {
     // XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
     m_flips.clear();
@@ -83,7 +83,7 @@ auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
 {
     const auto& infos = m_layout->fluent_infos;
     const auto view = m_array_set->at(packed);
@@ -103,7 +103,7 @@ StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
 {
     const auto words = unpacked.indices.significant_words();
     for (std::size_t i = 0; i < m_buffer.size(); ++i)
@@ -112,8 +112,9 @@ auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<GroundTag>& parent_atoms)
-    -> Packed
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked,
+                                                                                            const Handle& parent,
+                                                                                            const AtomStorageView<GroundTag>& parent_atoms) -> Handle
 {
     // Derived atoms lie within the stored row, so the blocks that differ are written there.
     const auto from = parent_atoms.get_indices().significant_words();
@@ -127,7 +128,7 @@ auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
 {
     const auto view = m_array_set->at(packed);
     const auto blocks = std::span(view.data(), view.size());

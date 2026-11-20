@@ -49,9 +49,7 @@ struct builder<::tyr::planning::match_tree::AtomSelectorNode<Tag>, C>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::atom, &builder::true_child, &builder::false_child, &builder::dontcare_child> {};
-    }
+    { return urd::Members<&builder::atom, &builder::true_child, &builder::false_child, &builder::dontcare_child> {}; }
 };
 
 }  // namespace urd

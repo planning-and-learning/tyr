@@ -37,6 +37,7 @@ void bind_predicate_view(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<PredicateView<T>>(m);
     ygg::bind_insert<Predicate<T>>(repository);
+    urd::python::bind_builder<Predicate<T>, Repository>(m);
 }
 }  // namespace
 

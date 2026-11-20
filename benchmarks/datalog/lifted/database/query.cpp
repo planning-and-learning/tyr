@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #include "tyr/datalog/lifted/database/semantics/incremental/query.hpp"
-#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 
+#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 #include "tyr/datalog/lifted/database/semantics/generic_join.hpp"
 #include "tyr/datalog/lifted/database/semantics/query_evaluation.hpp"
@@ -23,19 +23,18 @@
 namespace tyr::datalog::benchmarks
 {
 using tyr::datalog::tests::borrow;
-using tyr::datalog::tests::Change;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
+
 namespace
 {
 using Column = urd::index<ygg::Column>;
 
 /// ygg::Columns of type ygg::uint_t with these labels.
-std::vector<ygg::ColumnLayout> cols(std::initializer_list<Column> labels)
+std::vector<urd::data<ygg::ColumnLayout>> cols(std::initializer_list<Column> labels)
 {
-    std::vector<ygg::ColumnLayout> result;
+    std::vector<urd::data<ygg::ColumnLayout>> result;
     for (const auto label : labels)
         result.emplace_back(label, ygg::type_id<ygg::uint_t>);
     return result;
@@ -91,8 +90,8 @@ struct Triangle
     database::QueryView<> join(database::QueryView<> left_operand, database::QueryView<> right_operand)
     {
         auto data = database::checkout<database::Query<database::QueryJoinTag>>(builder);
-        data->left_operand = left_operand;
-        data->right_operand = right_operand;
+        urd::store(data->left_operand, left_operand);
+        urd::store(data->right_operand, right_operand);
         return database::insert_query(repository, builder, *data);
     }
 
@@ -109,7 +108,7 @@ struct Triangle
 
 bool equal(ygg::FreeRelationBuilderView left, ygg::FreeRelationBuilderView right)
 {
-    if (left.size() != right.size() || !std::ranges::equal(left.columns(), right.columns()))
+    if (left.get_rows().size() != right.get_rows().size() || !std::ranges::equal(left.columns(), right.columns()))
         return false;
     for (const auto& row : left.get_rows())
         if (!right.contains(values_of(row)))
@@ -134,7 +133,7 @@ bool exact_delta(const database::incremental::Delta& delta, const Relation& befo
             if (!delta.removed->view().contains(values_of(row)))
                 return false;
         }
-    return added == delta.added->view().size() && removed == delta.removed->view().size();
+    return added == delta.added->view().get_rows().size() && removed == delta.removed->view().get_rows().size();
 }
 
 enum class Planning : std::uint8_t
@@ -226,15 +225,15 @@ void query_updates(benchmark::State& state)
     for (auto _ : state)
     {
         update(true);
-        benchmark::DoNotOptimize(evaluator.get_result().size());
+        benchmark::DoNotOptimize(evaluator.get_result().get_rows().size());
         benchmark::ClobberMemory();
         update(false);
-        benchmark::DoNotOptimize(evaluator.get_result().size());
+        benchmark::DoNotOptimize(evaluator.get_result().get_rows().size());
         benchmark::ClobberMemory();
     }
     state.SetItemsProcessed(state.iterations() * 2);
     state.counters["retained_bytes"] = static_cast<double>(evaluator.memory_usage());
-    state.counters["output_rows"] = static_cast<double>(evaluator.get_result().size());
+    state.counters["output_rows"] = static_cast<double>(evaluator.get_result().get_rows().size());
     constexpr auto delta_rows = 6.0;  // one row added and one removed in each of the three inputs
     state.counters["delta_rows"] = delta_rows;
 }
@@ -244,7 +243,7 @@ void generic_join_full(benchmark::State& state)
 {
     Triangle trace(static_cast<ygg::uint_t>(state.range(0)));
     const auto input = borrow_all(trace.initial);
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::ColumnLayout>>>> schemas;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>>>> schemas;
     schemas.reserve(trace.initial.size());
     for (const auto& value : trace.initial)
         schemas.emplace_back(value.columns().begin(), value.columns().end());

@@ -21,11 +21,12 @@
 #include "normalization.hpp"
 #include "proof.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include <urd/elements/clone.hpp>
 #include "utils.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <optional>
+#include <urd/elements/clone.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
@@ -37,9 +38,8 @@ namespace
 
 using PositionMapping = urd::Store<urd::sequence<std::pair<size_t, std::optional<ParameterIndex>>>>;
 
-urd::Store<urd::map<ParameterIndex, Term>, urd::sorted> get_parameters_from_part(const urd::data<Atom<LiftedTag, FluentTag>>& part,
-                                                                                 const urd::data<Atom<LiftedTag, FluentTag>>& literal,
-                                                                                 size_t num_rigid_variables)
+urd::Store<urd::map<ParameterIndex, Term>, urd::sorted>
+get_parameters_from_part(const urd::data<Atom<LiftedTag, FluentTag>>& part, const urd::data<Atom<LiftedTag, FluentTag>>& literal, size_t num_rigid_variables)
 {
     urd::Store<urd::map<ParameterIndex, Term>, urd::sorted> result;
 
@@ -180,16 +180,14 @@ std::vector<urd::data<Atom<LiftedTag, FluentTag>>> possible_matches(const urd::d
 }
 }  // namespace
 
-std::vector<urd::builder<Invariant, Repository>> refine_candidate(const urd::builder<Invariant, Repository>& inv,
-                                                                  const Threat& threat,
-                                                                  const std::vector<ActionView<LiftedTag>>& ops,
-                                                                  CandidateStorage& storage)
+std::vector<urd::builder<Invariant, Repository>>
+refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& threat, const std::vector<ActionView<LiftedTag>>& ops, CandidateStorage& storage)
 {
     auto result = std::vector<urd::builder<Invariant, Repository>>();
 
     const auto op = ops[threat.op_index];
-    const auto effect = op.get_effects()[threat.effect_index];
-    const auto add_literal = effect.get_effect().get_literals()[threat.add_index];
+    const auto effect = op.get_effects()[static_cast<std::ptrdiff_t>(threat.effect_index)];
+    const auto add_literal = effect.get_effect().get_literals()[static_cast<std::ptrdiff_t>(threat.add_index)];
     assert(add_literal.get_polarity());
     const auto& add_atom = add_literal.get_atom().context()[add_literal.get_atom().index()];
 

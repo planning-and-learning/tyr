@@ -17,6 +17,7 @@
 
 #include "bindings.hpp"
 #include "pytyr/module.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/invariants/matcher.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/ordering.hpp"

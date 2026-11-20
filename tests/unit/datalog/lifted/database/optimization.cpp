@@ -26,7 +26,6 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
 using PlanId = urd::index<tyr::datalog::database::Query<>>;
 using Delta = tyr::datalog::tests::Change;
@@ -37,7 +36,7 @@ const Column w(3), x(0), y(1), z(2);
 auto rows(const auto& relation)
 {
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>> result;
-    result.reserve(relation.size());
+    result.reserve(relation.get_rows().size());
     for (const auto& row : relation.get_rows())
     {
         auto& values = result.emplace_back();
@@ -73,7 +72,7 @@ urd::Store<urd::sequence<Column>> labels(std::initializer_list<Column> values)
 
 TEST(DatabaseOptimization, CollectsCanonicalTypedDistinctCounts)
 {
-    const std::vector<ygg::ColumnLayout> columns { { x, ygg::type_id<double> }, { y, ygg::type_id<bool> } };
+    const std::vector<urd::data<ygg::ColumnLayout>> columns { { x, ygg::type_id<double> }, { y, ygg::type_id<bool> } };
     Relation relation(columns);
     relation.insert(std::array { ygg::encode_value(0.0), ygg::encode_value(false) });
     relation.insert(std::array { ygg::encode_value(-0.0), ygg::encode_value(true) });
@@ -86,7 +85,7 @@ TEST(DatabaseOptimization, CollectsCanonicalTypedDistinctCounts)
 
 TEST(DatabaseOptimization, AveragesStatisticsOverSamplesAndWarnsAboutAlwaysEmptyKeys)
 {
-    const std::vector<ygg::ColumnLayout> columns { { x, ygg::type_id<double> }, { y, ygg::type_id<double> } };
+    const std::vector<urd::data<ygg::ColumnLayout>> columns { { x, ygg::type_id<double> }, { y, ygg::type_id<double> } };
     Relation two(columns), four(columns), empty(columns);
     two.insert(std::array { ygg::encode_value(0.0), ygg::encode_value(0.0) });
     two.insert(std::array { ygg::encode_value(0.0), ygg::encode_value(1.0) });
@@ -178,9 +177,9 @@ TEST(DatabaseOptimization, YannakakisBoundsIntermediatesByInputTimesOutput)
     optimized.evaluate(refs);
     EXPECT_EQ(rows(optimized.get_result()), rows(reference.get_result()));
     // Yannakakis' bound for projected acyclic joins: O(|input| · |output|).
-    const auto bound = (inputs[0].size() + inputs[1].size() + inputs[2].size()) * reference.get_result().size();
+    const auto bound = (inputs[0].size() + inputs[1].size() + inputs[2].size()) * reference.get_result().get_rows().size();
     for (size_t position = 0; position < nodes.size(); ++position)
-        EXPECT_LE(evaluator.get_result(position).size(), bound);
+        EXPECT_LE(evaluator.get_result(position).get_rows().size(), bound);
 }
 
 TEST(DatabaseOptimization, BoundRootsKeepTheirJoinStructure)
@@ -323,7 +322,7 @@ TEST(DatabaseOptimization, NullaryGenericJoinHasOneRow)
     {
         tyr::datalog::database::QueryEvaluator evaluator(scratch(), plan);
         evaluator.evaluate(std::array<ygg::FreeRelationBuilderView, 0> {});
-        EXPECT_EQ(evaluator.get_result().size(), 1);
+        EXPECT_EQ(evaluator.get_result().get_rows().size(), 1);
     }
 }
 
@@ -359,8 +358,8 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
     const auto measured = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), statistics);
     tyr::datalog::database::QueryEvaluator reference(scratch(), tyr::datalog::database::compile_plan(roots));
     reference.evaluate(refs);
-    EXPECT_EQ(reference.get_result(0).size(), 1);
-    EXPECT_EQ(reference.get_result(1).size(), 1);
+    EXPECT_EQ(reference.get_result(0).get_rows().size(), 1);
+    EXPECT_EQ(reference.get_result(1).get_rows().size(), 1);
     EXPECT_TRUE(reference.get_result(2).get_rows().empty());
     for (const auto* chosen : { &unmeasured, &measured })
     {
@@ -568,8 +567,8 @@ TEST(DatabaseOptimization, BothModesPreserveFactoredUnionsAndFilteredDifferences
     tyr::datalog::database::QueryEvaluator reference(scratch(), original);
     reference.evaluate(inputs);
     EXPECT_EQ(rows(reference.get_result(0)), rows(reference.get_result(1)));
-    EXPECT_EQ(reference.get_result(2).size(), 1);
-    EXPECT_EQ(reference.get_result(3).size(), 1);
+    EXPECT_EQ(reference.get_result(2).get_rows().size(), 1);
+    EXPECT_EQ(reference.get_result(3).get_rows().size(), 1);
     EXPECT_EQ(rows(reference.get_result(4)), rows(borrow(ar)));
     EXPECT_EQ(rows(reference.get_result(5)), rows(borrow(ar)));
     for (const auto* chosen : { &unmeasured, &measured })

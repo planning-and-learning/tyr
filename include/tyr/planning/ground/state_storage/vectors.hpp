@@ -63,16 +63,16 @@ class StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadS
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
     using Unpacked = urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>;
-    using Packed = typename Context::ArraySet::handle_type;
+    using Handle = typename Context::ArraySet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);
 
-    Packed insert(const Unpacked& unpacked);
+    Handle insert(const Unpacked& unpacked);
 
     /// Inserts `unpacked` as the exact `changes` to the stored `parent`, as writes to the changed blocks.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::FluentChange> changes);
+    Handle insert(const Unpacked& unpacked, const Handle& parent, std::span<const StateDelta::FluentChange> changes);
 
-    void unpack(const Packed& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
     typename Context::ArraySet* m_array_set;
@@ -89,17 +89,17 @@ class StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadS
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
     using Unpacked = urd::builder<AtomStorage<GroundTag>, formalism::planning::Repository>;
-    using Packed = typename Context::ArraySet::handle_type;
+    using Handle = typename Context::ArraySet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);
 
-    Packed insert(const Unpacked& unpacked);
+    Handle insert(const Unpacked& unpacked);
 
     /// Inserts `unpacked` as writes to the blocks in which it differs from `parent_atoms` (the parent's derived atoms),
     /// stored as `parent`.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<GroundTag>& parent_atoms);
+    Handle insert(const Unpacked& unpacked, const Handle& parent, const AtomStorageView<GroundTag>& parent_atoms);
 
-    void unpack(const Packed& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
     typename Context::ArraySet* m_array_set;

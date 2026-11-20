@@ -77,7 +77,7 @@ class Planner
     }
 
     /// Plans π_output(⋈ atoms): cost-based when every atom is known, otherwise from structure.
-    QueryView<> plan_block(QueryView<> join, std::span<const ygg::ColumnLayout> output);
+    QueryView<> plan_block(QueryView<> join, std::span<const urd::data<ygg::ColumnLayout>> output);
 
 public:
     Planner(const Statistics& statistics,

@@ -37,12 +37,15 @@ StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::StateCompon
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-typename StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::Packed StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
+typename StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::Handle
+StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
 { return m_context->bitsets.insert(unpacked.indices).first; }
 
 template<TaskKind Kind, bool ThreadSafe>
-typename StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::Packed
-StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<Kind>& parent_atoms)
+typename StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::Handle
+StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked,
+                                                                            const Handle& parent,
+                                                                            const AtomStorageView<Kind>& parent_atoms)
 {
     // One flip per block in which the two rows differ, by increasing position.
     const auto from = parent_atoms.get_indices().significant_words();
@@ -55,7 +58,7 @@ StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(cons
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-void StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
 { m_context->bitsets.copy(packed, unpacked.indices); }
 
 template class StateComponentRepository<AtomStorage<GroundTag>, TreeBitset, false>;

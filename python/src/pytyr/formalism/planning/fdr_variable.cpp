@@ -33,9 +33,11 @@ namespace tyr::formalism::planning
 
 void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<FDRVariable<FluentTag>>(m);
     urd::python::bind_data<FDRVariable<FluentTag>>(m);
     urd::python::bind_view<FDRVariableView<FluentTag>>(m);
     ygg::bind_insert<FDRVariable<FluentTag>>(repository);
+    urd::python::bind_builder<FDRVariable<FluentTag>, Repository>(m);
 }
 
 }  // namespace tyr::formalism::planning

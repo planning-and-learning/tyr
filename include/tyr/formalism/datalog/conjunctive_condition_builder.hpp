@@ -53,9 +53,7 @@ struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::variables, &builder::static_literals, &builder::fluent_literals, &builder::numeric_constraints> {};
-    }
+    { return urd::Members<&builder::variables, &builder::static_literals, &builder::fluent_literals, &builder::numeric_constraints> {}; }
 };
 
 /// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
@@ -76,9 +74,7 @@ struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::static_literals, &builder::fluent_literals, &builder::numeric_constraints> {};
-    }
+    { return urd::Members<&builder::static_literals, &builder::fluent_literals, &builder::numeric_constraints> {}; }
 };
 
 }  // namespace urd

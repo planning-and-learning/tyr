@@ -26,12 +26,12 @@
 
 #include <cassert>
 #include <cstddef>
-#include <urd/elements/clone.hpp>
-#include <vector>
 #include <ranges>
 #include <urd/config.hpp>
+#include <urd/elements/clone.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning::invariant
@@ -134,7 +134,7 @@ bool intersect_matching_bindings(const InvariantMatchData& data, const Invariant
 
 Matcher::Matcher(InvariantMatchDataList invariant_match_data) : m_invariant_match_data(std::move(invariant_match_data)) {}
 
-void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& result, QueryWorkspace& ws) const
+void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& result, QueryWorkspace& workspace) const
 {
     result.matches.clear();
     const auto atom = lifted_record(ground_atom);
@@ -147,7 +147,7 @@ void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& res
         if (num_bindings == 0)
             continue;
 
-        ws.matches.clear();
+        workspace.matches.clear();
 
         // Each atom of the invariant is a pattern, read as its record.
         for (const auto part : data.invariant().get_atoms())
@@ -159,18 +159,16 @@ void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& res
             if (pattern.terms.size() != atom.terms.size())
                 continue;
 
-            auto sigma = match_invariant_against_ground_atom(data.invariant().get_num_rigid_variables(),
-                                                             data.invariant().get_num_counted_variables(),
-                                                             pattern,
-                                                             atom);
+            auto sigma =
+                match_invariant_against_ground_atom(data.invariant().get_num_rigid_variables(), data.invariant().get_num_counted_variables(), pattern, atom);
             if (!sigma.has_value())
                 continue;
 
-            if (intersect_matching_bindings(data, *sigma, ws.candidates))
-                ws.matches |= ws.candidates;
+            if (intersect_matching_bindings(data, *sigma, workspace.candidates))
+                workspace.matches |= workspace.candidates;
         }
 
-        for (const auto binding_index : ws.matches)
+        for (const auto binding_index : workspace.matches)
             result.matches.push_back({ invariant_index, binding_index });
     }
 }

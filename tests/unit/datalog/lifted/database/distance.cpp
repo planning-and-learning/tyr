@@ -168,8 +168,8 @@ TEST(YggdrasilTests, DatabaseDistanceAcceptsInternedViewsWithoutRetainingInputOw
                      std::pair { borrow(edges), borrow(edges) },
                      std::pair { borrow(targets), borrow(targets) });
     EXPECT_EQ(rows(evaluator.get_result()), rows(borrow(result)));
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
 }
 
 TEST(YggdrasilTests, DatabaseDistancePlansValidateSchemasAndOutputsMustNotAlias)
@@ -182,7 +182,7 @@ TEST(YggdrasilTests, DatabaseDistancePlansValidateSchemasAndOutputsMustNotAlias)
     EXPECT_THROW((database::DistancePlan(sources.columns(), sources.columns(), targets.columns(), ColumnIndex(3))), std::invalid_argument);
     EXPECT_THROW((database::DistancePlan(sources.columns(), edges.columns(), edges.columns(), ColumnIndex(3))), std::invalid_argument);
     EXPECT_THROW((database::DistancePlan(sources.columns(), edges.columns(), targets.columns(), ColumnIndex(2))), std::invalid_argument);
-    const std::vector<ygg::ColumnLayout> wrong_type { { ColumnIndex(20), ygg::type_id<double> } };
+    const std::vector<urd::data<ygg::ColumnLayout>> wrong_type { { ColumnIndex(20), ygg::type_id<double> } };
     EXPECT_THROW((database::DistancePlan(sources.columns(), edges.columns(), wrong_type, ColumnIndex(3))), std::invalid_argument);
 
     database::DistanceWorkspace workspace(plan);
@@ -192,8 +192,7 @@ TEST(YggdrasilTests, DatabaseDistancePlansValidateSchemasAndOutputsMustNotAlias)
     EXPECT_TRUE(sources.contains(std::array { ygg::encode_value(ygg::uint_t(1)) }));
 
     database::incremental::DistanceEvaluator evaluator(scratch(), plan);
-    Change source_delta(sources.columns()), edge_delta(edges.columns()),
-        target_delta(targets.columns());
+    Change source_delta(sources.columns()), edge_delta(edges.columns()), target_delta(targets.columns());
     EXPECT_THROW((void) evaluator.get_result(), std::logic_error);
     EXPECT_THROW((void) evaluator.get_delta(), std::logic_error);
     EXPECT_THROW(evaluator.update(source_delta.change(), edge_delta.change(), target_delta.change()), std::logic_error);
@@ -234,7 +233,7 @@ TEST(YggdrasilTests, DatabaseDistanceRejectsChangesThatAreNotActualSetChanges)
             // Invalid changes are rejected before mutation, so the previous evaluation remains.
             EXPECT_THROW(evaluator.update(ds.change(), de.change(), dt.change()), std::invalid_argument);
             EXPECT_EQ(rows(evaluator.get_result()), (Results { { 1, 2, 1 } }));
-            EXPECT_TRUE(evaluator.get_delta().added->view().empty() && evaluator.get_delta().removed->view().empty());
+            EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty() && evaluator.get_delta().removed->view().get_rows().empty());
         }
     evaluator.initialize(borrow(sources), borrow(edges), borrow(targets));
     EXPECT_EQ(rows(evaluator.get_result()), (Results { { 1, 2, 1 } }));
@@ -384,7 +383,7 @@ TEST(YggdrasilTests, DatabaseDistanceMixedTupleTypesShareCanonicalVertices)
 {
     const auto schema = [](ygg::uint_t label, size_t tuples)
     {
-        std::vector<ygg::ColumnLayout> result;
+        std::vector<urd::data<ygg::ColumnLayout>> result;
         for (size_t i = 0; i < tuples; ++i)
         {
             result.emplace_back(ColumnIndex(label++), ygg::type_id<ygg::uint_t>);
@@ -427,20 +426,20 @@ TEST(YggdrasilTests, DatabaseDistanceMixedTupleTypesShareCanonicalVertices)
     Change ds(sources.columns()), de(edges.columns()), dt(targets.columns());
     de.removed.insert(values_of(borrow(edges).row(0)));
     evaluator.update(ds.change(), de.change(), dt.change());
-    EXPECT_EQ(evaluator.get_result().size(), 1);
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    ASSERT_EQ(evaluator.get_delta().removed->view().size(), 1);
+    EXPECT_EQ(evaluator.get_result().get_rows().size(), 1);
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    ASSERT_EQ(evaluator.get_delta().removed->view().get_rows().size(), 1);
     EXPECT_TRUE(evaluator.get_delta().removed->view().contains(std::array { ygg::encode_value(ygg::uint_t(7)),
-                                                                    ygg::encode_value(0.0),
-                                                                    ygg::encode_value(true),
-                                                                    ygg::encode_value(ygg::uint_t(8)),
-                                                                    ygg::encode_value(1.5),
-                                                                    ygg::encode_value(false),
-                                                                    ygg::encode_value(ygg::uint_t(1)) }));
+                                                                            ygg::encode_value(0.0),
+                                                                            ygg::encode_value(true),
+                                                                            ygg::encode_value(ygg::uint_t(8)),
+                                                                            ygg::encode_value(1.5),
+                                                                            ygg::encode_value(false),
+                                                                            ygg::encode_value(ygg::uint_t(1)) }));
     evaluator.update(std::pair { borrow(ds.removed), borrow(ds.added) },
                      std::pair { borrow(de.removed), borrow(de.added) },
                      std::pair { borrow(dt.removed), borrow(dt.added) });
-    EXPECT_EQ(evaluator.get_result().size(), 2);
+    EXPECT_EQ(evaluator.get_result().get_rows().size(), 2);
     for (size_t i = 0; i < result.size(); ++i)
         EXPECT_TRUE(evaluator.get_result().contains(values_of(borrow(result).row(i))));
 }
@@ -458,19 +457,13 @@ TEST(YggdrasilTests, DatabaseDistanceNullaryTuplesUseTheSingleEmptyVertex)
     evaluator.initialize(borrow(sources), borrow(edges), borrow(targets));
     RelationBuilder empty, truth;
     truth.insert(std::array<ygg::Value, 0> {});
-    evaluator.update(std::pair { borrow(truth), borrow(empty) },
-                     std::pair { borrow(empty), borrow(empty) },
-                     std::pair { borrow(empty), borrow(empty) });
-    ASSERT_EQ(evaluator.get_result().size(), 1);
+    evaluator.update(std::pair { borrow(truth), borrow(empty) }, std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(empty), borrow(empty) });
+    ASSERT_EQ(evaluator.get_result().get_rows().size(), 1);
     EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(ygg::uint_t(0)) }));
-    evaluator.update(std::pair { borrow(empty), borrow(empty) },
-                     std::pair { borrow(truth), borrow(empty) },
-                     std::pair { borrow(empty), borrow(empty) });
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
-    evaluator.update(std::pair { borrow(empty), borrow(truth) },
-                     std::pair { borrow(empty), borrow(truth) },
-                     std::pair { borrow(empty), borrow(empty) });
+    evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(truth), borrow(empty) }, std::pair { borrow(empty), borrow(empty) });
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
+    evaluator.update(std::pair { borrow(empty), borrow(truth) }, std::pair { borrow(empty), borrow(truth) }, std::pair { borrow(empty), borrow(empty) });
     EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     EXPECT_TRUE(evaluator.get_delta().removed->view().contains(std::array { ygg::encode_value(ygg::uint_t(0)) }));
     sources.insert(std::array<ygg::Value, 0> {});
@@ -513,8 +506,8 @@ TEST(YggdrasilTests, DatabaseDistanceGrowsTheSharedDictionaryAndResetsToASmaller
     evaluator.initialize(borrow(sources), borrow(edges), borrow(targets));
     const Results smaller { { 2, 3, 1 } };
     EXPECT_EQ(rows(evaluator.get_result()), smaller);
-    EXPECT_TRUE(evaluator.get_delta().added->view().empty());
-    EXPECT_TRUE(evaluator.get_delta().removed->view().empty());
+    EXPECT_TRUE(evaluator.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(evaluator.get_delta().removed->view().get_rows().empty());
     ds.clear();
     de.clear();
     dt.clear();
@@ -559,8 +552,8 @@ TEST(YggdrasilTests, DatabaseDistanceMovesRetainedRepairStorageAndResetsAfterwar
     assigned.initialize(borrow(sources), borrow(edges), borrow(targets));
     const Results reset { { 20, 20, 0 }, { 20, 21, 1 } };
     EXPECT_EQ(rows(assigned.get_result()), reset);
-    EXPECT_TRUE(assigned.get_delta().added->view().empty());
-    EXPECT_TRUE(assigned.get_delta().removed->view().empty());
+    EXPECT_TRUE(assigned.get_delta().added->view().get_rows().empty());
+    EXPECT_TRUE(assigned.get_delta().removed->view().get_rows().empty());
     fill(de.added, Edges { { 21, 22 } });
     assigned.update(ds.change(), de.change(), dt.change());
     expect_delta(assigned, reset, Results { { 20, 20, 0 }, { 20, 21, 1 }, { 20, 22, 2 } });
@@ -675,8 +668,7 @@ TEST(YggdrasilTests, DatabaseMinDistanceAggregatesTheDistanceColumnFullAndIncrem
         fill(sources, s);
         fill(edges, e);
         fill(targets, t);
-        EXPECT_EQ(database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace), expected)
-            << "full, step " << step;
+        EXPECT_EQ(database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace), expected) << "full, step " << step;
         if (step == 0)
             evaluator.initialize(borrow(sources), borrow(edges), borrow(targets));
         else

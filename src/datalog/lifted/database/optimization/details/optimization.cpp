@@ -79,7 +79,7 @@ bool Planner::known(QueryView<> plan)
 
 namespace tyr::datalog::database::detail
 {
-QueryView<> Planner::plan_block(QueryView<> join, std::span<const ygg::ColumnLayout> output)
+QueryView<> Planner::plan_block(QueryView<> join, std::span<const urd::data<ygg::ColumnLayout>> output)
 {
     auto labels = urd::Store<urd::sequence<urd::index<ygg::Column>>>();
     for (const auto& column : output)

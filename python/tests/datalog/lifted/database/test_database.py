@@ -20,11 +20,11 @@ def columns(*labels: int) -> list[formalism.ColumnIndex]:
 
 def typed(
     labels: Iterable[formalism.ColumnIndex], types: Iterable[formalism.ColumnType]
-) -> list[formalism.ColumnLayout]:
-    return [formalism.ColumnLayout(label, column_type) for label, column_type in zip(labels, types, strict=True)]
+) -> list[formalism.ColumnLayoutData]:
+    return [formalism.ColumnLayoutData(label, column_type) for label, column_type in zip(labels, types, strict=True)]
 
 
-def layouts(*labels: int) -> list[formalism.ColumnLayout]:
+def layouts(*labels: int) -> list[formalism.ColumnLayoutData]:
     return typed(columns(*labels), [formalism.ColumnType.UINT32] * len(labels))
 
 
@@ -37,7 +37,7 @@ def test_relation_rows_and_validation() -> None:
     assert isinstance(schema, list)
     assert len(schema) == 2
     assert schema == layouts(10, 20)
-    assert all(type(column) is formalism.ColumnLayout for column in schema)
+    assert all(type(column) is formalism.ColumnLayoutData for column in schema)
     assert labels(schema) == columns(10, 20)
     assert relation.arity() == 2
     assert relation.empty()
@@ -45,7 +45,7 @@ def test_relation_rows_and_validation() -> None:
     assert not hasattr(relation, "rows")  # a builder's rows are read through a repository
     repository = formalism.RelationRepository()
     view = relation.view()
-    assert isinstance(view, formalism.RelationSchemaBuilder)
+    assert isinstance(view, formalism.RelationSchemaBuilderBorrowed)
     row = view.row(0)
     assert isinstance(row, formalism.RowSchemaBorrowed)  # a scratch relation's row is a record, not interned
     assert relation.size() == 1
@@ -79,7 +79,6 @@ def test_nullary_relation() -> None:
     assert relation.size() == 0
     assert isinstance(relation.columns(), list)
     assert relation.columns() == []
-    repository = formalism.RelationRepository()
     view = relation.view()
     assert view.get_rows() == []
     relation.insert([])
@@ -331,9 +330,7 @@ def test_operations_take_plans_outputs_and_workspaces() -> None:
     assert tuples(union.view()) == [(1, 2)]
 
     equal = database.ScratchRelation(other.columns())
-    database.select_equal_columns(
-        other.view(), database.SelectEqualPlan(other.columns(), *columns(0, 1)), equal
-    )
+    database.select_equal_columns(other.view(), database.SelectEqualPlan(other.columns(), *columns(0, 1)), equal)
     assert tuples(equal.view()) == [(7, 7)]
     value = database.SelectValuePlan(other.columns(), formalism.ColumnIndex(0), formalism.ColumnType.UINT32, 3)
     database.select_equal_value(other.view(), value, equal)
@@ -342,8 +339,6 @@ def test_operations_take_plans_outputs_and_workspaces() -> None:
     with pytest.raises(ValueError, match="Relational operation: input schemas must have the same column order"):
         database.SetPlan(left_operand.columns(), right_operand.columns())
     with pytest.raises(ValueError, match="output aliases an input"):
-        database.select_equal_columns(
-            equal.view(), database.SelectEqualPlan(equal.columns(), *columns(0, 1)), equal
-        )
+        database.select_equal_columns(equal.view(), database.SelectEqualPlan(equal.columns(), *columns(0, 1)), equal)
     with pytest.raises(ValueError, match="columns do not match the plan"):
         database.join(left_operand, right_operand, join, database.ScratchRelation(), workspace)

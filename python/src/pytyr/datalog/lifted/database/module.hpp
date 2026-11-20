@@ -17,7 +17,7 @@ namespace nb = nanobind;
 
 /// Python is a trust boundary: the operations only assert (debug builds) that their relations have the plan's columns,
 /// so the bindings check it, throwing ValueError.
-inline void require_columns(std::span<const ygg::ColumnLayout> actual, std::span<const ygg::ColumnLayout> expected)
+inline void require_columns(std::span<const urd::data<ygg::ColumnLayout>> actual, std::span<const urd::data<ygg::ColumnLayout>> expected)
 {
     if (!std::ranges::equal(actual, expected))
         throw std::invalid_argument("Relational operation: columns do not match the plan.");

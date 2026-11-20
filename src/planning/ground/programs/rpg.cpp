@@ -94,7 +94,7 @@ void fill_delete_free_condition(formalism::planning::ConjunctiveConditionView<Gr
     for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
         if (const auto literal =
                 formalism::planning::merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, context.merge_context))
-            result.fluent_literals.push_back(*literal);
+            urd::append(result.fluent_literals, *literal);
 }
 
 formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condition(formalism::planning::ConjunctiveConditionView<GroundTag> condition,
@@ -133,7 +133,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
                         ygg::float_t cost = 0)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag>>(context.builder);
-    rule->body = body;
+    urd::store(rule->body, body);
     urd::build_member(rule->heads, heads, context.merge_context.destination());
     rule->cost = cost;
     return context.merge_context.destination().insert(*rule, context.builder);
@@ -163,7 +163,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto [rule, inserted] = create_ground_atom_rule(body, heads, context, 1);
             if (inserted)
-                program.rules.push_back(rule);
+                urd::append(program.rules, rule);
             rule_to_action[rule.index()].push_back(action);
         }
     }
@@ -181,38 +181,38 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
     {
         const auto new_predicate = formalism::copy(predicate, merge_context).first;
         context.static_predicates.emplace(predicate, new_predicate);
-        context.program->static_predicates.push_back(new_predicate);
+        urd::append(context.program->static_predicates, new_predicate);
     }
     for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
     {
         const auto new_predicate = formalism::copy(predicate, merge_context).first;
         context.fluent_predicates.emplace(predicate, new_predicate);
-        context.program->fluent_predicates.push_back(new_predicate);
+        urd::append(context.program->fluent_predicates, new_predicate);
     }
 
     for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
-        context.program->static_functions.push_back(formalism::copy(function, merge_context).first);
+        urd::append(context.program->static_functions, formalism::copy(function, merge_context).first);
     for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
-        context.program->fluent_functions.push_back(formalism::copy(function, merge_context).first);
+        urd::append(context.program->fluent_functions, formalism::copy(function, merge_context).first);
 
     for (const auto object : task.get_domain().get_constants())
-        context.program->objects.push_back(formalism::copy(object, merge_context).first);
+        urd::append(context.program->objects, formalism::copy(object, merge_context).first);
     for (const auto object : task.get_objects())
-        context.program->objects.push_back(formalism::copy(object, merge_context).first);
+        urd::append(context.program->objects, formalism::copy(object, merge_context).first);
 
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
     {
         const auto new_atom = formalism::planning::merge_p2d(atom, context.static_predicates, merge_context).first;
         translation_context.p2d.static_to_static_atom.emplace(atom, new_atom);
         translation_context.d2p.static_to_static_atom.emplace(new_atom, atom);
-        context.program->static_atoms.push_back(new_atom);
+        urd::append(context.program->static_atoms, new_atom);
     }
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
     {
         const auto new_atom =
             formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, merge_context).first;
         translation_context.d2p.fluent_to_fluent_atom.emplace(new_atom.get_row(), atom);
-        context.program->fluent_atoms.push_back(new_atom);
+        urd::append(context.program->fluent_atoms, new_atom);
     }
     for (const auto fact : task.get_fluent_facts())
     {
@@ -222,7 +222,7 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
                 formalism::planning::merge_p2d(*atom, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, merge_context);
             translation_context.d2p.fluent_to_fluent_atom.emplace(new_atom.get_row(), *atom);
             if (inserted)
-                context.program->fluent_atoms.push_back(new_atom);
+                urd::append(context.program->fluent_atoms, new_atom);
         }
     }
 
@@ -231,17 +231,17 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
         const auto new_fterm_value = formalism::copy(fterm_value, merge_context).first;
         translation_context.p2d.static_to_static_fterm.emplace(fterm_value.get_fterm(), new_fterm_value.get_fterm());
         translation_context.d2p.static_to_static_fterm.emplace(new_fterm_value.get_fterm(), fterm_value.get_fterm());
-        context.program->static_fterm_values.push_back(new_fterm_value);
+        urd::append(context.program->static_fterm_values, new_fterm_value);
     }
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
     {
         const auto new_fterm_value = formalism::copy(fterm_value, merge_context).first;
         translation_context.p2d.fluent_to_fluent_fterm.emplace(fterm_value.get_fterm(), new_fterm_value.get_fterm());
         translation_context.d2p.fluent_to_fluent_fterm.emplace(new_fterm_value.get_fterm(), fterm_value.get_fterm());
-        context.program->fluent_fterm_values.push_back(new_fterm_value);
+        urd::append(context.program->fluent_fterm_values, new_fterm_value);
     }
 
-    context.program->goal = create_delete_free_goal(task.get_goal(), translation_context, context);
+    urd::store(context.program->goal, create_delete_free_goal(task.get_goal(), translation_context, context));
 
     for (const auto action : task.get_ground_actions())
         translate_action_to_delete_free_rules(action, *context.program, translation_context, context, mapping);

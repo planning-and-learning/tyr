@@ -41,12 +41,14 @@ namespace tyr::kckp
 
 struct Edge
 {
-    Vertex src;
-    Vertex dst;
+    urd::data<Vertex> src;
+    urd::data<Vertex> dst;
 
     constexpr Edge() noexcept = default;
 
-    constexpr Edge(Vertex lhs, Vertex rhs) noexcept : src(lhs.index < rhs.index ? lhs : rhs), dst(lhs.index < rhs.index ? rhs : lhs) {}
+    constexpr Edge(urd::data<Vertex> lhs, urd::data<Vertex> rhs) noexcept : src(lhs.number < rhs.number ? lhs : rhs), dst(lhs.number < rhs.number ? rhs : lhs)
+    {
+    }
 
     friend constexpr bool operator==(Edge, Edge) noexcept = default;
 
@@ -90,10 +92,10 @@ public:
     { return kind(source_partition, target_partition) == AdjacencyKind::RUNTIME; }
 
     /// The row of `vertex` (in `source_partition`) into the runtime pair's `target_partition`.
-    [[nodiscard]] size_t row(Vertex vertex, size_t source_partition, size_t target_partition) const noexcept
+    [[nodiscard]] size_t row(urd::data<Vertex> vertex, size_t source_partition, size_t target_partition) const noexcept
     {
         assert(is_runtime(source_partition, target_partition));
-        return m_first_rows[vertex.index] + m_pair_rows[(source_partition * m_num_partitions) + target_partition];
+        return m_first_rows[vertex.number] + m_pair_rows[(source_partition * m_num_partitions) + target_partition];
     }
 
 private:
@@ -113,18 +115,18 @@ public:
     PartitionedAdjacencyMatrix(const Graph& graph, const PartitionedAdjacencyLayout& adjacency_layout, const VertexSets& affected, const VertexSets& delta);
 
     /// Adds the edge between u and v, of a runtime pair of parts.
-    void add_edge(Vertex u, Vertex v);
+    void add_edge(urd::data<Vertex> u, urd::data<Vertex> v);
 
     /// The runtime neighbours of `vertex` in `partition`.
-    [[nodiscard]] const VertexSet& runtime_neighbours(Vertex vertex, size_t partition) const
+    [[nodiscard]] const VertexSet& runtime_neighbours(urd::data<Vertex> vertex, size_t partition) const
     { return m_rows[m_adjacency_layout->row(vertex, m_graph->part_of(vertex), partition)]; }
 
-    void copy_adjacency_to(Vertex vertex, size_t partition, VertexSet& destination) const;
+    void copy_adjacency_to(urd::data<Vertex> vertex, size_t partition, VertexSet& destination) const;
     /// Sets `destination` to the vertices of `source` adjacent to `vertex` in `partition`; `source` may be `destination`.
-    void intersect_adjacency(Vertex vertex, size_t partition, const VertexSet& source, VertexSet& destination) const;
+    void intersect_adjacency(urd::data<Vertex> vertex, size_t partition, const VertexSet& source, VertexSet& destination) const;
     /// Removes the neighbours of `vertex` in `partition` from `destination`; `scratch` is a set over the partition's window.
-    void subtract_adjacency_from(Vertex vertex, size_t partition, VertexSet& destination, VertexSet& scratch) const;
-    [[nodiscard]] bool is_adjacent(Vertex vertex, Vertex target) const;
+    void subtract_adjacency_from(urd::data<Vertex> vertex, size_t partition, VertexSet& destination, VertexSet& scratch) const;
+    [[nodiscard]] bool is_adjacent(urd::data<Vertex> vertex, urd::data<Vertex> target) const;
 
     template<typename Callback>
     void for_each_vertex(Callback callback) const
@@ -137,11 +139,11 @@ public:
     template<std::invocable<Edge> Callback>
     void for_each_edge(Callback callback) const
     {
-        for_each_edge([](Vertex, size_t) noexcept { return true; }, std::move(callback));
+        for_each_edge([](urd::data<Vertex>, size_t) noexcept { return true; }, std::move(callback));
     }
 
     /// for_each_edge, but each source vertex and target partition are first passed to visit_source, which can skip their edges.
-    template<std::predicate<Vertex, size_t> VisitSource, std::invocable<Edge> Callback>
+    template<std::predicate<urd::data<Vertex>, size_t> VisitSource, std::invocable<Edge> Callback>
     void for_each_edge(VisitSource visit_source, Callback callback) const
     {
         const auto num_parts = m_graph->num_parts();
@@ -154,7 +156,7 @@ public:
                     const auto& targets = (*m_affected)[target_partition];
                     for_each_adjacent_vertex(source,
                                              target_partition,
-                                             [&](Vertex target)
+                                             [&](urd::data<Vertex> target)
                                              {
                                                  if (targets.contains(target))
                                                      callback(Edge(source, target));
@@ -173,11 +175,11 @@ public:
 
 private:
     /// The vertices of `partition` that `vertex` may be adjacent to: all affected ones if it is new, else the new ones.
-    [[nodiscard]] const VertexSet& context(Vertex vertex, size_t partition) const
+    [[nodiscard]] const VertexSet& context(urd::data<Vertex> vertex, size_t partition) const
     { return (*m_delta)[m_graph->part_of(vertex)].contains(vertex) ? (*m_affected)[partition] : (*m_delta)[partition]; }
 
     template<typename Callback>
-    void for_each_adjacent_vertex(Vertex vertex, size_t partition, Callback callback) const
+    void for_each_adjacent_vertex(urd::data<Vertex> vertex, size_t partition, Callback callback) const
     {
         switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
         {
@@ -296,7 +298,7 @@ public:
         else if (num_partitions == 1)
         {
             m_full_graph.matrix.for_each_vertex(
-                [&](Vertex vertex)
+                [&](urd::data<Vertex> vertex)
                 {
                     workspace.partial_solution[0] = vertex;
                     workspace.partial_solution_size = 1;
@@ -337,7 +339,7 @@ public:
         if (num_partitions == 1)
         {
             m_delta_graph.matrix.for_each_vertex(
-                [&](Vertex vertex)
+                [&](urd::data<Vertex> vertex)
                 {
                     workspace.partial_solution[0] = vertex;
                     workspace.partial_solution_size = 1;
@@ -359,7 +361,7 @@ public:
         }
 
         // The rows of an anchor's source are shared by its edges into a target partition, and if one is empty, no edge seeds.
-        m_delta_graph.matrix.for_each_edge([&](Vertex source, size_t target_partition)
+        m_delta_graph.matrix.for_each_edge([&](urd::data<Vertex> source, size_t target_partition)
                                            { return prepare_anchor_source(source, static_cast<ygg::uint_t>(target_partition), workspace); },
                                            [&](Edge edge)
                                            {
@@ -370,7 +372,7 @@ public:
 
     /// Cliques that contain all anchor vertices (at most one per partition) and no delta vertex or edge.
     template<typename Callback>
-    void for_each_hyperedge_clique(std::span<const Vertex> anchor, Callback callback, Workspace& workspace) const
+    void for_each_hyperedge_clique(std::span<const urd::data<Vertex>> anchor, Callback callback, Workspace& workspace) const
     {
         if (!seed_from_vertices(anchor, workspace))
             return;
@@ -385,17 +387,17 @@ public:
     bool seed_from_anchor(const Edge& edge, Workspace& workspace) const;
     /// Computes the rows of the anchor source shared by its edges into the target partition: in every other partition, the
     /// source's neighbours, without its delta neighbours before the target partition. Returns false if a row is empty.
-    bool prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const;
+    bool prepare_anchor_source(urd::data<Vertex> source, ygg::uint_t target_partition, Workspace& workspace) const;
     /// seed_from_anchor for an edge from the source last passed to prepare_anchor_source.
     bool seed_from_prepared_anchor(const Edge& edge, Workspace& workspace) const;
-    bool seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const;
+    bool seed_from_vertices(std::span<const urd::data<Vertex>> vertices, Workspace& workspace) const;
 
     template<typename Anchor, typename Callback>
     void complete_from_seed(Callback callback, size_t depth, Workspace& workspace) const
     {
         assert(depth < m_graph->num_parts());
         auto select_partition = [&](size_t current_depth, const Workspace& current) { return choose_best_partition(current_depth, current); };
-        auto update_candidates = [&](Vertex source, size_t current_depth, Workspace& current)
+        auto update_candidates = [&](urd::data<Vertex> source, size_t current_depth, Workspace& current)
         { return update_candidates_for<Anchor>(source, current_depth, current); };
         detail::complete_clique(*m_graph, depth, workspace, select_partition, update_candidates, callback);
     }
@@ -412,7 +414,7 @@ private:
     [[nodiscard]] ygg::uint_t choose_best_partition(size_t depth, const Workspace& workspace) const;
 
     template<typename Anchor>
-    bool update_candidates_for(Vertex source, size_t depth, Workspace& workspace) const
+    bool update_candidates_for(urd::data<Vertex> source, size_t depth, Workspace& workspace) const
     {
         const auto source_partition = m_graph->part_of(source);
         assert(source_partition != workspace.anchor_pi);

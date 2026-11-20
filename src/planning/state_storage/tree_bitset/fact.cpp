@@ -31,7 +31,10 @@ using Blocks = urd::Store<urd::sequence<tree_bitset::Block>>;
 using Flips = urd::Store<urd::sequence<tree_bitset::Flip>>;
 
 template<typename Set>
-auto insert_facts(Set& bitsets, const StateLayout<GroundTag>& layout, const urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>& unpacked, Blocks& blocks)
+auto insert_facts(Set& bitsets,
+                  const StateLayout<GroundTag>& layout,
+                  const urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>& unpacked,
+                  Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
     blocks.assign(layout.fluent_num_blocks, tree_bitset::Block { 0 });
@@ -80,7 +83,11 @@ void unpack_facts(Set& bitsets,
 }
 
 template<typename Set>
-void unpack_facts(Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>& unpacked, Blocks&)
+void unpack_facts(Set& bitsets,
+                  const StateLayout<LiftedTag>&,
+                  typename Set::handle_type packed,
+                  urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>& unpacked,
+                  Blocks&)
 { bitsets.copy(packed, unpacked.indices); }
 }
 
@@ -90,12 +97,13 @@ StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::StateCompon
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
 { return insert_facts(m_context->bitsets, m_context->layout, unpacked, m_blocks); }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
-    -> Packed
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked&,
+                                                                                 const Handle& parent,
+                                                                                 std::span<const StateDelta::FluentChange> changes) -> Handle
 {
     m_flips.clear();
     for (const auto& change : changes)
@@ -106,7 +114,7 @@ auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-void StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
 { unpack_facts(m_context->bitsets, m_context->layout, packed, unpacked, m_blocks); }
 
 template class StateComponentRepository<FactStorage<GroundTag>, TreeBitset, false>;

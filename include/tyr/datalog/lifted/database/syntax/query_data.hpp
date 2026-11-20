@@ -60,11 +60,12 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>> index;
     size_t input_slot = 0;
-    urd::flat_vector<ygg::ColumnLayout> columns;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> columns;
 
     data() = default;
 
-    data(size_t input_slot_, std::span<const ygg::ColumnLayout> columns_) : input_slot(input_slot_) { columns.set(columns_.begin(), columns_.end()); }
+    data(size_t input_slot_, std::span<const urd::data<ygg::ColumnLayout>> columns_) : input_slot(input_slot_)
+    { columns.set(columns_.begin(), columns_.end()); }
 
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
@@ -83,11 +84,11 @@ template<>
 struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryEmptyTag>>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryEmptyTag>> index;
-    urd::flat_vector<ygg::ColumnLayout> columns;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> columns;
 
     data() = default;
 
-    explicit data(std::span<const ygg::ColumnLayout> columns_) { columns.set(columns_.begin(), columns_.end()); }
+    explicit data(std::span<const urd::data<ygg::ColumnLayout>> columns_) { columns.set(columns_.begin(), columns_.end()); }
 
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
@@ -212,11 +213,13 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag>> index;
     urd::index<tyr::datalog::database::Query<>> operand;
     urd::flat_vector<urd::index<ygg::Column>> labels;
-    urd::flat_vector<ygg::ColumnLayout> columns;
+    urd::flat_vector<urd::data<ygg::ColumnLayout>> columns;
 
     data() = default;
 
-    data(urd::index<tyr::datalog::database::Query<>> operand_, std::span<const urd::index<ygg::Column>> labels_, std::span<const ygg::ColumnLayout> columns_) :
+    data(urd::index<tyr::datalog::database::Query<>> operand_,
+         std::span<const urd::index<ygg::Column>> labels_,
+         std::span<const urd::data<ygg::ColumnLayout>> columns_) :
         operand(operand_)
     {
         labels.set(labels_.begin(), labels_.end());

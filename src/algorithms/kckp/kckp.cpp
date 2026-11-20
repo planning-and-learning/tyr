@@ -40,7 +40,7 @@ void Workspace::prepare(const Graph& graph)
     partial_solution.resize(parts.size());
 }
 
-bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace) const
+bool KCKP::seed_from_prefix(std::span<const urd::data<Vertex>> prefix, Workspace& workspace) const
 {
     const auto& graph = *m_graph;
     workspace.prepare(graph);
@@ -50,7 +50,7 @@ bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace
     for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
     {
         const auto vertex = prefix[partition];
-        if (vertex.index >= graph.num_vertices() || graph.part_of(vertex) != partition)
+        if (vertex.number >= graph.num_vertices() || graph.part_of(vertex) != partition)
             return false;
 
         workspace.partial_solution[partition] = vertex;
@@ -83,7 +83,7 @@ ygg::uint_t KCKP::choose_next_partition(ygg::uint_t first_partition, const Works
     return std::numeric_limits<ygg::uint_t>::max();
 }
 
-bool KCKP::update_candidates(ygg::uint_t first_partition, Vertex source, size_t depth, Workspace& workspace) const
+bool KCKP::update_candidates(ygg::uint_t first_partition, urd::data<Vertex> source, size_t depth, Workspace& workspace) const
 {
     for (auto partition = first_partition; partition < m_graph->num_parts(); ++partition)
     {

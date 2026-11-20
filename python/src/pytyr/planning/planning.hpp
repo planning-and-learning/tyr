@@ -81,6 +81,7 @@
 #include <tyr/planning/worker_state_index.hpp>
 #include <urd/python/bindings.hpp>
 #include <urd/python/sequences/sequence.hpp>
+#include <urd/python/values/dense_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -704,7 +705,21 @@ void bind_task_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_kind_definitions(nb::module_& m)
 {
+    urd::python::bind_index<PackedStorage<FactStorage<Kind>>>(m);
+    urd::python::bind_index<PackedStorage<AtomStorage<Kind>>>(m);
+    urd::python::bind_index<PackedStorage<NumericStorage<Kind>>>(m);
+    urd::python::bind_data<FactStorage<Kind>>(m);
+    urd::python::bind_data<AtomStorage<Kind>>(m);
+    urd::python::bind_data<NumericStorage<Kind>>(m);
+    urd::python::bind_builder<FactStorage<Kind>, formalism::planning::Repository>(m);
+    urd::python::bind_builder<AtomStorage<Kind>, formalism::planning::Repository>(m);
+    urd::python::bind_builder<NumericStorage<Kind>, formalism::planning::Repository>(m);
+    urd::python::bind_view<FactStorageView<Kind>>(m);
+    urd::python::bind_view<AtomStorageView<Kind>>(m);
+    urd::python::bind_view<NumericStorageView<Kind>>(m);
+    urd::python::bind_index<State<Kind>>(m);
     urd::python::bind_data<State<Kind>>(m);
+    urd::python::bind_builder<State<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_view<PackedStateView<Kind>>(m);
     urd::python::bind_view<StateView<Kind>>(m);
     urd::python::bind_view<StateBuilderView<Kind>>(m);

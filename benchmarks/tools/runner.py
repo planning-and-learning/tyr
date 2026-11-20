@@ -301,7 +301,10 @@ def run_case(
     options: BenchmarkOptions,
     cpu: int | None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str]:
-    """Run one case, on ``cpu`` alone if given, recording its status in the case; its result or its failure, and its log entry."""
+    """Run one case, on ``cpu`` alone if given, recording its status in the case.
+
+    Returns its result or its failure, and its log entry.
+    """
     timeout = options.timeout
     run_name = case["run_name"]
     result_file = output_dir / "benchmark-results" / f"{run_name}.json"
@@ -360,9 +363,11 @@ def run_case(
 def run_benchmarks(
     benchmark_executable: pathlib.Path, output_dir: pathlib.Path, cases: list[dict[str, Any]], options: BenchmarkOptions
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Run every case, ``options.jobs`` at a time, each on a CPU of its own (one at a time: on every CPU, for cases that
-    run threads of their own); log their output in suite order and record each status in its case; return the results
-    and failures."""
+    """Run every case, ``options.jobs`` at a time, each on a CPU of its own.
+
+    One at a time, on every CPU, for cases that run threads of their own. Logs their output in suite order, records each
+    status in its case, and returns the results and failures.
+    """
     cpus: queue.Queue[int] = queue.Queue()
     for cpu in sorted(os.sched_getaffinity(0))[: options.jobs]:
         cpus.put(cpu)
@@ -419,8 +424,7 @@ def main() -> int:
         "--jobs",
         type=int,
         default=24,
-        help="Cases run at a time, each pinned to a CPU of its own (at most the CPUs available); 1 runs them one at a "
-        "time on every CPU, for benchmarks with threads of their own (A* search workers, GBFS evaluation threads).",
+        help="Cases run at a time, each on a CPU of its own; 1 runs them one at a time on every CPU (threaded cases).",
     )
     parser.add_argument(
         "--benchmark-report-aggregates-only",

@@ -4,8 +4,8 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
-#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 
+#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 
 #include <benchmark/benchmark.h>
@@ -24,8 +24,8 @@ using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Change;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
+
 namespace
 {
 using Values = boost::mp11::mp_list<ygg::uint_t>;
@@ -43,9 +43,9 @@ constexpr ygg::uint_t changed_shortcut = 9;
 /// The evaluations run before the measured ones.
 constexpr size_t warm_up_rounds = 8;
 
-std::vector<ygg::ColumnLayout> columns(size_t arity, ygg::uint_t first_label)
+std::vector<urd::data<ygg::ColumnLayout>> columns(size_t arity, ygg::uint_t first_label)
 {
-    std::vector<ygg::ColumnLayout> result;
+    std::vector<urd::data<ygg::ColumnLayout>> result;
     result.reserve(arity);
     for (size_t i = 0; i < arity; ++i)
         result.emplace_back(ColumnIndex(first_label + static_cast<ygg::uint_t>(i)), ygg::type_id<ygg::uint_t>);
@@ -189,7 +189,7 @@ struct Trace
 
 bool equal_rows(ygg::FreeRelationBuilderView actual, const RelationBuilder& expected)
 {
-    if (actual.size() != expected.size())
+    if (actual.get_rows().size() != expected.size())
         return false;
     for (const auto& row : borrow(expected).get_rows())
         if (!actual.contains(values_of(row)))
@@ -214,7 +214,7 @@ bool equal_delta(const database::incremental::Delta& actual, const RelationBuild
             if (!actual.removed->view().contains(values_of(row)))
                 return false;
         }
-    return actual.added->view().size() == added && actual.removed->view().size() == removed;
+    return actual.added->view().get_rows().size() == added && actual.removed->view().get_rows().size() == removed;
 }
 
 template<bool Incremental, TraceKind Kind = TraceKind::shortcuts>
@@ -289,14 +289,14 @@ void distance_changes(benchmark::State& state)
     for (auto _ : state)
     {
         update(true);
-        benchmark::DoNotOptimize(result().size());
+        benchmark::DoNotOptimize(result().get_rows().size());
         benchmark::ClobberMemory();
         update(false);
-        benchmark::DoNotOptimize(result().size());
+        benchmark::DoNotOptimize(result().get_rows().size());
         benchmark::ClobberMemory();
     }
     state.SetItemsProcessed(state.iterations() * 2);
-    state.counters["output_rows"] = static_cast<double>(result().size());
+    state.counters["output_rows"] = static_cast<double>(result().get_rows().size());
     state.counters["input_delta_rows"] = static_cast<double>(trace.edge_change.added.size() + trace.edge_change.removed.size());
     state.counters["updates_per_iteration"] = 2;
     state.counters["graph_edges"] = static_cast<double>(trace.edges.size());
@@ -344,12 +344,12 @@ void distance_initialize_warm(benchmark::State& state)
     for (auto _ : state)
     {
         initialize();
-        benchmark::DoNotOptimize(result().size());
+        benchmark::DoNotOptimize(result().get_rows().size());
         benchmark::ClobberMemory();
     }
     state.SetItemsProcessed(state.iterations());
     state.counters["initializations_per_iteration"] = 1;
-    state.counters["output_rows"] = static_cast<double>(result().size());
+    state.counters["output_rows"] = static_cast<double>(result().get_rows().size());
     state.counters["graph_edges"] = static_cast<double>(trace.edges.size());
     if constexpr (Incremental)
         state.counters["retained_bytes"] = static_cast<double>(evaluation.memory_usage());

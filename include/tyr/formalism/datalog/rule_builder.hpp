@@ -64,9 +64,7 @@ struct builder<::tyr::formalism::datalog::Rule<::tyr::GroundTag>, C>
     urd::built_t<ygg::float_t, C> cost { 0 };  ///< The edge cost of deriving a head.
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"body", &builder::body>, urd::field<"heads", &builder::heads>, urd::field<"cost", &builder::cost>> {};
-    }
+    { return urd::Fields<urd::field<"body", &builder::body>, urd::field<"heads", &builder::heads>, urd::field<"cost", &builder::cost>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };

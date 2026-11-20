@@ -38,7 +38,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
 {
-    ::tyr::planning::StateBits indices;
+    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>>, C> indices;
 
     void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
@@ -58,6 +58,14 @@ struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
     void swap(builder& other) noexcept { indices.swap(other.indices); }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
+
+    static constexpr auto functions() noexcept
+    {
+        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"fact">>,
+                              urd::function<"clear", &builder::clear>,
+                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
+                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+    }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };

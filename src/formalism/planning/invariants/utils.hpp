@@ -15,14 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #ifndef TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 #define TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 
-#include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/atom_data.hpp"
-#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -49,10 +48,10 @@ struct CandidateStorage
 
 /// An atom of a candidate: the record its child holds (a candidate's atoms are always held).
 inline const urd::data<Atom<LiftedTag, FluentTag>>& atom_of(const urd::child<Atom<LiftedTag, FluentTag>, Repository>& part)
-{ return std::get<urd::held_child<Atom<LiftedTag, FluentTag>, Repository>>(part).held(); }
+{ return *std::get<urd::held_child<Atom<LiftedTag, FluentTag>, Repository>>(part); }
 
 inline urd::data<Atom<LiftedTag, FluentTag>>& atom_of(urd::child<Atom<LiftedTag, FluentTag>, Repository>& part)
-{ return std::get<urd::held_child<Atom<LiftedTag, FluentTag>, Repository>>(part).held(); }
+{ return *std::get<urd::held_child<Atom<LiftedTag, FluentTag>, Repository>>(part); }
 
 /// Its atoms sorted and without duplicates: the canonical form candidates are compared in.
 inline void canonicalize(urd::builder<Invariant, Repository>& inv)
@@ -76,7 +75,7 @@ inline urd::builder<Invariant, Repository> make_candidate(std::size_t num_rigid_
     for (auto& atom : atoms)
     {
         auto& part = result.atoms.emplace_back();
-        part.emplace<urd::held_child<Atom<LiftedTag, FluentTag>, Repository>>(storage.atoms.make_handle(), storage.repository);
+        part.emplace<urd::held_child<Atom<LiftedTag, FluentTag>, Repository>>(storage.atoms.make_handle());
         atom_of(part) = std::move(atom);
     }
     canonicalize(result);
@@ -85,7 +84,9 @@ inline urd::builder<Invariant, Repository> make_candidate(std::size_t num_rigid_
 
 /// Whether some atom of the candidate has this predicate.
 inline bool has_predicate(const urd::builder<Invariant, Repository>& inv, urd::index<Predicate<FluentTag>> predicate)
-{ return std::ranges::any_of(inv.atoms, [&](const auto& part) { return atom_of(part).predicate == predicate; }); }
+{
+    return std::ranges::any_of(inv.atoms, [&](const auto& part) { return atom_of(part).predicate == predicate; });
+}
 
 /// The candidate's atom of this predicate, if any (an invariant's atoms have distinct predicates).
 inline const urd::data<Atom<LiftedTag, FluentTag>>* find_part(const urd::builder<Invariant, Repository>& inv, urd::index<Predicate<FluentTag>> predicate)
@@ -114,7 +115,9 @@ inline std::size_t part_arity(const urd::data<Atom<LiftedTag, FluentTag>>& part,
 }
 
 inline bool atom_uses_counted(const urd::data<Atom<LiftedTag, FluentTag>>& atom, std::size_t num_rigid_variables)
-{ return std::ranges::any_of(atom.terms, [&](const Term& term) { return uses_counted(term, num_rigid_variables); }); }
+{
+    return std::ranges::any_of(atom.terms, [&](const Term& term) { return uses_counted(term, num_rigid_variables); });
+}
 
 inline urd::data<Atom<LiftedTag, FluentTag>> make_initial_atom(PredicateView<FluentTag> predicate, std::size_t counted_position)
 {

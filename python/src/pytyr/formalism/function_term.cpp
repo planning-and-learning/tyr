@@ -47,6 +47,7 @@ void bind_function_term_view(nb::module_& m, nb::class_<C>& repository)
     using V = urd::index_view<FunctionTerm<T, F>, C>;
     urd::python::bind_view<V>(m);
     ygg::bind_insert<FunctionTerm<T, F>>(repository);
+    urd::python::bind_builder<FunctionTerm<T, F>, C>(m);
 }
 
 template<typename C>
@@ -63,11 +64,17 @@ void bind_function_term_views(nb::module_& m, nb::class_<C>& repository)
 
 void bind_function_term(nb::module_& m)
 {
+    urd::python::bind_index<FunctionTerm<LiftedTag, StaticTag>>(m);
     urd::python::bind_data<FunctionTerm<LiftedTag, StaticTag>>(m);
+    urd::python::bind_index<FunctionTerm<LiftedTag, FluentTag>>(m);
     urd::python::bind_data<FunctionTerm<LiftedTag, FluentTag>>(m);
+    urd::python::bind_index<FunctionTerm<LiftedTag, AuxiliaryTag>>(m);
     urd::python::bind_data<FunctionTerm<LiftedTag, AuxiliaryTag>>(m);
+    urd::python::bind_index<FunctionTerm<GroundTag, StaticTag>>(m);
     urd::python::bind_data<FunctionTerm<GroundTag, StaticTag>>(m);
+    urd::python::bind_index<FunctionTerm<GroundTag, FluentTag>>(m);
     urd::python::bind_data<FunctionTerm<GroundTag, FluentTag>>(m);
+    urd::python::bind_index<FunctionTerm<GroundTag, AuxiliaryTag>>(m);
     urd::python::bind_data<FunctionTerm<GroundTag, AuxiliaryTag>>(m);
 }
 

@@ -26,11 +26,14 @@ fmt::format_context::iterator fmt::formatter<tyr::formalism::ParameterIndex>::fo
                                                                                      fmt::format_context& context) const
 { return fmt::format_to(context.out(), "?x{}", value.value); }
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::BooleanOperatorKind>::format(tyr::formalism::BooleanOperatorKind value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tyr::formalism::BooleanOperatorKind>::format(tyr::formalism::BooleanOperatorKind value,
+                                                                                          fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::ArithmeticOperatorKind>::format(tyr::formalism::ArithmeticOperatorKind value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tyr::formalism::ArithmeticOperatorKind>::format(tyr::formalism::ArithmeticOperatorKind value,
+                                                                                             fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::NumericEffectOperatorKind>::format(tyr::formalism::NumericEffectOperatorKind value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tyr::formalism::NumericEffectOperatorKind>::format(tyr::formalism::NumericEffectOperatorKind value,
+                                                                                                fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }

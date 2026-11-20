@@ -22,7 +22,6 @@ using Column = urd::index<ygg::Column>;
 using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
 using ygg::uint_t;
 
@@ -66,7 +65,7 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
     auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), tyr::datalog::database::compile_plan({ edges }));
     evaluator.evaluate(borrow_all(maximal));
     auto supergraph = Relation(evaluator.get_result().columns());
-    for (size_t i = 0; i < evaluator.get_result().size(); ++i)
+    for (size_t i = 0; i < evaluator.get_result().get_rows().size(); ++i)
         supergraph.insert(values_of(evaluator.get_result().row(i)));
     auto heuristic = HalfDistance {};
     heuristic.columns = sources.columns();
@@ -80,10 +79,9 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
         evaluator.evaluate(views);
         const auto materialized = evaluator.get_result();
         auto edge_relation = Relation(materialized.columns());
-        for (size_t i = 0; i < materialized.size(); ++i)
+        for (size_t i = 0; i < materialized.get_rows().size(); ++i)
             edge_relation.insert(values_of(materialized.row(i)));
-        const auto expected =
-            tyr::datalog::database::min_distance(borrow(sources), borrow(edge_relation), borrow(targets), plan, result, workspace);
+        const auto expected = tyr::datalog::database::min_distance(borrow(sources), borrow(edge_relation), borrow(targets), plan, result, workspace);
         const auto input = [&](size_t slot) { return views[slot]; };
         blind.bind(input);
         guided.bind(input);
@@ -306,8 +304,7 @@ TEST_P(DatabaseIncrementalMinDistance, RelationEdgesUnderChanges)
                 else
                     edges.insert(edge);
             }
-        const auto expected =
-            tyr::datalog::database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace);
+        const auto expected = tyr::datalog::database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace);
         const auto edge_view = borrow(edges);
         const auto edge_input = [&](size_t) -> const auto& { return edge_view; };
         auto maybe_changed = urd::Store<urd::set<size_t>, urd::dense>();
@@ -377,8 +374,7 @@ struct TwoSlotEdges
                                                                                 tyr::datalog::tests::qb::input(repository, 1, { x, y }));
     Relation sources = Relation(tyr::datalog::tests::ops::cols({ x }));
     Relation targets = Relation(tyr::datalog::tests::ops::cols({ y }));
-    tyr::datalog::database::DistancePlan plan =
-        tyr::datalog::database::DistancePlan(sources.columns(), columns_of(edges), targets.columns(), Column(99));
+    tyr::datalog::database::DistancePlan plan = tyr::datalog::database::DistancePlan(sources.columns(), columns_of(edges), targets.columns(), Column(99));
     urd::Store<urd::sequence<Relation>> inputs;
 
     TwoSlotEdges()
@@ -504,7 +500,7 @@ TEST(DatabaseIncrementalBoundEvaluation, FailedChangesLeaveTheInputUnchanged)
     added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     EXPECT_THROW(evaluator.update(0, borrow(added), borrow(removed)), std::invalid_argument);
     EXPECT_EQ(evaluator.version(), version);
-    EXPECT_EQ(evaluator.input(0).size(), 2);
+    EXPECT_EQ(evaluator.input(0).get_rows().size(), 2);
     EXPECT_TRUE(evaluator.input(0).contains(std::array { ygg::encode_value(ygg::uint_t(0)), ygg::encode_value(ygg::uint_t(1)) }));
     EXPECT_FALSE(evaluator.input(0).contains(std::array { ygg::encode_value(ygg::uint_t(0)), ygg::encode_value(ygg::uint_t(3)) }));
     EXPECT_EQ(count(), 2);

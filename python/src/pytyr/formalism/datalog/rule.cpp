@@ -34,13 +34,18 @@ namespace tyr::formalism::datalog
 
 void bind_rule(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<Rule<LiftedTag>>(m);
     urd::python::bind_data<Rule<LiftedTag>>(m);
     urd::python::bind_view<RuleView<LiftedTag>>(m);
     ygg::bind_insert<Rule<LiftedTag>>(repository);
+    urd::python::bind_builder<Rule<LiftedTag>, Repository>(m);
+
+    urd::python::bind_index<Rule<GroundTag>>(m);
 
     urd::python::bind_data<Rule<GroundTag>>(m);
     urd::python::bind_view<RuleView<GroundTag>>(m);
     ygg::bind_insert<Rule<GroundTag>>(repository);
+    urd::python::bind_builder<Rule<GroundTag>, Repository>(m);
 }
 
 }  // namespace tyr::formalism::datalog

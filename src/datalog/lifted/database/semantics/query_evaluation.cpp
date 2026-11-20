@@ -9,7 +9,7 @@
 
 namespace tyr::datalog::database
 {
-size_t QueryEvaluator::memory_usage() const noexcept
+size_t QueryEvaluator::memory_usage() const
 {
     // get_if rather than std::visit, which throws for a valueless variant; states are never valueless.
     const auto usage = []<typename Prepared>(const Prepared* prepared) noexcept -> size_t

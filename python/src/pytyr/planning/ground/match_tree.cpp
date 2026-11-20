@@ -37,15 +37,25 @@ namespace
 template<typename Tag>
 void bind_match_tree_nodes(nb::module_& m)
 {
+    urd::python::bind_index<match_tree::AtomSelectorNode<Tag>>(m);
     urd::python::bind_data<match_tree::AtomSelectorNode<Tag>>(m);
+    urd::python::bind_builder<match_tree::AtomSelectorNode<Tag>, match_tree::Repository<Tag>>(m);
     urd::python::bind_view<urd::index_view<match_tree::AtomSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
+    urd::python::bind_index<match_tree::VariableSelectorNode<Tag>>(m);
     urd::python::bind_data<match_tree::VariableSelectorNode<Tag>>(m);
+    urd::python::bind_builder<match_tree::VariableSelectorNode<Tag>, match_tree::Repository<Tag>>(m);
     urd::python::bind_view<urd::index_view<match_tree::VariableSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
+    urd::python::bind_index<match_tree::NegativeFactSelectorNode<Tag>>(m);
     urd::python::bind_data<match_tree::NegativeFactSelectorNode<Tag>>(m);
+    urd::python::bind_builder<match_tree::NegativeFactSelectorNode<Tag>, match_tree::Repository<Tag>>(m);
     urd::python::bind_view<urd::index_view<match_tree::NegativeFactSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
+    urd::python::bind_index<match_tree::NumericConstraintSelectorNode<Tag>>(m);
     urd::python::bind_data<match_tree::NumericConstraintSelectorNode<Tag>>(m);
+    urd::python::bind_builder<match_tree::NumericConstraintSelectorNode<Tag>, match_tree::Repository<Tag>>(m);
     urd::python::bind_view<urd::index_view<match_tree::NumericConstraintSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
+    urd::python::bind_index<match_tree::ElementGeneratorNode<Tag>>(m);
     urd::python::bind_data<match_tree::ElementGeneratorNode<Tag>>(m);
+    urd::python::bind_builder<match_tree::ElementGeneratorNode<Tag>, match_tree::Repository<Tag>>(m);
     urd::python::bind_view<urd::index_view<match_tree::ElementGeneratorNode<Tag>, match_tree::Repository<Tag>>>(m);
 }
 }  // namespace

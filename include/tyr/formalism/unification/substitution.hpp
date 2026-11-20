@@ -154,11 +154,6 @@ private:
 
     /// Each parameter of the domain with its value, unbound where it has none, in the order the parameters were given.
     urd::Store<urd::map<ParameterIndex, std::optional<T>>, urd::insertion_ordered> m_bindings;
-
-public:
-    static constexpr std::string_view name = "SubstitutionFunction";
-
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"bindings", &SubstitutionFunction::m_bindings>> {}; }
 };
 
 }

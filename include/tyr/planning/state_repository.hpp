@@ -67,9 +67,11 @@ public:
     [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return { state_index, this }; }
 
     /// A state's storage being built, read through its task's formalism repository (a state's view reads its storages so).
-    [[nodiscard]] FactStorageView<Kind> view(const urd::builder<FactStorage<Kind>, formalism::planning::Repository>& storage) const noexcept { return { &storage, get_task()->get_repository().get() }; }
+    [[nodiscard]] FactStorageView<Kind> view(const urd::builder<FactStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
+    { return { &storage, get_task()->get_repository().get() }; }
 
-    [[nodiscard]] AtomStorageView<Kind> view(const urd::builder<AtomStorage<Kind>, formalism::planning::Repository>& storage) const noexcept { return { &storage, get_task()->get_repository().get() }; }
+    [[nodiscard]] AtomStorageView<Kind> view(const urd::builder<AtomStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
+    { return { &storage, get_task()->get_repository().get() }; }
 
     [[nodiscard]] NumericStorageView<Kind> view(const urd::builder<NumericStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
     { return { &storage, get_task()->get_repository().get() }; }
@@ -80,6 +82,11 @@ public:
     /// A state record unpacked, its storages read from this repository's: a registered one's (get_registered_state, its
     /// index set) or a record held outside it, packed here but not registered (no index).
     StateView<Kind> unpack(const urd::data<State<Kind>>& packed) const;
+
+    /// A state's storage unpacked from this repository's (urd::resolution<PackedStorage<S>>).
+    urd::builder<FactStorage<Kind>, formalism::planning::Repository> unpack(const PackedStorage<FactStorage<Kind>>& packed) const;
+    urd::builder<AtomStorage<Kind>, formalism::planning::Repository> unpack(const PackedStorage<AtomStorage<Kind>>& packed) const;
+    urd::builder<NumericStorage<Kind>, formalism::planning::Repository> unpack(const PackedStorage<NumericStorage<Kind>>& packed) const;
 
     StateView<Kind>
     create_state(AxiomEvaluator<Kind>& axiom_evaluator,
@@ -142,7 +149,7 @@ StateView<Kind> materialize_state(const StateView<Kind>& source, StateRepository
     if (&source.context() == &target)
         return source;
     if (source.context().shares_storage_with(target))
-        return target.get_registered_state(source.index());
+        return target.get_registered_state(source.pack().index());
 
     auto builder = target.get_state_builder();
     builder->assign_unextended_part(source);

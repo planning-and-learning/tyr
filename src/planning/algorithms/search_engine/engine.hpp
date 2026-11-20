@@ -304,7 +304,7 @@ private:
             return stop(SearchStatus::OUT_OF_TIME);
 
         auto& start_worker = get_worker(start_owner);
-        const auto start_state_index = start_state.index();
+        const auto start_state_index = start_state.pack().index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
 
         if (start_worker.pruning_strategy->should_prune_state(start_state))
@@ -423,7 +423,7 @@ private:
         const auto& labeled_successor = routed_successor.labeled_node;
         const auto& successor_node = labeled_successor.node;
         const auto& successor_state = successor_node.get_state();
-        auto& successor_search_node = worker.get_search_node(successor_state.index());
+        auto& successor_search_node = worker.get_search_node(successor_state.pack().index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
         if (is_new && m_options->search_budget.max_num_states && !m_execution.reserve_state(*m_options->search_budget.max_num_states))
@@ -475,7 +475,7 @@ private:
 
     void solve(WorkerData& worker, const Node<Kind>& node)
     {
-        const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().index() };
+        const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().pack().index() };
         if (m_execution.consider_goal(goal, node.get_metric(), SearchPolicy::terminate_on_goal))
             call_worker_event(worker, [&](auto& handler) { handler.on_expand_goal_node(node); });
     }

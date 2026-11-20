@@ -36,16 +36,16 @@ class StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>
 public:
     using Context = StateStorageContext<Kind, Tag, ThreadSafe>;
     using Unpacked = urd::builder<NumericStorage<Kind>, formalism::planning::Repository>;
-    using Packed = typename Context::FloatVectorSet::handle_type;
+    using Handle = typename Context::FloatVectorSet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);
 
-    Packed insert(Unpacked& unpacked);
+    Handle insert(Unpacked& unpacked);
 
     /// Inserts `unpacked` as the exact `changes` to the stored `parent`. A pool with structural sharing rebuilds only the tree paths to changed values.
-    Packed insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes);
+    Handle insert(Unpacked& unpacked, const Handle& parent, std::span<const StateDelta::NumericChange> changes);
 
-    void unpack(const Packed& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
     typename Context::FloatVectorSet* m_float_vectors;

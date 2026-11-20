@@ -47,9 +47,7 @@ struct builder<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>, C>
     urd::built_t<::tyr::formalism::TermList, C> terms;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"parameters", &builder::parameters>, urd::field<"function", &builder::function>, urd::field<"terms", &builder::terms>> {};
-    }
+    { return urd::Fields<urd::field<"parameters", &builder::parameters>, urd::field<"function", &builder::function>, urd::field<"terms", &builder::terms>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };

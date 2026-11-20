@@ -50,11 +50,11 @@ void bind_row_view(nb::module_& m, RepositoryBinding& repository)
 void bind_row(nb::module_& m, RepositoryBinding& repository)
 {
     // The rows of its own relations; those of predicates and functions are bound with the formalism's records.
-    urd::python::bind_value<ygg::RowIndex<Predicate<DerivedTag>>>(m);
+    urd::python::bind_index<ygg::RowIndex<Predicate<DerivedTag>>>(m);
     urd::python::bind_data<ygg::Row<Predicate<DerivedTag>>>(m);
-    urd::python::bind_value<ygg::RowIndex<Action<LiftedTag>>>(m);
+    urd::python::bind_index<ygg::RowIndex<Action<LiftedTag>>>(m);
     urd::python::bind_data<ygg::Row<Action<LiftedTag>>>(m);
-    urd::python::bind_value<ygg::RowIndex<Axiom<LiftedTag>>>(m);
+    urd::python::bind_index<ygg::RowIndex<Axiom<LiftedTag>>>(m);
     urd::python::bind_data<ygg::Row<Axiom<LiftedTag>>>(m);
 
     bind_row_view<Predicate<DerivedTag>>(m, repository);

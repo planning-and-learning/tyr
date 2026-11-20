@@ -170,7 +170,7 @@ public:
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
         const auto preferred = m_relaxed_plan && m_relaxed_plan->contains(action);
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric(), m_state_h_value, preferred };
+        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().pack().index() }, node.get_metric(), m_state_h_value, preferred };
     }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool is_preferred)
@@ -217,7 +217,7 @@ public:
         }
 
         worker.statistics.increment_num_generated_successors();
-        open_successor(successor_state.index(),
+        open_successor(successor_state.pack().index(),
                        g_value,
                        routed_successor.metadata.inherited_h_value,
                        successor_search_node.status,

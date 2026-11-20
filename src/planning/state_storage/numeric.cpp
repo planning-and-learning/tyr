@@ -42,15 +42,16 @@ void canonicalize(urd::builder<NumericStorage<Kind>, formalism::planning::Reposi
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Packed
+auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Handle
 {
     canonicalize(unpacked);
     return m_float_vectors->insert(unpacked.values).first;
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes)
-    -> Packed
+auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked,
+                                                                             const Handle& parent,
+                                                                             std::span<const StateDelta::NumericChange> changes) -> Handle
 {
     canonicalize(unpacked);
 
@@ -71,7 +72,7 @@ auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unp
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-void StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
 {
     unpacked.values.resize(m_float_vectors->row_size(packed));
     m_float_vectors->copy(packed, unpacked.values);

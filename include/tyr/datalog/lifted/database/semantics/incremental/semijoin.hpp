@@ -46,7 +46,7 @@ class SemijoinEvaluator
         const auto left_keys = m_plan.left_keys();
         const auto right_keys = m_plan.right_keys();
         if (left_keys.empty())
-            return !m_right_operand->view().empty();
+            return !m_right_operand->view().get_rows().empty();
         for (const auto [first, last] = m_right_index.equal_range(database::detail::join_key_hash(left_row, left_keys));
              const auto slot : std::ranges::subrange(first, last) | std::views::values)
             if (database::detail::join_keys_equal(m_right_operand->at(slot).values, right_keys, left_row, left_keys))
@@ -90,7 +90,8 @@ class SemijoinEvaluator
                              {
                                  for (const auto [first, last] = m_left_index.equal_range(database::detail::join_key_hash(right_row, right_keys));
                                       const auto slot : std::ranges::subrange(first, last) | std::views::values)
-                                     if (const auto& left_row = m_left_operand->at(slot).values; database::detail::join_keys_equal(left_row, left_keys, right_row, right_keys))
+                                     if (const auto& left_row = m_left_operand->at(slot).values;
+                                         database::detail::join_keys_equal(left_row, left_keys, right_row, right_keys))
                                          reconcile(left_row);
                              });
     }
@@ -194,7 +195,7 @@ public:
 
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
-    [[nodiscard]] size_t memory_usage() const noexcept
+    [[nodiscard]] size_t memory_usage() const
     {
         return urd::memory_usage(m_left_operand->relation) + urd::memory_usage(m_right_operand->relation) + urd::memory_usage(m_result->relation)
                + m_delta.memory_usage() + urd::memory_usage(m_left_index) + urd::memory_usage(m_right_index);

@@ -48,9 +48,7 @@ struct builder<::tyr::formalism::planning::Invariant, C>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::num_rigid_variables, &builder::num_counted_variables, &builder::atoms> {};
-    }
+    { return urd::Members<&builder::num_rigid_variables, &builder::num_counted_variables, &builder::atoms> {}; }
 };
 
 }  // namespace urd

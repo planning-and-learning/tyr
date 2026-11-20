@@ -42,7 +42,7 @@ static_assert(requires(const Data& data, const tyr::planning::StateBuilderView<t
     building.get_fact_storage().fluent_atoms();
     building.get_atom_storage().atoms();
     building.get_numeric_storage().fterm_values();
-    view.index();
+    view.pack().index();
     view.template get_atom_indices<::tyr::formalism::StaticTag>();
     view.get_fluent_fact_index_values();
     view.template get_atom_indices<tyr::formalism::FluentTag>();

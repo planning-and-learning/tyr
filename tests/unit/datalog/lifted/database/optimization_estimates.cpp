@@ -167,7 +167,7 @@ TEST(DatabaseOptimizationEstimates, BoundedDomainsCapDistinctCounts)
 
 TEST(DatabaseOptimizationEstimates, FactorIdentitySeparatesInputsAndQueries)
 {
-    const std::vector<ygg::ColumnLayout> columns { { x, ygg::type_id<ygg::uint_t> } };
+    const std::vector<urd::data<ygg::ColumnLayout>> columns { { x, ygg::type_id<ygg::uint_t> } };
     const tyr::datalog::database::RelationStatistics statistics { 10, { { x, 2 } } };
     const auto input = tyr::datalog::database::detail::factor(statistics, columns, tyr::datalog::database::detail::InputFactorIdentity { 7 });
     const auto query = tyr::datalog::database::detail::factor(statistics, columns, tyr::datalog::database::detail::QueryFactorIdentity { 7 });

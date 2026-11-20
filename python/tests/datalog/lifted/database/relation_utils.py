@@ -11,7 +11,7 @@ from pyyggdrasil import formalism
 from pytyr.datalog.lifted import database
 
 
-def labels(columns: Iterable[formalism.ColumnLayout]) -> list[formalism.ColumnIndex]:
+def labels(columns: Iterable[formalism.ColumnLayoutData]) -> list[formalism.ColumnIndex]:
     """The labels of `columns` (a relation's or a plan's)."""
     return [column.label for column in columns]
 
@@ -21,13 +21,14 @@ def insert(builder: database.ScratchRelation, values: Sequence[Any]) -> int:
     return builder.insert([formalism.encode(v, c.type) for v, c in zip(values, builder.columns(), strict=True)])
 
 
-# `row` is a row of a relation, of a builder's view (RelationSchemaBuilder) or of an interned relation (RelationSchema).
+# `row` is a row of a relation, of a builder's view (RelationSchemaBuilderBorrowed) or of an interned relation
+# (RelationSchema).
 def values(row: Any) -> tuple[object, ...]:  # noqa: ANN401
     """The decoded values of `row`."""
     return tuple(row.get(i) for i in range(len(row.get_values())))
 
 
-# `relation` is a builder's view (RelationSchemaBuilder) or an interned relation (RelationSchema).
+# `relation` is a builder's view (RelationSchemaBuilderBorrowed) or an interned relation (RelationSchema).
 def tuples(relation: Any) -> list[tuple[object, ...]]:  # noqa: ANN401
     """The decoded rows of `relation`, in its order."""
     return [values(row) for row in relation.get_rows()]
@@ -53,7 +54,7 @@ def rename(
     if len(new) != len(columns):
         message = "Columns: renaming must preserve arity."
         raise ValueError(message)
-    layout = [formalism.ColumnLayout(label, column.type) for label, column in zip(new, columns, strict=True)]
+    layout = [formalism.ColumnLayoutData(label, column.type) for label, column in zip(new, columns, strict=True)]
     renamed = repository.insert(formalism.ColumnsData(layout))[0]
     return repository.insert(
         formalism.RelationSchemaData(

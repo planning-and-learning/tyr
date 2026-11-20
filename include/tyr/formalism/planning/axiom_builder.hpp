@@ -43,9 +43,7 @@ struct builder<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C> head;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"variables", &builder::variables>, urd::field<"body", &builder::body>, urd::field<"head", &builder::head>> {};
-    }
+    { return urd::Fields<urd::field<"variables", &builder::variables>, urd::field<"body", &builder::body>, urd::field<"head", &builder::head>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::variables, &builder::body, &builder::head> {}; }
 };
@@ -60,9 +58,7 @@ struct builder<::tyr::formalism::planning::Axiom<::tyr::GroundTag>, C>
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> head;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"row", &builder::row>, urd::field<"body", &builder::body>, urd::field<"head", &builder::head>> {};
-    }
+    { return urd::Fields<urd::field<"row", &builder::row>, urd::field<"body", &builder::body>, urd::field<"head", &builder::head>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&builder::row> {}; }
 };

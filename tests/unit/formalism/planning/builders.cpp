@@ -72,14 +72,14 @@ TEST(TyrFormalismPlanningBuilders, ReadsBuiltAndInternedChildrenAlike)
     auto parameter_pool = urd::Store<urd::slots<ParametersBuilder>> {};
     auto atom_pool = urd::Store<urd::slots<AtomBuilder>> {};
     auto parameters = parameter_pool.make_handle();
-    parameters->variables.emplace_back(variable);
+    parameters->variables.emplace_back(variable.index());
     auto atom = atom_pool.make_handle();
-    atom->parameters.emplace<1>(std::move(parameters), &repository);
-    atom->predicate = predicate;
-    atom->terms.emplace_back(std::in_place_index<0>, urd::child<f::Object, Repository>(object));
+    atom->parameters.emplace<1>(std::move(parameters));
+    urd::store(atom->predicate, predicate);
+    atom->terms.emplace_back(std::in_place_index<0>, urd::child<f::Object, Repository>(object.index()));
     atom->terms.emplace_back(std::in_place_index<1>, f::ParameterIndex(0));
     auto literal = LiteralBuilder {};
-    literal.atom.emplace<1>(std::move(atom), &repository);
+    literal.atom.emplace<1>(std::move(atom));
     literal.polarity = true;
 
     const auto view = urd::resolve(literal, repository);

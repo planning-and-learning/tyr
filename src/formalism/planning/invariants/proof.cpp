@@ -25,13 +25,14 @@
 #include "utils.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <map>
 #include <optional>
+#include <urd/elements/clone.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/clone.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -77,7 +78,8 @@ void ensure_conjunction_sat(ConstraintSystem& system, const Conjunction& conjunc
 }
 
 /// Renames the effect's own variables (after its action's `num_parent_variables`) to `fresh_base`, `fresh_base` + 1, ...
-unification::SubstitutionFunction<Term> make_effect_alpha_renaming(ConditionalEffectView<LiftedTag> effect, std::size_t num_parent_variables, std::size_t fresh_base)
+unification::SubstitutionFunction<Term>
+make_effect_alpha_renaming(ConditionalEffectView<LiftedTag> effect, std::size_t num_parent_variables, std::size_t fresh_base)
 {
     const std::size_t num_variables = effect.get_arity();
     auto sigma = unification::SubstitutionFunction<Term>::from_range(ParameterIndex { static_cast<ygg::uint_t>(num_parent_variables) }, num_variables);
@@ -130,7 +132,8 @@ std::size_t max_num_effect_variables(ActionView<LiftedTag> op)
 
 /// What holds when the action applies and the add effect adds something new: the precondition, the add effect's condition
 /// and the added atom being false (Helmert 2009, Fig. 7: o'.precond ∧ e.cond ∧ ¬e.atom).
-Conjunction build_add_effect_produced(ActionView<LiftedTag> op, ConditionalEffectView<LiftedTag> add_effect, const urd::data<Atom<LiftedTag, FluentTag>>& add_atom)
+Conjunction
+build_add_effect_produced(ActionView<LiftedTag> op, ConditionalEffectView<LiftedTag> add_effect, const urd::data<Atom<LiftedTag, FluentTag>>& add_atom)
 {
     auto produced = Conjunction();
     append_condition(produced, op.get_condition(), nullptr);
@@ -142,7 +145,9 @@ Conjunction build_add_effect_produced(ActionView<LiftedTag> op, ConditionalEffec
 /// Requires each literal of `required` to equal some literal of the same predicate and sign in `produced`; false if one
 /// has no candidate.
 template<FactKind T>
-bool add_entailment(ConstraintSystem& system, const std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>& required, const std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>& produced)
+bool add_entailment(ConstraintSystem& system,
+                    const std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>& required,
+                    const std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>& produced)
 {
     for (const auto& [lit_atom, lit_polarity] : required)
     {
@@ -249,8 +254,7 @@ bool is_overridden_delete(ConditionalEffectView<LiftedTag> effect, LiteralView<L
     if (literal.get_polarity())
         return false;
     const auto literals = effect.get_effect().get_literals();
-    return std::ranges::any_of(literals,
-                               [&](const auto other) { return other.get_polarity() && other.get_atom().index() == literal.get_atom().index(); });
+    return std::ranges::any_of(literals, [&](const auto other) { return other.get_polarity() && other.get_atom().index() == literal.get_atom().index(); });
 }
 
 bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invariant, Repository>& inv)
@@ -367,12 +371,12 @@ ProofResult prove_invariant(const urd::builder<Invariant, Repository>& inv, cons
         const auto effects = op.get_effects();
         for (std::size_t effect_index = 0; effect_index < effects.size(); ++effect_index)
         {
-            const auto effect = effects[effect_index];
+            const auto effect = effects[static_cast<std::ptrdiff_t>(effect_index)];
             const auto literals = effect.get_effect().get_literals();
 
             for (std::size_t literal_index = 0; literal_index < literals.size(); ++literal_index)
             {
-                const auto literal = literals[literal_index];
+                const auto literal = literals[static_cast<std::ptrdiff_t>(literal_index)];
                 if (!literal.get_polarity())
                     continue;
 

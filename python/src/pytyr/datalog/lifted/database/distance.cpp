@@ -16,7 +16,7 @@ namespace
 {
 using Relation = ygg::FreeScratchRelation;
 using Column = urd::index<ygg::Column>;
-using ColumnIndices = std::span<const ygg::ColumnLayout>;
+using ColumnIndices = std::span<const urd::data<ygg::ColumnLayout>>;
 using Plan = tyr::datalog::database::DistancePlan;
 using Evaluator = tyr::datalog::database::incremental::DistanceEvaluator;
 using Delta = tyr::datalog::database::incremental::Delta;

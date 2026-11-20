@@ -64,7 +64,9 @@ inline std::span<const ygg::Value> vertex_values(const urd::packed_row<false>& r
 template<typename R>
     requires urd::View<R> || urd::variant_value<R>
 std::span<const ygg::Value> vertex_values(const R& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
-{ return ygg::with_values(row, [&buffer](const auto& values) { return vertex_values(values, buffer); }); }
+{
+    return ygg::with_values(row, [&buffer](const auto& values) { return vertex_values(values, buffer); });
+}
 
 /// A random-access sequence of vertices: get_rows() of them, row(i) the i-th, its values or a stored row (e.g. a relation
 /// view).

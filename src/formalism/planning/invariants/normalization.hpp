@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 

@@ -9,8 +9,8 @@
 #include <urd/store.hpp>
 
 #ifndef TYR_DATALOG_DATABASE_APPEND_ONLY_PROFILE
-#include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
 #include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
+#include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/projection.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 #endif
@@ -36,16 +36,16 @@ using tyr::datalog::tests::borrow;
 using tyr::datalog::tests::Change;
 using tyr::datalog::tests::Relation;
 using tyr::datalog::tests::scratch;
-using ygg::value_of;
 using tyr::datalog::tests::values_of;
+
 namespace
 {
 using ColumnIndex = urd::index<ygg::Column>;
 
 /// ygg::Columns of type ygg::uint_t with these labels.
-std::vector<ygg::ColumnLayout> cols(std::initializer_list<ColumnIndex> labels)
+std::vector<urd::data<ygg::ColumnLayout>> cols(std::initializer_list<ColumnIndex> labels)
 {
-    std::vector<ygg::ColumnLayout> result;
+    std::vector<urd::data<ygg::ColumnLayout>> result;
     for (const auto label : labels)
         result.emplace_back(label, ygg::type_id<ygg::uint_t>);
     return result;
@@ -184,7 +184,7 @@ struct JoinTrace
 
 bool equal_rows(ygg::FreeRelationBuilderView lhs, const Relation& rhs)
 {
-    if (lhs.size() != rhs.size())
+    if (lhs.get_rows().size() != rhs.size())
         return false;
     for (const auto& row : lhs.get_rows())
         if (!rhs.contains(values_of(row)))
@@ -220,7 +220,7 @@ bool equal_delta(const database::incremental::Delta& delta, const Relation& befo
             if (!delta.added->view().contains(values_of(row)))
                 return false;
         }
-    return delta.added->view().size() == added && delta.removed->view().size() == removed;
+    return delta.added->view().get_rows().size() == added && delta.removed->view().get_rows().size() == removed;
 }
 
 template<bool Latency, typename TraceType, typename Update, typename Result, typename Memory>
@@ -254,7 +254,7 @@ void measure(benchmark::State& state, TraceType& trace, Update update, Result re
             {
                 const auto begin = std::chrono::steady_clock::now();
                 update(transition);
-                benchmark::DoNotOptimize(result().size());
+                benchmark::DoNotOptimize(result().get_rows().size());
                 benchmark::ClobberMemory();
                 const auto duration = std::chrono::steady_clock::now() - begin;
                 maximum = std::max(maximum, duration);
@@ -263,7 +263,7 @@ void measure(benchmark::State& state, TraceType& trace, Update update, Result re
             else
             {
                 update(transition);
-                benchmark::DoNotOptimize(result().size());
+                benchmark::DoNotOptimize(result().get_rows().size());
                 benchmark::ClobberMemory();
             }
         }
@@ -272,7 +272,7 @@ void measure(benchmark::State& state, TraceType& trace, Update update, Result re
     }
     state.SetItemsProcessed(state.iterations() * static_cast<benchmark::IterationCount>(trace.transitions.size()));
     state.counters["retained_bytes"] = static_cast<double>(memory());
-    state.counters["output_rows"] = static_cast<double>(result().size());
+    state.counters["output_rows"] = static_cast<double>(result().get_rows().size());
     state.counters["input_delta_rows"] = static_cast<double>(2 * state.range(1));
     state.counters["seconds_per_update"] =
         benchmark::Counter(static_cast<double>(trace.transitions.size()), benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);

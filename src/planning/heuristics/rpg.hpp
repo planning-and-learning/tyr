@@ -127,9 +127,9 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
             continue;
 
         auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder());
-        literal->atom = translate_atom(*atom);
+        urd::store(literal->atom, translate_atom(*atom));
         literal->polarity = true;
-        condition->fluent_literals.push_back(merge_context.destination().insert(*literal, merge_context.builder()).first);
+        urd::append(condition->fluent_literals, merge_context.destination().insert(*literal, merge_context.builder()).first);
     }
 
     workspace.tp.set_goals(merge_context.destination().insert(*condition, merge_context.builder()).first);

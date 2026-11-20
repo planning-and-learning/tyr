@@ -7,7 +7,7 @@
 
 namespace tyr::datalog::database
 {
-namespace detail
+namespace
 {
 template<typename OutputIt>
 OutputIt format_query_plan(OutputIt out, const QueryPlan& plan)
@@ -22,7 +22,7 @@ OutputIt format_query_plan(OutputIt out, const QueryPlan& plan)
                 for_each_child(operation, [&](QueryView<> child) { children.push_back(child.index().value); });
                 const auto columns =
                     operation.columns()
-                    | std::views::transform([](const ygg::ColumnLayout& column) { return fmt::format("{}:{}", column.label.value, column.type); });
+                    | std::views::transform([](const urd::data<ygg::ColumnLayout>& column) { return fmt::format("{}:{}", column.label.value, column.type); });
                 out = fmt::format_to(out, "{}: {}({}) columns=[{}]", id, Tag::operation, fmt::join(children, ","), fmt::join(columns, ","));
                 if constexpr (std::same_as<Tag, QueryInputTag>)
                     out = fmt::format_to(out, " slot={}", operation.get_input_slot());
@@ -33,20 +33,20 @@ OutputIt format_query_plan(OutputIt out, const QueryPlan& plan)
             plan[urd::index<Query<>>(ygg::to_uint_t(id))].get_variant());
     return fmt::format_to(out, "roots=[{}]\n", fmt::join(plan.roots() | std::views::transform(value), ","));
 }
-}  // namespace detail
+}  // namespace
 
 std::string explain(const QueryPlan& plan)
 {
     fmt::memory_buffer out;
-    detail::format_query_plan(std::back_inserter(out), plan);
+    format_query_plan(std::back_inserter(out), plan);
     return fmt::to_string(out);
 }
 }
 
 #if YGG_ENABLE_FMT_FORMATTERS
 fmt::format_context::iterator fmt::formatter<tyr::datalog::database::QueryPlan>::format(const tyr::datalog::database::QueryPlan& plan,
-                                                                                         fmt::format_context& ctx) const
-{ return tyr::datalog::database::detail::format_query_plan(ctx.out(), plan); }
+                                                                                        fmt::format_context& ctx) const
+{ return tyr::datalog::database::format_query_plan(ctx.out(), plan); }
 
 template<typename Plan>
     requires boost::mp11::mp_contains<boost::mp11::mp_list<tyr::datalog::database::ProjectionPlan,

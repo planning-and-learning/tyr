@@ -27,9 +27,9 @@
 namespace tyr::kckp
 {
 
-Graph::Graph() : m_rows(urd::graph_data<std::pair<Vertex, Vertex>> { 0, {}, {} }), m_bounds(1, 0) {}
+Graph::Graph() : m_rows(urd::graph_data<std::pair<urd::data<Vertex>, urd::data<Vertex>>> { 0, {}, {} }), m_bounds(1, 0) {}
 
-std::optional<Vertex> Graph::find_vertex(size_t p, ygg::uint_t label) const
+std::optional<urd::data<Vertex>> Graph::find_vertex(size_t p, ygg::uint_t label) const
 {
     const auto first = m_labels.begin() + static_cast<std::ptrdiff_t>(m_bounds[p]);
     const auto last = m_labels.begin() + static_cast<std::ptrdiff_t>(m_bounds[p + 1]);
@@ -37,14 +37,15 @@ std::optional<Vertex> Graph::find_vertex(size_t p, ygg::uint_t label) const
     const auto it = std::lower_bound(first, last, label);
     if (it == last || *it != label)
         return std::nullopt;
-    return Vertex(static_cast<ygg::uint_t>(it - m_labels.begin()));
+    return urd::data<Vertex>(static_cast<ygg::uint_t>(it - m_labels.begin()));
 }
 
 VertexSets Graph::empty_parts() const
 {
     auto result = VertexSets {};
     for (size_t p = 0; p < num_parts(); ++p)
-        result.emplace_back(urd::key_range<Vertex> { Vertex(static_cast<ygg::uint_t>(m_bounds[p])), Vertex(static_cast<ygg::uint_t>(m_bounds[p + 1])) });
+        result.emplace_back(urd::key_range<urd::data<Vertex>> { urd::data<Vertex>(static_cast<ygg::uint_t>(m_bounds[p])),
+                                                                urd::data<Vertex>(static_cast<ygg::uint_t>(m_bounds[p + 1])) });
     return result;
 }
 
@@ -55,7 +56,7 @@ Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::sp
     assert(labels.size() == num_vertices);
     const auto constrained = [&](size_t first, size_t second) { return first != second && !universal.contains(first * num_parts + second); };
 
-    auto live = VertexSet(urd::key_range<Vertex> { Vertex(0), Vertex(static_cast<ygg::uint_t>(num_vertices)) });
+    auto live = VertexSet(urd::key_range<urd::data<Vertex>> { urd::data<Vertex>(0), urd::data<Vertex>(static_cast<ygg::uint_t>(num_vertices)) });
     auto live_in_part = urd::Store<urd::sequence<size_t>>(num_parts, 0);
     for (size_t p = 0; p < num_parts; ++p)
         for (const auto v : matrix.part(p))
@@ -69,9 +70,9 @@ Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::sp
         live.clear();
 
     // Arc consistency: a vertex without a neighbour in some constrained part goes, and with it its support of others.
-    auto removed = urd::Store<urd::queue<Vertex>, urd::fifo> {};
+    auto removed = urd::Store<urd::queue<urd::data<Vertex>>, urd::fifo> {};
     auto wiped_out = !satisfiable && num_parts != 0;
-    const auto remove_vertex = [&](Vertex v)
+    const auto remove_vertex = [&](urd::data<Vertex> v)
     {
         if (!live.contains(v))
             return;
@@ -94,7 +95,7 @@ Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::sp
         {
             if (!constrained(matrix.part_of(source), target_part))
                 continue;
-            auto& count = support_counts[(source.index * num_parts) + target_part];
+            auto& count = support_counts[(source.number * num_parts) + target_part];
             count = urd::degree_in(matrix, source, target_part);
             if (count == 0)
             {
@@ -104,7 +105,7 @@ Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::sp
         }
     }
 
-    auto supported = urd::Store<urd::sequence<Vertex>> {};
+    auto supported = urd::Store<urd::sequence<urd::data<Vertex>>> {};
     while (!removed.empty() && !wiped_out)
     {
         const auto target = removed.front();
@@ -115,14 +116,14 @@ Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::sp
             if (!constrained(source_part, target_part))
                 continue;
             supported.clear();
-            urd::for_each_neighbour_in(matrix, target, source_part, live, [&](Vertex source) { supported.push_back(source); });
+            urd::for_each_neighbour_in(matrix, target, source_part, live, [&](urd::data<Vertex> source) { supported.push_back(source); });
             for (const auto source : supported)
             {
                 if (wiped_out)
                     break;
                 if (!live.contains(source))
                     continue;
-                auto& count = support_counts[(source.index * num_parts) + target_part];
+                auto& count = support_counts[(source.number * num_parts) + target_part];
                 assert(count != 0);
                 if (--count == 0)
                     remove_vertex(source);
@@ -140,7 +141,7 @@ Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::sp
     result.m_rows = urd::freeze<StaticRows>(kept);
     result.m_labels.clear();
     for (const auto v : live)
-        result.m_labels.push_back(labels[v.index]);
+        result.m_labels.push_back(labels[v.number]);
     result.m_bounds.clear();
     result.m_bounds.push_back(0);
     for (size_t p = 0; p < num_parts; ++p)

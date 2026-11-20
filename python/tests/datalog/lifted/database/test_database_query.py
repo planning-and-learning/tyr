@@ -26,7 +26,7 @@ QueryRecord = (
     | db.QuerySemijoinData
     | db.QueryAntijoinData
 )
-Readable = db.ScratchRelation | formalism.RelationSchemaBuilder | formalism.RelationSchema
+Readable = db.ScratchRelation | formalism.RelationSchemaBuilderBorrowed | formalism.RelationSchema
 # Reads the tests' relation builders and evaluator results.
 RELATIONS = formalism.RelationRepository()
 SCRATCH = db.ScratchRelations()
@@ -41,7 +41,9 @@ def relation(
 ) -> db.ScratchRelation:
     result = db.ScratchRelation(
         [
-            formalism.ColumnLayout(formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32)
+            formalism.ColumnLayoutData(
+                formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32
+            )
             for index, label in enumerate(labels)
         ]
     )
@@ -74,17 +76,17 @@ def inputs_of(
     return [query(repo, db.QueryInputData(slot, value.columns())) for slot, value in zip(slots, relations, strict=True)]
 
 
-def rows(value: formalism.RelationSchemaBuilder | formalism.RelationSchema) -> set[tuple[object, ...]]:
+def rows(value: formalism.RelationSchemaBuilderBorrowed | formalism.RelationSchema) -> set[tuple[object, ...]]:
     return set(tuples(value))
 
 
-def borrow(relations: Iterable[db.ScratchRelation]) -> list[formalism.RelationSchemaBuilder]:
+def borrow(relations: Iterable[db.ScratchRelation]) -> list[formalism.RelationSchemaBuilderBorrowed]:
     return [value.view() for value in relations]
 
 
 def change(
     added: db.ScratchRelation, removed: db.ScratchRelation
-) -> tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]:
+) -> tuple[formalism.RelationSchemaBuilderBorrowed, formalism.RelationSchemaBuilderBorrowed]:
     return added.view(), removed.view()
 
 
@@ -92,7 +94,7 @@ def changes(
     schemas: Sequence[Sequence[int]],
     additions: Sequence[Iterable[Sequence[object]]],
     removals: Sequence[Iterable[Sequence[object]]],
-) -> list[tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]]:
+) -> list[tuple[formalism.RelationSchemaBuilderBorrowed, formalism.RelationSchemaBuilderBorrowed]]:
     return [change(relation(s, a), relation(s, r)) for s, a, r in zip(schemas, additions, removals, strict=True)]
 
 

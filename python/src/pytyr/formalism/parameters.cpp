@@ -25,6 +25,10 @@
 namespace tyr::formalism
 {
 
-void bind_parameters(nb::module_& m) { urd::python::bind_data<Parameters>(m); }
+void bind_parameters(nb::module_& m)
+{
+    urd::python::bind_index<Parameters>(m);
+    urd::python::bind_data<Parameters>(m);
+}
 
 }  // namespace tyr::formalism

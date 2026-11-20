@@ -65,7 +65,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
 {
-    urd::Store<urd::sequence<ygg::uint_t>> values;
+    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>>, C> values;
 
     void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
@@ -83,6 +83,15 @@ struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
     void swap(builder& other) noexcept { values.swap(other.values); }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
+
+    static constexpr auto functions() noexcept
+    {
+        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"fact">>,
+                              urd::function<"resize", &builder::resize, urd::arg<"size">>,
+                              urd::function<"clear", &builder::clear>,
+                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
+                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+    }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };

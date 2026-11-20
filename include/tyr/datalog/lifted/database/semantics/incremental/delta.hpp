@@ -34,8 +34,14 @@ struct Delta
     urd::handle<ygg::FreeScratchRelation> added;
     urd::handle<ygg::FreeScratchRelation> removed;
 
-    Delta(ygg::FreeScratchRelations& scratch, std::span<const ygg::ColumnLayout> columns) : added(scratch.draw(columns)), removed(scratch.draw(columns)) {}
+    Delta(ygg::FreeScratchRelations& scratch, std::span<const urd::data<ygg::ColumnLayout>> columns) :
+        added(scratch.draw(columns)),
+        removed(scratch.draw(columns))
+    {
+    }
 
+    // Clears the relations its handles own: a change of its own, not const.
+    // NOLINTNEXTLINE(readability-make-member-function-const)
     void clear()
     {
         added->clear();
@@ -45,7 +51,7 @@ struct Delta
     /// The (added, removed) change, as views.
     [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change() const { return { added->view(), removed->view() }; }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(added->relation) + urd::memory_usage(removed->relation); }
+    [[nodiscard]] size_t memory_usage() const { return urd::memory_usage(added->relation) + urd::memory_usage(removed->relation); }
 };
 
 /// An actual set change of one input: disjoint (added, removed) relations, read with std::get.
@@ -71,7 +77,7 @@ concept RelationDeltaRange =
 namespace detail
 {
 template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R>
-void require_delta(const A& added, const R& removed, [[maybe_unused]] std::span<const ygg::ColumnLayout> columns)
+void require_delta(const A& added, const R& removed, [[maybe_unused]] std::span<const urd::data<ygg::ColumnLayout>> columns)
 {
     assert(std::ranges::equal(added.columns(), columns));
     assert(std::ranges::equal(removed.columns(), columns));
@@ -93,7 +99,7 @@ void require_unaliased(const V& input, const ygg::FreeScratchRelation& result, c
 
 /// A change of an input with the given columns is disjoint and borrows no evaluator storage.
 template<RelationChange C>
-void require_change(const C& change, std::span<const ygg::ColumnLayout> columns, const ygg::FreeScratchRelation& result, const Delta& delta)
+void require_change(const C& change, std::span<const urd::data<ygg::ColumnLayout>> columns, const ygg::FreeScratchRelation& result, const Delta& delta)
 {
     const auto& [added, removed] = change;
     require_delta(added, removed, columns);

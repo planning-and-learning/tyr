@@ -39,13 +39,16 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<ProgramView<T>>(m);
     ygg::bind_insert<Program<T>>(repository);
+    urd::python::bind_builder<Program<T>, Repository>(m);
 }
 }  // namespace
 
 void bind_program(nb::module_& m, RepositoryBinding& repository)
 {
+    urd::python::bind_index<Program<LiftedTag>>(m);
     urd::python::bind_data<Program<LiftedTag>>(m);
     bind_program_kind<LiftedTag>(m, repository);
+    urd::python::bind_index<Program<GroundTag>>(m);
     urd::python::bind_data<Program<GroundTag>>(m);
     bind_program_kind<GroundTag>(m, repository);
 }

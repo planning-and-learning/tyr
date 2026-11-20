@@ -18,16 +18,16 @@
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 
 #include "planning/parser.hpp"
+#include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/invariants/ordering.hpp"
-#include "tyr/formalism/atom_data.hpp"
-#include "tyr/formalism/planning/invariant_data.hpp"
 #include "tyr/formalism/planning/interning.hpp"
+#include "tyr/formalism/planning/invariant_data.hpp"
+#include "tyr/formalism/planning/invariants/ordering.hpp"
 #include "tyr/formalism/variable_data.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -80,7 +80,10 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
 /// The invariant of these atoms interned, each atom a copy (urd::clone), its parameters named as synthesis names them:
 /// ?v0, ?v1, ... for its rigid, then its counted variables.
 template<typename... Atoms>
-auto intern_invariant(tyr::formalism::planning::Repository& repository, std::size_t num_rigid_variables, std::size_t num_counted_variables, const Atoms&... atoms)
+auto intern_invariant(tyr::formalism::planning::Repository& repository,
+                      std::size_t num_rigid_variables,
+                      std::size_t num_counted_variables,
+                      const Atoms&... atoms)
 {
     auto data = urd::data<tyr::formalism::planning::Invariant>(num_rigid_variables, num_counted_variables, {});
     auto parameters = urd::data<tyr::formalism::Parameters> {};

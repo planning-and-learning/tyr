@@ -27,6 +27,10 @@
 namespace tyr::formalism
 {
 
-void bind_variable(nb::module_& m) { urd::python::bind_data<Variable>(m); }
+void bind_variable(nb::module_& m)
+{
+    urd::python::bind_index<Variable>(m);
+    urd::python::bind_data<Variable>(m);
+}
 
 }  // namespace tyr::formalism

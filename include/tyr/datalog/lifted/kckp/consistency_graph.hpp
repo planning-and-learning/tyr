@@ -139,10 +139,7 @@ public:
     static constexpr std::string_view name = "Vertex";
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"parameter_index", &Vertex::m_parameter_index>,
-                           urd::field<"object_index", &Vertex::m_object_index>> {};
-    }
+    { return urd::Fields<urd::field<"parameter_index", &Vertex::m_parameter_index>, urd::field<"object_index", &Vertex::m_object_index>> {}; }
 };
 
 /**

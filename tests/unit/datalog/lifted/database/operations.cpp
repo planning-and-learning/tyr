@@ -11,9 +11,9 @@
 #include <array>
 #include <cista/serialization.h>
 #include <gtest/gtest.h>
-#include <optional>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 #include <random>
 #include <ranges>
 #include <set>
@@ -41,14 +41,14 @@ static_assert(!std::is_convertible_v<ygg::uint_t, ColumnIndex> && !std::is_conve
 static_assert(sizeof(ColumnIndex) == sizeof(ygg::uint_t));
 static_assert(std::is_trivially_copyable_v<ColumnIndex>);
 
-static_assert(std::same_as<decltype(std::declval<const Relation&>().columns()), std::span<const ygg::ColumnLayout>>);
-static_assert(std::same_as<decltype(std::declval<const database::ProjectionPlan&>().output_columns()), std::span<const ygg::ColumnLayout>>);
-static_assert(std::same_as<decltype(std::declval<const database::JoinPlan&>().output_columns()), std::span<const ygg::ColumnLayout>>);
+static_assert(std::same_as<decltype(std::declval<const Relation&>().columns()), std::span<const urd::data<ygg::ColumnLayout>>>);
+static_assert(std::same_as<decltype(std::declval<const database::ProjectionPlan&>().output_columns()), std::span<const urd::data<ygg::ColumnLayout>>>);
+static_assert(std::same_as<decltype(std::declval<const database::JoinPlan&>().output_columns()), std::span<const urd::data<ygg::ColumnLayout>>>);
 
 namespace
 {
 
-using Layouts = std::vector<ygg::ColumnLayout>;
+using Layouts = std::vector<urd::data<ygg::ColumnLayout>>;
 
 /// Columns of type T labeled `labels`.
 template<ygg::ColumnValueType T = ygg::uint_t>
@@ -172,15 +172,15 @@ std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const Relation& 
             extra.push_back(right);
     }
     std::set<urd::Store<urd::sequence<ygg::uint_t>>> result;
-    for (size_t left = 0; left < left_relation.size(); ++left)
+    for (size_t left = 0; left < left_relation.get_rows().size(); ++left)
     {
-        for (size_t right = 0; right < right_relation.size(); ++right)
+        for (size_t right = 0; right < right_relation.get_rows().size(); ++right)
         {
             bool matches = true;
             for (const auto& [l, r] : keys)
-                matches =
-                    matches
-                    && ygg::decode_value<ygg::uint_t>(value_of(left_relation.row(left), l)) == ygg::decode_value<ygg::uint_t>(value_of(right_relation.row(right), r));
+                matches = matches
+                          && ygg::decode_value<ygg::uint_t>(value_of(left_relation.row(left), l))
+                                 == ygg::decode_value<ygg::uint_t>(value_of(right_relation.row(right), r));
             if (!matches)
                 continue;
             auto row = urd::Store<urd::sequence<ygg::uint_t>>();
@@ -367,8 +367,8 @@ TEST(YggdrasilTests, DatabasePlansOwnSchemasAndReuseResolvedPositions)
         auto right = cols({ ColumnIndex(2), ColumnIndex(3), large });
         auto projection = database::ProjectionPlan(left, std::array { ColumnIndex(2), large });
         auto join = database::JoinPlan(left, right);
-        std::ranges::fill(left, ygg::ColumnLayout {});
-        std::ranges::fill(right, ygg::ColumnLayout {});
+        std::ranges::fill(left, urd::data<ygg::ColumnLayout> {});
+        std::ranges::fill(right, urd::data<ygg::ColumnLayout> {});
         return std::pair(std::move(projection), std::move(join));
     }();
     auto copied = plans;

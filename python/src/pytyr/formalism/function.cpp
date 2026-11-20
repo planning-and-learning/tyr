@@ -29,8 +29,11 @@ namespace tyr::formalism
 
 void bind_function(nb::module_& m)
 {
+    urd::python::bind_index<Function<StaticTag>>(m);
     urd::python::bind_data<Function<StaticTag>>(m);
+    urd::python::bind_index<Function<FluentTag>>(m);
     urd::python::bind_data<Function<FluentTag>>(m);
+    urd::python::bind_index<Function<AuxiliaryTag>>(m);
     urd::python::bind_data<Function<AuxiliaryTag>>(m);
 }
 

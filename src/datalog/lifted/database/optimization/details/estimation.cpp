@@ -10,7 +10,7 @@
 
 namespace tyr::datalog::database::detail
 {
-Estimate factor(const RelationStatistics& stats, std::span<const ygg::ColumnLayout> columns, FactorIdentity identity)
+Estimate factor(const RelationStatistics& stats, std::span<const urd::data<ygg::ColumnLayout>> columns, FactorIdentity identity)
 {
     Estimate result;
     result.rows = stats.rows;
@@ -109,7 +109,7 @@ Estimate combine(Estimate left, const Estimate& right)
 
 namespace tyr::datalog::database::detail
 {
-Estimate conjunction(Estimate result, std::span<const ygg::ColumnLayout> columns)
+Estimate conjunction(Estimate result, std::span<const urd::data<ygg::ColumnLayout>> columns)
 {
     auto labels = urd::Store<urd::sequence<urd::index<ygg::Column>>>();
     for (const auto& column : columns)
@@ -120,12 +120,12 @@ Estimate conjunction(Estimate result, std::span<const ygg::ColumnLayout> columns
 
 namespace tyr::datalog::database::detail
 {
-void validate_statistics(const RelationStatistics& stats, std::span<const ygg::ColumnLayout> columns)
+void validate_statistics(const RelationStatistics& stats, std::span<const urd::data<ygg::ColumnLayout>> columns)
 {
     if (!std::isfinite(stats.rows) || stats.rows < 0 || (columns.empty() && stats.rows > 1))
         throw std::invalid_argument("Optimizer: invalid row count.");
     for (const auto& [label, count] : stats.distinct)
-        if (std::ranges::find(columns, label, &ygg::ColumnLayout::label) == columns.end() || !std::isfinite(count) || count < 0 || count > stats.rows
+        if (std::ranges::find(columns, label, &urd::data<ygg::ColumnLayout>::label) == columns.end() || !std::isfinite(count) || count < 0 || count > stats.rows
             || (stats.rows > 0 && count < 1))
             throw std::invalid_argument("Optimizer: invalid distinct count or column.");
 }
@@ -133,7 +133,7 @@ void validate_statistics(const RelationStatistics& stats, std::span<const ygg::C
 
 namespace tyr::datalog::database::detail
 {
-RelationStatistics with_default_distinct(RelationStatistics stats, std::span<const ygg::ColumnLayout> columns, std::optional<size_t> objects)
+RelationStatistics with_default_distinct(RelationStatistics stats, std::span<const urd::data<ygg::ColumnLayout>> columns, std::optional<size_t> objects)
 {
     const auto domain = objects ? static_cast<double>(*objects) : max_estimate;
     for (const auto& column : columns)

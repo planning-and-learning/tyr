@@ -472,7 +472,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 {
     const auto& graph = m_compatibility_graph;
     const auto num_partitions = graph.num_parts();
-    const auto vertex_of = [&](ygg::uint_t p, kckp::Vertex v)
+    const auto vertex_of = [&](ygg::uint_t p, urd::data<kckp::Vertex> v)
     { return details::Vertex(formalism::ParameterIndex(p), urd::index<formalism::Object>(graph.label(v))); };
 
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
@@ -624,7 +624,7 @@ create_overapproximation_conjunctive_condition(size_t k,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
-        conj_cond->variables.push_back(variable);
+        urd::append(conj_cond->variables, variable);
 
     const auto literal_belongs_to_k_overapproximation = [k](const auto literal)
     { return literal.get_polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
@@ -632,15 +632,15 @@ create_overapproximation_conjunctive_condition(size_t k,
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (literal_belongs_to_k_overapproximation(literal))
-            conj_cond->static_literals.push_back(literal);
+            urd::append(conj_cond->static_literals, literal);
 
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (literal_belongs_to_k_overapproximation(literal))
-            conj_cond->fluent_literals.push_back(literal);
+            urd::append(conj_cond->fluent_literals, literal);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
-            conj_cond->numeric_constraints.push_back(numeric_constraint);
+            urd::append(conj_cond->numeric_constraints, numeric_constraint);
 
     return context.insert(*conj_cond, builder);
 }
@@ -654,7 +654,7 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
-        conj_cond->variables.push_back(variable);
+        urd::append(conj_cond->variables, variable);
 
     // Binary KCKP edges join distinct rule parameters, so a one-parameter literal such as p(x,x) still needs an exact check.
     const auto requires_exact_literal_check = [k](const auto literal)
@@ -664,15 +664,15 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (requires_exact_literal_check(literal))
-            conj_cond->static_literals.push_back(literal);
+            urd::append(conj_cond->static_literals, literal);
 
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (requires_exact_literal_check(literal))
-            conj_cond->fluent_literals.push_back(literal);
+            urd::append(conj_cond->fluent_literals, literal);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (requires_exact_numeric_check(numeric_constraint))
-            conj_cond->numeric_constraints.push_back(numeric_constraint);
+            urd::append(conj_cond->numeric_constraints, numeric_constraint);
 
     return context.insert(*conj_cond, builder);
 }
@@ -684,11 +684,11 @@ create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionV
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : conflicting_condition.get_variables())
-        conj_cond->variables.push_back(variable);
+        urd::append(conj_cond->variables, variable);
 
     for (const auto literal : conflicting_condition.get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond->fluent_literals.push_back(literal);
+            urd::append(conj_cond->fluent_literals, literal);
 
     return context.insert(*conj_cond, builder);
 }
@@ -706,15 +706,15 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (is_nullary(literal))
-            conj_cond->static_literals.push_back(ground(literal, grounder_context).first);
+            urd::append(conj_cond->static_literals, ground(literal, grounder_context).first);
 
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (is_nullary(literal))
-            conj_cond->fluent_literals.push_back(ground(literal, grounder_context).first);
+            urd::append(conj_cond->fluent_literals, ground(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (is_nullary(numeric_constraint))
-            conj_cond->numeric_constraints.push_back(ground(numeric_constraint, grounder_context).first);
+            urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, grounder_context).first);
 
     return context.insert(*conj_cond, builder);
 }

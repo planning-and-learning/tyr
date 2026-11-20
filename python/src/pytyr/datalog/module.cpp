@@ -22,6 +22,9 @@
 #include "lifted/module.hpp"
 #include "pytyr/module.hpp"
 
+#include <tyr/algorithms/kckp/kckp.hpp>
+#include <urd/python/bindings.hpp>
+
 namespace tyr::datalog
 {
 
@@ -30,6 +33,7 @@ void bind_module_definitions(nb::module_& m)
     bind_fact_sets(m);
     bind_annotations(m);
     bind_policies(m);
+    urd::python::bind_data<kckp::Vertex>(m);
 
     nb::class_<ProgramStatistics>(m, "ProgramStatistics")
         .def(nb::init<>())

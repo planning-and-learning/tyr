@@ -12,7 +12,7 @@
 
 namespace tyr::datalog::database::detail
 {
-std::span<const ygg::ColumnLayout> child_columns(urd::index<Query<>> child, const QueryRepository& repository)
+std::span<const urd::data<ygg::ColumnLayout>> child_columns(urd::index<Query<>> child, const QueryRepository& repository)
 {
     if (child.value >= repository.size())
         throw std::invalid_argument("Query: children must precede their parent.");
@@ -67,7 +67,7 @@ namespace tyr::datalog::database::detail
 {
 void derive(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository)
 {
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::ColumnLayout>>>> schemas;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::data<ygg::ColumnLayout>>>>> schemas;
     for (const auto child : data.inputs)
     {
         const auto schema = child_columns(child, repository);

@@ -138,7 +138,7 @@ std::pair<FunctionRowView<F>, bool> ground(TermListView terms, FunctionView<F> f
 {
     auto binding = datalog::checkout<ygg::Row<Function<F>>>(context.builder());
 
-    binding->relation = function;
+    urd::store(binding->relation, function);
     ground(terms, context, binding->values);
 
     // Canonicalize and Serialize
@@ -220,7 +220,7 @@ std::pair<PredicateRowView<F>, bool> ground(TermListView terms, PredicateView<F>
 {
     auto binding = datalog::checkout<ygg::Row<Predicate<F>>>(context.builder());
 
-    binding->relation = predicate;
+    urd::store(binding->relation, predicate);
     ground(terms, context, binding->values);
 
     // Canonicalize and Serialize
@@ -248,7 +248,7 @@ std::pair<LiteralView<GroundTag, F>, bool> ground(LiteralView<LiftedTag, F> elem
 
     // Fill data
     ground_literal->polarity = element.get_polarity();
-    ground_literal->atom = ground(element.get_atom(), context).first;
+    urd::store(ground_literal->atom, ground(element.get_atom(), context).first);
 
     // Canonicalize and Serialize
     return context.destination().insert(*ground_literal, context.builder());
@@ -260,7 +260,7 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
     auto numeric_effect = datalog::checkout<NumericEffect<GroundTag, F>>(context.builder());
 
     numeric_effect->operation = element.get_operation();
-    numeric_effect->fterm = ground(element.get_fterm(), context).first;
+    urd::store(numeric_effect->fterm, ground(element.get_fterm(), context).first);
     urd::store(numeric_effect->fexpr, ground(element.get_fexpr(), context));
 
     return context.destination().insert(*numeric_effect, context.builder());
@@ -273,11 +273,11 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())
-        conj_cond->static_literals.push_back(ground(literal, context).first);
+        urd::append(conj_cond->static_literals, ground(literal, context).first);
     for (const auto literal : element.template get_literals<FluentTag>())
-        conj_cond->fluent_literals.push_back(ground(literal, context).first);
+        urd::append(conj_cond->fluent_literals, ground(literal, context).first);
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).first);
+        urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, context).first);
 
     // Canonicalize and Serialize
     return context.destination().insert(*conj_cond, context.builder());
@@ -292,7 +292,7 @@ std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element,
 {
     auto binding = datalog::checkout<ygg::Row<Predicate<F>>>(context.builder());
 
-    binding->relation = element.get_predicate();
+    urd::store(binding->relation, element.get_predicate());
     ground(element.get_terms(), context, binding->values);
 
     const auto [row, created] = context.destination().insert(*binding, context.builder());
@@ -314,7 +314,7 @@ inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, 
 {
     auto binding = datalog::checkout<ygg::Row<Rule<LiftedTag>>>(context.builder());
 
-    binding->relation = element;
+    urd::store(binding->relation, element);
     for (const auto object : context.binding())
         binding->values.push_back(object.value);
 
@@ -330,7 +330,7 @@ std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag,
 {
     auto binding = datalog::checkout<ygg::Row<Function<F>>>(context.builder());
 
-    binding->relation = element.get_function();
+    urd::store(binding->relation, element.get_function());
     ground(element.get_terms(), context, binding->values);
 
     return context.destination().find(*binding, context.builder());
@@ -341,7 +341,7 @@ std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> ele
 {
     auto binding = datalog::checkout<ygg::Row<Predicate<F>>>(context.builder());
 
-    binding->relation = element.get_predicate();
+    urd::store(binding->relation, element.get_predicate());
     ground(element.get_terms(), context, binding->values);
 
     return context.destination().find(*binding, context.builder());

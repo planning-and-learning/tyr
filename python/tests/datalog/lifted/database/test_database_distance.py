@@ -12,7 +12,7 @@ from relation_utils import insert, intern, labels, tuples, values
 
 from pytyr.datalog.lifted import database
 
-Readable = database.ScratchRelation | formalism.RelationSchemaBuilder | formalism.RelationSchema
+Readable = database.ScratchRelation | formalism.RelationSchemaBuilderBorrowed | formalism.RelationSchema
 # Reads the tests' relation builders and evaluator results.
 RELATIONS = formalism.RelationRepository()
 SCRATCH = database.ScratchRelations()
@@ -30,7 +30,9 @@ def relation(
 ) -> database.ScratchRelation:
     result = database.ScratchRelation(
         [
-            formalism.ColumnLayout(formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32)
+            formalism.ColumnLayoutData(
+                formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32
+            )
             for index, label in enumerate(labels)
         ]
     )
@@ -39,26 +41,30 @@ def relation(
     return result
 
 
-def rows(value: formalism.RelationSchemaBuilder | formalism.RelationSchema) -> set[tuple[object, ...]]:
+def rows(value: formalism.RelationSchemaBuilderBorrowed | formalism.RelationSchema) -> set[tuple[object, ...]]:
     return set(tuples(value))
 
 
 def borrow(
     source: database.ScratchRelation, edges: database.ScratchRelation, target: database.ScratchRelation
-) -> tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]:
+) -> tuple[
+    formalism.RelationSchemaBuilderBorrowed,
+    formalism.RelationSchemaBuilderBorrowed,
+    formalism.RelationSchemaBuilderBorrowed,
+]:
     return source.view(), edges.view(), target.view()
 
 
 def change(
     added: database.ScratchRelation, removed: database.ScratchRelation
-) -> tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]:
+) -> tuple[formalism.RelationSchemaBuilderBorrowed, formalism.RelationSchemaBuilderBorrowed]:
     return added.view(), removed.view()
 
 
 def distance(
-    source: formalism.RelationSchemaBuilder,
-    edges: formalism.RelationSchemaBuilder,
-    target: formalism.RelationSchemaBuilder,
+    source: formalism.RelationSchemaBuilderBorrowed,
+    edges: formalism.RelationSchemaBuilderBorrowed,
+    target: formalism.RelationSchemaBuilderBorrowed,
     plan: database.DistancePlan,
 ) -> database.ScratchRelation:
     """The distances of borrowed inputs into a fresh relation of the plan's output columns."""
@@ -223,10 +229,10 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     )
     result = evaluator.get_result()
     delta = evaluator.get_delta()
-    assert isinstance(result, formalism.RelationSchemaBuilder)
+    assert isinstance(result, formalism.RelationSchemaBuilderBorrowed)
     assert isinstance(delta, database.RelationDelta)
 
-    def check_read_only(value: formalism.RelationSchemaBuilder) -> None:
+    def check_read_only(value: formalism.RelationSchemaBuilderBorrowed) -> None:
         assert not hasattr(value, "insert")
         assert not hasattr(value, "clear")
         assert not hasattr(value, "erase")
@@ -241,7 +247,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     with pytest.raises(AttributeError):
         cast("Any", delta).added = source
     with pytest.raises(TypeError):
-        cast("Any", formalism.RelationSchemaBuilder)()
+        cast("Any", formalism.RelationSchemaBuilderBorrowed)()
     with pytest.raises(TypeError):
         database.RelationDelta()
     retained: Any  # each leaf is a different borrowed type

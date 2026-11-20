@@ -21,9 +21,9 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 
+#include <cstddef>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <cstddef>
 #include <vector>
 
 namespace tyr::formalism::unification

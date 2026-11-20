@@ -101,7 +101,7 @@ public:
         {
             auto receiver_target = repository.get_state_builder();
             using std::swap;
-            swap(*receiver_target, *target);
+            receiver_target->swap(*target);
             target = std::move(receiver_target);
         }
 
@@ -147,7 +147,7 @@ public:
     template<typename Engine>
     static std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
-        const auto start_owner = SharedStatePolicy::owner(start_state.index(), engine.num_workers());
+        const auto start_owner = SharedStatePolicy::owner(start_state.pack().index(), engine.num_workers());
         return { start_owner, start_state };
     }
 
@@ -167,7 +167,7 @@ public:
                                          size_t num_workers)
     {
         auto node = Node<Kind>(worker.state_repository->register_state(*worker.axiom_evaluator, std::move(target), parent, delta), metric);
-        return PreparedTarget { owner(node.get_state().index(), num_workers), std::move(node) };
+        return PreparedTarget { owner(node.get_state().pack().index(), num_workers), std::move(node) };
     }
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
@@ -602,7 +602,7 @@ public:
             return std::nullopt;
 
         search_node.status = SearchNodeStatus::GOAL;
-        static_cast<void>(consider_goal(WorkerStateIndex<Kind> { worker.index, state.index() }, g_value, SearchPolicy::terminate_on_goal));
+        static_cast<void>(consider_goal(WorkerStateIndex<Kind> { worker.index, state.pack().index() }, g_value, SearchPolicy::terminate_on_goal));
         std::forward<EmitTransition>(emit_transition)(TransitionOutcome::GOAL);
         return running() ? AcceptanceResult::DISCARDED : AcceptanceResult::TERMINAL;
     }
