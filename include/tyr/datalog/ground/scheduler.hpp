@@ -29,6 +29,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <concepts>
 #include <limits>
@@ -89,8 +90,8 @@ template<>
 class Scheduler<GroundTag>
 {
 public:
-    /// What a run starts from is computed once here, by rule: the number of its conditions (fluent literals and numeric
-    /// constraints), the rules without any, the rules with numeric constraints.
+    /// What a run starts from is computed once here, by rule: the number of its conditions (fluent and derived literals and
+    /// numeric constraints), the rules without any, the rules with numeric constraints.
     explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program)
     {
         const auto rules = program.get_rules();
@@ -101,7 +102,9 @@ public:
             const auto rule = rules[rule_index];
             const auto body = rule.get_body();
             const auto numeric_constraints = body.get_numeric_constraints().size();
-            m_conditions[rule_index] = static_cast<ygg::uint_t>(body.template get_literals<formalism::FluentTag>().size() + numeric_constraints);
+            auto num_literals = size_t { 0 };
+            boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { num_literals += body.template get_literals<F>().size(); });
+            m_conditions[rule_index] = static_cast<ygg::uint_t>(num_literals + numeric_constraints);
             if (numeric_constraints != 0)
                 m_numeric_rules.push_back(rule);
             if (m_conditions[rule_index] == 0)
@@ -169,20 +172,20 @@ public:
     [[nodiscard]] const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
 
 private:
-    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void notify_predicate_generated(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
 
     formalism::datalog::ProgramView<GroundTag> m_program;
     RuleStates m_states;
-    /// By rule: the number of its conditions, fluent literals and numeric constraints.
+    /// By rule: the number of its conditions, fluent and derived literals and numeric constraints.
     urd::Store<urd::sequence<ygg::uint_t>> m_conditions;
     Rules m_unconditional_rules;
     Rules m_numeric_rules;

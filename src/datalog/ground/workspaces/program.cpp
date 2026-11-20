@@ -20,6 +20,7 @@
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 
+#include <boost/mp11.hpp>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -34,12 +35,16 @@ void validate_rules(formalism::datalog::ProgramView<GroundTag> program, const Fa
     {
         if (!is_statically_applicable(rule, fact_sets))
             throw std::invalid_argument("Ground Datalog programs must remove statically inapplicable rules before execution");
-        for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
-            if (!literal.get_polarity())
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
             {
-                throw std::invalid_argument("Ground Datalog rule " + std::to_string(static_cast<ygg::uint_t>(rule.index().value))
-                                            + " contains a negative fluent literal; only positive fluent rule bodies are supported");
-            }
+                for (const auto literal : rule.get_body().template get_literals<F>())
+                    if (!literal.get_polarity())
+                    {
+                        throw std::invalid_argument("Ground Datalog rule " + std::to_string(static_cast<ygg::uint_t>(rule.index().value))
+                                                    + " contains a negative fluent or derived literal; only positive rule bodies are supported");
+                    }
+            });
     }
 }
 
@@ -50,9 +55,14 @@ void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program,
     for (const auto rule : program.get_rules())
     {
         const auto body = rule.get_body();
-        for (const auto literal : body.template get_literals<formalism::FluentTag>())
-            if (literal.get_polarity())
-                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().index(), [&](auto& rules, bool) { rules.push_back(rule); });
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto literal : body.template get_literals<F>())
+                    if (literal.get_polarity())
+                        dependencies.precondition_to_rules.template get<F>().update(literal.get_atom().get_row().index(),
+                                                                                    [&](auto& rules, bool) { rules.push_back(rule); });
+            });
     }
 }
 }
@@ -64,14 +74,11 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::datalog::Prog
           program.template get_atoms<formalism::StaticTag>(),
           program.template get_fterm_values<formalism::StaticTag>(),
           program.context()),
-    dependencies(program.template get_predicates<formalism::FluentTag>().size())
+    dependencies(program)
 {
-    const auto fluent_fact_sets = TaggedFactSets<formalism::FluentTag>(program.template get_predicates<formalism::FluentTag>(),
-                                                                       program.template get_functions<formalism::FluentTag>(),
-                                                                       program.template get_atoms<formalism::FluentTag>(),
-                                                                       program.template get_fterm_values<formalism::FluentTag>(),
-                                                                       program.context());
-    validate_program(program, FactSets { facts.fact_sets, fluent_fact_sets });
+    auto mutable_fact_sets = MutableFactSets(program, program.context());
+    insert_program_facts(mutable_fact_sets, program);
+    validate_program(program, FactSets { facts.fact_sets, mutable_fact_sets });
     initialize_dependencies(program, dependencies);
 }
 

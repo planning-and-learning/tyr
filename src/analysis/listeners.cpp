@@ -45,7 +45,11 @@ void add_stratum_listeners(const TypedRuleStratum& stratum, const formalism::dat
 
         for (const auto literal : rule_view.get_body().template get_literals<formalism::FluentTag>())
             if (literal.get_polarity())
-                listeners.predicates[literal.get_atom().get_predicate().index()].insert(rule);
+                listeners.fluent_predicates[literal.get_atom().get_predicate().index()].insert(rule);
+
+        for (const auto literal : rule_view.get_body().template get_literals<formalism::DerivedTag>())
+            if (literal.get_polarity())
+                listeners.derived_predicates[literal.get_atom().get_predicate().index()].insert(rule);
 
         for (const auto term : formalism::datalog::collect_fluent_reads(rule_view))
             listeners.functions[term.get_function().index()].insert(rule);

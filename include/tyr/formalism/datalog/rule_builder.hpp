@@ -40,18 +40,21 @@ struct builder<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>, C>
     urd::index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>, C> body;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> heads;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> fluent_heads;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>>, C> derived_heads;
     urd::built_t<ygg::float_t, C> cost { 0 };  ///< The edge cost of deriving a head.
 
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"variables", &builder::variables>,
                            urd::field<"body", &builder::body>,
-                           urd::field<"heads", &builder::heads>,
+                           urd::field<"fluent_heads", &builder::fluent_heads>,
+                           urd::field<"derived_heads", &builder::derived_heads>,
                            urd::field<"cost", &builder::cost>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::variables, &builder::body, &builder::heads, &builder::cost> {}; }
+    static constexpr auto identifying_members() noexcept
+    { return urd::Members<&builder::variables, &builder::body, &builder::fluent_heads, &builder::derived_heads, &builder::cost> {}; }
 };
 
 /// The builder of Rule: its record's members, each in its built form (urd::built_t).
@@ -60,11 +63,17 @@ struct builder<::tyr::formalism::datalog::Rule<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::datalog::Rule<::tyr::GroundTag>> index;
     urd::built_t<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>, C> body;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> heads;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_heads;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_heads;
     urd::built_t<ygg::float_t, C> cost { 0 };  ///< The edge cost of deriving a head.
 
     static constexpr auto fields() noexcept
-    { return urd::Fields<urd::field<"body", &builder::body>, urd::field<"heads", &builder::heads>, urd::field<"cost", &builder::cost>> {}; }
+    {
+        return urd::Fields<urd::field<"body", &builder::body>,
+                           urd::field<"fluent_heads", &builder::fluent_heads>,
+                           urd::field<"derived_heads", &builder::derived_heads>,
+                           urd::field<"cost", &builder::cost>> {};
+    }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };

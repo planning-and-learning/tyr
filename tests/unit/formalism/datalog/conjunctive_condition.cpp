@@ -26,6 +26,7 @@ static_assert(requires(Data& data, const View& view) {
     data.variables;
     data.static_literals;
     data.fluent_literals;
+    data.derived_literals;
     data.numeric_constraints;
     view.index();
     view.get_variables();
@@ -54,6 +55,7 @@ static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_literals;
     data.fluent_literals;
+    data.derived_literals;
     data.numeric_constraints;
     view.index();
     view.template get_literals<tyr::formalism::StaticTag>();

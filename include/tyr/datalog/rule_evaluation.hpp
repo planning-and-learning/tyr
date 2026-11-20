@@ -244,20 +244,31 @@ evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvalu
     if (!can_continue(state.support_cost, state.raw_edge))
         return std::nullopt;
 
-    for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
-    {
-        if (!literal.get_polarity())
-            continue;
+    auto supported = true;
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F)
+        {
+            for (const auto literal : instance.get_body().template get_literals<F>())
+            {
+                if (!supported)
+                    return;
+                if (!literal.get_polarity())
+                    continue;
 
-        const auto binding = instance.resolve(literal.get_atom()).index();
-        const auto* annotation = input.predicate_annotations().find(binding);
-        if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
-            return std::nullopt;
+                const auto binding = instance.resolve(literal.get_atom()).index();
+                const auto* annotation = input.predicate_annotations().find(binding);
+                if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
+                {
+                    supported = false;
+                    return;
+                }
 
-        state.support_cost = aggregate(state.support_cost, get_cost(*annotation));
-        if (!can_continue(state.support_cost, state.raw_edge))
-            return std::nullopt;
-    }
+                state.support_cost = aggregate(state.support_cost, get_cost(*annotation));
+                supported = can_continue(state.support_cost, state.raw_edge);
+            }
+        });
+    if (!supported)
+        return std::nullopt;
 
     for (const auto constraint : instance.get_body().get_numeric_constraints())
         if (!evaluate(instance.resolve(constraint), input.fact_sets()))

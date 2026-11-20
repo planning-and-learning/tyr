@@ -120,7 +120,7 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                                                                                                       context)
                               .first;
 
-    urd::append(rule->heads, new_head);
+    urd::append(rule->fluent_heads, new_head);
 
     return context.destination().insert(*rule, context.builder());
 }

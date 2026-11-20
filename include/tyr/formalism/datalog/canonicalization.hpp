@@ -56,23 +56,29 @@ void canonicalize(urd::data<ConjunctiveCondition<T>>& data)
 {
     canonicalize(data.static_literals);
     canonicalize(data.fluent_literals);
+    canonicalize(data.derived_literals);
     canonicalize(data.numeric_constraints);
 }
 
 template<TaskKind T>
 void canonicalize(urd::data<Rule<T>>& data)
-{ canonicalize(data.heads); }
+{
+    canonicalize(data.fluent_heads);
+    canonicalize(data.derived_heads);
+}
 
 template<TaskKind T>
 void canonicalize(urd::data<Program<T>>& data)
 {
     canonicalize(data.static_predicates);
     canonicalize(data.fluent_predicates);
+    canonicalize(data.derived_predicates);
     canonicalize(data.static_functions);
     canonicalize(data.fluent_functions);
     canonicalize(data.objects);
     canonicalize(data.static_atoms);
     canonicalize(data.fluent_atoms);
+    canonicalize(data.derived_atoms);
     canonicalize(data.static_fterm_values);
     canonicalize(data.fluent_fterm_values);
     canonicalize(data.goal);

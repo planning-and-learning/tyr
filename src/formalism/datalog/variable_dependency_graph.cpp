@@ -90,6 +90,9 @@ VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<Lifted
     for (const auto literal : condition.get_literals<FluentTag>())
         insert_literal(literal, m_unary_dependencies, m_binary_dependencies);
 
+    for (const auto literal : condition.get_literals<DerivedTag>())
+        insert_literal(literal, m_unary_dependencies, m_binary_dependencies);
+
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         insert_numeric_constraint(numeric_constraint, m_unary_dependencies, m_binary_dependencies);
 }

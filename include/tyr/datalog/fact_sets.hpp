@@ -18,8 +18,11 @@
 #ifndef TYR_DATALOG_FACT_SETS_HPP_
 #define TYR_DATALOG_FACT_SETS_HPP_
 
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <concepts>
 #include <iterator>
@@ -47,14 +50,26 @@ using PredicateFacts = urd::Store<urd::set<urd::index<ygg::Row<formalism::Predic
 template<formalism::FactKind T>
 using FunctionFacts = urd::Store<urd::map<urd::index<ygg::Row<formalism::Function<T>>>, ygg::ClosedInterval<ygg::float_t>>, urd::dense, urd::insertion_ordered>;
 
+/// Whether the facts of kind T include function values: static and fluent ones do; no function is derived, so the
+/// derived facts are those of predicates alone.
+template<formalism::FactKind T>
+inline constexpr bool has_function_facts = boost::mp11::mp_contains<formalism::StaticFluentTags, T>::value;
+
 /// The facts of kind T: those of each predicate and of each function, at its index, and the repository their rows are
-/// read through.
+/// read through. A kind without function facts (has_function_facts) has no function.
 template<formalism::FactKind T>
 struct TaggedFactSets
 {
     urd::Store<urd::sequence<PredicateFacts<T>>> predicate;
     urd::Store<urd::sequence<FunctionFacts<T>>> function;
-    const formalism::datalog::Repository* repository;
+    const formalism::datalog::Repository* repository = nullptr;
+
+    /// No predicate, no function and no repository yet: a member of MutableFactSets before it is sized.
+    TaggedFactSets() = default;
+
+    /// Sized for the predicates (and functions) of kind T of the program, without facts.
+    template<TaskKind K>
+    TaggedFactSets(formalism::datalog::ProgramView<K> program, const formalism::datalog::Repository& repository_);
 
     TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
                    formalism::datalog::FunctionListView<T> functions,
@@ -158,6 +173,28 @@ TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predi
 }
 
 template<formalism::FactKind T>
+template<TaskKind K>
+TaggedFactSets<T>::TaggedFactSets(formalism::datalog::ProgramView<K> program, const formalism::datalog::Repository& repository_) :
+    predicate(program.template get_predicates<T>().size()),
+    function(),
+    repository(&repository_)
+{
+    if constexpr (has_function_facts<T>)
+        function.resize(program.template get_functions<T>().size());
+}
+
+/// Adds the program's facts of kind T: its atoms, and its function values where the kind has them.
+template<formalism::FactKind T, TaskKind K>
+void insert_program_facts(TaggedFactSets<T>& facts, formalism::datalog::ProgramView<K> program)
+{
+    for (const auto atom : program.template get_atoms<T>())
+        insert(facts, atom.get_row().index());
+    if constexpr (has_function_facts<T>)
+        for (const auto fterm_value : program.template get_fterm_values<T>())
+            insert(facts, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+}
+
+template<formalism::FactKind T>
 TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
                                   formalism::datalog::FunctionListView<T> functions,
                                   formalism::datalog::AtomListView<GroundTag, T> atoms,
@@ -171,28 +208,75 @@ TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predi
         insert(*this, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
 }
 
+template<typename F>
+using MutableTaggedFactSets = TaggedFactSets<F>;
+
+/// The facts of each mutable kind (MutableTags), each reached by get<F>(): the facts that evaluation derives.
+class MutableFactSets : public MutableFamily<MutableTaggedFactSets>
+{
+public:
+    MutableFactSets() = default;
+
+    /// Sized for the predicates (and functions) of each mutable kind of the program, without facts.
+    template<TaskKind K>
+    MutableFactSets(formalism::datalog::ProgramView<K> program, const formalism::datalog::Repository& repository)
+    {
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { this->template get<F>() = TaggedFactSets<F>(program, repository); });
+    }
+};
+
+/// Adds the fact; whether it is new.
+template<formalism::FactKind F>
+bool insert(MutableFactSets& facts, formalism::datalog::PredicateRowIndex<F> fact)
+{ return insert(facts.template get<F>(), fact); }
+
+template<formalism::FactKind F>
+[[nodiscard]] bool contains(const MutableFactSets& facts, formalism::datalog::PredicateRowIndex<F> fact)
+{ return contains(facts.template get<F>(), fact); }
+
+/// Adds the program's facts of each mutable kind.
+template<TaskKind K>
+void insert_program_facts(MutableFactSets& facts, formalism::datalog::ProgramView<K> program)
+{
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { insert_program_facts(facts.template get<F>(), program); });
+}
+
+/// Adds the facts of `other`; whether any fact or interval changed.
+inline bool insert(MutableFactSets& facts, const MutableFactSets& other)
+{
+    auto changed = false;
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { changed |= insert(facts.template get<F>(), other.template get<F>()); });
+    return changed;
+}
+
+/// Removes every fact, keeping storage.
+inline void clear(MutableFactSets& facts) noexcept
+{
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { clear(facts.template get<F>()); });
+}
+
+/// The facts of every kind: the static ones and those of each mutable kind.
 class FactSets
 {
 public:
-    FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) noexcept :
+    FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const MutableFactSets& mutable_sets) noexcept :
         m_static_sets(&static_sets),
-        m_fluent_sets(&fluent_sets)
+        m_mutable_sets(&mutable_sets)
     {
     }
 
     template<formalism::FactKind T>
-        requires std::same_as<T, formalism::StaticTag> || std::same_as<T, formalism::FluentTag>
     [[nodiscard]] const TaggedFactSets<T>& get() const noexcept
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
             return *m_static_sets;
         else
-            return *m_fluent_sets;
+            return m_mutable_sets->template get<T>();
     }
 
 private:
     const TaggedFactSets<formalism::StaticTag>* m_static_sets;
-    const TaggedFactSets<formalism::FluentTag>* m_fluent_sets;
+    const MutableFactSets* m_mutable_sets;
 };
 
 }

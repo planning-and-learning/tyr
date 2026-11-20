@@ -41,8 +41,9 @@ void initialize_const_rule_workspaces(formalism::datalog::ProgramView<LiftedTag>
 {
     const auto rules = program.get_rules();
     workspaces.resize(rules.size());
+    auto builder = formalism::datalog::Builder {};
     for (const auto rule : rules)
-        workspaces[static_cast<ygg::uint_t>(rule.index().value)].emplace(rule, program_repository, std::move(graphs.at(rule.index())));
+        workspaces[static_cast<ygg::uint_t>(rule.index().value)].emplace(rule, builder, program_repository, std::move(graphs.at(rule.index())));
 }
 }
 
@@ -62,13 +63,8 @@ ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag
 KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                              formalism::datalog::ProgramView<LiftedTag> program,
                              const analysis::ProgramVariableDomains& domains,
-                             const TaggedFactSets<formalism::FluentTag>& fact_sets) :
-    assignment_sets(program.get_predicates<formalism::FluentTag>(),
-                    program.get_functions<formalism::FluentTag>(),
-                    domains.fluent_predicate_domains,
-                    domains.fluent_function_domains,
-                    program.get_objects().size(),
-                    fact_sets),
+                             const MutableFactSets& fact_sets) :
+    assignment_sets(program, domains, fact_sets),
     rules()
 { initialize_rule_workspaces(const_workspace, rules); }
 

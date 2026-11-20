@@ -49,6 +49,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <cstdint>
 #include <optional>
@@ -191,6 +192,16 @@ inline bool consistent_literals(const Edge& edge, const Literals<T>& literals, c
     return consistent_literals(literals, literals.by_pair[(std::min(i, j) * literals.arity) + std::max(i, j)], edge, at_edge, predicate_assignment_sets);
 }
 
+/// Whether the vertex or edge agrees with the literals of every mutable kind.
+template<typename Element>
+inline bool consistent_literals(const Element& element, const MutableLiterals& literals, const AssignmentSets& assignment_sets) noexcept
+{
+    auto result = true;
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F) { result = result && consistent_literals(element, literals.template get<F>(), assignment_sets.template get<F>().predicate); });
+    return result;
+}
+
 /// The interval of function term `term` the assignments a vertex or an edge reads allow.
 template<formalism::FactKind T, typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(const FunctionTerms<T>& terms,
@@ -286,14 +297,14 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{ return consistent_interval(constraint_info.static_terms, element.index(), structure, assignment_sets.static_sets().function); }
+{ return consistent_interval(constraint_info.static_terms, element.index(), structure, assignment_sets.template get<formalism::StaticTag>().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{ return consistent_interval(constraint_info.fluent_terms, element.index(), structure, assignment_sets.fluent_sets().function); }
+{ return consistent_interval(constraint_info.fluent_terms, element.index(), structure, assignment_sets.template get<formalism::FluentTag>().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
@@ -419,8 +430,13 @@ static auto constraint_terms_of(formalism::datalog::ConjunctiveConditionView<Lif
     return result;
 }
 
-static auto literals_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
-{ return literals_of(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
+static details::MutableLiterals literals_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
+{
+    auto result = details::MutableLiterals {};
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
+                                          { result.template get<F>() = literals_of(element.template get_literals<F>(), element.get_arity()); });
+    return result;
+}
 
 static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalog::VariableDependencyGraph& dependency_graph)
 {
@@ -438,9 +454,13 @@ static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalo
             if (!dependencies.has_dependency(pi, pj))
                 continue;
 
-            const auto has_runtime_dependency = dependencies.has_literal_dependency<formalism::FluentTag, formalism::PositiveTag>(pi, pj)
-                                                || dependencies.has_literal_dependency<formalism::FluentTag, formalism::NegativeTag>(pi, pj)
-                                                || dependencies.has_numeric_dependency(pi, pj);
+            auto has_runtime_dependency = dependencies.has_numeric_dependency(pi, pj);
+            boost::mp11::mp_for_each<MutableTags>(
+                [&]<typename F>(F)
+                {
+                    has_runtime_dependency = has_runtime_dependency || dependencies.has_literal_dependency<F, formalism::PositiveTag>(pi, pj)
+                                             || dependencies.has_literal_dependency<F, formalism::NegativeTag>(pi, pj);
+                });
             result[pi * num_partitions + pj] = has_runtime_dependency ? kckp::AdjacencyKind::RUNTIME : kckp::AdjacencyKind::STATIC_ONLY;
         }
 
@@ -489,9 +509,14 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
             // Implicit case doesnt exist for vertices, so we dont need to check for that here.
 
-            const auto has_runtime_dependency = m_unary_overapproximation_vdg.unary().has_literal_dependency<formalism::FluentTag, formalism::PositiveTag>(p)
-                                                || m_unary_overapproximation_vdg.unary().has_literal_dependency<formalism::FluentTag, formalism::NegativeTag>(p)
-                                                || m_unary_overapproximation_vdg.unary().has_numeric_dependency(p);
+            const auto& unary_dependencies = m_unary_overapproximation_vdg.unary();
+            auto has_runtime_dependency = unary_dependencies.has_numeric_dependency(p);
+            boost::mp11::mp_for_each<MutableTags>(
+                [&]<typename F>(F)
+                {
+                    has_runtime_dependency = has_runtime_dependency || unary_dependencies.has_literal_dependency<F, formalism::PositiveTag>(p)
+                                             || unary_dependencies.has_literal_dependency<F, formalism::NegativeTag>(p);
+                });
 
             // Static-only case.
             if (!has_runtime_dependency)
@@ -510,7 +535,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     continue;
 
                 const auto vertex = vertex_of(p, v);
-                if (details::consistent_literals(vertex, m_unary_overapproximation_literals, assignment_sets.fluent_sets().predicate)
+                if (details::consistent_literals(vertex, m_unary_overapproximation_literals, assignment_sets)
                     && details::consistent_numeric_constraints(vertex,
                                                                unary_overapproximation_constraints,
                                                                m_unary_overapproximation_constraints,
@@ -586,7 +611,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     for (const auto vj : new_edges)
                     {
                         const auto edge = details::Edge(vertex_i, vertex_of(pj, vj));
-                        if (details::consistent_literals(edge, m_binary_overapproximation_literals, assignment_sets.fluent_sets().predicate)
+                        if (details::consistent_literals(edge, m_binary_overapproximation_literals, assignment_sets)
                             && details::consistent_numeric_constraints(edge,
                                                                        binary_overapproximation_constraints,
                                                                        m_binary_overapproximation_constraints,
@@ -612,14 +637,14 @@ const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m
 
 const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
 
-const details::Literals<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_literals() const noexcept { return m_hyperedge_literals; }
+const details::MutableLiterals& StaticConsistencyGraph::get_hyperedge_literals() const noexcept { return m_hyperedge_literals; }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
                                                formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                               formalism::datalog::Builder& builder,
                                                formalism::datalog::Repository& context)
 {
-    auto builder = formalism::datalog::Builder {};
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
@@ -637,6 +662,10 @@ create_overapproximation_conjunctive_condition(size_t k,
         if (literal_belongs_to_k_overapproximation(literal))
             urd::append(conj_cond->fluent_literals, literal);
 
+    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+        if (literal_belongs_to_k_overapproximation(literal))
+            urd::append(conj_cond->derived_literals, literal);
+
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
             urd::append(conj_cond->numeric_constraints, numeric_constraint);
@@ -647,9 +676,9 @@ create_overapproximation_conjunctive_condition(size_t k,
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
                                                            formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                                           formalism::datalog::Builder& builder,
                                                            formalism::datalog::Repository& context)
 {
-    auto builder = formalism::datalog::Builder {};
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
@@ -669,6 +698,10 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
         if (requires_exact_literal_check(literal))
             urd::append(conj_cond->fluent_literals, literal);
 
+    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+        if (requires_exact_literal_check(literal))
+            urd::append(conj_cond->derived_literals, literal);
+
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (requires_exact_numeric_check(numeric_constraint))
             urd::append(conj_cond->numeric_constraints, numeric_constraint);
@@ -677,9 +710,10 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
 }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition, formalism::datalog::Repository& context)
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
+                                       formalism::datalog::Builder& builder,
+                                       formalism::datalog::Repository& context)
 {
-    auto builder = formalism::datalog::Builder {};
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : conflicting_condition.get_variables())
@@ -689,13 +723,18 @@ create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionV
         if (literal.get_polarity())
             urd::append(conj_cond->fluent_literals, literal);
 
+    for (const auto literal : conflicting_condition.get_literals<formalism::DerivedTag>())
+        if (literal.get_polarity())
+            urd::append(conj_cond->derived_literals, literal);
+
     return context.insert(*conj_cond, builder);
 }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>
-create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, formalism::datalog::Repository& context)
+create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                            formalism::datalog::Builder& builder,
+                                            formalism::datalog::Repository& context)
 {
-    auto builder = formalism::datalog::Builder {};
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(builder);
 
     auto binding_empty = urd::flat_vector<urd::index<formalism::Object>> {};
@@ -710,6 +749,10 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
     for (const auto literal : condition.get_literals<formalism::FluentTag>())
         if (is_nullary(literal))
             urd::append(conj_cond->fluent_literals, ground(literal, grounder_context).first);
+
+    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+        if (is_nullary(literal))
+            urd::append(conj_cond->derived_literals, ground(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (is_nullary(numeric_constraint))

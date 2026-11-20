@@ -20,6 +20,7 @@
 
 #include "tyr/analysis/declarations.hpp"
 
+#include <concepts>
 #include <string_view>
 #include <urd/elements/concepts.hpp>
 
@@ -58,6 +59,7 @@ struct ProgramVariableDomains
 {
     PredicateDomainMap<formalism::StaticTag> static_predicate_domains;
     PredicateDomainMap<formalism::FluentTag> fluent_predicate_domains;
+    PredicateDomainMap<formalism::DerivedTag> derived_predicate_domains;
     FunctionDomainMap<formalism::StaticTag> static_function_domains;
     FunctionDomainMap<formalism::FluentTag> fluent_function_domains;
     RuleDomainMap rule_domains;
@@ -68,11 +70,34 @@ struct ProgramVariableDomains
     {
         return urd::Fields<urd::field<"static_predicate_domains", &ProgramVariableDomains::static_predicate_domains>,
                            urd::field<"fluent_predicate_domains", &ProgramVariableDomains::fluent_predicate_domains>,
+                           urd::field<"derived_predicate_domains", &ProgramVariableDomains::derived_predicate_domains>,
                            urd::field<"static_function_domains", &ProgramVariableDomains::static_function_domains>,
                            urd::field<"fluent_function_domains", &ProgramVariableDomains::fluent_function_domains>,
                            urd::field<"rule_domains", &ProgramVariableDomains::rule_domains>> {};
     }
 };
+
+/// The domains of the predicates of kind F of a program.
+template<formalism::FactKind F>
+const PredicateDomainMap<F>& get_predicate_domains(const ProgramVariableDomains& domains) noexcept
+{
+    if constexpr (std::same_as<F, formalism::StaticTag>)
+        return domains.static_predicate_domains;
+    else if constexpr (std::same_as<F, formalism::FluentTag>)
+        return domains.fluent_predicate_domains;
+    else
+        return domains.derived_predicate_domains;
+}
+
+/// The domains of the functions of kind F of a program: static and fluent ones.
+template<formalism::FactKind F>
+const FunctionDomainMap<F>& get_function_domains(const ProgramVariableDomains& domains) noexcept
+{
+    if constexpr (std::same_as<F, formalism::StaticTag>)
+        return domains.static_function_domains;
+    else
+        return domains.fluent_function_domains;
+}
 
 struct TaskVariableDomains
 {

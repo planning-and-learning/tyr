@@ -19,6 +19,7 @@
 
 #include "tyr/datalog/applicability.hpp"
 
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <limits>
 #include <stdexcept>
@@ -33,9 +34,13 @@ static_assert(TerminationPolicyConcept<TerminationPolicy<MaxAggregation>>);
 template<typename AggregationFunction>
 void TerminationPolicy<AggregationFunction>::set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_)
 {
-    for (const auto literal : goals_.template get_literals<formalism::FluentTag>())
-        if (!literal.get_polarity())
-            throw std::invalid_argument("TerminationPolicy requires positive fluent goals");
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F)
+        {
+            for (const auto literal : goals_.template get_literals<F>())
+                if (!literal.get_polarity())
+                    throw std::invalid_argument("TerminationPolicy requires positive fluent and derived goals");
+        });
 
     clear();
     goals = goals_;
@@ -62,20 +67,26 @@ Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&, con
         return AggregationFunction::identity();
 
     auto total = AggregationFunction::identity();
-    for (const auto literal : goals->template get_literals<formalism::FluentTag>())
-    {
-        const auto* annotation = annotations.find(literal.get_atom().get_row().index());
-        assert(annotation);
-        if (!annotation)
-            return std::numeric_limits<Cost>::max();
+    auto reachable = true;
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F)
+        {
+            for (const auto literal : goals->template get_literals<F>())
+            {
+                if (!reachable)
+                    return;
+                const auto* annotation = annotations.find(literal.get_atom().get_row().index());
+                assert(annotation);
+                if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
+                {
+                    reachable = false;
+                    return;
+                }
+                total = agg(total, get_cost(*annotation));
+            }
+        });
 
-        const auto atom_cost = get_cost(*annotation);
-        if (atom_cost == std::numeric_limits<Cost>::max())
-            return std::numeric_limits<Cost>::max();
-        total = agg(total, atom_cost);
-    }
-
-    return total;
+    return reachable ? total : std::numeric_limits<Cost>::max();
 }
 
 template<typename AggregationFunction>

@@ -28,6 +28,7 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <cstddef>
 #include <type_traits>
@@ -69,7 +70,9 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
 
         /// Commits a fact. Whether it was new.
-        bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact) { return m_ws->facts.insert(fact); }
+        template<formalism::FactKind F>
+        bool insert(formalism::datalog::PredicateRowIndex<F> fact)
+        { return m_ws->facts.insert(fact); }
 
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
 
@@ -105,15 +108,19 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 
     void initialize() { reset_from_current_facts(); }
 
+    /// Starts from the given fluent atoms, the program's fluent function values and its derived atoms.
     template<typename Range>
     void initialize(const Range& fluent_atoms)
     {
         m_out.facts().reset();
         auto& facts = m_out.facts().fact_sets;
         for (const auto fterm_value : m_in.program().template get_fterm_values<formalism::FluentTag>())
-            insert(facts, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+            insert(facts.template get<formalism::FluentTag>(),
+                   fterm_value.get_fterm().get_row().index(),
+                   ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
         for (const auto atom : fluent_atoms)
             insert(facts, atom.get_row().index());
+        insert_program_facts(facts.template get<formalism::DerivedTag>(), m_in.program());
         initialize();
     }
 
@@ -130,12 +137,15 @@ private:
         m_out.annotation_policy().clear_achievers();
         m_out.tp().reset();
 
-        const auto& facts = m_out.facts().fact_sets;
-        for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
-            for (const auto id : facts.predicate[i])
-                m_out.annotation_policy().initialize_annotation(
-                    formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id },
-                    m_out.annotations());
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                const auto& facts = m_out.facts().fact_sets.template get<F>();
+                for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
+                    for (const auto id : facts.predicate[i])
+                        m_out.annotation_policy().initialize_annotation(formalism::datalog::PredicateRowIndex<F> { urd::index<formalism::Predicate<F>>(i), id },
+                                                                        m_out.annotations());
+            });
     }
 
     void reset_from_current_facts()
@@ -148,15 +158,19 @@ private:
         auto& scheduler = m_out.scheduler();
         scheduler.reset(support_start<AP>());
         const auto aggregate = support_aggregation<AP>();
-        const auto& facts = m_out.facts().fact_sets;
-        for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
-            for (const auto id : facts.predicate[i])
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
             {
-                const auto fact = formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id };
-                if (const auto* rules = m_in.dependencies().fluent_precondition_to_rules.find(fact))
-                    for (const auto rule : *rules)
-                        scheduler.satisfy(rule, m_out.annotations().fetch_cost(fact), aggregate);
-            }
+                const auto& facts = m_out.facts().fact_sets.template get<F>();
+                for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
+                    for (const auto id : facts.predicate[i])
+                    {
+                        const auto fact = formalism::datalog::PredicateRowIndex<F> { urd::index<formalism::Predicate<F>>(i), id };
+                        if (const auto* rules = m_in.dependencies().find(fact))
+                            for (const auto rule : *rules)
+                                scheduler.satisfy(rule, m_out.annotations().fetch_cost(fact), aggregate);
+                    }
+            });
     }
 
     In m_in;

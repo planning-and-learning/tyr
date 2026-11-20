@@ -42,6 +42,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <concepts>
 #include <limits>
@@ -275,6 +276,7 @@ const urd::Store<urd::set<size_t>, urd::dense, urd::proportional_clear>& Predica
 
 template class PredicateAssignmentSet<formalism::StaticTag>;
 template class PredicateAssignmentSet<formalism::FluentTag>;
+template class PredicateAssignmentSet<formalism::DerivedTag>;
 
 /**
  * PredicateAssignmentSets
@@ -336,6 +338,7 @@ const urd::Store<urd::sequence<PredicateAssignmentSet<T>>>& PredicateAssignmentS
 
 template class PredicateAssignmentSets<formalism::StaticTag>;
 template class PredicateAssignmentSets<formalism::FluentTag>;
+template class PredicateAssignmentSets<formalism::DerivedTag>;
 
 /**
  * FunctionAssignmentSet
@@ -521,34 +524,71 @@ TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListV
 { insert(fact_sets); }
 
 template<formalism::FactKind T>
+TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
+                                              const analysis::ProgramVariableDomains& domains,
+                                              const TaggedFactSets<T>& fact_sets) :
+    predicate(program.template get_predicates<T>(), analysis::get_predicate_domains<T>(domains), program.get_objects().size()),
+    function()
+{
+    if constexpr (has_function_facts<T>)
+        function = FunctionAssignmentSets<T>(program.template get_functions<T>(), analysis::get_function_domains<T>(domains), program.get_objects().size());
+    insert(fact_sets);
+}
+
+template<formalism::FactKind T>
 void TaggedAssignmentSets<T>::insert(const TaggedFactSets<T>& fact_sets)
 {
     for (ygg::uint_t i = 0; i < fact_sets.predicate.size(); ++i)
         for (const auto binding : rows(fact_sets, i))
             predicate.insert(binding);
 
-    for (ygg::uint_t i = 0; i < fact_sets.function.size(); ++i)
-        for (const auto& [id, interval] : fact_sets.function[i])
-            function.get_sets()[i].insert(row(fact_sets, i, id), interval);
+    if constexpr (has_function_facts<T>)
+        for (ygg::uint_t i = 0; i < fact_sets.function.size(); ++i)
+            for (const auto& [id, interval] : fact_sets.function[i])
+                function.get_sets()[i].insert(row(fact_sets, i, id), interval);
 }
 
 template<formalism::FactKind T>
 void TaggedAssignmentSets<T>::reset() noexcept
 {
     predicate.reset();
-    function.reset();
+    if constexpr (has_function_facts<T>)
+        function.reset();
 }
 
 template struct TaggedAssignmentSets<formalism::StaticTag>;
 template struct TaggedAssignmentSets<formalism::FluentTag>;
+// Derived facts have no function: only the members that do not build function sets.
+template TaggedAssignmentSets<formalism::DerivedTag>::TaggedAssignmentSets(formalism::datalog::ProgramView<LiftedTag>,
+                                                                           const analysis::ProgramVariableDomains&,
+                                                                           const TaggedFactSets<formalism::DerivedTag>&);
+template void TaggedAssignmentSets<formalism::DerivedTag>::insert(const TaggedFactSets<formalism::DerivedTag>&);
+template void TaggedAssignmentSets<formalism::DerivedTag>::reset() noexcept;
+
+/**
+ * MutableAssignmentSets
+ */
+
+MutableAssignmentSets::MutableAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
+                                             const analysis::ProgramVariableDomains& domains,
+                                             const MutableFactSets& fact_sets)
+{
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
+                                          { this->template get<F>() = TaggedAssignmentSets<F>(program, domains, fact_sets.template get<F>()); });
+}
+
+void MutableAssignmentSets::reset() noexcept
+{
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { this->template get<F>().reset(); });
+}
 
 /**
  * AssignmentSets
  */
 
-AssignmentSets::AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets) :
+AssignmentSets::AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const MutableAssignmentSets& mutable_sets) :
     m_static_sets(&static_sets),
-    m_fluent_sets(&fluent_sets)
+    m_mutable_sets(&mutable_sets)
 {
 }
 

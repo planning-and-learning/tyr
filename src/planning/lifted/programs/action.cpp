@@ -122,7 +122,7 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
 
         const auto applicability_atom = create_applicability_atom(action, context).first;
 
-        urd::append(rule->heads, applicability_atom);
+        urd::append(rule->fluent_heads, applicability_atom);
 
         const auto new_rule = repository.insert(*rule, builder).first;
 
@@ -160,7 +160,7 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
             urd::store(effect_atom->predicate, new_effect_predicate);
             for (ygg::uint_t i = 0; i < new_effect_predicate.get_arity(); ++i)
                 urd::build_member(effect_atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), repository);
-            urd::append(effect_rule->heads, repository.insert(*effect_atom, builder).first);
+            urd::append(effect_rule->fluent_heads, repository.insert(*effect_atom, builder).first);
 
             urd::append(program->rules, repository.insert(*effect_rule, builder).first);
             effect_to_predicate.emplace(std::pair(action, cond_eff), new_effect_predicate);
@@ -212,7 +212,7 @@ auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
     auto rule_of = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::index<formalism::datalog::Rule<LiftedTag>>>> {};
     for (const auto rule : program.get_rules())
-        rule_of.emplace(rule.get_heads().front().get_predicate(), rule.index());
+        rule_of.emplace(rule.get_fluent_heads().front().get_predicate(), rule.index());
     auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *schema, context);
     for (const auto& [predicate, action] : mapping)

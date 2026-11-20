@@ -21,6 +21,7 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
@@ -45,9 +46,16 @@ public:
 
     auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
 
-    auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
+    auto get_fluent_heads() const noexcept { return self().template member<&urd::record_of<V>::fluent_heads>(); }
+
+    auto get_derived_heads() const noexcept { return self().template member<&urd::record_of<V>::derived_heads>(); }
 
     auto get_cost() const noexcept { return self().template member<&urd::record_of<V>::cost>(); }
+
+    // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
+    template<::tyr::formalism::FactKind F>
+    auto get_heads() const noexcept
+    { return self().template member<::tyr::formalism::datalog::heads_of<F, T>>(); }
 
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const

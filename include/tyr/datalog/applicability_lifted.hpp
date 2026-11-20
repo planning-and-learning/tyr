@@ -140,8 +140,9 @@ inline bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag>
 
 inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), context)     //
-           && is_applicable(element.template get_literals<formalism::FluentTag>(), context)  //
+    return is_applicable(element.template get_literals<formalism::StaticTag>(), context)      //
+           && is_applicable(element.template get_literals<formalism::FluentTag>(), context)   //
+           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)  //
            && is_applicable(element.get_numeric_constraints(), context);
 }
 
@@ -156,9 +157,11 @@ namespace tyr::datalog
 {
 extern template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
 extern template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
 
 extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
 extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
 extern template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> element,
                                                            const ApplicabilityContext& context);

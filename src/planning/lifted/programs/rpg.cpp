@@ -131,7 +131,7 @@ auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> acti
     urd::store(rule->body, new_conj_cond);
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects
-            urd::append(rule->heads, merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first);
+            urd::append(rule->fluent_heads, merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first);
     rule->cost = 1;
 
     return context.destination().insert(*rule, context.builder());

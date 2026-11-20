@@ -38,6 +38,8 @@ public:
 
     auto get_fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
 
+    auto get_derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
+
     auto get_static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
 
     auto get_fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
@@ -47,6 +49,8 @@ public:
     auto get_static_atoms() const noexcept { return self().template member<&urd::record_of<V>::static_atoms>(); }
 
     auto get_fluent_atoms() const noexcept { return self().template member<&urd::record_of<V>::fluent_atoms>(); }
+
+    auto get_derived_atoms() const noexcept { return self().template member<&urd::record_of<V>::derived_atoms>(); }
 
     auto get_static_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::static_fterm_values>(); }
 

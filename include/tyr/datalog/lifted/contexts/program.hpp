@@ -26,6 +26,7 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 
+#include <boost/mp11.hpp>
 #include <cassert>
 #include <cstddef>
 #include <urd/repr/sequences/sequence.hpp>
@@ -65,11 +66,12 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         [[nodiscard]] const auto& engine() const noexcept { return m_ws->engine; }
 
         /// Commits a fact: into the facts, then into the engine's index over them. Whether it was new.
-        bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact)
+        template<formalism::FactKind F>
+        bool insert(formalism::datalog::PredicateRowIndex<F> fact)
         {
             if (!m_ws->facts.insert(fact))
                 return false;
-            m_ws->engine.assignment_sets.predicate.insert(urd::resolve(fact, *m_ws->workspace_repository));
+            m_ws->engine.assignment_sets.insert(urd::resolve(fact, *m_ws->workspace_repository));
             return true;
         }
 
@@ -178,23 +180,15 @@ private:
         out.tp().reset();
         // The engine's index is rebuilt from the facts the evaluation starts with.
         out.engine().assignment_sets.reset();
-        const auto& facts = out.facts().fact_sets;
-        for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
-        {
-            for (const auto binding : rows(facts, i))
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
             {
-                out.annotation_policy().initialize_annotation(binding.index(), out.annotations());
-                out.engine().assignment_sets.predicate.insert(binding);
-            }
-        }
-
-        for (ygg::uint_t i = 0; i < facts.function.size(); ++i)
-        {
-            for (const auto& [id, interval] : facts.function[i])
-            {
-                out.engine().assignment_sets.function.insert(row(facts, i, id), interval);
-            }
-        }
+                const auto& facts = out.facts().fact_sets.template get<F>();
+                for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
+                    for (const auto binding : rows(facts, i))
+                        out.annotation_policy().initialize_annotation(binding.index(), out.annotations());
+                out.engine().assignment_sets.template get<F>().insert(facts);
+            });
     }
 
     In m_in;

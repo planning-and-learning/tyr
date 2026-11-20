@@ -17,21 +17,17 @@
 
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 
+#include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::datalog
 {
 
-FactsWorkspace<LiftedTag>::FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
-                                          formalism::datalog::FunctionListView<formalism::FluentTag> functions,
-                                          formalism::datalog::AtomListView<GroundTag, formalism::FluentTag> atoms,
-                                          formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
-                                          const formalism::datalog::Repository& workspace_repository) :
-    fact_sets(predicates, functions, atoms, fterm_values, workspace_repository),
-    delta_fact_sets(predicates, functions, workspace_repository),
+FactsWorkspace<LiftedTag>::FactsWorkspace(formalism::datalog::ProgramView<LiftedTag> program, const formalism::datalog::Repository& workspace_repository) :
+    fact_sets(program, workspace_repository),
+    delta_fact_sets(program, workspace_repository),
     repository(&workspace_repository)
-{
-}
+{ insert_program_facts(fact_sets, program); }
 
 void FactsWorkspace<LiftedTag>::reset()
 {

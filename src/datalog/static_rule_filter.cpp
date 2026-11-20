@@ -34,12 +34,9 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
                                                                        program.get_atoms<formalism::StaticTag>(),
                                                                        program.get_fterm_values<formalism::StaticTag>(),
                                                                        program.context());
-    const auto fluent_fact_sets = TaggedFactSets<formalism::FluentTag>(program.get_predicates<formalism::FluentTag>(),
-                                                                       program.get_functions<formalism::FluentTag>(),
-                                                                       program.get_atoms<formalism::FluentTag>(),
-                                                                       program.get_fterm_values<formalism::FluentTag>(),
-                                                                       program.context());
-    const auto fact_sets = FactSets { static_fact_sets, fluent_fact_sets };
+    auto mutable_fact_sets = MutableFactSets(program, program.context());
+    insert_program_facts(mutable_fact_sets, program);
+    const auto fact_sets = FactSets { static_fact_sets, mutable_fact_sets };
 
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::WriteContext { builder, repository };

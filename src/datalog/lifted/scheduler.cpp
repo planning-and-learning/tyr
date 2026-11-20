@@ -37,6 +37,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <assert.h>
+#include <boost/mp11.hpp>
 #include <gtl/phmap.hpp>
 #include <type_traits>
 #include <urd/repr/sequences/sequence.hpp>
@@ -63,16 +64,15 @@ void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::
 TypedRuleSchedulerStratum::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
                                                      const analysis::TypedListenerStratum& listeners,
                                                      const formalism::datalog::Repository& context,
-                                                     size_t num_fluent_predicates,
-                                                     size_t num_fluent_functions) :
+                                                     formalism::datalog::ProgramView<LiftedTag> program) :
     m_rules(&rules),
     m_listeners(&listeners),
     m_context(&context),
     m_active_rules(),
     m_full_enumeration_rules()
 {
-    m_active_predicates.reserve(num_fluent_predicates);
-    m_active_functions.reserve(num_fluent_functions);
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_active_predicates.template get<F>().reserve(program.get_predicates<F>().size()); });
+    m_active_functions.reserve(program.get_functions<formalism::FluentTag>().size());
 }
 
 void TypedRuleSchedulerStratum::activate_all()
@@ -92,15 +92,14 @@ void TypedRuleSchedulerStratum::on_start_iteration() noexcept
     m_active_functions.clear();
 }
 
-void TypedRuleSchedulerStratum::on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) { m_active_predicates.insert(predicate); }
-
 void TypedRuleSchedulerStratum::on_generate(urd::index<formalism::Function<formalism::FluentTag>> function) { m_active_functions.insert(function); }
 
 void TypedRuleSchedulerStratum::on_finish_iteration()
 {
     m_active_rules.clear();
     m_full_enumeration_rules.clear();
-    collect_active_rules(m_active_predicates, m_listeners->predicates, m_active_rules);
+    boost::mp11::mp_for_each<MutableTags>(
+        [&]<typename F>(F) { collect_active_rules(m_active_predicates.template get<F>(), m_listeners->template get_predicates<F>(), m_active_rules); });
     collect_active_rules(m_active_functions, m_listeners->functions, m_full_enumeration_rules);
     m_active_rules.insert(m_full_enumeration_rules.begin(), m_full_enumeration_rules.end());
     rebuild_sorted_active_rules();
@@ -109,9 +108,8 @@ void TypedRuleSchedulerStratum::on_finish_iteration()
 Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum& rules,
                                 const analysis::ListenerStratum& listeners,
                                 const formalism::datalog::Repository& context,
-                                size_t num_fluent_predicates,
-                                size_t num_fluent_functions) :
-    predicate_rules(rules, listeners, context, num_fluent_predicates, num_fluent_functions)
+                                formalism::datalog::ProgramView<LiftedTag> program) :
+    predicate_rules(rules, listeners, context, program)
 {
 }
 
@@ -119,21 +117,18 @@ void Scheduler<LiftedTag>::activate_all() { predicate_rules.activate_all(); }
 
 void Scheduler<LiftedTag>::on_start_iteration() noexcept { predicate_rules.on_start_iteration(); }
 
-void Scheduler<LiftedTag>::activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) { predicate_rules.on_generate(predicate); }
-
 void Scheduler<LiftedTag>::on_finish_iteration() { predicate_rules.on_finish_iteration(); }
 
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                                   const analysis::ListenerStrata& listeners,
                                                                   const formalism::datalog::Repository& context,
-                                                                  size_t num_fluent_predicates,
-                                                                  size_t num_fluent_functions)
+                                                                  formalism::datalog::ProgramView<LiftedTag> program)
 {
     assert(rules.data.size() == listeners.data.size());
 
     auto result = urd::Store<urd::sequence<Scheduler<LiftedTag>>> {};
     for (ygg::uint_t i = 0; i < rules.data.size(); ++i)
-        result.emplace_back(rules.data[i], listeners.data[i], context, num_fluent_predicates, num_fluent_functions);
+        result.emplace_back(rules.data[i], listeners.data[i], context, program);
 
     return result;
 }

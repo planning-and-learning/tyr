@@ -33,11 +33,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     const_workspace(&program.get_const_program_workspace()),
     program_repository(&program.get_program_repository()),
     workspace_repository(std::make_shared<formalism::datalog::Repository>(program.get_program().get_objects().size(), program_repository)),
-    facts(program.get_program().get_predicates<formalism::FluentTag>(),
-          program.get_program().get_functions<formalism::FluentTag>(),
-          program.get_program().get_atoms<formalism::FluentTag>(),
-          program.get_program().get_fterm_values<formalism::FluentTag>(),
-          *workspace_repository),
+    facts(program.get_program(), *workspace_repository),
     annotation_policy(std::move(annotation_policy_)),
     annotations(program.get_program()),
     delta_annotations(program.get_program()),
@@ -46,11 +42,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     engine(const_workspace->engine, program.get_program(), program.get_domains(), facts.fact_sets),
     planning_builder(),
     datalog_builder(),
-    schedulers(create_schedulers(program.get_strata(),
-                                 program.get_listeners(),
-                                 *program_repository,
-                                 program.get_program().get_predicates<formalism::FluentTag>().size(),
-                                 program.get_program().get_functions<formalism::FluentTag>().size())),
+    schedulers(create_schedulers(program.get_strata(), program.get_listeners(), *program_repository, program.get_program())),
     statistics()
 {
     if constexpr (AP::records_propositional_achievers)

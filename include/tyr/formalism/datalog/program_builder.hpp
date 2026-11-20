@@ -44,11 +44,13 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
     urd::index<::tyr::formalism::datalog::Program<T>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::StaticTag>>>, C> static_functions;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>>, C> fluent_functions;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_atoms;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_atoms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_atoms;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_fterm_values;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>>, C> goal;
@@ -58,11 +60,13 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
     {
         return urd::Fields<urd::field<"static_predicates", &builder::static_predicates>,
                            urd::field<"fluent_predicates", &builder::fluent_predicates>,
+                           urd::field<"derived_predicates", &builder::derived_predicates>,
                            urd::field<"static_functions", &builder::static_functions>,
                            urd::field<"fluent_functions", &builder::fluent_functions>,
                            urd::field<"objects", &builder::objects>,
                            urd::field<"static_atoms", &builder::static_atoms>,
                            urd::field<"fluent_atoms", &builder::fluent_atoms>,
+                           urd::field<"derived_atoms", &builder::derived_atoms>,
                            urd::field<"static_fterm_values", &builder::static_fterm_values>,
                            urd::field<"fluent_fterm_values", &builder::fluent_fterm_values>,
                            urd::field<"goal", &builder::goal>,
@@ -73,11 +77,13 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
     {
         return urd::Members<&builder::static_predicates,
                             &builder::fluent_predicates,
+                            &builder::derived_predicates,
                             &builder::static_functions,
                             &builder::fluent_functions,
                             &builder::objects,
                             &builder::static_atoms,
                             &builder::fluent_atoms,
+                            &builder::derived_atoms,
                             &builder::static_fterm_values,
                             &builder::fluent_fterm_values,
                             &builder::goal,

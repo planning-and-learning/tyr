@@ -38,19 +38,22 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> body;
-    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> heads;
+    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_heads;
+    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_heads;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
 
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> body_,
-         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> heads_,
+         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_heads_,
+         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_heads_,
          ygg::float_t cost_ = 0) :
         index(),
         variables(std::move(variables_)),
         body(body_),
-        heads(std::move(heads_)),
+        fluent_heads(std::move(fluent_heads_)),
+        derived_heads(std::move(derived_heads_)),
         cost(cost_)
     {
     }
@@ -65,13 +68,16 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
     {
         return urd::Fields<urd::field<"variables", &data::variables>,
                            urd::field<"body", &data::body>,
-                           urd::field<"heads", &data::heads>,
+                           urd::field<"fluent_heads", &data::fluent_heads>,
+                           urd::field<"derived_heads", &data::derived_heads>,
                            urd::field<"cost", &data::cost>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::heads, &data::cost> {}; }
+    static constexpr auto identifying_members() noexcept
+    { return urd::Members<&data::variables, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::heads, &data::cost> {}; }
+    static constexpr auto cista_members() noexcept
+    { return urd::Members<&data::index, &data::variables, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
 };
 
 template<>
@@ -79,17 +85,20 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::datalog::Rule<::tyr::GroundTag>> index;
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body;
-    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> heads;
+    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads;
+    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
 
     data(urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body_,
-         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> heads_,
+         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads_,
+         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads_,
          ygg::float_t cost_ = 0) :
         index(),
         body(body_),
-        heads(std::move(heads_)),
+        fluent_heads(std::move(fluent_heads_)),
+        derived_heads(std::move(derived_heads_)),
         cost(cost_)
     {
     }
@@ -101,13 +110,28 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    { return urd::Fields<urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {}; }
+    {
+        return urd::Fields<urd::field<"body", &data::body>,
+                           urd::field<"fluent_heads", &data::fluent_heads>,
+                           urd::field<"derived_heads", &data::derived_heads>,
+                           urd::field<"cost", &data::cost>> {};
+    }
 
     /// Identified by its content: identical ground rules are one rule.
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::body, &data::heads, &data::cost> {}; }
+    static constexpr auto cista_members() noexcept
+    { return urd::Members<&data::index, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
 };
+}
+
+namespace tyr::formalism::datalog
+{
+/// The member holding the F-heads of a rule: the atoms of the task's fluent predicates it derives, and of the derived
+/// predicates (the task's, or the program's own).
+template<FactKind F, TaskKind T>
+inline constexpr auto heads_of =
+    tagged_member_pointer<boost::mp11::mp_list<FluentTag, DerivedTag>, F, &urd::data<Rule<T>>::fluent_heads, &urd::data<Rule<T>>::derived_heads>;
 }
 
 #endif

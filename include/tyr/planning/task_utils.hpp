@@ -89,8 +89,14 @@ void insert_unextended_state(const StateContext<GroundTag>& state,
                              const P2DTranslationContext<GroundTag>& translation_context,
                              datalog::ProgramWorkspace<GroundTag, AP, TP, CP>& workspace)
 {
-    detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_atom, workspace.facts.fact_sets);
-    detail::insert_numeric_variables_to_fact_set(state, repository, translation_context.fluent_to_fluent_fterm, workspace.facts.fact_sets);
+    detail::insert_fluent_atoms_to_fact_set(state,
+                                            repository,
+                                            translation_context.fluent_to_fluent_atom,
+                                            workspace.facts.fact_sets.template get<formalism::FluentTag>());
+    detail::insert_numeric_variables_to_fact_set(state,
+                                                 repository,
+                                                 translation_context.fluent_to_fluent_fterm,
+                                                 workspace.facts.fact_sets.template get<formalism::FluentTag>());
 }
 
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
@@ -102,8 +108,16 @@ void insert_unextended_state(const StateContext<LiftedTag>& state,
                              datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
     auto merge_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository };
-    detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
-    detail::insert_numeric_variables_to_fact_set(state, repository, translation_context.fluent_to_fluent_function, merge_context, workspace.facts.fact_sets);
+    detail::insert_fluent_atoms_to_fact_set(state,
+                                            repository,
+                                            translation_context.fluent_to_fluent_predicate,
+                                            merge_context,
+                                            workspace.facts.fact_sets.template get<formalism::FluentTag>());
+    detail::insert_numeric_variables_to_fact_set(state,
+                                                 repository,
+                                                 translation_context.fluent_to_fluent_function,
+                                                 merge_context,
+                                                 workspace.facts.fact_sets.template get<formalism::FluentTag>());
 }
 
 /// insert_unextended_state, and the derived atoms.
@@ -115,7 +129,11 @@ void insert_extended_state(const StateContext<LiftedTag>& state,
 {
     insert_unextended_state(state, repository, translation_context, workspace);
     auto merge_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository };
-    detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
+    detail::insert_derived_atoms_to_fact_set(state,
+                                             repository,
+                                             translation_context.derived_to_fluent_predicate,
+                                             merge_context,
+                                             workspace.facts.fact_sets.template get<formalism::FluentTag>());
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
@@ -129,7 +147,7 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateReposi
                                              repository,
                                              translation_context.fluent_to_derived_predicate,
                                              workspace.planning_builder,
-                                             workspace.facts.fact_sets,
+                                             workspace.facts.fact_sets.template get<formalism::FluentTag>(),
                                              derived_bindings);
 }
 

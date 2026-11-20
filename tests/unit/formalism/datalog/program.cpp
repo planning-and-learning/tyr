@@ -30,11 +30,13 @@ static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_predicates;
     data.fluent_predicates;
+    data.derived_predicates;
     data.static_functions;
     data.fluent_functions;
     data.objects;
     data.static_atoms;
     data.fluent_atoms;
+    data.derived_atoms;
     data.static_fterm_values;
     data.fluent_fterm_values;
     data.goal;
@@ -73,11 +75,13 @@ static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_predicates;
     data.fluent_predicates;
+    data.derived_predicates;
     data.static_functions;
     data.fluent_functions;
     data.objects;
     data.static_atoms;
     data.fluent_atoms;
+    data.derived_atoms;
     data.static_fterm_values;
     data.fluent_fterm_values;
     data.goal;
@@ -144,7 +148,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         {
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag>> {};
             rule_data.body = body.index();
-            rule_data.heads.push_back(head.index());
+            rule_data.fluent_heads.push_back(head.index());
             return intern(std::move(rule_data));
         };
         const auto object = intern(urd::data<tyr::formalism::Object> { std::string("source-object") });
@@ -186,7 +190,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     EXPECT_EQ(&filtered->context(), &destination);
     ASSERT_EQ(filtered->get_rules().size(), 1);
     EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules().front().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
+    EXPECT_EQ(filtered->get_rules().front().get_fluent_heads().front().get_predicate().get_name().str(), "retained-predicate");
     ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());

@@ -54,11 +54,10 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
     }
 }
 
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact,
-                                                          ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    const auto* dependent_rules = ctx.in().dependencies().fluent_precondition_to_rules.find(fact);
+    const auto* dependent_rules = ctx.in().dependencies().find(fact);
     if (!dependent_rules)
         return;
 
@@ -77,9 +76,8 @@ void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, 
         update_numeric_constraint_satisfaction(rule, ctx);
 }
 
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact,
-                                                      ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     ++m_statistics.num_facts_derived;
     notify_predicate_generated_for(fact, ctx);

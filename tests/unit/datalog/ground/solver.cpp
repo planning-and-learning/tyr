@@ -45,8 +45,9 @@ template<typename Context>
 PredicateRowViews binding_views(const Context& ctx)
 {
     auto result = PredicateRowViews {};
-    for (ygg::uint_t set = 0; set < ctx.out().facts().fact_sets.predicate.size(); ++set)
-        for (const auto binding : tyr::datalog::rows(ctx.out().facts().fact_sets, set))
+    const auto& fact_sets = ctx.out().facts().fact_sets.template get<tyr::formalism::FluentTag>();
+    for (ygg::uint_t set = 0; set < fact_sets.predicate.size(); ++set)
+        for (const auto binding : tyr::datalog::rows(fact_sets, set))
             result.push_back(binding);
     return result;
 }
@@ -170,7 +171,7 @@ struct GroundQueueFixture
     {
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag>>();
         rule_builder.body = body.index();
-        rule_builder.heads.push_back(head.index());
+        rule_builder.fluent_heads.push_back(head.index());
         rule_builder.cost = cost;
         const auto [ground_rule, inserted] = ygg::formalism::insert(repository, rule_builder);
         if (inserted)
@@ -253,7 +254,7 @@ TEST(TyrDatalogGroundQueueTest, GroundProgramStoresGroundRules)
     EXPECT_EQ(program.get_rules()[0].index(), fixture.ground_rules[0]);
     // In Datalog: the program's last statement is its rule, a fact without a body, its cost a comment after it.
     const auto rule_text = fmt::format("{}", program.get_rules()[0]);
-    EXPECT_EQ(rule_text, fmt::format("{}.  % cost {}", program.get_rules()[0].get_heads()[0], program.get_rules()[0].get_cost()));
+    EXPECT_EQ(rule_text, fmt::format("{}.  % cost {}", program.get_rules()[0].get_fluent_heads()[0], program.get_rules()[0].get_cost()));
     EXPECT_TRUE(fmt::format("{}", program).ends_with(rule_text));
 }
 
@@ -358,8 +359,8 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     const auto& dependencies = const_workspace.dependencies;
-    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row().index());
-    const auto* d_rules = dependencies.fluent_precondition_to_rules.find(d.get_row().index());
+    const auto* a_rules = dependencies.find(a.get_row().index());
+    const auto* d_rules = dependencies.find(d.get_row().index());
 
     ASSERT_NE(a_rules, nullptr);
     ASSERT_NE(d_rules, nullptr);
@@ -381,7 +382,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     const auto& dependencies = const_workspace.dependencies;
-    const auto* a_rules = dependencies.fluent_precondition_to_rules.find(a.get_row().index());
+    const auto* a_rules = dependencies.find(a.get_row().index());
 
     ASSERT_NE(a_rules, nullptr);
     EXPECT_EQ(rule_indices(*a_rules), (urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>>({ fixture.ground_rules[0] })));
@@ -703,7 +704,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
 
     auto expected = PredicateRowViews {};
     for (const auto rule : program.get_rules())
-        expected.push_back(rule.get_heads().front().get_row());
+        expected.push_back(rule.get_fluent_heads().front().get_row());
     EXPECT_EQ(binding_views(ctx), expected);
     EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 2);
 }
@@ -717,11 +718,12 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctio
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
-    tyr::datalog::insert(ctx.out().facts().fact_sets, term.get_row().index(), ygg::ClosedInterval<ygg::float_t>(9, 9));
+    tyr::datalog::insert(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.get_row().index(), ygg::ClosedInterval<ygg::float_t>(9, 9));
 
     ctx.initialize(fixture.initial_fluent_atoms);
 
-    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().index()), ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.get_row().index()),
+              ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
 TEST(TyrDatalogGroundQueueTest, PredicateRuleWithNegativeFluentLiteralIsRejected)

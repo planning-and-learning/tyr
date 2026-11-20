@@ -39,6 +39,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_literals;
     urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
@@ -46,11 +47,13 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         variables(std::move(variables_)),
         static_literals(std::move(static_literals_)),
         fluent_literals(std::move(fluent_literals_)),
+        derived_literals(std::move(derived_literals_)),
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
@@ -66,14 +69,18 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
         return urd::Fields<urd::field<"variables", &data::variables>,
                            urd::field<"static_literals", &data::static_literals>,
                            urd::field<"fluent_literals", &data::fluent_literals>,
+                           urd::field<"derived_literals", &data::derived_literals>,
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
 
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    {
+        return urd::
+            Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {};
+    }
 };
 
 template<>
@@ -82,16 +89,19 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals;
     urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
 
     data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         static_literals(std::move(static_literals_)),
         fluent_literals(std::move(fluent_literals_)),
+        derived_literals(std::move(derived_literals_)),
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
@@ -106,13 +116,15 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     {
         return urd::Fields<urd::field<"static_literals", &data::static_literals>,
                            urd::field<"fluent_literals", &data::fluent_literals>,
+                           urd::field<"derived_literals", &data::derived_literals>,
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    static constexpr auto identifying_members() noexcept
+    { return urd::Members<&data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 };
 
 }
@@ -121,8 +133,11 @@ namespace tyr::formalism::datalog
 {
 /// The member holding the F-literals of a conjunctive condition.
 template<FactKind F, TaskKind T>
-inline constexpr auto literals_of =
-    tagged_member_pointer<StaticFluentTags, F, &urd::data<ConjunctiveCondition<T>>::static_literals, &urd::data<ConjunctiveCondition<T>>::fluent_literals>;
+inline constexpr auto literals_of = tagged_member_pointer<StaticFluentDerivedTags,
+                                                          F,
+                                                          &urd::data<ConjunctiveCondition<T>>::static_literals,
+                                                          &urd::data<ConjunctiveCondition<T>>::fluent_literals,
+                                                          &urd::data<ConjunctiveCondition<T>>::derived_literals>;
 }
 
 #endif

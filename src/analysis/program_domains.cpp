@@ -181,6 +181,7 @@ struct InsertConstantPolicy
 {
     TmpPredicateDomainMap<formalism::StaticTag>* static_predicate_domain_sets;
     TmpPredicateDomainMap<formalism::FluentTag>* fluent_predicate_domain_sets;
+    TmpPredicateDomainMap<formalism::DerivedTag>* derived_predicate_domain_sets;
     TmpFunctionDomainMap<formalism::StaticTag>* static_function_domain_sets;
     TmpFunctionDomainMap<formalism::FluentTag>* fluent_function_domain_sets;
 
@@ -193,6 +194,8 @@ struct InsertConstantPolicy
     [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
     [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+
+    [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
 
     [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
@@ -215,6 +218,7 @@ struct RestrictPolicy
 {
     const TmpPredicateDomainMap<formalism::StaticTag>* static_predicate_domain_sets;
     const TmpPredicateDomainMap<formalism::FluentTag>* fluent_predicate_domain_sets;
+    const TmpPredicateDomainMap<formalism::DerivedTag>* derived_predicate_domain_sets;
     const TmpFunctionDomainMap<formalism::StaticTag>* static_function_domain_sets;
     const TmpFunctionDomainMap<formalism::FluentTag>* fluent_function_domain_sets;
     TmpVariableDomainList* parameter_domains;
@@ -232,6 +236,8 @@ struct RestrictPolicy
     [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
     [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+
+    [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
 
     [[nodiscard]] const auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
@@ -255,6 +261,7 @@ struct LiftPolicy
 {
     TmpPredicateDomainMap<formalism::StaticTag>* static_predicate_domain_sets;
     TmpPredicateDomainMap<formalism::FluentTag>* fluent_predicate_domain_sets;
+    TmpPredicateDomainMap<formalism::DerivedTag>* derived_predicate_domain_sets;
     TmpFunctionDomainMap<formalism::StaticTag>* static_function_domain_sets;
     TmpFunctionDomainMap<formalism::FluentTag>* fluent_function_domain_sets;
     const TmpVariableDomainList* parameter_domains;
@@ -268,6 +275,8 @@ struct LiftPolicy
     [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
     [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+
+    [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
 
     [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
@@ -412,8 +421,10 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
 
     auto static_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<formalism::StaticTag>());
     auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<formalism::FluentTag>());
+    auto derived_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<formalism::DerivedTag>());
     insert_into_predicate_domain_sets(program.get_atoms<formalism::StaticTag>(), static_predicate_domain_sets);
     insert_into_predicate_domain_sets(program.get_atoms<formalism::FluentTag>(), fluent_predicate_domain_sets);
+    insert_into_predicate_domain_sets(program.get_atoms<formalism::DerivedTag>(), derived_predicate_domain_sets);
 
     ///--- Step 2: Initialize static and fluent function parameter domains
 
@@ -426,10 +437,8 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
 
     {
         auto insert_policy = InsertConstantPolicy {
-            &static_predicate_domain_sets,
-            &fluent_predicate_domain_sets,
-            &static_function_domain_sets,
-            &fluent_function_domain_sets,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,
         };
 
         const auto insert_rule_constants = [&]()
@@ -442,7 +451,10 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
                 for (const auto op : rule.get_body().get_numeric_constraints())
                     apply_policy(op, insert_policy);
 
-                for (const auto head : rule.get_heads())
+                for (const auto head : rule.get_heads<formalism::FluentTag>())
+                    apply_policy(head, insert_policy);
+
+                for (const auto head : rule.get_heads<formalism::DerivedTag>())
                     apply_policy(head, insert_policy);
             }
         };
@@ -470,7 +482,8 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
                 domain.objects = universe;
 
             auto restrict_policy = RestrictPolicy {
-                &static_predicate_domain_sets, &fluent_predicate_domain_sets, &static_function_domain_sets, &fluent_function_domain_sets, &parameter_domains,
+                &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+                &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
             };
 
             for (const auto literal : rule.get_body().template get_literals<formalism::StaticTag>())
@@ -503,7 +516,8 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
             const auto& parameter_domains = domain_sets.at(rule.index());
 
             auto lift_policy = LiftPolicy {
-                &static_predicate_domain_sets, &fluent_predicate_domain_sets, &static_function_domain_sets, &fluent_function_domain_sets, &parameter_domains,
+                &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+                &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
             };
 
             for (const auto literal : rule.get_body().template get_literals<formalism::StaticTag>())
@@ -512,10 +526,16 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
             for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
                 apply_policy(literal, lift_policy);
 
+            for (const auto literal : rule.get_body().template get_literals<formalism::DerivedTag>())
+                apply_policy(literal, lift_policy);
+
             for (const auto op : rule.get_body().get_numeric_constraints())
                 apply_policy(op, lift_policy);
 
-            for (const auto head : rule.get_heads())
+            for (const auto head : rule.get_heads<formalism::FluentTag>())
+                apply_policy(head, lift_policy);
+
+            for (const auto head : rule.get_heads<formalism::DerivedTag>())
                 apply_policy(head, lift_policy);
         }
     };
@@ -526,10 +546,12 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
 
     auto static_predicate_domains = to_predicate_domain_map(static_predicate_domain_sets);
     auto fluent_predicate_domains = to_predicate_domain_map(fluent_predicate_domain_sets);
+    auto derived_predicate_domains = to_predicate_domain_map(derived_predicate_domain_sets);
     auto static_function_domains = to_function_domain_map(static_function_domain_sets);
     auto fluent_function_domains = to_function_domain_map(fluent_function_domain_sets);
     auto domains = ProgramVariableDomains {
-        std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(static_function_domains), std::move(fluent_function_domains), {},
+        std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(derived_predicate_domains),
+        std::move(static_function_domains),  std::move(fluent_function_domains),  {},
     };
     domains.rule_domains = to_rule_domain_map(predicate_rule_domain_sets);
 

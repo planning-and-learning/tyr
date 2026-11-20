@@ -98,6 +98,12 @@ struct Literals
     size_t arity = 0;
 };
 
+template<typename F>
+using LiteralsOf = Literals<F>;
+
+/// A condition's literals of each mutable fact kind (MutableTags), each reached by get<F>().
+using MutableLiterals = MutableFamily<LiteralsOf>;
+
 /// A numeric constraint's function terms of fact kind T: its terms and function, by the function term.
 template<formalism::FactKind T>
 struct FunctionTerms
@@ -178,8 +184,8 @@ public:
     [[nodiscard]] const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     [[nodiscard]] const kckp::Graph& get_graph() const noexcept;
     [[nodiscard]] const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
-    /// The hyperedge condition's literals, in its literal order.
-    [[nodiscard]] const details::Literals<formalism::FluentTag>& get_hyperedge_literals() const noexcept;
+    /// The hyperedge condition's literals of each mutable kind, in its literal order.
+    [[nodiscard]] const details::MutableLiterals& get_hyperedge_literals() const noexcept;
 
 private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> m_unary_overapproximation_condition;
@@ -191,30 +197,37 @@ private:
     kckp::Graph m_compatibility_graph;
     kckp::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
 
-    details::Literals<formalism::FluentTag> m_unary_overapproximation_literals;
-    details::Literals<formalism::FluentTag> m_binary_overapproximation_literals;
-    details::Literals<formalism::FluentTag> m_hyperedge_literals;
+    details::MutableLiterals m_unary_overapproximation_literals;
+    details::MutableLiterals m_binary_overapproximation_literals;
+    details::MutableLiterals m_hyperedge_literals;
 
     urd::Store<urd::sequence<details::ConstraintTerms>> m_unary_overapproximation_constraints;
     urd::Store<urd::sequence<details::ConstraintTerms>> m_binary_overapproximation_constraints;
 };
 
 extern std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>
-create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, formalism::datalog::Repository& context);
+create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                            formalism::datalog::Builder& builder,
+                                            formalism::datalog::Repository& context);
 
 extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
                                                formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                               formalism::datalog::Builder& builder,
                                                formalism::datalog::Repository& context);
 
 extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
                                                            formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                                           formalism::datalog::Builder& builder,
                                                            formalism::datalog::Repository& context);
 
-/// The positive fluent literals of the conflicting condition: a new atom of one anchors the cliques it makes applicable.
+/// The positive fluent and derived literals of the conflicting condition: a new atom of one anchors the cliques it makes
+/// applicable.
 extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition, formalism::datalog::Repository& context);
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
+                                       formalism::datalog::Builder& builder,
+                                       formalism::datalog::Repository& context);
 
 }
 

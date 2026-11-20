@@ -49,33 +49,52 @@ namespace tyr::analysis
 {
 namespace
 {
+/// The vertices of the dependency graph: the fluent predicates, then the derived predicates, then the fluent functions.
 struct RelationVertexMap
 {
-    size_t num_predicates;
+    size_t num_fluent_predicates;
+    size_t num_derived_predicates;
     size_t num_functions;
 
     [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) const
     { return static_cast<ygg::uint_t>(predicate.value); }
 
-    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Function<formalism::FluentTag>> function) const
-    { return static_cast<ygg::uint_t>(num_predicates + static_cast<ygg::uint_t>(function.value)); }
+    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Predicate<formalism::DerivedTag>> predicate) const
+    { return static_cast<ygg::uint_t>(num_fluent_predicates + static_cast<ygg::uint_t>(predicate.value)); }
 
-    [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
+    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Function<formalism::FluentTag>> function) const
+    { return static_cast<ygg::uint_t>(num_fluent_predicates + num_derived_predicates + static_cast<ygg::uint_t>(function.value)); }
+
+    [[nodiscard]] size_t size() const { return num_fluent_predicates + num_derived_predicates + num_functions; }
 };
+
+/// Calls `function` with each head of the rule, of each kind.
+template<typename Function>
+void for_each_head(formalism::datalog::RuleView<LiftedTag> rule, Function&& function)
+{
+    for (const auto head : rule.get_heads<formalism::FluentTag>())
+        function(head);
+    for (const auto head : rule.get_heads<formalism::DerivedTag>())
+        function(head);
+}
 
 void add_body_dependencies(formalism::datalog::RuleView<LiftedTag> rule,
                            ygg::uint_t head_vertex,
                            const RelationVertexMap& vertices,
                            stratification::DepGraph& graph)
 {
-    for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
+    const auto add_literal_dependency = [&](const auto literal)
     {
         const auto body_vertex = vertices.get_vertex(literal.get_atom().get_predicate().index());
 
         stratification::EdgeProps ep;
         ep.kind = literal.get_polarity() ? stratification::EdgeKind::NonStrict : stratification::EdgeKind::Strict;
         boost::add_edge(body_vertex, head_vertex, ep, graph);
-    }
+    };
+    for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
+        add_literal_dependency(literal);
+    for (const auto literal : rule.get_body().template get_literals<formalism::DerivedTag>())
+        add_literal_dependency(literal);
 
     for (const auto term : formalism::datalog::collect_fluent_reads(rule))
     {
@@ -85,14 +104,14 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag> rule,
     }
 }
 
-ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
+template<formalism::FactKind F>
+ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, F> head, const RelationVertexMap& vertices)
 { return vertices.get_vertex(head.get_predicate().index()); }
 
 void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
     for (const auto rule : program.get_rules())
-        for (const auto head : rule.get_heads())
-            add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph);
+        for_each_head(rule, [&](const auto head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
 }
 
 void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
@@ -103,13 +122,14 @@ void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
     for (const auto rule : program.get_rules())
     {
         auto stratum = std::optional<ygg::uint_t> {};
-        for (const auto head : rule.get_heads())
-        {
-            const auto head_stratum = relation_stratum[get_head_vertex(head, vertices)];
-            if (stratum && *stratum != head_stratum)
-                throw std::runtime_error("bucket_rules_by_stratum: the heads of a rule must share a stratum.");
-            stratum = head_stratum;
-        }
+        for_each_head(rule,
+                      [&](const auto head)
+                      {
+                          const auto head_stratum = relation_stratum[get_head_vertex(head, vertices)];
+                          if (stratum && *stratum != head_stratum)
+                              throw std::runtime_error("bucket_rules_by_stratum: the heads of a rule must share a stratum.");
+                          stratum = head_stratum;
+                      });
         assert(stratum);
         buckets[*stratum].push_back(rule.index());
     }
@@ -117,7 +137,7 @@ void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
 
 }  // namespace
 
-// Build dependency graph: nodes = fluent predicates and fluent functions.
+// Build dependency graph: nodes = fluent and derived predicates and fluent functions.
 static stratification::DepGraph build_dependency_graph(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices)
 {
     stratification::DepGraph graph(vertices.size());
@@ -131,6 +151,7 @@ RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag
 {
     const auto vertices = RelationVertexMap {
         program.get_predicates<formalism::FluentTag>().size(),
+        program.get_predicates<formalism::DerivedTag>().size(),
         program.get_functions<formalism::FluentTag>().size(),
     };
 

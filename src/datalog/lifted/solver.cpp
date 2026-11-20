@@ -143,9 +143,13 @@ private:
 
             m_goal_positions.clear();
             m_num_goal_atoms = 0;
-            for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal_positions.template get<formalism::FluentTag>().emplace(literal.get_atom().get_row().index(), m_num_goal_atoms).second)
-                    ++m_num_goal_atoms;
+            boost::mp11::mp_for_each<MutableTags>(
+                [&]<typename F>(F)
+                {
+                    for (const auto literal : goal->template get_literals<F>())
+                        if (m_goal_positions.template get<F>().emplace(literal.get_atom().get_row().index(), m_num_goal_atoms).second)
+                            ++m_num_goal_atoms;
+                });
             m_goal_final.clear();
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
             m_goal_cutoff_enabled = m_num_goal_atoms != 0;
@@ -157,12 +161,20 @@ private:
     Cost get_delta_cost(StratumExecutionContext<AP, TP, CP>& ctx) const
     {
         const auto& program_out = ctx.out().program();
-        const auto& delta = program_out.facts().delta_fact_sets;
-        for (ygg::uint_t i = 0; i < delta.predicate.size(); ++i)
-            for (const auto atom : rows(delta, i))
-                if (const auto* annotation = program_out.annotations().find(atom.index()))
-                    return get_cost(*annotation);
-        return static_cast<Cost>(0);
+        auto result = std::optional<Cost> {};
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                const auto& delta = program_out.facts().delta_fact_sets.template get<F>();
+                for (ygg::uint_t i = 0; i < delta.predicate.size() && !result; ++i)
+                    for (const auto atom : rows(delta, i))
+                        if (const auto* annotation = program_out.annotations().find(atom.index()))
+                        {
+                            result = get_cost(*annotation);
+                            break;
+                        }
+            });
+        return result.value_or(static_cast<Cost>(0));
     }
 
     /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
@@ -239,9 +251,12 @@ private:
         auto& out = ctx.out();
         auto& heads = out.head_bindings();
         heads.clear();
-        // Rules derive fluent heads only.
-        for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
-            heads.template get<formalism::FluentTag>().push_back(formalism::datalog::ground_row(head_atom, out.ground_context()).first);
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto head_atom : ctx.in().cws_rule().get_rule().template get_heads<F>())
+                    heads.template get<F>().push_back(formalism::datalog::ground_row(head_atom, out.ground_context()).first);
+            });
         insert_propositional_update(std::as_const(heads), input, out.head_updates(), out.delta_annotations());
     }
 
@@ -367,14 +382,17 @@ private:
         auto& ground_context = out.ground_context();
         auto& heads = out.head_bindings();
         heads.clear();
-        // Rules derive fluent heads only.
-        for (const auto head_atom : in.cws_rule().get_rule().get_heads())
-        {
-            const auto head = formalism::datalog::ground_row(head_atom, ground_context).first;
-            if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<formalism::FluentTag>(), head))
-                continue;
-            heads.template get<formalism::FluentTag>().push_back(head);
-        }
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto head_atom : in.cws_rule().get_rule().template get_heads<F>())
+                {
+                    const auto head = formalism::datalog::ground_row(head_atom, ground_context).first;
+                    if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<F>(), head))
+                        continue;
+                    heads.template get<F>().push_back(head);
+                }
+            });
     }
 
     bool try_process_predicate_binding(RuleWorkerExecutionContext<AP, TP, CP>& wrctx,
@@ -485,14 +503,17 @@ private:
 
     /// Edge anchors generate every clique with a delta vertex or edge. A new atom of hyperedge literal i generates
     /// the cliques without any, provided no literal before i has a new atom, so each binding is generated once,
-    /// in the iteration it becomes applicable. generate_general_case calls this before the edge anchors, the order
-    /// in which the retried bindings were processed, so that equal-cost witnesses keep their first derivation.
+    /// in the iteration it becomes applicable. The literals are ordered by kind (MutableTags), then by their order in the
+    /// condition. generate_general_case calls this before the edge anchors, the order in which the retried bindings were
+    /// processed, so that equal-cost witnesses keep their first derivation.
     void generate_hyperedge_cliques(RuleExecutionContext<AP, TP, CP>& rctx)
     {
         const auto& cws_rule = rctx.in().cws_rule();
-        const auto literals = cws_rule.get_hyperedge_condition().template get_literals<formalism::FluentTag>();
+        const auto hyperedge_condition = cws_rule.get_hyperedge_condition();
         auto& kckp_algorithm = rctx.out().kckp();
-        if (literals.empty() || kckp_algorithm.get_iteration() <= 1)
+        auto num_literals = size_t { 0 };
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { num_literals += hyperedge_condition.template get_literals<F>().size(); });
+        if (num_literals == 0 || kckp_algorithm.get_iteration() <= 1)
             return;
 
         const auto& graph = cws_rule.get_static_consistency_graph();
@@ -503,34 +524,61 @@ private:
         const auto delta_sets = FactSets { rctx.stratum_in().program().facts().fact_sets, delta_fact_sets };
         const auto delta_context = ApplicabilityContext { delta_sets, out.ground_context() };
 
-        for (size_t i = 0; i < literals.size(); ++i)
+        // Whether a literal before literal i of kind F has a new atom: a literal of an earlier kind, or of kind F before i.
+        const auto earlier_literal_has_new_atom = [&]<typename F>(F, size_t i)
         {
-            for (const auto atom : rows(delta_fact_sets, anchors.heads[i].predicate.value))
-            {
-                if (!match_anchor(graph.get_graph(), anchors, i, atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
-                    continue;
-
-                kckp_algorithm.for_each_hyperedge_clique(
-                    out.anchor_vertices(),
-                    [&](auto&& clique)
+            auto result = false;
+            boost::mp11::mp_for_each<MutableTags>(
+                [&]<typename G>(G)
+                {
+                    constexpr auto g = boost::mp11::mp_find<MutableTags, G>::value;
+                    constexpr auto f = boost::mp11::mp_find<MutableTags, F>::value;
+                    if constexpr (g <= f)
                     {
-                        if (goal_cutoff_stopped())
-                            return;
-                        create_general_binding(clique, graph, out.ground_context().binding());
-                        for (size_t j = 0; j < i; ++j)
-                            if (is_applicable(literals[j], delta_context))
-                                return;  // An earlier literal's new atom anchors this clique.
-                        process_binding(wrctx, true);
-                    },
-                    out.kckp_workspace());
-            }
-        }
+                        const auto literals = hyperedge_condition.template get_literals<G>();
+                        const auto end = (g < f) ? literals.size() : i;
+                        for (size_t j = 0; j < end && !result; ++j)
+                            result = is_applicable(literals[j], delta_context);
+                    }
+                });
+            return result;
+        };
+
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F tag)
+            {
+                const auto& kind_anchors = anchors.template get<F>();
+                const auto& kind_delta = delta_fact_sets.template get<F>();
+                const auto num_kind_literals = hyperedge_condition.template get_literals<F>().size();
+                for (size_t i = 0; i < num_kind_literals; ++i)
+                {
+                    for (const auto atom : rows(kind_delta, kind_anchors.heads[i].predicate.value))
+                    {
+                        if (!match_anchor(graph.get_graph(), kind_anchors, i, atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
+                            continue;
+
+                        kckp_algorithm.for_each_hyperedge_clique(
+                            out.anchor_vertices(),
+                            [&](auto&& clique)
+                            {
+                                if (goal_cutoff_stopped())
+                                    return;
+                                create_general_binding(clique, graph, out.ground_context().binding());
+                                if (earlier_literal_has_new_atom(tag, i))
+                                    return;  // An earlier literal's new atom anchors this clique.
+                                process_binding(wrctx, true);
+                            },
+                            out.kckp_workspace());
+                    }
+                }
+            });
     }
 
     /// The vertices of the atom's objects at literal `literal`'s parameters, if the atom matches its constants and repeated parameters.
     /// vertices is a per-worker scratch buffer, reused across anchors to avoid allocations.
+    template<formalism::FactKind F>
     static bool match_anchor(const kckp::Graph& graph,
-                             const details::Literals<formalism::FluentTag>& literals,
+                             const details::Literals<F>& literals,
                              size_t literal,
                              const auto& objects,
                              urd::Store<urd::sequence<urd::data<kckp::Vertex>>>& vertices)

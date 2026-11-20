@@ -71,11 +71,21 @@ template class MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>;
 template class MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>;
 template const MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::Achievers*
     MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(formalism::datalog::PredicateRowIndex<formalism::FluentTag>) const noexcept;
+template const MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::Achievers*
+    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(
+        formalism::datalog::PredicateRowIndex<formalism::DerivedTag>) const noexcept;
 template const MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::Achievers*
     MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(formalism::datalog::PredicateRowIndex<formalism::FluentTag>) const noexcept;
+template const MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::Achievers*
+    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(
+        formalism::datalog::PredicateRowIndex<formalism::DerivedTag>) const noexcept;
 template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::datalog::PredicateRowIndex<formalism::FluentTag>,
                                                                                                WitnessAnnotation<GroundTag>);
+template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::datalog::PredicateRowIndex<formalism::DerivedTag>,
+                                                                                               WitnessAnnotation<GroundTag>);
 template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::datalog::PredicateRowIndex<formalism::FluentTag>,
+                                                                                               WitnessAnnotation<LiftedTag>);
+template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::datalog::PredicateRowIndex<formalism::DerivedTag>,
                                                                                                WitnessAnnotation<LiftedTag>);
 
 }

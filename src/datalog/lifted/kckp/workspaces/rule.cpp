@@ -29,15 +29,17 @@ namespace tyr::datalog
  */
 
 ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_,
+                                                  formalism::datalog::Builder& builder,
                                                   formalism::datalog::Repository& repository,
                                                   kckp::Graph compatibility_graph) :
     rule(rule_),
-    nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
-    unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
-    binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first),
+    nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), builder, repository).first),
+    unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), builder, repository).first),
+    binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), builder, repository).first),
     conflicting_overapproximation_condition(
-        create_overapproximation_conflicting_conjunctive_condition(get_rule().get_body().get_arity() == 1 ? 1 : 2, get_rule().get_body(), repository).first),
-    hyperedge_condition(create_hyperedge_conjunctive_condition(conflicting_overapproximation_condition, repository).first),
+        create_overapproximation_conflicting_conjunctive_condition(get_rule().get_body().get_arity() == 1 ? 1 : 2, get_rule().get_body(), builder, repository)
+            .first),
+    hyperedge_condition(create_hyperedge_conjunctive_condition(conflicting_overapproximation_condition, builder, repository).first),
     static_consistency_graph(unary_overapproximation_condition, binary_overapproximation_condition, hyperedge_condition, std::move(compatibility_graph))
 {
 }

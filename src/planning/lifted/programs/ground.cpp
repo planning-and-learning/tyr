@@ -115,7 +115,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
     for (const auto variable : new_conj_cond.get_variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
-    urd::append(rule->heads, create_applicability_atom(action, context).first);
+    urd::append(rule->fluent_heads, create_applicability_atom(action, context).first);
 
     return context.destination().insert(*rule, context.builder());
 }
@@ -148,7 +148,7 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     for (const auto variable : new_conj_cond.get_variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
-    urd::append(rule->heads, create_applicability_atom(axiom, context).first);
+    urd::append(rule->fluent_heads, create_applicability_atom(axiom, context).first);
 
     return context.destination().insert(*rule, context.builder());
 }
@@ -181,7 +181,8 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
     urd::store(rule->body, new_conj_cond);
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects
-            urd::append(rule->heads, formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first);
+            urd::append(rule->fluent_heads,
+                        formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first);
     if (effect_predicate)
     {
         auto effect_parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
@@ -191,7 +192,7 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
         urd::store(effect_atom->predicate, *effect_predicate);
         for (ygg::uint_t i = 0; i < effect_predicate->get_arity(); ++i)
             urd::build_member(effect_atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), context.destination());
-        urd::append(rule->heads, context.destination().insert(*effect_atom, context.builder()).first);
+        urd::append(rule->fluent_heads, context.destination().insert(*effect_atom, context.builder()).first);
     }
 
     return context.destination().insert(*rule, context.builder());
@@ -217,7 +218,7 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     for (const auto variable : new_conj_cond.get_variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
-    urd::append(rule->heads, effect);
+    urd::append(rule->fluent_heads, effect);
 
     return context.destination().insert(*rule, context.builder());
 }

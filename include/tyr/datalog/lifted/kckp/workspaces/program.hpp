@@ -52,17 +52,17 @@ struct ConstKCKPWorkspace
                        const TaggedFactSets<formalism::StaticTag>& static_fact_sets);
 };
 
-/// The KCKP engine's part of an evaluation: the fluent facts' assignment sets (KCKP's index over the facts, rebuilt
-/// from them when an evaluation starts and kept in step as facts are committed) and each rule's workspace.
+/// The KCKP engine's part of an evaluation: the assignment sets of the facts of each mutable kind (KCKP's index over the
+/// facts, rebuilt from them when an evaluation starts and kept in step as facts are committed) and each rule's workspace.
 struct KCKPWorkspace
 {
-    TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
+    MutableAssignmentSets assignment_sets;
     RuleWorkspaces rules;
 
     KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                   formalism::datalog::ProgramView<LiftedTag> program,
                   const analysis::ProgramVariableDomains& domains,
-                  const TaggedFactSets<formalism::FluentTag>& fact_sets);
+                  const MutableFactSets& fact_sets);
 
     /// Forgets the rules' evaluation state.
     void clear();

@@ -525,8 +525,9 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     datalog::execute_model(ctx, execution_context);
 
     auto predicate_bindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>> {};
-    for (ygg::uint_t i = 0; i < workspace.facts.fact_sets.predicate.size(); ++i)
-        for (const auto binding : datalog::rows(workspace.facts.fact_sets, i))
+    const auto& fluent_fact_sets = workspace.facts.fact_sets.get<formalism::FluentTag>();
+    for (ygg::uint_t i = 0; i < fluent_fact_sets.predicate.size(); ++i)
+        for (const auto binding : datalog::rows(fluent_fact_sets, i))
             predicate_bindings.push_back(binding);
     /**
      * Create basic structures of task
@@ -673,7 +674,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     // The atoms of the effect predicates are the relaxed reachable groundings of the conditional effects.
     auto effect_atom_index = EffectAtomIndex(ground_program.get_predicate_to_action_mapping(),
                                              ground_program.get_conditional_effect_to_predicate_mapping(),
-                                             workspace.facts.fact_sets,
+                                             workspace.facts.fact_sets.get<formalism::FluentTag>(),
                                              *workspace.workspace_repository);
 
     for_each_predicate_binding(

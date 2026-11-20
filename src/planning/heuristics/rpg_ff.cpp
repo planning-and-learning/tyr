@@ -51,13 +51,13 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         Base(std::move(task), std::move(execution_context), cost_mode),
-        m_predicate_markings(this->workspace().facts.fact_sets.predicate.size())
+        m_predicate_markings(this->workspace().facts.fact_sets.template get<formalism::FluentTag>().predicate.size())
     {
     }
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
         Base(source, std::move(execution_context)),
-        m_predicate_markings(this->workspace().facts.fact_sets.predicate.size())
+        m_predicate_markings(this->workspace().facts.fact_sets.template get<formalism::FluentTag>().predicate.size())
     {
     }
 

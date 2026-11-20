@@ -219,24 +219,14 @@ fmt::formatter<urd::index_view<td::ConjunctiveCondition<T>, td::Repository>>::fo
         out = fmt::format_to(out, "{}{}", separator, element);
         separator = ", ";
     };
-    if constexpr (std::same_as<T, LiftedTag>)
-    {
-        for (auto literal : value.get_static_literals())
-            write(literal);
-        for (auto literal : value.get_fluent_literals())
-            write(literal);
-        for (auto constraint : value.get_numeric_constraints())
-            write(constraint);
-    }
-    else
-    {
-        for (auto literal : value.get_static_literals())
-            write(literal);
-        for (auto literal : value.get_fluent_literals())
-            write(literal);
-        for (auto constraint : value.get_numeric_constraints())
-            write(constraint);
-    }
+    for (auto literal : value.get_static_literals())
+        write(literal);
+    for (auto literal : value.get_fluent_literals())
+        write(literal);
+    for (auto literal : value.get_derived_literals())
+        write(literal);
+    for (auto constraint : value.get_numeric_constraints())
+        write(constraint);
     return out;
 }
 
@@ -245,21 +235,15 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Re
                                                                                                    fmt::format_context& context) const
 {
     const auto body = value.get_body();
-    const auto has_body = !body.get_static_literals().empty() || !body.get_fluent_literals().empty() || !body.get_numeric_constraints().empty();
-    if constexpr (std::same_as<T, LiftedTag>)
-    {
-        auto out = fmt::format_to(context.out(), "{}", fmt::join(value.get_heads(), ", "));
-        if (has_body)
-            out = fmt::format_to(out, " :- {}", body);
-        return fmt::format_to(out, ".  % cost {}", value.get_cost());
-    }
-    else
-    {
-        auto out = fmt::format_to(context.out(), "{}", fmt::join(value.get_heads(), ", "));
-        if (has_body)
-            out = fmt::format_to(out, " :- {}", body);
-        return fmt::format_to(out, ".  % cost {}", value.get_cost());
-    }
+    const auto has_body = !body.get_static_literals().empty() || !body.get_fluent_literals().empty() || !body.get_derived_literals().empty()
+                          || !body.get_numeric_constraints().empty();
+    auto out = fmt::format_to(context.out(), "{}", fmt::join(value.get_fluent_heads(), ", "));
+    if (!value.get_fluent_heads().empty() && !value.get_derived_heads().empty())
+        out = fmt::format_to(out, ", ");
+    out = fmt::format_to(out, "{}", fmt::join(value.get_derived_heads(), ", "));
+    if (has_body)
+        out = fmt::format_to(out, " :- {}", body);
+    return fmt::format_to(out, ".  % cost {}", value.get_cost());
 }
 
 // A program, one statement per line: its predicates, functions and objects as comments, its facts and function values,
@@ -281,6 +265,7 @@ fmt::formatter<urd::index_view<td::Program<T>, td::Repository>>::format(const ur
     };
     comment("static predicates", value.get_static_predicates());
     comment("fluent predicates", value.get_fluent_predicates());
+    comment("derived predicates", value.get_derived_predicates());
     comment("static functions", value.get_static_functions());
     comment("fluent functions", value.get_fluent_functions());
     comment("objects", value.get_objects());
@@ -294,6 +279,7 @@ fmt::formatter<urd::index_view<td::Program<T>, td::Repository>>::format(const ur
     };
     statements(value.get_static_atoms());
     statements(value.get_fluent_atoms());
+    statements(value.get_derived_atoms());
     statements(value.get_static_fterm_values());
     statements(value.get_fluent_fterm_values());
     for (auto rule : value.get_rules())
@@ -344,28 +330,35 @@ fmt::format_context::iterator fmt::formatter<td::VariableDependencyGraph>::forma
     const auto& binary = value.binary();
     const auto parameter = [](const auto& /*graph*/, tf::ParameterIndex v) { return v; };
     return fmt::format_to(context.out(),
-                          "{}{}{}{}{}",
+                          "{}{}{}{}{}{}{}",
                           urd::to_dot(binary.static_positive_literal, parameter, urd::unlabeled, "static_positive_literal"),
                           urd::to_dot(binary.static_negative_literal, parameter, urd::unlabeled, "static_negative_literal"),
                           urd::to_dot(binary.fluent_positive_literal, parameter, urd::unlabeled, "fluent_positive_literal"),
                           urd::to_dot(binary.fluent_negative_literal, parameter, urd::unlabeled, "fluent_negative_literal"),
+                          urd::to_dot(binary.derived_positive_literal, parameter, urd::unlabeled, "derived_positive_literal"),
+                          urd::to_dot(binary.derived_negative_literal, parameter, urd::unlabeled, "derived_negative_literal"),
                           urd::to_dot(binary.numeric_constraint, parameter, urd::unlabeled, "numeric_constraint"));
 }
 
 // Each family's formatter, once for each record of the family the repository stores.
 template struct fmt::formatter<urd::index_view<tf::Predicate<tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Predicate<tf::FluentTag>, td::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Predicate<tf::DerivedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Function<tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Function<tf::FluentTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Function<tf::AuxiliaryTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::FluentTag>, td::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::DerivedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::FluentTag>, td::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::DerivedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::FluentTag>, td::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::DerivedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::FluentTag>, td::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::DerivedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::FluentTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::AuxiliaryTag>, td::Repository>>;
@@ -393,6 +386,7 @@ template struct fmt::formatter<urd::index_view<td::Program<LiftedTag>, td::Repos
 template struct fmt::formatter<urd::index_view<td::Program<GroundTag>, td::Repository>>;
 template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::FluentTag>, td::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::DerivedTag>, td::Repository>>;
 template struct fmt::formatter<ygg::RowView<tf::Function<tf::StaticTag>, td::Repository>>;
 template struct fmt::formatter<ygg::RowView<tf::Function<tf::FluentTag>, td::Repository>>;
 template struct fmt::formatter<ygg::RowView<tf::Function<tf::AuxiliaryTag>, td::Repository>>;

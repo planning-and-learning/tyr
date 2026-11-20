@@ -30,6 +30,7 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <boost/mp11.hpp>
 #include <type_traits>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -39,15 +40,29 @@
 namespace tyr::datalog
 {
 
+/// The rules that wait on each fact of a mutable kind, a positive literal of their body.
 struct GroundRuleDependencies
 {
 private:
     using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
 
-public:
-    DenseRelationMap<formalism::PredicateTag, formalism::FluentTag, Rules> fluent_precondition_to_rules;
+    template<typename F>
+    using PreconditionToRules = DenseRelationMap<formalism::PredicateTag, F, Rules>;
 
-    explicit GroundRuleDependencies(size_t num_predicates) : fluent_precondition_to_rules(num_predicates) {}
+public:
+    MutableFamily<PreconditionToRules> precondition_to_rules;
+
+    /// Sized for the predicates of each mutable kind of the program.
+    explicit GroundRuleDependencies(formalism::datalog::ProgramView<GroundTag> program)
+    {
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
+                                              { precondition_to_rules.template get<F>().initialize(program.template get_predicates<F>().size()); });
+    }
+
+    /// The rules that wait on the fact, if any.
+    template<formalism::FactKind F>
+    [[nodiscard]] const Rules* find(formalism::datalog::PredicateRowIndex<F> fact) const noexcept
+    { return precondition_to_rules.template get<F>().find(fact); }
 };
 
 template<>
@@ -76,11 +91,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP()) :
         const_workspace(&cws),
-        facts(cws.program.template get_predicates<formalism::FluentTag>(),
-              cws.program.template get_functions<formalism::FluentTag>(),
-              cws.program.template get_atoms<formalism::FluentTag>(),
-              cws.program.template get_fterm_values<formalism::FluentTag>(),
-              cws.program.context()),
+        facts(cws.program, cws.program.context()),
         annotation_policy(std::move(annotation_policy_)),
         annotations(cws.program),
         tp(std::move(tp_)),

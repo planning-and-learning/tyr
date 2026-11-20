@@ -19,6 +19,8 @@
 #define TYR_DATALOG_ASSIGNMENT_SETS_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/variable_domains.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/kckp/assignment.hpp"
 #include "tyr/formalism/atom_view.hpp"
@@ -43,6 +45,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -113,6 +116,8 @@ private:
     urd::Store<urd::sequence<PredicateAssignmentSet<T>>> m_sets;
 
 public:
+    PredicateAssignmentSets() = default;
+
     PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates, const analysis::PredicateDomainMap<T>& predicate_domains, size_t num_objects);
 
     void reset() noexcept;
@@ -166,6 +171,9 @@ private:
     urd::Store<urd::sequence<FunctionAssignmentSet<T>>> m_sets;
 
 public:
+    /// No function: those of a kind without function facts (has_function_facts).
+    FunctionAssignmentSets() = default;
+
     FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions, const analysis::FunctionDomainMap<T>& function_domains, size_t num_objects);
 
     void reset() noexcept;
@@ -183,11 +191,21 @@ public:
     [[nodiscard]] size_t size() const noexcept;
 };
 
+/// The assignment sets of the facts of kind T: of its predicates, and of its functions where the kind has function facts
+/// (has_function_facts; none for derived facts).
 template<formalism::FactKind T>
 struct TaggedAssignmentSets
 {
     PredicateAssignmentSets<T> predicate;
     FunctionAssignmentSets<T> function;
+
+    /// No set yet: a member of MutableAssignmentSets before it is built.
+    TaggedAssignmentSets() = default;
+
+    /// The sets of the program's predicates (and functions) of kind T over their domains, holding `fact_sets`.
+    TaggedAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
+                         const analysis::ProgramVariableDomains& domains,
+                         const TaggedFactSets<T>& fact_sets);
 
     TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
                          formalism::datalog::FunctionListView<T> functions,
@@ -206,18 +224,46 @@ struct TaggedAssignmentSets
     void reset() noexcept;
 };
 
+template<typename F>
+using MutableTaggedAssignmentSets = TaggedAssignmentSets<F>;
+
+/// The assignment sets of each mutable kind (MutableTags), each reached by get<F>().
+class MutableAssignmentSets : public MutableFamily<MutableTaggedAssignmentSets>
+{
+public:
+    MutableAssignmentSets() = default;
+
+    /// The sets of the program's predicates (and functions) of each mutable kind, holding `fact_sets`.
+    MutableAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
+                          const analysis::ProgramVariableDomains& domains,
+                          const MutableFactSets& fact_sets);
+
+    /// Inserts the fact of kind F.
+    template<formalism::FactKind F>
+    void insert(formalism::datalog::PredicateRowView<F> binding)
+    { this->template get<F>().predicate.insert(binding); }
+
+    void reset() noexcept;
+};
+
+/// The assignment sets of every kind: the static ones and those of each mutable kind.
 class AssignmentSets
 {
 public:
-    AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets);
+    AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const MutableAssignmentSets& mutable_sets);
 
-    [[nodiscard]] const TaggedAssignmentSets<formalism::StaticTag>& static_sets() const noexcept { return *m_static_sets; }
-
-    [[nodiscard]] const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets() const noexcept { return *m_fluent_sets; }
+    template<formalism::FactKind T>
+    [[nodiscard]] const TaggedAssignmentSets<T>& get() const noexcept
+    {
+        if constexpr (std::same_as<T, formalism::StaticTag>)
+            return *m_static_sets;
+        else
+            return m_mutable_sets->template get<T>();
+    }
 
 private:
     const TaggedAssignmentSets<formalism::StaticTag>* m_static_sets;
-    const TaggedAssignmentSets<formalism::FluentTag>* m_fluent_sets;
+    const MutableAssignmentSets* m_mutable_sets;
 };
 
 }

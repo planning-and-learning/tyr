@@ -41,6 +41,7 @@ struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>>, C>
         numeric_constraints;
 
@@ -49,11 +50,15 @@ struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>
         return urd::Fields<urd::field<"variables", &builder::variables>,
                            urd::field<"static_literals", &builder::static_literals>,
                            urd::field<"fluent_literals", &builder::fluent_literals>,
+                           urd::field<"derived_literals", &builder::derived_literals>,
                            urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
     }
 
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::variables, &builder::static_literals, &builder::fluent_literals, &builder::numeric_constraints> {}; }
+    {
+        return urd::
+            Members<&builder::variables, &builder::static_literals, &builder::fluent_literals, &builder::derived_literals, &builder::numeric_constraints> {};
+    }
 };
 
 /// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
@@ -63,6 +68,7 @@ struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>>, C>
         numeric_constraints;
 
@@ -70,11 +76,12 @@ struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>
     {
         return urd::Fields<urd::field<"static_literals", &builder::static_literals>,
                            urd::field<"fluent_literals", &builder::fluent_literals>,
+                           urd::field<"derived_literals", &builder::derived_literals>,
                            urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
     }
 
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::static_literals, &builder::fluent_literals, &builder::numeric_constraints> {}; }
+    { return urd::Members<&builder::static_literals, &builder::fluent_literals, &builder::derived_literals, &builder::numeric_constraints> {}; }
 };
 
 }  // namespace urd

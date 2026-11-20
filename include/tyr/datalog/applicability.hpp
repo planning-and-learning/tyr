@@ -135,13 +135,17 @@ inline bool is_applicable(formalism::datalog::BooleanOperatorListView<GroundTag>
 
 inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<GroundTag> element, const FactSets& fact_sets)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), fact_sets)     //
-           && is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets)  //
+    return is_applicable(element.template get_literals<formalism::StaticTag>(), fact_sets)      //
+           && is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets)   //
+           && is_applicable(element.template get_literals<formalism::DerivedTag>(), fact_sets)  //
            && is_applicable(element.get_numeric_constraints(), fact_sets);
 }
 
 inline bool is_dynamically_applicable(formalism::datalog::ConjunctiveConditionView<GroundTag> element, const FactSets& fact_sets)
-{ return is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets) && is_applicable(element.get_numeric_constraints(), fact_sets); }
+{
+    return is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets)
+           && is_applicable(element.template get_literals<formalism::DerivedTag>(), fact_sets) && is_applicable(element.get_numeric_constraints(), fact_sets);
+}
 
 // GroundRule
 
@@ -178,9 +182,11 @@ extern template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::F
 
 extern template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::StaticTag> element, const FactSets& fact_sets);
 extern template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> element, const FactSets& fact_sets);
+extern template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::DerivedTag> element, const FactSets& fact_sets);
 
 extern template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::StaticTag> elements, const FactSets& fact_sets);
 extern template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::FluentTag> elements, const FactSets& fact_sets);
+extern template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::DerivedTag> elements, const FactSets& fact_sets);
 
 // GroundConjunctiveCondition
 

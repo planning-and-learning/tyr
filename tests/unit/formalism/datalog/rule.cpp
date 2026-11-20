@@ -37,13 +37,17 @@ static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
     data.body;
-    data.heads;
+    data.fluent_heads;
+    data.derived_heads;
     data.cost;
     view.index();
     view.get_body().get_arity();
     view.get_variables();
     view.get_body();
-    view.get_heads();
+    view.get_fluent_heads();
+    view.get_derived_heads();
+    view.template get_heads<tyr::formalism::FluentTag>();
+    view.template get_heads<tyr::formalism::DerivedTag>();
     view.get_cost();
 });
 
@@ -65,11 +69,15 @@ static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::Ground
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.body;
-    data.heads;
+    data.fluent_heads;
+    data.derived_heads;
     data.cost;
     view.index();
     view.get_body();
-    view.get_heads();
+    view.get_fluent_heads();
+    view.get_derived_heads();
+    view.template get_heads<tyr::formalism::FluentTag>();
+    view.template get_heads<tyr::formalism::DerivedTag>();
     view.get_cost();
 });
 
@@ -112,7 +120,7 @@ TEST(TyrFormalismDatalogLiftedRule, PrintsAsDatalog)
     auto rule = urd::data<tf::datalog::Rule<::tyr::LiftedTag>> {};
     rule.variables = variables;
     rule.body = insert(std::move(body)).index();
-    rule.heads.push_back(reached_y.index());
+    rule.fluent_heads.push_back(reached_y.index());
     rule.cost = 1;
 
     EXPECT_EQ(fmt::format("{}", insert(std::move(rule))), "reached(?y) :- edge(?x, ?y), not visited(?y).  % cost 1");

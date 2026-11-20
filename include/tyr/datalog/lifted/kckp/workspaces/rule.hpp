@@ -178,7 +178,11 @@ public:
 
     [[nodiscard]] const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
-    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
+    /// Builds the rule's conditions in `repository` with `builder`, which the rules of a program share.
+    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_,
+                       formalism::datalog::Builder& builder,
+                       formalism::datalog::Repository& repository,
+                       kckp::Graph compatibility_graph);
 
 private:
     formalism::datalog::RuleView<LiftedTag> rule;

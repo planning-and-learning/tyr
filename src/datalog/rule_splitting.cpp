@@ -44,6 +44,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
+#include <boost/mp11.hpp>
 #include <optional>
 #include <string>
 #include <urd/config.hpp>
@@ -70,7 +71,11 @@ class Splitter
 public:
     using StaticLiteral = urd::index<formalism::Literal<LiftedTag, formalism::StaticTag>>;
     using FluentLiteral = urd::index<formalism::Literal<LiftedTag, formalism::FluentTag>>;
-    using FluentAtom = urd::index<formalism::Atom<LiftedTag, formalism::FluentTag>>;
+    using DerivedLiteral = urd::index<formalism::Literal<LiftedTag, formalism::DerivedTag>>;
+    /// The heads of kind F of a rule.
+    template<typename F>
+    using Heads = urd::Store<urd::sequence<urd::index<formalism::Atom<LiftedTag, F>>>>;
+    using RuleHeads = MutableFamily<Heads>;
 
     Splitter(urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program,
              RuleSplitting& splitting,
@@ -85,8 +90,7 @@ public:
 
     /// The main rule of the rule with the given parts in the destination repository, or nullopt if nothing can be projected.
     /// The projection rules are added to the program.
-    std::optional<RuleSplitting::Rule>
-    split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, const urd::Store<urd::sequence<FluentAtom>>& heads, ygg::float_t cost)
+    std::optional<RuleSplitting::Rule> split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, const RuleHeads& heads, ygg::float_t cost)
     {
         if (!condition.get_numeric_constraints().empty())
             return std::nullopt;
@@ -104,10 +108,16 @@ public:
             body.static_literals.push_back(literal.index());
         for (const auto literal : condition.get_literals<formalism::FluentTag>())
             body.fluent_literals.push_back(literal.index());
+        for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+            body.derived_literals.push_back(literal.index());
 
         auto head_parameters = Parameters {};
-        for (const auto head : heads)
-            formalism::datalog::collect_parameters(urd::resolve(head, m_context->destination()), head_parameters);
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto head : heads.template get<F>())
+                    formalism::datalog::collect_parameters(urd::resolve(head, m_context->destination()), head_parameters);
+            });
 
         auto projections = urd::Store<urd::sequence<std::pair<Body, FluentLiteral>>> {};
         while (auto projection = choose_projection(body, head_parameters, variables.size()))
@@ -123,8 +133,9 @@ public:
 
         for (const auto& [projected, atom] : projections)
         {
-            const auto [projection_rule, positions] =
-                emit_rule(variables, projected, { urd::resolve(atom, m_context->destination()).get_atom().index() }, static_cast<ygg::float_t>(0));
+            auto projection_heads = RuleHeads {};
+            projection_heads.template get<formalism::FluentTag>().push_back(urd::resolve(atom, m_context->destination()).get_atom().index());
+            const auto [projection_rule, positions] = emit_rule(variables, projected, projection_heads, static_cast<ygg::float_t>(0));
             urd::append(m_program->rules, m_context->destination().view(projection_rule));
             m_splitting->origins.emplace(projection_rule, RuleSplitting::Origin { variables.size(), positions });
             m_splitting->projection_rules.emplace(urd::resolve(atom, m_context->destination()).get_atom().get_predicate().index(), projection_rule);
@@ -142,6 +153,12 @@ private:
     {
         urd::Store<urd::sequence<StaticLiteral>> static_literals;
         urd::Store<urd::sequence<FluentLiteral>> fluent_literals;
+        urd::Store<urd::sequence<DerivedLiteral>> derived_literals;
+
+        /// Whether the body has no literal over facts that evaluation derives.
+        [[nodiscard]] bool has_no_mutable_literals() const noexcept { return fluent_literals.empty() && derived_literals.empty(); }
+
+        [[nodiscard]] bool empty() const noexcept { return static_literals.empty() && has_no_mutable_literals(); }
     };
 
     struct Projection
@@ -164,6 +181,8 @@ private:
         for (const auto literal : body.static_literals)
             formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         for (const auto literal : body.fluent_literals)
+            formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
+        for (const auto literal : body.derived_literals)
             formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         return result;
     }
@@ -188,8 +207,9 @@ private:
             };
             partition(body.static_literals, candidate.projected.static_literals, candidate.rest.static_literals);
             partition(body.fluent_literals, candidate.projected.fluent_literals, candidate.rest.fluent_literals);
+            partition(body.derived_literals, candidate.projected.derived_literals, candidate.rest.derived_literals);
             // A projection of static literals alone would derive the same atoms in every evaluation.
-            if (candidate.projected.fluent_literals.empty() || (candidate.rest.static_literals.empty() && candidate.rest.fluent_literals.empty()))
+            if (candidate.projected.has_no_mutable_literals() || candidate.rest.empty())
                 continue;
 
             const auto covered = parameters_of(candidate.projected);
@@ -203,7 +223,7 @@ private:
                          return inside;
                      });
 
-            if (candidate.rest.static_literals.empty() && candidate.rest.fluent_literals.empty())
+            if (candidate.rest.empty())
                 continue;
             const auto rest_parameters = parameters_of(candidate.rest);
             if (std::ranges::all_of(rest_parameters, [&](auto p) { return covered.contains(p); }))
@@ -342,10 +362,7 @@ private:
 
     /// The rule over the variables that its body uses, in action rule order, and the action rule position of each of them.
     std::pair<urd::index<formalism::datalog::Rule<LiftedTag>>, urd::Store<urd::sequence<ygg::uint_t>>>
-    emit_rule(const urd::flat_vector<urd::index<formalism::Variable>>& variables,
-              const Body& body,
-              const urd::Store<urd::sequence<FluentAtom>>& heads,
-              ygg::float_t cost)
+    emit_rule(const urd::flat_vector<urd::index<formalism::Variable>>& variables, const Body& body, const RuleHeads& heads, ygg::float_t cost)
     {
         auto positions = urd::Store<urd::sequence<ygg::uint_t>> {};
         for (const auto parameter : parameters_of(body))
@@ -365,14 +382,18 @@ private:
             urd::append(condition->static_literals, m_context->destination().view(renumber(literal, local, rule_parameters)));
         for (const auto literal : body.fluent_literals)
             urd::append(condition->fluent_literals, m_context->destination().view(renumber(literal, local, rule_parameters)));
+        for (const auto literal : body.derived_literals)
+            urd::append(condition->derived_literals, m_context->destination().view(renumber(literal, local, rule_parameters)));
         const auto new_condition = m_context->destination().insert(*condition, m_context->builder()).first;
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(m_context->builder());
         for (const auto variable : new_condition.get_variables())
             urd::append(rule->variables, variable);
         urd::store(rule->body, new_condition);
-        for (const auto head : heads)
-            urd::append(rule->heads, m_context->destination().view(renumber(urd::resolve(head, m_context->destination()), local, rule_parameters)));
+        for (const auto head : heads.template get<formalism::FluentTag>())
+            urd::append(rule->fluent_heads, m_context->destination().view(renumber(urd::resolve(head, m_context->destination()), local, rule_parameters)));
+        for (const auto head : heads.template get<formalism::DerivedTag>())
+            urd::append(rule->derived_heads, m_context->destination().view(renumber(urd::resolve(head, m_context->destination()), local, rule_parameters)));
         rule->cost = cost;
         return { m_context->destination().insert(*rule, m_context->builder()).first.index(), std::move(positions) };
     }
@@ -405,9 +426,13 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
     // Only rules of the program are inserted: rule workspaces are indexed by rule.
     for (const auto rule : program.get_rules())
     {
-        auto heads = urd::Store<urd::sequence<Splitter::FluentAtom>> {};
-        for (const auto head : rule.get_heads())
-            heads.push_back(formalism::copy(head, context).first.index());
+        auto heads = Splitter::RuleHeads {};
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto head : rule.template get_heads<F>())
+                    heads.template get<F>().push_back(formalism::copy(head, context).first.index());
+            });
         if (const auto main_rule = splitter.split(formalism::copy(rule.get_body(), context).first, heads, rule.get_cost()))
         {
             urd::append(result->rules, repository.view(*main_rule));

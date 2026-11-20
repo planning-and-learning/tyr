@@ -66,34 +66,33 @@ namespace tyr::datalog
 using Interval = ygg::ClosedInterval<ygg::float_t>;
 
 /// The facts of kind T, as tyr/datalog/fact_sets.hpp gives them: a predicate's rows, whether a fact holds, a
-/// function fact's value.
+/// function fact's value (where the kind has function facts).
 template<formalism::FactKind T>
 void bind_tagged_fact_sets(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
     using Sets = TaggedFactSets<T>;
 
-    nb::class_<Sets>(m, name)
-        .def(
-            "rows",
-            [](const Sets& self, ygg::uint_t predicate)
-            {
-                const auto found = rows(self, predicate);
-                return nb::make_iterator(nb::type<Sets>(), "RowIterator", found.begin(), found.end());
-            },
-            "predicate"_a,
-            nb::keep_alive<0, 1>())
-        .def(
-            "contains",
-            [](const Sets& self, formalism::datalog::PredicateRowIndex<T> fact) { return contains(self, fact); },
-            "fact"_a)
-        .def("value", [](const Sets& self, formalism::datalog::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
+    auto cls = nb::class_<Sets>(m, name);
+    cls.def(
+           "rows",
+           [](const Sets& self, ygg::uint_t predicate)
+           {
+               const auto found = rows(self, predicate);
+               return nb::make_iterator(nb::type<Sets>(), "RowIterator", found.begin(), found.end());
+           },
+           "predicate"_a,
+           nb::keep_alive<0, 1>())
+        .def("contains", [](const Sets& self, formalism::datalog::PredicateRowIndex<T> fact) { return contains(self, fact); }, "fact"_a);
+    if constexpr (has_function_facts<T>)
+        cls.def("value", [](const Sets& self, formalism::datalog::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
 }
 
 inline void bind_fact_sets(nb::module_& m)
 {
     bind_tagged_fact_sets<formalism::StaticTag>(m, "StaticFactSets");
     bind_tagged_fact_sets<formalism::FluentTag>(m, "FluentFactSets");
+    bind_tagged_fact_sets<formalism::DerivedTag>(m, "DerivedFactSets");
 }
 
 template<TaskKind Kind, typename Key>
@@ -211,33 +210,39 @@ template<TaskKind Kind, typename Workspace>
 void bind_workspace(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
-    auto cls = nb::class_<Workspace>(m, name.c_str())
-                   .def(nb::init<Program<Kind>&>(), "program"_a, nb::keep_alive<1, 2>())
-                   .def(
-                       "get_static_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<formalism::StaticTag>& { return self.const_workspace->facts.fact_sets; },
-                       nb::rv_policy::reference_internal)
-                   .def(
-                       "get_fluent_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<formalism::FluentTag>& { return self.facts.fact_sets; },
-                       nb::rv_policy::reference_internal)
-                   .def(
-                       "get_annotations",
-                       [](Workspace& self) -> auto& { return self.annotations; },
-                       nb::rv_policy::reference_internal)
-                   .def(
-                       "get_annotation_policy",
-                       [](Workspace& self) -> auto& { return self.annotation_policy; },
-                       nb::rv_policy::reference_internal)
-                   .def(
-                       "get_termination_policy",
-                       [](Workspace& self) -> auto& { return self.tp; },
-                       nb::rv_policy::reference_internal)
-                   .def(
-                       "get_cost_policy",
-                       [](Workspace& self) -> auto& { return self.cost_policy; },
-                       nb::rv_policy::reference_internal)
-                   .def("clear_costs", &Workspace::clear_costs);
+    auto cls =
+        nb::class_<Workspace>(m, name.c_str())
+            .def(nb::init<Program<Kind>&>(), "program"_a, nb::keep_alive<1, 2>())
+            .def(
+                "get_static_fact_sets",
+                [](const Workspace& self) -> const TaggedFactSets<formalism::StaticTag>& { return self.const_workspace->facts.fact_sets; },
+                nb::rv_policy::reference_internal)
+            .def(
+                "get_fluent_fact_sets",
+                [](const Workspace& self) -> const TaggedFactSets<formalism::FluentTag>& { return self.facts.fact_sets.template get<formalism::FluentTag>(); },
+                nb::rv_policy::reference_internal)
+            .def(
+                "get_derived_fact_sets",
+                [](const Workspace& self) -> const TaggedFactSets<formalism::DerivedTag>&
+                { return self.facts.fact_sets.template get<formalism::DerivedTag>(); },
+                nb::rv_policy::reference_internal)
+            .def(
+                "get_annotations",
+                [](Workspace& self) -> auto& { return self.annotations; },
+                nb::rv_policy::reference_internal)
+            .def(
+                "get_annotation_policy",
+                [](Workspace& self) -> auto& { return self.annotation_policy; },
+                nb::rv_policy::reference_internal)
+            .def(
+                "get_termination_policy",
+                [](Workspace& self) -> auto& { return self.tp; },
+                nb::rv_policy::reference_internal)
+            .def(
+                "get_cost_policy",
+                [](Workspace& self) -> auto& { return self.cost_policy; },
+                nb::rv_policy::reference_internal)
+            .def("clear_costs", &Workspace::clear_costs);
 
     if constexpr (std::same_as<Kind, GroundTag>)
     {
@@ -252,7 +257,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionTerm term, const Interval& interval)
-                { return tyr::datalog::insert(self.facts.fact_sets, term.get_row().index(), interval); },
+                { return tyr::datalog::insert(self.facts.fact_sets.template get<formalism::FluentTag>(), term.get_row().index(), interval); },
                 "function_term"_a,
                 "interval"_a);
     }
@@ -289,7 +294,9 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index(), interval);
+                    return tyr::datalog::insert(self.facts.fact_sets.template get<formalism::FluentTag>(),
+                                                formalism::copy(binding, context).first.index(),
+                                                interval);
                 },
                 "binding"_a,
                 "interval"_a)

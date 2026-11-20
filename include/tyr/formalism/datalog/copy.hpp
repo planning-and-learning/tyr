@@ -56,11 +56,13 @@ void copy_except_rules(ProgramView<T> element, urd::builder<Program<T>, Reposito
 
     copy_all(element.template get_predicates<StaticTag>(), result.static_predicates);
     copy_all(element.template get_predicates<FluentTag>(), result.fluent_predicates);
+    copy_all(element.template get_predicates<DerivedTag>(), result.derived_predicates);
     copy_all(element.template get_functions<StaticTag>(), result.static_functions);
     copy_all(element.template get_functions<FluentTag>(), result.fluent_functions);
     copy_all(element.get_objects(), result.objects);
     copy_all(element.template get_atoms<StaticTag>(), result.static_atoms);
     copy_all(element.template get_atoms<FluentTag>(), result.fluent_atoms);
+    copy_all(element.template get_atoms<DerivedTag>(), result.derived_atoms);
     copy_all(element.template get_fterm_values<StaticTag>(), result.static_fterm_values);
     copy_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
 

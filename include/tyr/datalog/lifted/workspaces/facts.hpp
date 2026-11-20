@@ -30,16 +30,14 @@ namespace tyr::datalog
 template<>
 struct FactsWorkspace<LiftedTag>
 {
-    TaggedFactSets<formalism::FluentTag> fact_sets;
-    TaggedFactSets<formalism::FluentTag> delta_fact_sets;  ///< Facts committed since the rules last ran.
+    MutableFactSets fact_sets;
+    MutableFactSets delta_fact_sets;  ///< Facts committed since the rules last ran.
 
-    explicit FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
-                            formalism::datalog::FunctionListView<formalism::FluentTag> functions,
-                            formalism::datalog::AtomListView<GroundTag, formalism::FluentTag> atoms,
-                            formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
-                            const formalism::datalog::Repository& workspace_repository);
+    /// The program's facts of each mutable kind.
+    FactsWorkspace(formalism::datalog::ProgramView<LiftedTag> program, const formalism::datalog::Repository& workspace_repository);
 
-    bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding)
+    template<formalism::FactKind F>
+    bool insert(formalism::datalog::PredicateRowIndex<F> binding)
     {
         if (!tyr::datalog::insert(fact_sets, binding))
             return false;
@@ -48,7 +46,7 @@ struct FactsWorkspace<LiftedTag>
     }
 
     bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return tyr::datalog::insert(fact_sets, binding, interval); }
+    { return tyr::datalog::insert(fact_sets.get<formalism::FluentTag>(), binding, interval); }
 
     void reset();
 

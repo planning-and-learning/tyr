@@ -42,8 +42,7 @@ struct GroundRuleHeads
     template<formalism::FactKind F>
     [[nodiscard]] auto get() const noexcept
     {
-        static_assert(std::same_as<F, formalism::FluentTag>, "Rules derive fluent heads only.");
-        return rule.get_heads() | std::views::transform([](auto head) { return head.get_row().index(); });
+        return rule.template get_heads<F>() | std::views::transform([](auto head) { return head.get_row().index(); });
     }
 };
 }

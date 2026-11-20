@@ -275,6 +275,8 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
         urd::append(conj_cond->static_literals, ground(literal, context).first);
     for (const auto literal : element.template get_literals<FluentTag>())
         urd::append(conj_cond->fluent_literals, ground(literal, context).first);
+    for (const auto literal : element.template get_literals<DerivedTag>())
+        urd::append(conj_cond->derived_literals, ground(literal, context).first);
     for (const auto numeric_constraint : element.get_numeric_constraints())
         urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, context).first);
 
@@ -370,20 +372,27 @@ extern template std::pair<PredicateRowView<StaticTag>, bool>
 ground(TermListView terms, PredicateView<StaticTag> predicate, WriteContext<Builder, Repository>& context);
 extern template std::pair<PredicateRowView<FluentTag>, bool>
 ground(TermListView terms, PredicateView<FluentTag> predicate, WriteContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<DerivedTag>, bool>
+ground(TermListView terms, PredicateView<DerivedTag> predicate, WriteContext<Builder, Repository>& context);
 
 extern template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 extern template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
+extern template std::pair<AtomView<GroundTag, DerivedTag>, bool> ground(AtomView<LiftedTag, DerivedTag> element, WriteContext<Builder, Repository>& context);
 
 extern template std::pair<LiteralView<GroundTag, StaticTag>, bool> ground(LiteralView<LiftedTag, StaticTag> element,
                                                                           WriteContext<Builder, Repository>& context);
 extern template std::pair<LiteralView<GroundTag, FluentTag>, bool> ground(LiteralView<LiftedTag, FluentTag> element,
                                                                           WriteContext<Builder, Repository>& context);
+extern template std::pair<LiteralView<GroundTag, DerivedTag>, bool> ground(LiteralView<LiftedTag, DerivedTag> element,
+                                                                           WriteContext<Builder, Repository>& context);
 
 extern template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element,
                                                                                 WriteContext<Builder, Repository>& context);
 
 extern template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 extern template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<DerivedTag>, bool> ground_binding(AtomView<LiftedTag, DerivedTag> element,
+                                                                             WriteContext<Builder, Repository>& context);
 
 extern template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
                                                                            WriteContext<Builder, Repository>& context);
@@ -399,6 +408,8 @@ extern template std::optional<PredicateRowView<StaticTag>> try_ground_binding(At
                                                                               WriteContext<Builder, Repository>& context);
 extern template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element,
                                                                               WriteContext<Builder, Repository>& context);
+extern template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element,
+                                                                               WriteContext<Builder, Repository>& context);
 
 }
 

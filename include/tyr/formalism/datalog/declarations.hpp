@@ -63,11 +63,11 @@ struct Program
 };
 
 using CoreTypes = boost::mp11::mp_list<Variable, Parameters, Object>;
-using PredicateTypes = boost::mp11::mp_transform<Predicate, StaticFluentTags>;
+using PredicateTypes = boost::mp11::mp_transform<Predicate, StaticFluentDerivedTags>;
 template<TaskKind T>
-using AtomTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Atom, T>, StaticFluentTags>;
+using AtomTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Atom, T>, StaticFluentDerivedTags>;
 template<TaskKind T>
-using LiteralTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Literal, T>, StaticFluentTags>;
+using LiteralTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Literal, T>, StaticFluentDerivedTags>;
 using FunctionTypes = boost::mp11::mp_transform<Function, StaticFluentAuxiliaryTags>;
 template<TaskKind T>
 using FunctionTermTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<FunctionTerm, T>, StaticFluentAuxiliaryTags>;

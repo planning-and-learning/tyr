@@ -50,14 +50,16 @@ public:
     TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
                               const analysis::TypedListenerStratum& listeners,
                               const formalism::datalog::Repository& context,
-                              size_t num_fluent_predicates,
-                              size_t num_fluent_functions);
+                              formalism::datalog::ProgramView<LiftedTag> program);
 
     void activate_all();
 
     void on_start_iteration() noexcept;
 
-    void on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate);
+    template<formalism::FactKind F>
+    void on_generate(urd::index<formalism::Predicate<F>> predicate)
+    { m_active_predicates.template get<F>().insert(predicate); }
+
     void on_generate(urd::index<formalism::Function<formalism::FluentTag>> function);
 
     void on_finish_iteration();
@@ -81,7 +83,11 @@ private:
     const analysis::TypedListenerStratum* m_listeners;
     const formalism::datalog::Repository* m_context;
 
-    urd::Store<urd::set<urd::index<formalism::Predicate<formalism::FluentTag>>>, urd::dense> m_active_predicates;
+    /// The predicates of kind F with a fact committed in the iteration.
+    template<typename F>
+    using ActivePredicates = urd::Store<urd::set<urd::index<formalism::Predicate<F>>>, urd::dense>;
+
+    MutableFamily<ActivePredicates> m_active_predicates;
     urd::Store<urd::set<urd::index<formalism::Function<formalism::FluentTag>>>, urd::dense> m_active_functions;
     urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense> m_active_rules;
     urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense> m_full_enumeration_rules;
@@ -95,8 +101,7 @@ public:
     Scheduler(const analysis::RuleStratum& rules,
               const analysis::ListenerStratum& listeners,
               const formalism::datalog::Repository& context,
-              size_t num_fluent_predicates,
-              size_t num_fluent_functions);
+              formalism::datalog::ProgramView<LiftedTag> program);
 
     auto& rules() noexcept { return predicate_rules; }
 
@@ -139,7 +144,11 @@ public:
 private:
     void activate_all();
     void on_start_iteration() noexcept;
-    void activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate);
+
+    template<formalism::FactKind F>
+    void activate(urd::index<formalism::Predicate<F>> predicate)
+    { predicate_rules.on_generate(predicate); }
+
     void on_finish_iteration();
 
     TypedRuleSchedulerStratum predicate_rules;
@@ -148,8 +157,7 @@ private:
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                                   const analysis::ListenerStrata& listeners,
                                                                   const formalism::datalog::Repository& context,
-                                                                  size_t num_fluent_predicates,
-                                                                  size_t num_fluent_functions);
+                                                                  formalism::datalog::ProgramView<LiftedTag> program);
 
 }
 

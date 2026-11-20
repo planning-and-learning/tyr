@@ -240,7 +240,7 @@ template<typename Workspace>
 AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 {
     auto result = AtomsByPredicate {};
-    append_atoms_by_predicate(workspace.facts.fact_sets, result);
+    append_atoms_by_predicate(workspace.facts.fact_sets.template get<tyr::formalism::FluentTag>(), result);
     return result;
 }
 
@@ -309,7 +309,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     auto rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag>>();
     rule_data.variables.push_back(variable.index());
     rule_data.body = body.index();
-    rule_data.heads.push_back(goal_atom.index());
+    rule_data.fluent_heads.push_back(goal_atom.index());
     rule_data.cost = 2;
     const auto rule = intern(std::move(rule_data));
 

@@ -35,18 +35,17 @@ namespace tyr::datalog
 template<>
 struct FactsWorkspace<GroundTag>
 {
-    TaggedFactSets<formalism::FluentTag> fact_sets;
+    MutableFactSets fact_sets;
 
-    explicit FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
-                            formalism::datalog::FunctionListView<formalism::FluentTag> functions,
-                            formalism::datalog::AtomListView<GroundTag, formalism::FluentTag> atoms,
-                            formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
-                            const formalism::datalog::Repository& workspace_repository);
+    /// The program's facts of each mutable kind.
+    FactsWorkspace(formalism::datalog::ProgramView<GroundTag> program, const formalism::datalog::Repository& workspace_repository);
 
-    bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding) { return tyr::datalog::insert(fact_sets, binding); }
+    template<formalism::FactKind F>
+    bool insert(formalism::datalog::PredicateRowIndex<F> binding)
+    { return tyr::datalog::insert(fact_sets, binding); }
 
     bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return tyr::datalog::insert(fact_sets, binding, interval); }
+    { return tyr::datalog::insert(fact_sets.get<formalism::FluentTag>(), binding, interval); }
 
     void reset();
 };

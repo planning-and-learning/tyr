@@ -23,6 +23,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <concepts>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
@@ -40,10 +41,35 @@ namespace tyr::analysis
 
 using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>>;
 
+/// The rules of a stratum that read the predicates of kind F, by predicate.
+template<formalism::FactKind F>
+using PredicateListeners = urd::Store<urd::map<urd::index<formalism::Predicate<F>>, RuleIndexSet>>;
+
+/// The rules of a stratum that read each fluent and derived predicate (a positive literal) and each fluent function.
 struct TypedListenerStratum
 {
-    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet>> predicates;
+    PredicateListeners<formalism::FluentTag> fluent_predicates;
+    PredicateListeners<formalism::DerivedTag> derived_predicates;
     urd::Store<urd::map<urd::index<formalism::Function<formalism::FluentTag>>, RuleIndexSet>> functions;
+
+    /// The listeners of the predicates of kind F, fluent or derived.
+    template<formalism::FactKind F>
+    [[nodiscard]] const PredicateListeners<F>& get_predicates() const noexcept
+    {
+        if constexpr (std::same_as<F, formalism::FluentTag>)
+            return fluent_predicates;
+        else
+            return derived_predicates;
+    }
+
+    template<formalism::FactKind F>
+    PredicateListeners<F>& get_predicates() noexcept
+    {
+        if constexpr (std::same_as<F, formalism::FluentTag>)
+            return fluent_predicates;
+        else
+            return derived_predicates;
+    }
 };
 
 using ListenerStratum = TypedListenerStratum;

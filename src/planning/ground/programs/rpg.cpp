@@ -134,7 +134,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag>>(context.builder);
     urd::store(rule->body, body);
-    urd::build_member(rule->heads, heads, context.merge_context.destination());
+    urd::build_member(rule->fluent_heads, heads, context.merge_context.destination());
     rule->cost = cost;
     return context.merge_context.destination().insert(*rule, context.builder);
 }
@@ -314,12 +314,9 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
                                                                                        source_program.get_atoms<formalism::StaticTag>(),
                                                                                        source_program.get_fterm_values<formalism::StaticTag>(),
                                                                                        source_program.context());
-    const auto source_fluent_fact_sets = datalog::TaggedFactSets<formalism::FluentTag>(source_program.get_predicates<formalism::FluentTag>(),
-                                                                                       source_program.get_functions<formalism::FluentTag>(),
-                                                                                       source_program.get_atoms<formalism::FluentTag>(),
-                                                                                       source_program.get_fterm_values<formalism::FluentTag>(),
-                                                                                       source_program.context());
-    const auto source_fact_sets = datalog::FactSets { source_static_fact_sets, source_fluent_fact_sets };
+    auto source_mutable_fact_sets = datalog::MutableFactSets(source_program, source_program.context());
+    datalog::insert_program_facts(source_mutable_fact_sets, source_program);
+    const auto source_fact_sets = datalog::FactSets { source_static_fact_sets, source_mutable_fact_sets };
 
     auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     const auto program = datalog::remove_statically_inapplicable_rules(source_program, *repository);

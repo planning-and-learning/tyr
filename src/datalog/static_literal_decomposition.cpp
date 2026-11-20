@@ -317,6 +317,8 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
             urd::append(condition->variables, variable);
         for (const auto literal : body.get_literals<formalism::FluentTag>())
             urd::append(condition->fluent_literals, literal);
+        for (const auto literal : body.get_literals<formalism::DerivedTag>())
+            urd::append(condition->derived_literals, literal);
         for (const auto numeric_constraint : body.get_numeric_constraints())
             urd::append(condition->numeric_constraints, numeric_constraint);
         const auto new_body = repository.insert(*condition, builder).first;
@@ -325,8 +327,10 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
         for (const auto variable : new_body.get_variables())
             urd::append(new_rule->variables, variable);
         urd::store(new_rule->body, new_body);
-        for (const auto head : rule.get_heads())
-            urd::append(new_rule->heads, formalism::copy(head, context).first);
+        for (const auto head : rule.get_heads<formalism::FluentTag>())
+            urd::append(new_rule->fluent_heads, formalism::copy(head, context).first);
+        for (const auto head : rule.get_heads<formalism::DerivedTag>())
+            urd::append(new_rule->derived_heads, formalism::copy(head, context).first);
         new_rule->cost = rule.get_cost();
         const auto rewritten = repository.insert(*new_rule, builder).first.index();
         urd::append(output->rules, repository.view(rewritten));

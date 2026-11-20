@@ -31,9 +31,11 @@ template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::Function
 
 template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::StaticTag> element, const FactSets& fact_sets);
 template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> element, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::LiteralView<GroundTag, formalism::DerivedTag> element, const FactSets& fact_sets);
 
 template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::StaticTag> elements, const FactSets& fact_sets);
 template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::FluentTag> elements, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::LiteralListView<GroundTag, formalism::DerivedTag> elements, const FactSets& fact_sets);
 
 // GroundConjunctiveCondition
 

@@ -52,6 +52,17 @@
 
 namespace tyr::tests
 {
+namespace
+{
+/// The assignment sets of each mutable kind, with the given fluent ones and no derived one.
+tyr::datalog::MutableAssignmentSets with_fluent(const tyr::datalog::TaggedAssignmentSets<tyr::formalism::FluentTag>& fluent)
+{
+    auto result = tyr::datalog::MutableAssignmentSets {};
+    result.get<tyr::formalism::FluentTag>() = fluent;
+    return result;
+}
+}
+
 TEST(TyrKCKPPartitionedAdjacency, ClassifiesPartitionPairsAndRejectsInvalidTableSizes)
 {
     const auto parts = urd::Store<urd::sequence<size_t>> { 2, 1 };
@@ -87,7 +98,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
     {
         const auto is_pick =
-            action_program.get_predicate_to_action_mapping().at(program_view.get_rules()[i].get_heads().front().get_predicate()).get_name() == "pick";
+            action_program.get_predicate_to_action_mapping().at(program_view.get_rules()[i].get_fluent_heads().front().get_predicate()).get_name() == "pick";
 
         if (is_pick)
         {
@@ -146,8 +157,8 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     {
         kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
-    update(tyr::datalog::AssignmentSets(static_assignments, empty_assignments));
-    update(tyr::datalog::AssignmentSets(static_assignments, initial_assignments));
+    update(tyr::datalog::AssignmentSets(static_assignments, with_fluent(empty_assignments)));
+    update(tyr::datalog::AssignmentSets(static_assignments, with_fluent(initial_assignments)));
     ASSERT_EQ(kckp.get_iteration(), 2);
 
     auto authoritative_edges = urd::Store<urd::sequence<tyr::kckp::Edge>> {};
@@ -214,7 +225,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
     {
         const auto rule = program_view.get_rules()[i];
-        if (action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate()).get_name() != "move")
+        if (action_program.get_predicate_to_action_mapping().at(rule.get_fluent_heads().front().get_predicate()).get_name() != "move")
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
@@ -282,7 +293,11 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     {
         kckp.update(
             [&](auto& delta_graph, auto& full_graph)
-            { static_graph.initialize_dynamic_consistency_graphs(tyr::datalog::AssignmentSets(static_assignments, assignments), delta_graph, full_graph); });
+            {
+                static_graph.initialize_dynamic_consistency_graphs(tyr::datalog::AssignmentSets(static_assignments, with_fluent(assignments)),
+                                                                   delta_graph,
+                                                                   full_graph);
+            });
     };
     update();
     ASSERT_EQ(kckp.get_iteration(), 1);
@@ -336,7 +351,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
     {
         const auto rule = program_view.get_rules()[i];
-        if (action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate()).get_name() != "drive")
+        if (action_program.get_predicate_to_action_mapping().at(rule.get_fluent_heads().front().get_predicate()).get_name() != "drive")
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
@@ -441,7 +456,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     {
         kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
-    update(tyr::datalog::AssignmentSets(static_assignments, first_assignments));
+    update(tyr::datalog::AssignmentSets(static_assignments, with_fluent(first_assignments)));
     EXPECT_EQ(count_vertices(kckp.get_full_graph()), 5);
     EXPECT_EQ(count_vertices(kckp.get_delta_graph()), 5);
     EXPECT_EQ(count_edges(kckp.get_full_graph()), 6);
@@ -449,7 +464,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     EXPECT_EQ(collect_cliques(false), first_expected);
     EXPECT_EQ(collect_cliques(true), first_expected);
 
-    update(tyr::datalog::AssignmentSets(static_assignments, second_assignments));
+    update(tyr::datalog::AssignmentSets(static_assignments, with_fluent(second_assignments)));
     EXPECT_EQ(count_vertices(kckp.get_full_graph()), 7);
     EXPECT_EQ(count_vertices(kckp.get_delta_graph()), 5);
     EXPECT_EQ(count_edges(kckp.get_full_graph()), 11);
@@ -457,7 +472,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     EXPECT_EQ(collect_cliques(false), second_expected);
     EXPECT_EQ(collect_cliques(true), (urd::Store<urd::sequence<Binding>> { { "truck-2", "city-loc-1", "city-loc-3" } }));
 
-    update(tyr::datalog::AssignmentSets(static_assignments, second_assignments));
+    update(tyr::datalog::AssignmentSets(static_assignments, with_fluent(second_assignments)));
     EXPECT_EQ(count_vertices(kckp.get_full_graph()), 7);
     EXPECT_EQ(count_vertices(kckp.get_delta_graph()), 0);
     EXPECT_EQ(count_edges(kckp.get_full_graph()), 11);

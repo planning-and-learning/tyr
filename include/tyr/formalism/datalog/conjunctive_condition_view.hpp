@@ -43,6 +43,8 @@ public:
 
     auto get_fluent_literals() const noexcept { return self().template member<&urd::record_of<V>::fluent_literals>(); }
 
+    auto get_derived_literals() const noexcept { return self().template member<&urd::record_of<V>::derived_literals>(); }
+
     auto get_numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.

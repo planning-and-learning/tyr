@@ -38,12 +38,14 @@ auto& select_literal_dependency(Dep& dep) noexcept
 {
     using D = std::remove_const_t<Dep>;
     using namespace boost::mp11;
-    return tagged_member<mp_product<mp_list, StaticFluentTags, PositiveNegativeTags>,
+    return tagged_member<mp_product<mp_list, StaticFluentDerivedTags, PositiveNegativeTags>,
                          mp_list<F, P>,
                          &D::static_positive_literal,
                          &D::static_negative_literal,
                          &D::fluent_positive_literal,
-                         &D::fluent_negative_literal>(dep);
+                         &D::fluent_negative_literal,
+                         &D::derived_positive_literal,
+                         &D::derived_negative_literal>(dep);
 }
 
 struct UnaryDependencies
@@ -80,7 +82,8 @@ struct UnaryDependencies
     [[nodiscard]] bool has_dependency(ygg::uint_t p) const noexcept
     {
         return has_literal_dependency<StaticTag, PositiveTag>(p) || has_literal_dependency<StaticTag, NegativeTag>(p)
-               || has_literal_dependency<FluentTag, PositiveTag>(p) || has_literal_dependency<FluentTag, NegativeTag>(p) || has_numeric_dependency(p);
+               || has_literal_dependency<FluentTag, PositiveTag>(p) || has_literal_dependency<FluentTag, NegativeTag>(p)
+               || has_literal_dependency<DerivedTag, PositiveTag>(p) || has_literal_dependency<DerivedTag, NegativeTag>(p) || has_numeric_dependency(p);
     }
 
     ygg::uint_t k;
@@ -89,6 +92,8 @@ struct UnaryDependencies
     urd::Store<urd::set<ParameterIndex>, urd::dense> static_negative_literal;
     urd::Store<urd::set<ParameterIndex>, urd::dense> fluent_positive_literal;
     urd::Store<urd::set<ParameterIndex>, urd::dense> fluent_negative_literal;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> derived_positive_literal;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> derived_negative_literal;
     urd::Store<urd::set<ParameterIndex>, urd::dense> numeric_constraint;
 };
 
@@ -104,6 +109,8 @@ struct BinaryDependencies
         static_negative_literal(static_positive_literal),
         fluent_positive_literal(static_positive_literal),
         fluent_negative_literal(static_positive_literal),
+        derived_positive_literal(static_positive_literal),
+        derived_negative_literal(static_positive_literal),
         numeric_constraint(static_positive_literal)
     {
     }
@@ -133,6 +140,7 @@ struct BinaryDependencies
     {
         return has_literal_dependency<StaticTag, PositiveTag>(pi, pj) || has_literal_dependency<StaticTag, NegativeTag>(pi, pj)
                || has_literal_dependency<FluentTag, PositiveTag>(pi, pj) || has_literal_dependency<FluentTag, NegativeTag>(pi, pj)
+               || has_literal_dependency<DerivedTag, PositiveTag>(pi, pj) || has_literal_dependency<DerivedTag, NegativeTag>(pi, pj)
                || has_numeric_dependency(pi, pj);
     }
 
@@ -142,6 +150,8 @@ struct BinaryDependencies
     Pairs static_negative_literal;
     Pairs fluent_positive_literal;
     Pairs fluent_negative_literal;
+    Pairs derived_positive_literal;
+    Pairs derived_negative_literal;
     Pairs numeric_constraint;
 };
 }
