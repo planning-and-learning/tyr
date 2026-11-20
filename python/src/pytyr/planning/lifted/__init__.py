@@ -33,6 +33,7 @@ from pytyr._pytyr.planning.lifted import (
     SearchResult as SearchResult,
     State as State,
     StateBuilder as StateBuilder,
+    StateBuilderBorrowed as StateBuilderBorrowed,
     StateBuilderShared as StateBuilderShared,
     StateData as StateData,
     StateIndex as StateIndex,
