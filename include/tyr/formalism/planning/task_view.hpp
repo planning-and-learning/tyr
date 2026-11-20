@@ -18,13 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_TASK_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_TASK_VIEW_HPP_
 
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"

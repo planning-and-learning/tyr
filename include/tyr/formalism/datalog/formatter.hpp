@@ -124,12 +124,22 @@ struct fmt::formatter<urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::
                                          fmt::format_context& context) const;
 };
 
-/// A rule's body: its literals and constraints, separated by commas.
-template<tyr::TaskKind T>
-struct fmt::formatter<urd::index_view<tyr::formalism::datalog::ConjunctiveCondition<T>, tyr::formalism::datalog::Repository>> :
+/// A lifted rule's body, in Datalog syntax: its literals and constraints, separated by commas.
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::ConjunctiveCondition<tyr::LiftedTag>, tyr::formalism::datalog::Repository>> :
     tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::ConjunctiveCondition<T>, tyr::formalism::datalog::Repository>& value,
+    fmt::format_context::iterator
+    format(const urd::index_view<tyr::formalism::ConjunctiveCondition<tyr::LiftedTag>, tyr::formalism::datalog::Repository>& value,
+           fmt::format_context& context) const;
+};
+
+/// A ground rule's body: its literals and constraints, separated by commas.
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::datalog::RuleBody<tyr::GroundTag>, tyr::formalism::datalog::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::RuleBody<tyr::GroundTag>, tyr::formalism::datalog::Repository>& value,
                                          fmt::format_context& context) const;
 };
 

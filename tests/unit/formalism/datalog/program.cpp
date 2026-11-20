@@ -136,7 +136,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             [&](std::initializer_list<tyr::formalism::datalog::LiteralView<::tyr::GroundTag, tyr::formalism::StaticTag>> static_literals,
                 std::initializer_list<tyr::formalism::datalog::LiteralView<::tyr::GroundTag, tyr::formalism::FluentTag>> fluent_literals = {})
         {
-            auto data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> {};
+            auto data = urd::data<tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> {};
             for (const auto value : static_literals)
                 data.static_literals.push_back(value.index());
             for (const auto value : fluent_literals)

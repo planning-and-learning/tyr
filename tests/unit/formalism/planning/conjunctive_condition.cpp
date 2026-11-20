@@ -1,7 +1,7 @@
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/parameters_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -20,9 +20,9 @@ namespace tyr::tests::planning_conjunctive_condition
 namespace lifted_tests
 {
 
-using ConjunctiveConditionIndex = urd::index<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>;
-using ConjunctiveConditionData = urd::data<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>;
-using ConjunctiveConditionView = urd::index_view<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ConjunctiveConditionIndex = urd::index<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>;
+using ConjunctiveConditionData = urd::data<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>;
+using ConjunctiveConditionView = urd::index_view<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ConjunctiveConditionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConjunctiveConditionIndex>);
@@ -60,9 +60,9 @@ static_assert(requires(const ConjunctiveConditionView& view) {
 namespace ground_tests
 {
 
-using GroundConjunctiveConditionIndex = urd::index<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>;
-using GroundConjunctiveConditionData = urd::data<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>;
-using GroundConjunctiveConditionView = urd::index_view<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundConjunctiveConditionIndex = urd::index<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>;
+using GroundConjunctiveConditionData = urd::data<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>;
+using GroundConjunctiveConditionView = urd::index_view<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundConjunctiveConditionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConjunctiveConditionIndex>);
@@ -130,7 +130,7 @@ void expect_condition_atom_projection()
         result.push_back(intern(urd::data<tyr::formalism::Literal<Kind, F>>(pair.second.index(), false)).index());
         return result;
     };
-    auto data = urd::data<tyr::formalism::planning::ConjunctiveCondition<Kind>> {};
+    auto data = urd::data<tyr::formalism::ConjunctiveCondition<Kind>> {};
     data.static_literals = literals.template operator()<tyr::formalism::StaticTag>(static_atoms);
     data.derived_literals = literals.template operator()<tyr::formalism::DerivedTag>(derived_atoms);
     if constexpr (std::same_as<Kind, tyr::GroundTag>)

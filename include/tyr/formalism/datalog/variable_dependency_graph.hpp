@@ -20,9 +20,10 @@
 
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/datalog/variable_dependency_graph_details.hpp"
 #include "tyr/formalism/declarations.hpp"

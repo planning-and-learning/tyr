@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_BUILDER_HPP_
-#define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_BUILDER_HPP_
+#ifndef TYR_FORMALISM_DATALOG_RULE_BODY_BUILDER_HPP_
+#define TYR_FORMALISM_DATALOG_RULE_BODY_BUILDER_HPP_
 
 #include "tyr/formalism/binary_operator_builder.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/literal_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
@@ -33,39 +33,11 @@
 namespace urd
 {
 
-/// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
+/// The builder of RuleBody: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> index;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>>, C>
-        numeric_constraints;
-
-    static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"variables", &builder::variables>,
-                           urd::field<"static_literals", &builder::static_literals>,
-                           urd::field<"fluent_literals", &builder::fluent_literals>,
-                           urd::field<"derived_literals", &builder::derived_literals>,
-                           urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
-    }
-
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::
-            Members<&builder::variables, &builder::static_literals, &builder::fluent_literals, &builder::derived_literals, &builder::numeric_constraints> {};
-    }
-};
-
-/// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
-template<typename C>
-struct builder<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>, C>
-{
-    urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;

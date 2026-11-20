@@ -20,10 +20,11 @@
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
@@ -66,7 +67,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
     const auto [atom, atom_success] = ygg::formalism::insert(repository, atom_builder);
     EXPECT_TRUE(atom_success);
 
-    auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
+    auto condition_builder = urd::data<tyr::formalism::ConjunctiveCondition<LiftedTag>>();
     const auto [condition, condition_success] = ygg::formalism::insert(repository, condition_builder);
     EXPECT_TRUE(condition_success);
 

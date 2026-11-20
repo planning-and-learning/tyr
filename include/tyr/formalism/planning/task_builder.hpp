@@ -19,11 +19,11 @@
 #define TYR_FORMALISM_PLANNING_TASK_BUILDER_HPP_
 
 #include "tyr/formalism/atom_builder.hpp"
+#include "tyr/formalism/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/function_term_value_builder.hpp"
 #include "tyr/formalism/object_builder.hpp"
 #include "tyr/formalism/planning/action_builder.hpp"
 #include "tyr/formalism/planning/axiom_builder.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/planning/domain_builder.hpp"
 #include "tyr/formalism/planning/fdr_fact_builder.hpp"
 #include "tyr/formalism/planning/fdr_variable_builder.hpp"
@@ -56,7 +56,7 @@ struct builder<::tyr::formalism::planning::Task<::tyr::LiftedTag>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
         auxiliary_fterm_value;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>>, C> metric;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
 
@@ -109,7 +109,7 @@ struct builder<::tyr::formalism::planning::Task<::tyr::GroundTag>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
         auxiliary_fterm_value;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>>, C> metric;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>>, C> fluent_variables;

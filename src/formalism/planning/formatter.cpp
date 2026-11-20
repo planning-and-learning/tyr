@@ -173,7 +173,7 @@ fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, tp::Repository>>::format
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tp::ConjunctiveCondition<T>, tp::Repository>>::format(const urd::index_view<tp::ConjunctiveCondition<T>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::ConjunctiveCondition<T>, tp::Repository>>::format(const urd::index_view<tf::ConjunctiveCondition<T>, tp::Repository>& value,
                                                                                      fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "(and");
@@ -559,8 +559,8 @@ template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::
 template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::AuxiliaryTag>, tp::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::FluentTag>, tp::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::ConjunctiveCondition<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::ConjunctiveCondition<GroundTag>, tp::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConjunctiveCondition<LiftedTag>, tp::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConjunctiveCondition<GroundTag>, tp::Repository>>;
 template struct fmt::formatter<urd::index_view<tp::ConjunctiveEffect<LiftedTag>, tp::Repository>>;
 template struct fmt::formatter<urd::index_view<tp::ConjunctiveEffect<GroundTag>, tp::Repository>>;
 template struct fmt::formatter<urd::index_view<tp::ConditionalEffect<LiftedTag>, tp::Repository>>;

@@ -195,6 +195,15 @@ struct Literal
     static constexpr std::string_view name = urd::joined_name<"Literal", T::name, F::name>;
 };
 
+/// A conjunctive condition: its variables (lifted), literals and numeric constraints. Its lifted form is shared by
+/// datalog (a lifted rule's body) and planning; its ground form is planning's (fluent facts as FDR facts), datalog's
+/// ground rules have a RuleBody.
+template<TaskKind T>
+struct ConjunctiveCondition
+{
+    static constexpr std::string_view name = urd::joined_name<"ConjunctiveCondition", T::name>;
+};
+
 template<TaskKind T, FactKind F>
 struct FunctionTerm
 {

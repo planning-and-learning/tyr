@@ -43,10 +43,13 @@ namespace tyr::formalism::datalog
  * Formalism tag
  */
 
+/// The body of a ground rule (and a program's goal): its static, fluent and derived literals and numeric constraints. A
+/// lifted rule's body is the shared formalism::ConjunctiveCondition<LiftedTag>.
 template<TaskKind T>
-struct ConjunctiveCondition
+    requires std::same_as<T, GroundTag>
+struct RuleBody
 {
-    static constexpr std::string_view name = urd::joined_name<"ConjunctiveCondition", T::name>;
+    static constexpr std::string_view name = urd::joined_name<"RuleBody", T::name>;
 };
 
 /// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
@@ -88,7 +91,7 @@ using RuleTypes = boost::mp11::mp_list<Rule<T>>;
 
 using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>>,
                                              RuleTypes<LiftedTag>,
-                                             boost::mp11::mp_list<ConjunctiveCondition<GroundTag>>,
+                                             boost::mp11::mp_list<RuleBody<GroundTag>>,
                                              RuleTypes<GroundTag>,
                                              boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
 
@@ -202,8 +205,10 @@ template<TaskKind T, FactKind F>
 using AtomView = urd::index_view<Atom<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using AtomViewList = urd::Store<urd::sequence<AtomView<T, F>>>;
+using RuleBodyView = urd::index_view<RuleBody<GroundTag>, Repository>;
+/// The body of a rule of kind T: a lifted rule's conjunctive condition, a ground rule's RuleBody.
 template<TaskKind T>
-using ConjunctiveConditionView = urd::index_view<ConjunctiveCondition<T>, Repository>;
+using ConjunctiveConditionView = std::conditional_t<std::same_as<T, GroundTag>, RuleBodyView, urd::index_view<ConjunctiveCondition<LiftedTag>, Repository>>;
 template<TaskKind T, FactKind F>
 using FunctionTermListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTerm<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>

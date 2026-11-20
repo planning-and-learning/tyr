@@ -25,6 +25,7 @@
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
@@ -39,7 +40,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -184,7 +184,7 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
                                         const formalism::planning::FDRContext& fdr_context,
                                         formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context)
 {
-    auto fdr_conj_cond = formalism::planning::checkout<formalism::planning::ConjunctiveCondition<GroundTag>>(context.builder());
+    auto fdr_conj_cond = formalism::planning::checkout<formalism::ConjunctiveCondition<GroundTag>>(context.builder());
 
     for (const auto literal : element.get_literals<formalism::StaticTag>())
     {
@@ -258,7 +258,7 @@ ground_pruned(formalism::planning::ConjunctiveConditionView<LiftedTag> element,
               formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
               const formalism::planning::FDRContext& fdr_context)
 {
-    auto conj_cond = formalism::planning::checkout<formalism::planning::ConjunctiveCondition<GroundTag>>(context.builder());
+    auto conj_cond = formalism::planning::checkout<formalism::ConjunctiveCondition<GroundTag>>(context.builder());
 
     for (const auto literal : element.template get_literals<formalism::StaticTag>())
     {

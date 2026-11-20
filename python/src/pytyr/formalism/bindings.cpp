@@ -61,6 +61,7 @@ void bind_formalism(nb::module_& m)
     bind_unary_operator(m);
     bind_binary_operator(m);
     bind_multi_operator(m);
+    bind_conjunctive_condition(m);
     bind_numeric_effect(m);
 }
 

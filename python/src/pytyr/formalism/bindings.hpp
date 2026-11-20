@@ -34,6 +34,7 @@ void bind_predicate(nb::module_& m);
 void bind_function(nb::module_& m);
 void bind_atom(nb::module_& m);
 void bind_literal(nb::module_& m);
+void bind_conjunctive_condition(nb::module_& m);
 void bind_function_term(nb::module_& m);
 void bind_function_term_value(nb::module_& m);
 void bind_unary_operator(nb::module_& m);

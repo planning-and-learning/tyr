@@ -21,12 +21,13 @@
 #include "../../programs/translated_program.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
@@ -41,7 +42,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -106,7 +106,7 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
 
-        auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+        auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
         for (const auto variable : action.get_variables())
             urd::append(rule->variables, formalism::copy(variable, context).first);
@@ -143,7 +143,7 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
             urd::append(program->fluent_predicates, new_effect_predicate);
 
             auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
-            auto effect_condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+            auto effect_condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
             for (const auto variable : action.get_variables())
                 urd::append(effect_condition->variables, formalism::copy(variable, context).first);
             for (const auto variable : cond_eff.get_variables())

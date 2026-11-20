@@ -52,6 +52,7 @@ void bind_formalism(nb::module_& m)
     bind_binary_operator(m, repository);
     bind_multi_operator(m, repository);
     bind_conjunctive_condition(m, repository);
+    bind_rule_body(m, repository);
     bind_numeric_effect(m, repository);
     bind_rule(m, repository);
     bind_program(m, repository);

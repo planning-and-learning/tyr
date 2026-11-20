@@ -28,11 +28,12 @@
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
@@ -290,7 +291,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     goal_atom_data.predicate = goal_predicate.index();
     const auto goal_atom = intern(std::move(goal_atom_data));
 
-    auto body_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
+    auto body_data = urd::data<tyr::formalism::ConjunctiveCondition<LiftedTag>>();
     body_data.variables.push_back(variable.index());
     body_data.fluent_literals.push_back(source_literal.index());
     if (include_numeric_constraint)
@@ -337,7 +338,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     const auto goal = intern(std::move(goal_binding_data));
     const auto ground_goal = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(goal.index()));
     const auto goal_literal = intern(urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::FluentTag>>(ground_goal.index(), true));
-    auto goals_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
+    auto goals_data = urd::data<tyr::formalism::datalog::RuleBody<GroundTag>>();
     goals_data.fluent_literals.push_back(goal_literal.index());
     const auto goals = intern(std::move(goals_data));
 

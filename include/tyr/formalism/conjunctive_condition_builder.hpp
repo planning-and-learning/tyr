@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_BUILDER_HPP_
-#define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_BUILDER_HPP_
+#ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_BUILDER_HPP_
+#define TYR_FORMALISM_CONJUNCTIVE_CONDITION_BUILDER_HPP_
 
 #include "tyr/formalism/binary_operator_builder.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/literal_builder.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
@@ -36,9 +36,9 @@ namespace urd
 
 /// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
@@ -64,9 +64,9 @@ struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag
 
 /// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
     urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> positive_facts;

@@ -22,6 +22,8 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
@@ -44,8 +46,6 @@
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
@@ -102,7 +102,7 @@ namespace
 
 using TmpAxiomDomainMap = TmpSimpleScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
 
-using TmpConjunctiveConditionDomain = TmpSimpleScopedDomain<formalism::planning::ConjunctiveCondition<LiftedTag>>;
+using TmpConjunctiveConditionDomain = TmpSimpleScopedDomain<formalism::ConjunctiveCondition<LiftedTag>>;
 using TmpConjunctiveEffectDomain = TmpSimpleScopedDomain<formalism::planning::ConjunctiveEffect<LiftedTag>>;
 
 struct TmpConditionalEffectDomain

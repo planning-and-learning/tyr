@@ -138,10 +138,10 @@ struct fmt::formatter<urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::
 
 /// A condition: (and literals... constraints...), a ground one's facts as the literals they stand for.
 template<tyr::TaskKind T>
-struct fmt::formatter<urd::index_view<tyr::formalism::planning::ConjunctiveCondition<T>, tyr::formalism::planning::Repository>> :
+struct fmt::formatter<urd::index_view<tyr::formalism::ConjunctiveCondition<T>, tyr::formalism::planning::Repository>> :
     tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::ConjunctiveCondition<T>, tyr::formalism::planning::Repository>& value,
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::ConjunctiveCondition<T>, tyr::formalism::planning::Repository>& value,
                                          fmt::format_context& context) const;
 };
 

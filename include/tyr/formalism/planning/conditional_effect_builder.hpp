@@ -18,9 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_BUILDER_HPP_
 
+#include "tyr/formalism/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
@@ -39,7 +39,7 @@ struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, 
 {
     urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
     urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect;
 
     static constexpr auto fields() noexcept
@@ -56,7 +56,7 @@ template<typename C>
 struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
     urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>, C> effect;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &builder::condition>, urd::field<"effect", &builder::effect>> {}; }

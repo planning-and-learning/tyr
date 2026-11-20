@@ -18,10 +18,10 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_BUILDER_HPP_
 
+#include "tyr/formalism/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_builder.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
 #include <optional>
@@ -42,7 +42,7 @@ struct builder<::tyr::formalism::planning::Action<::tyr::LiftedTag>, C>
     urd::built_t<urd::flat_string, C> original_name;
     urd::built_t<ygg::uint_t, C> original_arity = 0;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>>, C> effects;
 
     static constexpr auto fields() noexcept
@@ -65,7 +65,7 @@ struct builder<::tyr::formalism::planning::Action<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>> index;
     urd::built_t<ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>>, C> row;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>>, C> effects;
 
     static constexpr auto fields() noexcept

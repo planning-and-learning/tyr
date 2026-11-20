@@ -20,12 +20,13 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
@@ -372,7 +373,7 @@ private:
         for (size_t i = 0; i < positions.size(); ++i)
             local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(static_cast<ygg::uint_t>(i)));
 
-        auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(m_context->builder());
+        auto condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(m_context->builder());
         for (const auto position : positions)
             urd::append(condition->variables, m_context->destination().view(variables[position]));
         auto parameters = formalism::datalog::checkout<formalism::Parameters>(m_context->builder());

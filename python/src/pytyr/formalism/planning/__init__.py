@@ -41,8 +41,6 @@ from pytyr._pytyr.formalism.planning import (
     ConjunctiveConditionGroundData as ConjunctiveConditionGroundData,
     ConjunctiveConditionGroundIndex as ConjunctiveConditionGroundIndex,
     ConjunctiveConditionLifted as ConjunctiveConditionLifted,
-    ConjunctiveConditionLiftedData as ConjunctiveConditionLiftedData,
-    ConjunctiveConditionLiftedIndex as ConjunctiveConditionLiftedIndex,
     ConjunctiveEffectDomain as ConjunctiveEffectDomain,
     ConjunctiveEffectGround as ConjunctiveEffectGround,
     ConjunctiveEffectGroundData as ConjunctiveEffectGroundData,

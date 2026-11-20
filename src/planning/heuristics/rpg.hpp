@@ -29,9 +29,10 @@
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
@@ -45,7 +46,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -108,7 +108,7 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
             return *workspace.workspace_repository;
     }();
     auto merge_context = formalism::WriteContext { workspace.datalog_builder, destination };
-    auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(merge_context.builder());
+    auto condition = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(merge_context.builder());
 
     const auto translate_atom = [&](const auto atom)
     {

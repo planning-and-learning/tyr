@@ -23,14 +23,16 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -52,7 +54,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -80,7 +81,7 @@ namespace
 void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag> axiom_body,
                         const TranslationContext<LiftedTag>& translation_context,
                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                        urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
+                        urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
         urd::append(conj_cond.static_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
@@ -104,7 +105,7 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
         urd::append(conj_cond->variables, formalism::copy(variable, context).first);

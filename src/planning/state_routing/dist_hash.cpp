@@ -17,7 +17,7 @@
 
 #include "tyr/planning/state_routing/dist_hash.hpp"
 
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/lmcut.hpp"
 #include "tyr/planning/lifted/task.hpp"

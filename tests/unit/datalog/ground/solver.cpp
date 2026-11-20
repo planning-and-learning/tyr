@@ -140,7 +140,7 @@ struct GroundQueueFixture
     condition(std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals = {},
               std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::StaticTag>> static_literals = {})
     {
-        auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
+        auto condition_builder = urd::data<tyr::formalism::datalog::RuleBody<GroundTag>>();
         for (const auto literal : fluent_literals)
             condition_builder.fluent_literals.push_back(literal.index());
         for (const auto literal : static_literals)
@@ -159,7 +159,7 @@ struct GroundQueueFixture
             tyr::formalism::FunctionExpression<GroundTag>(value));
         const auto comparison = ygg::formalism::insert(repository, comparison_builder).first;
 
-        auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
+        auto condition_builder = urd::data<tyr::formalism::datalog::RuleBody<GroundTag>>();
         condition_builder.numeric_constraints.emplace_back(comparison.index());
         return ygg::formalism::insert(repository, condition_builder).first;
     }

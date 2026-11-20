@@ -27,6 +27,8 @@ from pytyr._pytyr.formalism import (
     BinaryOperatorLiftedBooleanData as BinaryOperatorLiftedBooleanData,
     BinaryOperatorLiftedBooleanIndex as BinaryOperatorLiftedBooleanIndex,
     BooleanOperatorKind as BooleanOperatorKind,
+    ConjunctiveConditionLiftedData as ConjunctiveConditionLiftedData,
+    ConjunctiveConditionLiftedIndex as ConjunctiveConditionLiftedIndex,
     FunctionAuxiliaryData as FunctionAuxiliaryData,
     FunctionAuxiliaryIndex as FunctionAuxiliaryIndex,
     FunctionFluentData as FunctionFluentData,

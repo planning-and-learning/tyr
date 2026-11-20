@@ -37,13 +37,13 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
 {
     urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition;
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect;
 
     data() = default;
 
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
-         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
+         urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
          urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
         index(),
         variables(std::move(variables_)),
@@ -70,12 +70,12 @@ template<>
 struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition;
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect;
 
     data() = default;
 
-    data(urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
+    data(urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition_,
          urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
         index(),
         condition(condition_),

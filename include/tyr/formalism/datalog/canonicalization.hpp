@@ -21,8 +21,9 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_canonicalization.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
@@ -51,8 +52,7 @@ using ygg::canonicalize;
 // tyr::formalism's overloads, e.g. for rows: ygg::Row<F> of a family of this namespace does not bring them by ADL.
 using ::tyr::formalism::canonicalize;
 
-template<TaskKind T>
-void canonicalize(urd::data<ConjunctiveCondition<T>>& data)
+inline void canonicalize(urd::data<RuleBody<GroundTag>>& data)
 {
     canonicalize(data.static_literals);
     canonicalize(data.fluent_literals);

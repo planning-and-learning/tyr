@@ -23,11 +23,12 @@
 #include "tyr/datalog/static_literal_decomposition.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
@@ -42,7 +43,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -67,7 +67,7 @@ namespace
 {
 void append_variable(formalism::planning::VariableView variable,
                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                     urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
+                     urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     const auto copied = formalism::copy(variable, context).first;
     const auto child = urd::child<formalism::Variable, formalism::datalog::Repository>(copied.index());
@@ -80,7 +80,7 @@ void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> actio
                                 formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
                                 TranslationContext<LiftedTag>& translation_context,
                                 formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                                urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
+                                urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     // Action parameter may get deleted.
     for (const auto& variable : action.get_variables())
@@ -104,7 +104,7 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
                              TranslationContext<LiftedTag>& translation_context,
                              formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder());
 
     for (const auto fact : goal.get_facts<formalism::PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_predicate, context))
@@ -120,7 +120,7 @@ auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> acti
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 

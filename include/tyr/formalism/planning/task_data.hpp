@@ -48,7 +48,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
     urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal;
     urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
@@ -63,7 +63,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
          urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
-         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal_,
+         urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal_,
          urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_) :
         index(),
@@ -152,7 +152,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
     urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal;
     urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
@@ -174,7 +174,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
          urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
-         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal_,
+         urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal_,
          urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables_,

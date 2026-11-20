@@ -19,8 +19,8 @@
 #define TYR_FORMALISM_PLANNING_AXIOM_VIEW_HPP_
 
 #include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 

@@ -1,9 +1,10 @@
 #include "tyr/formalism/atom_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/literal_data.hpp"
@@ -113,7 +114,7 @@ TEST(TyrFormalismDatalogLiftedRule, PrintsAsDatalog)
     auto variables = urd::flat_vector<urd::index<tf::Variable>> {};
     variables.push_back(x.index());
     variables.push_back(y.index());
-    auto body = urd::data<tf::datalog::ConjunctiveCondition<::tyr::LiftedTag>> {};
+    auto body = urd::data<tf::ConjunctiveCondition<::tyr::LiftedTag>> {};
     body.variables = variables;
     body.static_literals.push_back(insert(urd::data<tf::Literal<::tyr::LiftedTag, tf::StaticTag>>(edge_xy.index(), true)).index());
     body.fluent_literals.push_back(insert(urd::data<tf::Literal<::tyr::LiftedTag, tf::FluentTag>>(visited_y.index(), false)).index());

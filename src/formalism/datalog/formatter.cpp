@@ -21,11 +21,13 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/datalog/variable_dependency_graph.hpp"
@@ -207,10 +209,11 @@ fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, td::Repository>>::format
     return fmt::format_to(context.out(), "{} {} {}", value.get_fterm(), assignment, value.get_fexpr());
 }
 
-template<tyr::TaskKind T>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<td::ConjunctiveCondition<T>, td::Repository>>::format(const urd::index_view<td::ConjunctiveCondition<T>, td::Repository>& value,
-                                                                                     fmt::format_context& context) const
+namespace
+{
+/// A rule's body, lifted or ground: its literals and constraints, separated by commas.
+template<typename Body>
+fmt::format_context::iterator format_rule_body(const Body& value, fmt::format_context& context)
 {
     auto out = context.out();
     auto separator = std::string_view("");
@@ -229,6 +232,17 @@ fmt::formatter<urd::index_view<td::ConjunctiveCondition<T>, td::Repository>>::fo
         write(constraint);
     return out;
 }
+}
+
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::ConjunctiveCondition<LiftedTag>, td::Repository>>::format(
+    const urd::index_view<tf::ConjunctiveCondition<LiftedTag>, td::Repository>& value,
+    fmt::format_context& context) const
+{ return format_rule_body(value, context); }
+
+fmt::format_context::iterator
+fmt::formatter<urd::index_view<td::RuleBody<GroundTag>, td::Repository>>::format(const urd::index_view<td::RuleBody<GroundTag>, td::Repository>& value,
+                                                                                 fmt::format_context& context) const
+{ return format_rule_body(value, context); }
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Repository>>::format(const urd::index_view<td::Rule<T>, td::Repository>& value,
@@ -378,8 +392,6 @@ template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf:
 template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::BooleanOperatorKind>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::MultiOperator<GroundTag, tf::ArithmeticOperatorKind>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::ConjunctiveCondition<LiftedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::ConjunctiveCondition<GroundTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Rule<LiftedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Rule<GroundTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Program<LiftedTag>, td::Repository>>;

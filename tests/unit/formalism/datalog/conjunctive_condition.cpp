@@ -1,7 +1,9 @@
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 
 #include <concepts>
 
@@ -11,7 +13,7 @@ namespace tyr::tests::datalog_conjunctive_condition
 namespace lifted_tests
 {
 
-using Entity = tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>;
+using Entity = tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
 using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
@@ -41,7 +43,7 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-using Entity = tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>;
+using Entity = tyr::formalism::datalog::RuleBody<::tyr::GroundTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
 using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;

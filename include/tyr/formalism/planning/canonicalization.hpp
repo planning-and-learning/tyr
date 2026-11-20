@@ -21,6 +21,7 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
+#include "tyr/formalism/conjunctive_condition_canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
@@ -33,7 +34,6 @@
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/axiom_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
@@ -122,23 +122,6 @@ template<FactKind T>
 void canonicalize(urd::data<FDRFact<T>>&)
 {
     // Trivially canonical
-}
-
-inline void canonicalize(urd::data<ConjunctiveCondition<LiftedTag>>& data)
-{
-    canonicalize(data.static_literals);
-    canonicalize(data.fluent_literals);
-    canonicalize(data.derived_literals);
-    canonicalize(data.numeric_constraints);
-}
-
-inline void canonicalize(urd::data<ConjunctiveCondition<GroundTag>>& data)
-{
-    canonicalize(data.static_literals);
-    canonicalize(data.derived_literals);
-    canonicalize(data.positive_facts);
-    canonicalize(data.negative_facts);
-    canonicalize(data.numeric_constraints);
 }
 
 inline void canonicalize(urd::data<Task<GroundTag>>& data)

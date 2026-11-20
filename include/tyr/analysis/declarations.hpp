@@ -73,7 +73,7 @@ using RuleDomainMap = ScopedDomainMap<formalism::datalog::Rule<LiftedTag>>;
 
 using AxiomDomainMap = ScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
 
-using ConjunctiveConditionDomain = SimpleScopedDomain<formalism::planning::ConjunctiveCondition<LiftedTag>>;
+using ConjunctiveConditionDomain = SimpleScopedDomain<formalism::ConjunctiveCondition<LiftedTag>>;
 
 using ConjunctiveEffectDomain = SimpleScopedDomain<formalism::planning::ConjunctiveEffect<LiftedTag>>;
 
@@ -154,7 +154,7 @@ template<typename C>
 using AxiomDomainViewMap = ScopedDomainViewMap<formalism::planning::Axiom<LiftedTag>, C>;
 
 template<typename C>
-using ConjunctiveConditionDomainView = SimpleScopedDomainView<formalism::planning::ConjunctiveCondition<LiftedTag>, C>;
+using ConjunctiveConditionDomainView = SimpleScopedDomainView<formalism::ConjunctiveCondition<LiftedTag>, C>;
 
 template<typename C>
 using ConjunctiveEffectDomainView = SimpleScopedDomainView<formalism::planning::ConjunctiveEffect<LiftedTag>, C>;

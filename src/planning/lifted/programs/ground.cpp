@@ -20,10 +20,11 @@
 #include "../../programs/common.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
@@ -38,7 +39,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -72,7 +72,7 @@ namespace
 void append_from_condition(formalism::planning::ConjunctiveConditionView<LiftedTag> cond,
                            const TranslationContext<LiftedTag>& translation_context,
                            formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                           urd::builder<formalism::datalog::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
+                           urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     // Keep negated static atoms because they are monotonic
     for (const auto literal : cond.template get_literals<formalism::StaticTag>())
@@ -104,7 +104,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : action.get_variables())
         urd::append(conj_cond->variables, formalism::copy(variable, context).first);
@@ -137,7 +137,7 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
         urd::append(conj_cond->variables, formalism::copy(variable, context).first);
@@ -162,7 +162,7 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : action.get_variables())
         urd::append(conj_cond->variables, formalism::copy(variable, context).first);
@@ -205,7 +205,7 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
         urd::append(conj_cond->variables, formalism::copy(variable, context).first);

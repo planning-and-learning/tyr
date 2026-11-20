@@ -25,8 +25,8 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -34,6 +34,7 @@
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
@@ -645,7 +646,7 @@ create_overapproximation_conjunctive_condition(size_t k,
                                                formalism::datalog::Builder& builder,
                                                formalism::datalog::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
         urd::append(conj_cond->variables, variable);
@@ -679,7 +680,7 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
                                                            formalism::datalog::Builder& builder,
                                                            formalism::datalog::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
         urd::append(conj_cond->variables, variable);
@@ -714,7 +715,7 @@ create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionV
                                        formalism::datalog::Builder& builder,
                                        formalism::datalog::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : conflicting_condition.get_variables())
         urd::append(conj_cond->variables, variable);
@@ -735,7 +736,7 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
                                             formalism::datalog::Builder& builder,
                                             formalism::datalog::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(builder);
 
     auto binding_empty = urd::flat_vector<urd::index<formalism::Object>> {};
     auto grounder_context = formalism::WriteContext { builder, context, binding_empty };

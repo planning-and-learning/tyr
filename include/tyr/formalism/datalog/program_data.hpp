@@ -47,7 +47,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_atoms;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
-    urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal;
+    urd::flat_optional<urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>> goal;
     urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules;
 
     data() = default;
@@ -63,7 +63,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_atoms_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
-         urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal_,
+         urd::flat_optional<urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>> goal_,
          urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules_) :
         index(),
         static_predicates(std::move(static_predicates_)),

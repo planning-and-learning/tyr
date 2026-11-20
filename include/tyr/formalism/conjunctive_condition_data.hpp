@@ -15,12 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_DATA_HPP_
-#define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_DATA_HPP_
+#ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
+#define TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/formalism/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <tuple>
 #include <urd/elements/flat.hpp>
@@ -33,9 +34,9 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
+struct data<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals;
@@ -84,24 +85,27 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
+struct data<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
-    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals;
+    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> positive_facts;
+    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> negative_facts;
     urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
 
     data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals_,
-         urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals_,
+         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> positive_facts_,
+         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> negative_facts_,
          urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         static_literals(std::move(static_literals_)),
-        fluent_literals(std::move(fluent_literals_)),
         derived_literals(std::move(derived_literals_)),
+        positive_facts(std::move(positive_facts_)),
+        negative_facts(std::move(negative_facts_)),
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
@@ -115,29 +119,46 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"static_literals", &data::static_literals>,
-                           urd::field<"fluent_literals", &data::fluent_literals>,
                            urd::field<"derived_literals", &data::derived_literals>,
+                           urd::field<"positive_facts", &data::positive_facts>,
+                           urd::field<"negative_facts", &data::negative_facts>,
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
 
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
+    { return urd::Members<&data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
+    {
+        return urd::
+            Members<&data::index, &data::static_literals, &data::derived_literals, &data::positive_facts, &data::negative_facts, &data::numeric_constraints> {};
+    }
 };
 
 }
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
-/// The member holding the F-literals of a conjunctive condition.
+/// The member holding the F-literals of a conjunctive condition: a ground one (planning's) holds its fluent part as FDR
+/// facts.
 template<FactKind F, TaskKind T>
-inline constexpr auto literals_of = tagged_member_pointer<StaticFluentDerivedTags,
-                                                          F,
-                                                          &urd::data<ConjunctiveCondition<T>>::static_literals,
-                                                          &urd::data<ConjunctiveCondition<T>>::fluent_literals,
-                                                          &urd::data<ConjunctiveCondition<T>>::derived_literals>;
+inline constexpr auto condition_literals_of = tagged_member_pointer<StaticFluentDerivedTags,
+                                                                    F,
+                                                                    &urd::data<ConjunctiveCondition<T>>::static_literals,
+                                                                    &urd::data<ConjunctiveCondition<T>>::fluent_literals,
+                                                                    &urd::data<ConjunctiveCondition<T>>::derived_literals>;
+template<FactKind F>
+inline constexpr auto condition_literals_of<F, GroundTag> = tagged_member_pointer<boost::mp11::mp_list<StaticTag, DerivedTag>,
+                                                                                  F,
+                                                                                  &urd::data<ConjunctiveCondition<GroundTag>>::static_literals,
+                                                                                  &urd::data<ConjunctiveCondition<GroundTag>>::derived_literals>;
+
+/// The member holding the P-facts of a ground conjunctive condition.
+template<PolarityKind P>
+inline constexpr auto condition_facts_of = tagged_member_pointer<PositiveNegativeTags,
+                                                                 P,
+                                                                 &urd::data<ConjunctiveCondition<GroundTag>>::positive_facts,
+                                                                 &urd::data<ConjunctiveCondition<GroundTag>>::negative_facts>;
 }
 
 #endif

@@ -116,12 +116,6 @@ struct FDRFact
     static constexpr std::string_view name = urd::joined_name<"FDRFact", T::name>;
 };
 
-template<TaskKind T>
-struct ConjunctiveCondition
-{
-    static constexpr std::string_view name = urd::joined_name<"ConjunctiveCondition", T::name>;
-};
-
 struct FDRAction
 {
 };

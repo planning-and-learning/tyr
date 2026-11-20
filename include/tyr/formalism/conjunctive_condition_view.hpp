@@ -15,13 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_VIEW_HPP_
-#define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_VIEW_HPP_
+#ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_VIEW_HPP_
+#define TYR_FORMALISM_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/literal_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
@@ -29,10 +28,29 @@
 #include <urd/elements/flat.hpp>
 #include <utility>
 
+namespace tyr::formalism::detail
+{
+/// The repository a view of a record (index_view, borrowed_view, ...: a view of T through C) reads through.
+template<typename V>
+struct ViewContext;
+
+template<template<typename, typename, typename...> class View, typename T, typename C, typename... Rest>
+struct ViewContext<View<T, C, Rest...>>
+{
+    using type = C;
+};
+
+/// A predicate of kind F through the repository a view V reads through.
+template<typename V, typename F>
+using PredicateViewOf = urd::index_view<Predicate<F>, typename ViewContext<V>::type>;
+}  // namespace tyr::formalism::detail
+
 namespace urd
 {
+/// The view of a conjunctive condition through either repository: the lifted condition is stored by both, the ground
+/// one by planning's.
 template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::planning::ConjunctiveCondition<T>, V>
+struct view_mixin<::tyr::formalism::ConjunctiveCondition<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -64,13 +82,13 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    { return self().template member<::tyr::formalism::planning::literals_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::condition_literals_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template member<::tyr::formalism::planning::condition_facts_of<F>>(); }
+    { return self().template member<::tyr::formalism::condition_facts_of<F>>(); }
 
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -102,7 +120,7 @@ public:
     }
 
     template<::tyr::formalism::FactKind F>
-    auto get_atoms(bool polarity, ::tyr::formalism::planning::PredicateView<F> predicate) const
+    auto get_atoms(bool polarity, ::tyr::formalism::detail::PredicateViewOf<V, F> predicate) const
     {
         return get_atoms<F>(polarity) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
     }
@@ -114,24 +132,24 @@ public:
             urd::Functions<urd::function<"get_atoms",
                                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>(
                                              true,
-                                             std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>>())) (
-                                             view_mixin::*)(bool, ::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>) const>(
+                                             std::declval<::tyr::formalism::detail::PredicateViewOf<V, ::tyr::formalism::StaticTag>>())) (
+                                             view_mixin::*)(bool, ::tyr::formalism::detail::PredicateViewOf<V, ::tyr::formalism::StaticTag>) const>(
                                              &view_mixin::template get_atoms<::tyr::formalism::StaticTag>),
                                          urd::arg<"polarity">,
                                          urd::arg<"predicate">>,
                            urd::function<"get_atoms",
                                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>(
                                              true,
-                                             std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>>())) (
-                                             view_mixin::*)(bool, ::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>) const>(
+                                             std::declval<::tyr::formalism::detail::PredicateViewOf<V, ::tyr::formalism::FluentTag>>())) (
+                                             view_mixin::*)(bool, ::tyr::formalism::detail::PredicateViewOf<V, ::tyr::formalism::FluentTag>) const>(
                                              &view_mixin::template get_atoms<::tyr::formalism::FluentTag>),
                                          urd::arg<"polarity">,
                                          urd::arg<"predicate">>,
                            urd::function<"get_atoms",
                                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>(
                                              true,
-                                             std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>>())) (
-                                             view_mixin::*)(bool, ::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>) const>(
+                                             std::declval<::tyr::formalism::detail::PredicateViewOf<V, ::tyr::formalism::DerivedTag>>())) (
+                                             view_mixin::*)(bool, ::tyr::formalism::detail::PredicateViewOf<V, ::tyr::formalism::DerivedTag>) const>(
                                              &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>),
                                          urd::arg<"polarity">,
                                          urd::arg<"predicate">>> {};

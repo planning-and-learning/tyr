@@ -18,11 +18,11 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
 
+#include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 

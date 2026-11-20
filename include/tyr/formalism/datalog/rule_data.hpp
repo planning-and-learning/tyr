@@ -37,7 +37,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
 {
     urd::index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
-    urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> body;
+    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_heads;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_heads;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
@@ -45,7 +45,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
     data() = default;
 
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
-         urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> body_,
+         urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> body_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_heads_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_heads_,
          ygg::float_t cost_ = 0) :
@@ -84,14 +84,14 @@ template<>
 struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::datalog::Rule<::tyr::GroundTag>> index;
-    urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body;
+    urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
 
-    data(urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body_,
+    data(urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> body_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads_,
          ygg::float_t cost_ = 0) :

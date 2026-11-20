@@ -20,13 +20,14 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/copy.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
@@ -292,7 +293,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     {
         // Only rules of the program are inserted: rule workspaces are indexed by rule.
         const auto body = formalism::copy(rule.get_body(), context).first;
-        auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+        auto condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
         auto decomposed = false;
         for (const auto literal : body.get_literals<formalism::StaticTag>())
         {

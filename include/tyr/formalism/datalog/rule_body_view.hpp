@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
-#define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
+#ifndef TYR_FORMALISM_DATALOG_RULE_BODY_VIEW_HPP_
+#define TYR_FORMALISM_DATALOG_RULE_BODY_VIEW_HPP_
 
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
@@ -28,17 +28,13 @@
 
 namespace urd
 {
-template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::datalog::ConjunctiveCondition<T>, V>
+template<typename V>
+struct view_mixin<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_variables() const noexcept
-        requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template member<&urd::record_of<V>::variables>(); }
-
     auto get_static_literals() const noexcept { return self().template member<&urd::record_of<V>::static_literals>(); }
 
     auto get_fluent_literals() const noexcept { return self().template member<&urd::record_of<V>::fluent_literals>(); }
@@ -50,19 +46,9 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    { return self().template member<::tyr::formalism::datalog::literals_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::datalog::rule_body_literals_of<F>>(); }
 
-    auto get_arity() const noexcept
-        requires std::same_as<T, ::tyr::LiftedTag>
-    { return get_variables().size(); }
-
-    static constexpr auto functions() noexcept
-    {
-        if constexpr (std::same_as<T, ::tyr::GroundTag>)
-            return urd::Functions<> {};
-        else
-            return urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>> {};
-    }
+    static constexpr auto functions() noexcept { return urd::Functions<> {}; }
 };
 }  // namespace urd
 

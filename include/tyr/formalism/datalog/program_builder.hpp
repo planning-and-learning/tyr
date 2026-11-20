@@ -19,9 +19,10 @@
 #define TYR_FORMALISM_DATALOG_PROGRAM_BUILDER_HPP_
 
 #include "tyr/formalism/atom_builder.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_builder.hpp"
+#include "tyr/formalism/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_body_builder.hpp"
 #include "tyr/formalism/datalog/rule_builder.hpp"
 #include "tyr/formalism/function_builder.hpp"
 #include "tyr/formalism/function_term_value_builder.hpp"
@@ -53,7 +54,7 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_atoms;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_fterm_values;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
-    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>>, C> goal;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>>, C> goal;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>>, C> rules;
 
     static constexpr auto fields() noexcept

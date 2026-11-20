@@ -21,13 +21,14 @@
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
@@ -268,7 +269,7 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
 inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto conj_cond = datalog::checkout<ConjunctiveCondition<GroundTag>>(context.builder());
+    auto conj_cond = datalog::checkout<RuleBody<GroundTag>>(context.builder());
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())

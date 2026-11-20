@@ -27,12 +27,12 @@
 
 #include <yggdrasil/formalism/intern_instantiations.hpp>
 
-/// The instantiations (PREFIX extern: declarations); the two repositories share 40 types.
+/// The instantiations (PREFIX extern: declarations); the two repositories share 41 types.
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): it expands to explicit instantiations, declarations, which no function gives
 #define TYR_FORMALISM_INTERNS(PREFIX) \
     YGG_FORMALISM_INTERNS(            \
         PREFIX,                       \
-        64,                           \
+        63,                           \
         true,                         \
         boost::mp11::mp_unique<boost::mp11::mp_append<tyr::formalism::datalog::SymbolRepositoryTypes, tyr::formalism::planning::SymbolRepositoryTypes>>)
 

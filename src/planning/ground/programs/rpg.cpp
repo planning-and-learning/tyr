@@ -22,6 +22,7 @@
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -38,7 +39,6 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -89,7 +89,7 @@ struct GroundProgramBuildContext
 void fill_delete_free_condition(formalism::planning::ConjunctiveConditionView<GroundTag> condition,
                                 TranslationContext<GroundTag>& translation_context,
                                 GroundProgramBuildContext& context,
-                                urd::builder<formalism::datalog::ConjunctiveCondition<GroundTag>, formalism::datalog::Repository>& result)
+                                urd::builder<formalism::datalog::RuleBody<GroundTag>, formalism::datalog::Repository>& result)
 {
     for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
         if (const auto literal =
@@ -101,7 +101,7 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condi
                                                                                      TranslationContext<GroundTag>& translation_context,
                                                                                      GroundProgramBuildContext& context)
 {
-    auto result = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
+    auto result = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(condition, translation_context, context, *result);
 
     return context.merge_context.destination().insert(*result, context.builder).first;
@@ -119,7 +119,7 @@ create_delete_free_effect_condition(formalism::planning::ConjunctiveConditionVie
                                     TranslationContext<GroundTag>& translation_context,
                                     GroundProgramBuildContext& context)
 {
-    auto result = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
+    auto result = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(action_condition, translation_context, context, *result);
     fill_delete_free_condition(effect_condition, translation_context, context, *result);
     return context.merge_context.destination().insert(*result, context.builder).first;
