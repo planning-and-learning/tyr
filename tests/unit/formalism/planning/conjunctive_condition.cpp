@@ -1,10 +1,10 @@
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/parameters_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <array>

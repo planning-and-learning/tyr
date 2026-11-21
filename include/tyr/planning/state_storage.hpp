@@ -19,7 +19,7 @@
 #define TYR_PLANNING_STATE_STORAGE_HPP_
 
 #include "tyr/containers.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/state_storage/config.hpp"
 #include "tyr/planning/task.hpp"
 

@@ -16,7 +16,7 @@
  */
 
 #include <nanobind/nanobind.h>
-#include <tyr/formalism/planning/repository.hpp>
+#include <tyr/formalism/repository.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace nb = nanobind;

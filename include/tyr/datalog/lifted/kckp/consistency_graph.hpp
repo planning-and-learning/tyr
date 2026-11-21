@@ -25,10 +25,8 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
@@ -39,7 +37,9 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_dependency_graph.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <string_view>

@@ -18,7 +18,7 @@
 #include "tyr/formalism/planning/invariants/matcher.hpp"
 
 #include "matching.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"

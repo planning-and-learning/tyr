@@ -28,7 +28,7 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <boost/mp11.hpp>
 #include <type_traits>

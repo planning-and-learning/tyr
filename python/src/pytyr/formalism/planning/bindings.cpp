@@ -22,7 +22,7 @@
 #include <nanobind/stl/optional.h>
 #include <new>
 #include <optional>
-#include <tyr/formalism/planning/repository.hpp>
+#include <tyr/formalism/repository.hpp>
 
 namespace tyr::formalism
 {

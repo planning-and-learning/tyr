@@ -20,12 +20,11 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
 
 #include <fmt/format.h>
 
 // Rules, ground rule bodies and programs in Datalog: each view has an fmt::formatter whose format is defined in
-// src/formalism/datalog/formatter.cpp. The shared records they hold print PDDL on their own (planning/formatter.hpp) and
+// src/formalism/datalog/formatter.cpp. The shared records they hold print PDDL on their own (formalism/formatter.hpp) and
 // Datalog inside a rule (p(x, y)). Variables keep their PDDL names (?x); a rule's cost is a comment after it.
 
 /// A ground rule's body: its literals and constraints, separated by commas.
@@ -49,13 +48,6 @@ struct fmt::formatter<urd::index_view<tyr::formalism::Program<T>, tyr::formalism
 {
     fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Program<T>, tyr::formalism::Repository>& value,
                                          fmt::format_context& context) const;
-};
-
-/// A condition's variable dependency graph: one DOT graph per kind of binary dependency.
-template<>
-struct fmt::formatter<tyr::formalism::VariableDependencyGraph> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const tyr::formalism::VariableDependencyGraph& value, fmt::format_context& context) const;
 };
 
 #endif

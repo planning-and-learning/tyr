@@ -18,8 +18,9 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_GROUNDER_DECL_HPP_
 #define TYR_PLANNING_LIFTED_TASK_GROUNDER_DECL_HPP_
 
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <cstdint>

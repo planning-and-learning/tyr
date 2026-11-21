@@ -21,7 +21,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <boost/mp11.hpp>

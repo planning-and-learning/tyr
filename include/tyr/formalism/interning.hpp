@@ -15,17 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_INTERNING_HPP_
-#define TYR_FORMALISM_PLANNING_INTERNING_HPP_
+#ifndef TYR_FORMALISM_INTERNING_HPP_
+#define TYR_FORMALISM_INTERNING_HPP_
 
+#include "tyr/formalism/canonicalization.hpp"
+#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <yggdrasil/formalism/interning.hpp>
 
-/// Insertion into the planning repository: records are canonicalized before they are interned. Kept out of
-/// repository.hpp, so code that only reads does not compile the canonicalization.
+/// Insertion into the repository: records are canonicalized (canonicalization.hpp and its planning and Datalog
+/// counterparts) before they are interned. Kept out of repository.hpp, so code that only reads does not compile the
+/// canonicalization.
 namespace tyr::formalism
 {
 

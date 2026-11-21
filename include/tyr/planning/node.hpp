@@ -19,7 +19,7 @@
 #define TYR_PLANNING_NODE_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
 #include "tyr/planning/state_repository.hpp"

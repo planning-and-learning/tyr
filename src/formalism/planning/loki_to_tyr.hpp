@@ -19,7 +19,7 @@
 #define TYR_SRC_FORMALISM_PLANNING_LOKI_TO_TYR_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <filesystem>

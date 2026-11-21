@@ -15,15 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
+#include "tyr/formalism/variable_dependency_graph.hpp"
 
-#include "tyr/formalism/datalog/expression_arity.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/expression_arity.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
@@ -79,7 +79,7 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
             binary_dep.add_edge(parameters[i], parameters[j]);  // undirected: both ways
 }
 
-VariableDependencyGraph::VariableDependencyGraph(RuleBodyView<LiftedTag> condition) :
+VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition) :
     m_k(condition.get_arity()),
     m_unary_dependencies(m_k),
     m_binary_dependencies(m_k)

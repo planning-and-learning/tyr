@@ -23,7 +23,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <memory>
 #include <optional>

@@ -25,12 +25,10 @@
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
@@ -49,6 +47,7 @@
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_data.hpp"
@@ -59,7 +58,6 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <string_view>
-#include <urd/dot.hpp>
 #include <urd/format.hpp>
 #include <utility>
 #include <variant>
@@ -285,7 +283,7 @@ Out write_rule_body(Out out, const Body& value)
 }
 
 // Rules, their ground bodies and programs in Datalog syntax; the shared records they hold are written by the writers
-// above (the shared records' own formatters print PDDL, src/formalism/planning/formatter.cpp).
+// above (the shared records' own formatters print PDDL, src/formalism/formatter.cpp).
 
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::RuleBody<GroundTag>, tf::Repository>>::format(const urd::index_view<tf::RuleBody<GroundTag>, tf::Repository>& value,
@@ -362,23 +360,6 @@ fmt::formatter<urd::index_view<tf::Program<T>, tf::Repository>>::format(const ur
         out = fmt::format_to(out, ".");
     }
     return out;
-}
-
-/// One DOT graph per kind of binary dependency, named after it: the condition's parameters, adjacent where they occur
-/// together in a literal (or constraint) of that kind.
-fmt::format_context::iterator fmt::formatter<tf::VariableDependencyGraph>::format(const tf::VariableDependencyGraph& value, fmt::format_context& context) const
-{
-    const auto& binary = value.binary();
-    const auto parameter = [](const auto& /*graph*/, tf::ParameterIndex v) { return v; };
-    return fmt::format_to(context.out(),
-                          "{}{}{}{}{}{}{}",
-                          urd::to_dot(binary.static_positive_literal, parameter, urd::unlabeled, "static_positive_literal"),
-                          urd::to_dot(binary.static_negative_literal, parameter, urd::unlabeled, "static_negative_literal"),
-                          urd::to_dot(binary.fluent_positive_literal, parameter, urd::unlabeled, "fluent_positive_literal"),
-                          urd::to_dot(binary.fluent_negative_literal, parameter, urd::unlabeled, "fluent_negative_literal"),
-                          urd::to_dot(binary.derived_positive_literal, parameter, urd::unlabeled, "derived_positive_literal"),
-                          urd::to_dot(binary.derived_negative_literal, parameter, urd::unlabeled, "derived_negative_literal"),
-                          urd::to_dot(binary.numeric_constraint, parameter, urd::unlabeled, "numeric_constraint"));
 }
 
 // Each family's formatter, once for each kind.

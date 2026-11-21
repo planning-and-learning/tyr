@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_DECLARATIONS_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_DECLARATIONS_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <boost/mp11.hpp>
 #include <concepts>

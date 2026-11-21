@@ -21,8 +21,8 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <filesystem>
 #include <memory>

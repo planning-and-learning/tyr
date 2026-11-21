@@ -25,7 +25,7 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/datalog/formatter.hpp>
-#include <tyr/formalism/datalog/interning.hpp>
+#include <tyr/formalism/interning.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/python/bindings.hpp>

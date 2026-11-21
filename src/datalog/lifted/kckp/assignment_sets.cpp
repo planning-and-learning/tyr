@@ -26,7 +26,6 @@
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -39,6 +38,7 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
@@ -317,7 +317,7 @@ void PredicateAssignmentSets<T>::insert(formalism::PredicateRowView<T> binding)
 { m_sets[static_cast<ygg::uint_t>(binding.index().relation.value)].insert(binding); }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(formalism::PredicateRowForwardRangeView<T> bindings)
+void PredicateAssignmentSets<T>::insert(formalism::PredicateRowsView<T> bindings)
 {
     for (const auto binding : bindings)
         insert(binding);

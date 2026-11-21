@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 
 #include <string>
 #include <tuple>

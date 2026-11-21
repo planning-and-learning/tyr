@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_FDR_FACT_DATA_HPP_
 #define TYR_FORMALISM_FDR_FACT_DATA_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 
 #include <tuple>

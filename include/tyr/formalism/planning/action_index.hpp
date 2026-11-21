@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_INDEX_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_INDEX_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <urd/elements/flat.hpp>
 

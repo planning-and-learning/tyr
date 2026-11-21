@@ -1,11 +1,11 @@
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
 
 #include <concepts>

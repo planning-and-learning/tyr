@@ -1,10 +1,10 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/parameters_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
 
 #include <concepts>

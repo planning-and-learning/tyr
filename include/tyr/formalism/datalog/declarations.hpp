@@ -20,7 +20,6 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 
 #include <boost/mp11.hpp>
 #include <cista/containers/variant.h>
@@ -48,16 +47,7 @@ namespace tyr::formalism
 
 using RuleRowView = ygg::RowView<Rule<LiftedTag>, Repository>;
 
-template<FactKind F>
-using PredicateRowIndex = ygg::RowIndex<Predicate<F>>;
-template<FactKind F>
-using FunctionRowIndex = ygg::RowIndex<Function<F>>;
 using RuleRowIndex = ygg::RowIndex<Rule<LiftedTag>>;
-
-template<FactKind F>
-using PredicateRowForwardRangeView = ygg::RowsView<Predicate<F>, urd::Store<urd::sequence<urd::index<ygg::Row<Predicate<F>>>>>, Repository>;
-template<FactKind F>
-using FunctionRowRandomAccessRangeView = ygg::RowsView<Function<F>, urd::Store<urd::sequence<urd::index<ygg::Row<Function<F>>>>>, Repository>;
 
 /// The body of a rule of kind T: a lifted rule's shared conjunctive condition, a ground rule's RuleBody.
 template<TaskKind T>
@@ -69,8 +59,6 @@ template<TaskKind T>
 using RuleView = urd::index_view<Rule<T>, Repository>;
 template<TaskKind T>
 using RuleViewList = urd::Store<urd::sequence<RuleView<T>>>;
-
-class VariableDependencyGraph;
 
 }
 

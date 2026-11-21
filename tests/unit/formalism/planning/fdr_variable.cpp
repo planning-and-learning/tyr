@@ -1,7 +1,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 

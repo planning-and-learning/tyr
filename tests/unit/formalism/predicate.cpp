@@ -1,7 +1,7 @@
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>

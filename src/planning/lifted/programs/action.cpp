@@ -22,18 +22,17 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_builder.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/expression_properties.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -49,9 +48,9 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
@@ -209,7 +208,8 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::ProgramView<Lif
 
     for (const auto rule : rules)
     {
-        const auto function_reads = formalism::collect_fluent_reads(rule);
+        auto function_reads = urd::Store<urd::set<formalism::FunctionTermView<LiftedTag, formalism::FluentTag>>> {};
+        formalism::collect_reads(rule.get_body(), function_reads);
         for (const auto function : program.get_functions<formalism::FluentTag>())
             if (std::ranges::any_of(function_reads, [&](auto term) { return term.get_function() == function; }))
                 inputs.fluent_functions.insert(function);

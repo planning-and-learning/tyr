@@ -18,7 +18,7 @@
 #include "planning/parser.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"

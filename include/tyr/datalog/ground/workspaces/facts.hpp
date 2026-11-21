@@ -20,7 +20,7 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>

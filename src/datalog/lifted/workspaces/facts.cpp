@@ -18,7 +18,7 @@
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::datalog
 {

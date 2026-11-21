@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/grounder.hpp"
 
 #include "tyr/formalism/detail/repository_instantiations.hpp"
 
@@ -23,12 +23,19 @@
 
 namespace tyr::formalism
 {
-template std::pair<FunctionRowView<StaticTag>, bool>
-ground(TermListView terms, FunctionView<StaticTag> function, GroundingContext<Builder, Repository>& context);
-template std::pair<FunctionRowView<FluentTag>, bool>
-ground(TermListView terms, FunctionView<FluentTag> function, GroundingContext<Builder, Repository>& context);
-template std::pair<FunctionRowView<AuxiliaryTag>, bool>
-ground(TermListView terms, FunctionView<AuxiliaryTag> function, GroundingContext<Builder, Repository>& context);
+template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
+template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
+template std::pair<PredicateRowView<DerivedTag>, bool> ground_binding(AtomView<LiftedTag, DerivedTag> element, GroundingContext<Builder, Repository>& context);
+template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
+template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
+template std::pair<FunctionRowView<AuxiliaryTag>, bool> ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element, GroundingContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<AuxiliaryTag>> try_ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element, GroundingContext<Builder, Repository>& context);
+template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
+template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
+template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element, GroundingContext<Builder, Repository>& context);
+
 
 template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element,
                                                                         GroundingContext<Builder, Repository>& context);
@@ -42,12 +49,6 @@ template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> 
 template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                     GroundingContext<Builder, Repository>& context);
 
-template std::pair<PredicateRowView<StaticTag>, bool>
-ground(TermListView terms, PredicateView<StaticTag> predicate, GroundingContext<Builder, Repository>& context);
-template std::pair<PredicateRowView<FluentTag>, bool>
-ground(TermListView terms, PredicateView<FluentTag> predicate, GroundingContext<Builder, Repository>& context);
-template std::pair<PredicateRowView<DerivedTag>, bool>
-ground(TermListView terms, PredicateView<DerivedTag> predicate, GroundingContext<Builder, Repository>& context);
 
 template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element,
                                                                 GroundingContext<Builder, Repository>& grounder_context);

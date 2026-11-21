@@ -20,7 +20,7 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <optional>
 #include <urd/repr/sequences/sequence.hpp>

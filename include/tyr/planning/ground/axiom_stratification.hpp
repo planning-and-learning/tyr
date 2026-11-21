@@ -20,7 +20,7 @@
 
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>

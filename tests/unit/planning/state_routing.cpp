@@ -19,7 +19,6 @@
 #include "planning/parser.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"

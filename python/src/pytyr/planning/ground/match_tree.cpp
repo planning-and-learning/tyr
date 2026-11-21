@@ -17,7 +17,7 @@
 
 #include "module.hpp"
 
-#include <tyr/formalism/planning/declarations.hpp>
+#include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/planning/formatter.hpp>
 #include <tyr/planning/ground/match_tree/nodes/atom_data.hpp>
 #include <tyr/planning/ground/match_tree/nodes/constraint_data.hpp>

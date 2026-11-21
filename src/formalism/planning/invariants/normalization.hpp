@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 
 #include "tyr/formalism/planning/invariant_builder.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::formalism::invariant
 {

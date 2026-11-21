@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_REPOSITORY_HPP_
-#define TYR_FORMALISM_PLANNING_REPOSITORY_HPP_
+#ifndef TYR_FORMALISM_REPOSITORY_HPP_
+#define TYR_FORMALISM_REPOSITORY_HPP_
 
 #include "tyr/formalism/atom_builder.hpp"
 #include "tyr/formalism/atom_data.hpp"
@@ -27,6 +27,7 @@
 #include "tyr/formalism/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_builder.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
@@ -73,7 +74,6 @@
 #include "tyr/formalism/planning/conjunctive_effect_builder.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_builder.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
@@ -106,6 +106,8 @@
 #include <optional>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/formalism/builder.hpp>

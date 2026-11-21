@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_VARIABLE_DEPENDENCY_GRAPH_DETAILS_HPP_
-#define TYR_FORMALISM_DATALOG_VARIABLE_DEPENDENCY_GRAPH_DETAILS_HPP_
+#ifndef TYR_FORMALISM_VARIABLE_DEPENDENCY_GRAPH_DETAILS_HPP_
+#define TYR_FORMALISM_VARIABLE_DEPENDENCY_GRAPH_DETAILS_HPP_
 
 #include "tyr/formalism/declarations.hpp"
 

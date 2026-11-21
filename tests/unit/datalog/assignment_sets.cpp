@@ -18,12 +18,12 @@
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 
 #include "tyr/analysis/variable_domain.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <gtest/gtest.h>

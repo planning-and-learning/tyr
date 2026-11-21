@@ -19,10 +19,10 @@
 #define TYR_FORMALISM_DETAIL_REPOSITORY_INSTANTIATIONS_HPP_
 
 /// Extern declarations of intern for every symbol type of the repository, instantiated in the
-/// library (src/formalism/repository.cpp). Include only from sources that intern many of these types; see rule 9 of the
+/// library (src/formalism/interning.cpp). Include only from sources that intern many of these types; see rule 9 of the
 /// template rules (https://planning-and-learning.github.io/brokkr/template_rules.html).
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <yggdrasil/formalism/intern_instantiations.hpp>
 

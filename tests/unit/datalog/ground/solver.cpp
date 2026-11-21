@@ -20,9 +20,9 @@
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/interning.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <fmt/core.h>
 #include <gtest/gtest.h>

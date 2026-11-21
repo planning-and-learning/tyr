@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
 #include <type_traits>

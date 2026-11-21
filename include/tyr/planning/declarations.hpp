@@ -19,7 +19,7 @@
 #define TYR_PLANNING_DECLARATIONS_HPP_
 
 #include "tyr/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <concepts>
 #include <memory>

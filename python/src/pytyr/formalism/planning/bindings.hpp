@@ -20,7 +20,7 @@
 
 #include "module.hpp"
 
-#include <tyr/formalism/planning/declarations.hpp>
+#include <tyr/formalism/declarations.hpp>
 
 namespace tyr::formalism
 {

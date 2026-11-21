@@ -25,10 +25,9 @@
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/formatter.hpp>
+#include <tyr/formalism/interning.hpp>
 #include <tyr/formalism/planning/action_view.hpp>
 #include <tyr/formalism/planning/axiom_view.hpp>
-#include <tyr/formalism/planning/declarations.hpp>
-#include <tyr/formalism/planning/interning.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>

@@ -19,7 +19,7 @@
 
 #include "pytyr/module.hpp"
 
-#include <tyr/formalism/planning/repository.hpp>
+#include <tyr/formalism/repository.hpp>
 
 namespace tyr::formalism
 {

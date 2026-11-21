@@ -20,7 +20,7 @@
 #include "matching.hpp"
 #include "normalization.hpp"
 #include "proof.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "utils.hpp"
 
 #include <algorithm>

@@ -20,7 +20,7 @@
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <string_view>
 #include <urd/elements/concepts.hpp>

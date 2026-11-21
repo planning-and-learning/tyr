@@ -15,17 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_VARIABLE_DEPENDENCY_GRAPH_HPP_
-#define TYR_FORMALISM_DATALOG_VARIABLE_DEPENDENCY_GRAPH_HPP_
+#ifndef TYR_FORMALISM_VARIABLE_DEPENDENCY_GRAPH_HPP_
+#define TYR_FORMALISM_VARIABLE_DEPENDENCY_GRAPH_HPP_
 
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_body_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/variable_dependency_graph_details.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
@@ -37,6 +32,7 @@
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_dependency_graph_details.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <yggdrasil/core/config.hpp>
@@ -48,7 +44,7 @@ namespace tyr::formalism
 class VariableDependencyGraph
 {
 public:
-    explicit VariableDependencyGraph(RuleBodyView<LiftedTag> condition);
+    explicit VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition);
 
     [[nodiscard]] const auto& unary() const noexcept { return m_unary_dependencies; }
 

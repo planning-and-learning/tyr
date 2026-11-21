@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
 #include <urd/elements/flat.hpp>

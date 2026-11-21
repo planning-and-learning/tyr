@@ -21,12 +21,12 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/expression_properties.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <cista/containers/vector.h>
 #include <gtl/phmap.hpp>
@@ -52,7 +52,9 @@ void add_stratum_listeners(const TypedRuleStratum& stratum, const formalism::Rep
             if (literal.get_polarity())
                 listeners.derived_predicates[literal.get_atom().get_predicate().index()].insert(rule);
 
-        for (const auto term : formalism::collect_fluent_reads(rule_view))
+        auto reads = urd::Store<urd::set<formalism::FunctionTermView<LiftedTag, formalism::FluentTag>>> {};
+        formalism::collect_reads(rule_view.get_body(), reads);
+        for (const auto term : reads)
             listeners.functions[term.get_function().index()].insert(rule);
     }
 }

@@ -2,15 +2,15 @@
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
 
 #include <concepts>

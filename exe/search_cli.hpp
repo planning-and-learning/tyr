@@ -31,7 +31,7 @@
 #include <string>
 #include <tyr/formalism/planning/formatter.hpp>
 #include <tyr/formalism/planning/parser.hpp>
-#include <tyr/formalism/planning/repository.hpp>
+#include <tyr/formalism/repository.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/formatter.hpp>

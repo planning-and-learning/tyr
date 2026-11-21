@@ -27,25 +27,25 @@
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/expression_arity.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/expression_arity.hpp"
+#include "tyr/formalism/expression_properties.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
@@ -66,6 +66,22 @@
 
 namespace tyr::datalog
 {
+namespace
+{
+/// The arity by which the k-consistency graph places a literal or constraint: a literal's predicate's, a function
+/// term's function's, and a constraint's largest function term's or parameter count, whichever is larger.
+template<formalism::FactKind F>
+std::size_t kckp_arity(formalism::LiteralView<LiftedTag, F> element)
+{ return element.get_atom().get_predicate().get_arity(); }
+
+template<formalism::FactKind F>
+std::size_t kckp_arity(formalism::FunctionTermView<LiftedTag, F> element)
+{ return element.get_function().get_arity(); }
+
+std::size_t kckp_arity(formalism::BooleanOperatorView<LiftedTag> element)
+{ return std::max(formalism::max_fterm_arity(element), formalism::collect_parameters(element).size()); }
+}
+
 namespace details
 {
 namespace

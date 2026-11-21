@@ -19,7 +19,7 @@
 #define TYR_DATALOG_GROUND_RULE_INSTANCE_HPP_
 
 #include "tyr/datalog/rule_instance.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::datalog
 {

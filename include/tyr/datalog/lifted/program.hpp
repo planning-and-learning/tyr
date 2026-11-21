@@ -23,7 +23,7 @@
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::datalog
 {

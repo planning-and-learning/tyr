@@ -19,9 +19,8 @@
 #define TYR_PLANNING_PROGRAMS_STATE_INPUTS_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <urd/elements/equal_to.hpp>

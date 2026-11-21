@@ -18,7 +18,7 @@
 #include "tyr/formalism/planning/invariants/ordering.hpp"
 
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <cstddef>

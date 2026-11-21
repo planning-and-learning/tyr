@@ -18,11 +18,11 @@
 #ifndef TYR_FORMALISM_PLANNING_DOMAIN_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_DOMAIN_VIEW_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 

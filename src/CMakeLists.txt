@@ -30,11 +30,11 @@ add_library(
     analysis/domains_translation.cpp
 
     formalism/formatter.cpp
+    formalism/grounder.cpp
+    formalism/interning.cpp
     formalism/repository.cpp
-    formalism/planning/repository.cpp
+    formalism/variable_dependency_graph.cpp
     formalism/datalog/formatter.cpp
-    formalism/datalog/grounder.cpp
-    formalism/datalog/variable_dependency_graph.cpp
 
     formalism/planning/invariants/constraints.cpp
     formalism/planning/invariants/matching.cpp
@@ -47,7 +47,6 @@ add_library(
     formalism/planning/invariants/synthesis.cpp
     formalism/planning/formatter.cpp
     formalism/planning/fdr_context.cpp
-    formalism/planning/grounder.cpp
     formalism/planning/loki_to_tyr.cpp
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp
@@ -157,7 +156,7 @@ brokkr_unity_directories(
 )
 brokkr_unity_directories(core ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 3 DIRECTORIES formalism/planning)
 # The repository's members, instantiated in their own source: the heaviest of the library's, alone.
-set_source_files_properties(formalism/planning/repository.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(formalism/repository.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
 
 # An executable shares the state of inline functions (a function's static, as yggdrasil's next_layer) with this

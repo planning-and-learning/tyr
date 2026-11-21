@@ -18,7 +18,7 @@
 #ifndef TYR_SRC_PLANNING_ALGORITHMS_REPOSITORY_STATISTICS_HPP_
 #define TYR_SRC_PLANNING_ALGORITHMS_REPOSITORY_STATISTICS_HPP_
 
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/declarations.hpp"
 

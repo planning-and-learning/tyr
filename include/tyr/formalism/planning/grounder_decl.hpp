@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_GROUNDER_DECL_HPP_
 #define TYR_FORMALISM_PLANNING_GROUNDER_DECL_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>

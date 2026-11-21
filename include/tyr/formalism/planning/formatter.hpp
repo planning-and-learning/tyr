@@ -21,7 +21,6 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
-#include "tyr/formalism/unification/substitution.hpp"
 
 #include <fmt/format.h>
 #include <utility>
@@ -34,113 +33,11 @@ struct PlanFormatting
 };
 }  // namespace tyr::formalism
 
-// The planning formalism in PDDL: each record's view (through Repository) has an fmt::formatter whose format
-// is defined in src/formalism/planning/formatter.cpp, and explicitly instantiated there for each member of a family of
-// records. A domain and a task are written as loki writes them: their sections one per line, the rest on one line. A
-// fact's variable, an invariant and a record held as data are written as urd writes a record.
-
-/// An object: its name.
-template<>
-struct fmt::formatter<urd::index_view<tyr::formalism::Object, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Object, tyr::formalism::Repository>& value, fmt::format_context& context) const;
-};
-
-/// A variable: its name (?x).
-template<>
-struct fmt::formatter<urd::index_view<tyr::formalism::Variable, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Variable, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A predicate as a domain declares it: (name ?x0 ?x1 ...).
-template<tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A function as a domain declares it: (name ?x0 ?x1 ...).
-template<tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::Function<F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Function<F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// An atom: (predicate terms...).
-template<tyr::TaskKind T, tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::Atom<T, F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Atom<T, F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A literal: its atom, or (not atom).
-template<tyr::TaskKind T, tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A function term: (function terms...).
-template<tyr::TaskKind T, tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A function term's initial value: (= term value).
-template<tyr::TaskKind T, tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTermValue<T, F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTermValue<T, F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A unary arithmetic expression: (- e).
-template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
-struct fmt::formatter<urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A binary arithmetic expression (+ a b), or a numeric comparison (>= a b); != is (not (= a b)).
-template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
-struct fmt::formatter<urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// An arithmetic expression over several arguments: (+ a b c).
-template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
-struct fmt::formatter<urd::index_view<tyr::formalism::MultiOperator<T, O>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::MultiOperator<T, O>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A numeric effect: (increase term expression).
-template<tyr::TaskKind T, tyr::formalism::FactKind F>
-struct fmt::formatter<urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
-
-/// A condition: (and literals... constraints...), a ground one's facts as the literals they stand for.
-template<tyr::TaskKind T>
-struct fmt::formatter<urd::index_view<tyr::formalism::ConjunctiveCondition<T>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::ConjunctiveCondition<T>, tyr::formalism::Repository>& value,
-                                         fmt::format_context& context) const;
-};
+// The planning formalism's records in PDDL (the shared records' in formalism/formatter.hpp): each record's view
+// (through Repository) has an fmt::formatter whose format is defined in src/formalism/planning/formatter.cpp, and
+// explicitly instantiated there for each member of a family of records. A domain and a task are written as loki writes
+// them: their sections one per line, the rest on one line. A fact's variable, an invariant and a record held as data are
+// written as urd writes a record.
 
 /// An effect: (and literals... numeric effects...), a ground one's added and deleted facts as literals.
 template<tyr::TaskKind T>
@@ -212,13 +109,6 @@ struct fmt::formatter<urd::owning_view<tyr::formalism::FDRFact<tyr::formalism::F
                                          fmt::format_context& context) const;
 };
 
-/// A binding of a relation (a predicate's, a function's, an action's): (name values...); an axiom's, which has no name, its values.
-template<typename R>
-struct fmt::formatter<ygg::RowView<R, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const ygg::RowView<R, tyr::formalism::Repository>& value, fmt::format_context& context) const;
-};
-
 /// An action's binding held by a view: as a stored one.
 template<>
 struct fmt::formatter<tyr::formalism::ActionRowBuilderView> : tyr::formalism::detail::without_format_spec
@@ -266,14 +156,6 @@ template<>
 struct fmt::formatter<tyr::formalism::OptimizationDirection, char> : tyr::formalism::detail::without_format_spec
 {
     fmt::format_context::iterator format(tyr::formalism::OptimizationDirection value, fmt::format_context& ctx) const;
-};
-
-/// A substitution: each parameter of its domain with its value, `_` where it has none, in the order its parameters were
-/// given.
-template<typename T>
-struct fmt::formatter<tyr::formalism::unification::SubstitutionFunction<T>, char> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const tyr::formalism::unification::SubstitutionFunction<T>& value, fmt::format_context& ctx) const;
 };
 
 #endif

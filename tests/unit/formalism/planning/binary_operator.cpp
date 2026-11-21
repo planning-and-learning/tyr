@@ -1,7 +1,7 @@
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <tuple>

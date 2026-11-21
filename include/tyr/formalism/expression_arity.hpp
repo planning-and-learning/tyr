@@ -15,19 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_EXPRESSION_ARITY_HPP_
-#define TYR_FORMALISM_DATALOG_EXPRESSION_ARITY_HPP_
+#ifndef TYR_FORMALISM_EXPRESSION_ARITY_HPP_
+#define TYR_FORMALISM_EXPRESSION_ARITY_HPP_
 
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/rule_body_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
@@ -36,9 +29,12 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
 
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
 #include <numeric>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
@@ -49,6 +45,8 @@
 #include <utility>
 #include <yggdrasil/formalism/row_view.hpp>
 
+/// The parameters and function arities of the shared records (atoms, literals, function terms, function expressions and
+/// operators).
 namespace tyr::formalism
 {
 
@@ -218,20 +216,6 @@ inline size_t max_fterm_arity(MultiOperatorView<LiftedTag, ::tyr::formalism::Ari
                            max_fterm_arity(child_fexprs.front()),
                            [&](const auto& value, const auto& child_expr) { return std::max(value, max_fterm_arity(child_expr)); });
 }
-
-/**
- * kckp_arity
- */
-
-template<FactKind F>
-inline size_t kckp_arity(LiteralView<LiftedTag, F> element)
-{ return element.get_atom().get_predicate().get_arity(); }
-
-template<FactKind F>
-inline size_t kckp_arity(FunctionTermView<LiftedTag, F> element)
-{ return element.get_function().get_arity(); }
-
-inline size_t kckp_arity(BooleanOperatorView<LiftedTag> element) { return std::max(max_fterm_arity(element), collect_parameters(element).size()); }
 
 /**
  * parameter_arity

@@ -18,9 +18,9 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_REPOSITORY_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_REPOSITORY_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_builder.hpp"

@@ -43,9 +43,9 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
 

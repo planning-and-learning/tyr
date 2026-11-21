@@ -35,7 +35,6 @@
 #include "tyr/formalism/planning/axiom_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"

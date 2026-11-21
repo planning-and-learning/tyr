@@ -20,8 +20,10 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <cassert>
 #include <gtl/phmap.hpp>

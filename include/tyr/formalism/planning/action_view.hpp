@@ -23,7 +23,6 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <ranges>

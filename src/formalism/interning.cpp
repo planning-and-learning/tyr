@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 Dominik Drexler
+ * Copyright (C) 2025-2026 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_INTERNING_HPP_
-#define TYR_FORMALISM_DATALOG_INTERNING_HPP_
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
-#include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/interning.hpp"
+#include "tyr/formalism/repository.hpp"
 
-/// Insertion: the planning formalism's (one repository holds both); the rules, ground rule bodies and programs are
-/// canonicalized by their own canonicalize (canonicalization.hpp), found by argument-dependent lookup.
-
-#endif
+TYR_FORMALISM_INTERNS()

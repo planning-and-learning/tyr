@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_FDR_FACT_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"

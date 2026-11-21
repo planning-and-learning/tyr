@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <tuple>

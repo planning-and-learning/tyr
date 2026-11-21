@@ -18,7 +18,7 @@
 #include "tyr/datalog/ground/workspaces/program.hpp"
 
 #include "tyr/datalog/applicability.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/expression_properties.hpp"
 
 #include <boost/mp11.hpp>
 #include <stdexcept>

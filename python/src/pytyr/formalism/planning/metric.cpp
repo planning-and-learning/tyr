@@ -22,9 +22,9 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <tyr/formalism/interning.hpp>
 #include <tyr/formalism/planning/declarations.hpp>
 #include <tyr/formalism/planning/formatter.hpp>
-#include <tyr/formalism/planning/interning.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 

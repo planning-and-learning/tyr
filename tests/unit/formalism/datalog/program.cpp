@@ -1,10 +1,10 @@
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/interning.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>

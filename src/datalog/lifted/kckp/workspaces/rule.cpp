@@ -19,8 +19,8 @@
 
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::datalog
 {

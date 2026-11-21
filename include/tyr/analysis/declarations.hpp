@@ -21,7 +21,6 @@
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 
 #include <string_view>
 #include <urd/elements/concepts.hpp>

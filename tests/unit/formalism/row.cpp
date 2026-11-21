@@ -1,7 +1,7 @@
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/interning.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <forward_list>

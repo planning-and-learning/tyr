@@ -21,12 +21,11 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/expression_properties.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -36,6 +35,7 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
@@ -94,7 +94,9 @@ void add_body_dependencies(formalism::RuleView<LiftedTag> rule, ygg::uint_t head
     for (const auto literal : rule.get_body().template get_literals<formalism::DerivedTag>())
         add_literal_dependency(literal);
 
-    for (const auto term : formalism::collect_fluent_reads(rule))
+    auto reads = urd::Store<urd::set<formalism::FunctionTermView<LiftedTag, formalism::FluentTag>>> {};
+    formalism::collect_reads(rule.get_body(), reads);
+    for (const auto term : reads)
     {
         auto ep = stratification::EdgeProps {};
         ep.kind = stratification::EdgeKind::NonStrict;

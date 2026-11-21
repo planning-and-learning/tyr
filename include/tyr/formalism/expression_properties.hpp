@@ -15,19 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_EXPRESSION_PROPERTIES_HPP_
-#define TYR_FORMALISM_DATALOG_EXPRESSION_PROPERTIES_HPP_
+#ifndef TYR_FORMALISM_EXPRESSION_PROPERTIES_HPP_
+#define TYR_FORMALISM_EXPRESSION_PROPERTIES_HPP_
 
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/rule_body_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
@@ -36,9 +30,10 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
 
+#include <algorithm>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
@@ -46,8 +41,10 @@
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <variant>
 #include <yggdrasil/formalism/row_view.hpp>
 
+/// The function terms the shared records (operators, function terms, numeric effects and conditions) read.
 namespace tyr::formalism
 {
 /**
@@ -74,9 +71,6 @@ void collect_fterms(MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKin
 
 template<TaskKind T, FactKind F1, FactKind F2>
 void collect_fterms(NumericEffectView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result);
-
-template<TaskKind T>
-auto collect_fluent_reads(RuleView<T> rule);
 
 /**
  * Implementations
@@ -125,34 +119,21 @@ inline void collect_fterms(NumericEffectView<T, F1> element, urd::Store<urd::set
     collect_fterms(element.get_fexpr(), result);
 }
 
-namespace detail
-{
-template<typename Effect, typename Result>
-void collect_effect_reads(Effect effect, bool reads_target, Result& result)
+/// Collects the function terms a numeric effect reads: its expression's, and its target's unless it assigns it.
+template<TaskKind T, typename Result>
+void collect_reads(NumericEffectOperatorView<T, FluentTag> effect, Result& result)
 {
     collect_fterms(effect.get_fexpr(), result);
-    if (reads_target)
+    if (effect.get_operation() != NumericEffectOperatorKind::Assign)
         collect_fterms(effect.get_fterm(), result);
 }
 
+/// Collects the function terms the condition's numeric constraints read.
 template<TaskKind T, typename Result>
-void collect_semantic_head_reads(NumericEffectOperatorView<T, FluentTag> head, Result& result)
-{ collect_effect_reads(head, head.get_operation() != NumericEffectOperatorKind::Assign, result); }
-
-template<typename Rule, typename Result>
-void collect_rule_fluent_reads(Rule rule, Result& result)
+void collect_reads(ConjunctiveConditionView<T> condition, Result& result)
 {
-    for (const auto constraint : rule.get_body().get_numeric_constraints())
+    for (const auto constraint : condition.get_numeric_constraints())
         collect_fterms(constraint, result);
-}
-}
-
-template<TaskKind T>
-inline auto collect_fluent_reads(RuleView<T> rule)
-{
-    auto result = urd::Store<urd::set<FunctionTermView<T, FluentTag>>> {};
-    detail::collect_rule_fluent_reads(rule, result);
-    return result;
 }
 
 template<TaskKind T, FactKind F>

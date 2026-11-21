@@ -15,9 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/datalog/repository.hpp"
+// The members of the repository, which the library's other sources only declare (yggdrasil/formalism/repository.hpp).
+// Compiled on its own, outside the unity batches (src/CMakeLists.txt).
 
-#include "tyr/formalism/detail/repository_instantiations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
-TYR_FORMALISM_INTERNS()
+#include <yggdrasil/formalism/builder_instantiations.hpp>
+#include <yggdrasil/formalism/repository_instantiations.hpp>
+
+YGG_FORMALISM_REPOSITORY(, tyr::formalism::Repository, 63, 9)
+YGG_FORMALISM_BUILDER(, tyr::formalism::Builder, 72)

@@ -18,8 +18,8 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_DATA_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_DATA_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
 #include <optional>

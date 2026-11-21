@@ -31,8 +31,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/statistics/program.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <cassert>
 #include <memory>

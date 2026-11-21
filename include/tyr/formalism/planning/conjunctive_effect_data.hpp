@@ -18,8 +18,8 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <optional>
