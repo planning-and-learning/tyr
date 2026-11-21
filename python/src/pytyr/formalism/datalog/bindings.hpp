@@ -27,23 +27,9 @@ namespace tyr::formalism::datalog
 
 using RepositoryBinding = nb::class_<Repository>;
 
+/// Rules, rule bodies and programs; their insert on the repository bound by pytyr.formalism.planning, which is bound first.
 void bind_formalism(nb::module_& m);
 
-void bind_row(nb::module_& m, RepositoryBinding& repository);
-void bind_predicate(nb::module_& m, RepositoryBinding& repository);
-void bind_function(nb::module_& m, RepositoryBinding& repository);
-void bind_object(nb::module_& m, RepositoryBinding& repository);
-void bind_variable(nb::module_& m, RepositoryBinding& repository);
-void bind_parameters(nb::module_& m, RepositoryBinding& repository);
-void bind_atom(nb::module_& m, RepositoryBinding& repository);
-void bind_literal(nb::module_& m, RepositoryBinding& repository);
-void bind_function_term(nb::module_& m, RepositoryBinding& repository);
-void bind_function_term_value(nb::module_& m, RepositoryBinding& repository);
-void bind_unary_operator(nb::module_& m, RepositoryBinding& repository);
-void bind_binary_operator(nb::module_& m, RepositoryBinding& repository);
-void bind_multi_operator(nb::module_& m, RepositoryBinding& repository);
-void bind_numeric_effect(nb::module_& m, RepositoryBinding& repository);
-void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository);
 void bind_rule_body(nb::module_& m, RepositoryBinding& repository);
 void bind_rule(nb::module_& m, RepositoryBinding& repository);
 void bind_program(nb::module_& m, RepositoryBinding& repository);

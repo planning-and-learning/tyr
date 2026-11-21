@@ -20,6 +20,7 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <boost/mp11.hpp>
 #include <cista/containers/variant.h>
@@ -39,95 +40,10 @@
 namespace tyr::formalism::datalog
 {
 
-/**
- * Formalism tag
- */
-
-/// The body of a ground rule (and a program's goal): its static, fluent and derived literals and numeric constraints. A
-/// lifted rule's body is the shared formalism::ConjunctiveCondition<LiftedTag>.
-template<TaskKind T>
-    requires std::same_as<T, GroundTag>
-struct RuleBody
-{
-    static constexpr std::string_view name = urd::joined_name<"RuleBody", T::name>;
-};
-
-/// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
-template<TaskKind T>
-struct Rule
-{
-    static constexpr std::string_view name = urd::joined_name<"Rule", T::name>;
-};
-
-template<TaskKind T>
-struct Program
-{
-    static constexpr std::string_view name = urd::joined_name<"Program", T::name>;
-};
-
-using CoreTypes = boost::mp11::mp_list<Variable, Parameters, Object>;
-using PredicateTypes = boost::mp11::mp_transform<Predicate, StaticFluentDerivedTags>;
-template<TaskKind T>
-using AtomTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Atom, T>, StaticFluentDerivedTags>;
-template<TaskKind T>
-using LiteralTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Literal, T>, StaticFluentDerivedTags>;
-using FunctionTypes = boost::mp11::mp_transform<Function, StaticFluentAuxiliaryTags>;
-template<TaskKind T>
-using FunctionTermTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<FunctionTerm, T>, StaticFluentAuxiliaryTags>;
-template<TaskKind T>
-using FunctionTermValueTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<FunctionTermValue, T>, StaticFluentAuxiliaryTags>;
-template<TaskKind T>
-using NumericEffectTypes = boost::mp11::mp_list<NumericEffect<T, FluentTag>>;
-template<TaskKind T>
-using ArithmeticExpressionTypes =
-    boost::mp11::mp_list<UnaryOperator<T, ArithmeticOperatorKind>, BinaryOperator<T, ArithmeticOperatorKind>, MultiOperator<T, ArithmeticOperatorKind>>;
-template<TaskKind T>
-using BooleanExpressionTypes = boost::mp11::mp_list<BinaryOperator<T, BooleanOperatorKind>>;
-using ExpressionTypes = boost::mp11::
-    mp_append<ArithmeticExpressionTypes<LiftedTag>, BooleanExpressionTypes<LiftedTag>, ArithmeticExpressionTypes<GroundTag>, BooleanExpressionTypes<GroundTag>>;
-using EffectTypes = boost::mp11::mp_append<NumericEffectTypes<LiftedTag>, NumericEffectTypes<GroundTag>>;
-template<TaskKind T>
-using RuleTypes = boost::mp11::mp_list<Rule<T>>;
-
-using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>>,
-                                             RuleTypes<LiftedTag>,
-                                             boost::mp11::mp_list<RuleBody<GroundTag>>,
-                                             RuleTypes<GroundTag>,
-                                             boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
-
-using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
-                                                     PredicateTypes,
-                                                     AtomTypes<LiftedTag>,
-                                                     AtomTypes<GroundTag>,
-                                                     LiteralTypes<LiftedTag>,
-                                                     LiteralTypes<GroundTag>,
-                                                     FunctionTypes,
-                                                     FunctionTermTypes<LiftedTag>,
-                                                     FunctionTermTypes<GroundTag>,
-                                                     FunctionTermValueTypes<GroundTag>,
-                                                     ExpressionTypes,
-                                                     EffectTypes,
-                                                     CompoundTypes>;
-using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, RuleTypes<LiftedTag>>;
-using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
-
-using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
-
-template<typename... Ts>
-using StoredRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<RelationStorage, Ts...>;
-
-using RelationRepository = boost::mp11::mp_apply<StoredRelationRepository, RelationRepositoryTypes>;
-
-template<typename... Ts>
-using StoredRelations = ::ygg::formalism::ConcurrentRelations<RelationStorage, Ts...>;
-
-/// Named by what it holds (yggdrasil's Symbols and Relations), not by its stores: a call with a repository argument
-/// then never instantiates them (yggdrasil/formalism/declarations.hpp).
-using Repository = ::ygg::formalism::Repository<boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>,
-                                                boost::mp11::mp_apply<StoredRelations, RelationRepositoryTypes>>;
-/// The pools of a writer's builders and scratch records, interned into a Repository (ygg::formalism::insert).
-using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<BuilderTypes, Repository>>;
-using RepositoryPtr = std::shared_ptr<Repository>;
+/// One repository holds both formalisms (planning/declarations.hpp): a program is a layer over its task's repository.
+using Repository = planning::Repository;
+using Builder = planning::Builder;
+using RepositoryPtr = planning::RepositoryPtr;
 
 /**
  * Declaration-only view aliases.

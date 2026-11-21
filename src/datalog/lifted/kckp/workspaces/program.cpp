@@ -40,7 +40,7 @@ void initialize_const_rule_workspaces(formalism::datalog::ProgramView<LiftedTag>
                                       ConstRuleWorkspaces& workspaces)
 {
     const auto rules = program.get_rules();
-    workspaces.resize(rules.size());
+    workspaces.resize(formalism::datalog::rule_index_bound(rules));
     auto builder = formalism::datalog::Builder {};
     for (const auto rule : rules)
         workspaces[static_cast<ygg::uint_t>(rule.index().value)].emplace(rule, builder, program_repository, std::move(graphs.at(rule.index())));
@@ -58,7 +58,9 @@ ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag
                     program.get_objects().size(),
                     static_fact_sets),
     rules()
-{ initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules); }
+{
+    initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules);
+}
 
 KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                              formalism::datalog::ProgramView<LiftedTag> program,
@@ -66,7 +68,9 @@ KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                              const MutableFactSets& fact_sets) :
     assignment_sets(program, domains, fact_sets),
     rules()
-{ initialize_rule_workspaces(const_workspace, rules); }
+{
+    initialize_rule_workspaces(const_workspace, rules);
+}
 
 void KCKPWorkspace::clear()
 {

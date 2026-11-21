@@ -174,7 +174,9 @@ private:
 
     template<formalism::FactKind F>
     [[nodiscard]] Parameters parameters_of(urd::index<formalism::Literal<LiftedTag, F>> literal) const
-    { return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination())); }
+    {
+        return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()));
+    }
 
     [[nodiscard]] Parameters parameters_of(const Body& body) const
     {
@@ -418,7 +420,7 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::WriteContext { builder, repository };
     auto result = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
-    formalism::datalog::copy_except_rules(program, *result, context);
+    formalism::datalog::list_except_rules(program, *result);
     // The static predicates come first in the repository, as the fact sets require.
     // The program's own static predicates and atoms: the result's, copied within this repository.
     auto static_facts = TaggedFactSets<formalism::StaticTag>(program.template get_predicates<formalism::StaticTag>(), repository);
@@ -433,18 +435,18 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
             [&]<typename F>(F)
             {
                 for (const auto head : rule.template get_heads<F>())
-                    heads.template get<F>().push_back(formalism::copy(head, context).first.index());
+                    heads.template get<F>().push_back(head.index());
             });
-        if (const auto main_rule = splitter.split(formalism::copy(rule.get_body(), context).first, heads, rule.get_cost()))
+        if (const auto main_rule = splitter.split(rule.get_body(), heads, rule.get_cost()))
         {
             urd::append(result->rules, repository.view(*main_rule));
             splitting.rules.emplace(rule.index(), *main_rule);
         }
         else
         {
-            const auto copy = formalism::copy(rule, context).first.index();
-            urd::append(result->rules, repository.view(copy));
-            splitting.rules.emplace(rule.index(), copy);
+            // The rule as it is: the output's layer stands on the source's.
+            urd::append(result->rules, rule);
+            splitting.rules.emplace(rule.index(), rule.index());
         }
     }
 

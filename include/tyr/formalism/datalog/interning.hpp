@@ -20,22 +20,9 @@
 
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 
-#include <yggdrasil/formalism/interning.hpp>
-
-/// Insertion into the datalog repository: records are canonicalized before they are interned. Kept out of
-/// repository.hpp, so code that only reads does not compile the canonicalization.
-namespace tyr::formalism::datalog
-{
-
-using ygg::formalism::insert;
-
-/// A record the repository holds as a symbol is made canonical before it is interned (a row is ygg's).
-template<typename T>
-    requires ygg::formalism::SupportsSymbol<Repository, T>
-void prepare_for_insert(Repository&, urd::data<T>& data)
-{ canonicalize(data); }
-
-}
+/// Insertion: the planning formalism's (one repository holds both); the rules, ground rule bodies and programs are
+/// canonicalized by their own canonicalize (canonicalization.hpp), found by argument-dependent lookup.
 
 #endif

@@ -45,30 +45,31 @@
 namespace tyr::formalism::datalog
 {
 
-/// Copies everything of the program but its rules into a program builder.
+/// Lists everything of the program but its rules in a program builder of a layer over the program's (its records, as
+/// they are).
 template<TaskKind T>
-void copy_except_rules(ProgramView<T> element, urd::builder<Program<T>, Repository>& result, WriteContext<Builder, Repository>& context)
+void list_except_rules(ProgramView<T> element, urd::builder<Program<T>, Repository>& result)
 {
-    const auto copy_all = [&](const auto elements, auto& destination)
+    const auto list_all = [&](const auto elements, auto& destination)
     {
         for (const auto e : elements)
-            urd::append(destination, copy(e, context).first);
+            urd::append(destination, e);
     };
 
-    copy_all(element.template get_predicates<StaticTag>(), result.static_predicates);
-    copy_all(element.template get_predicates<FluentTag>(), result.fluent_predicates);
-    copy_all(element.template get_predicates<DerivedTag>(), result.derived_predicates);
-    copy_all(element.template get_functions<StaticTag>(), result.static_functions);
-    copy_all(element.template get_functions<FluentTag>(), result.fluent_functions);
-    copy_all(element.get_objects(), result.objects);
-    copy_all(element.template get_atoms<StaticTag>(), result.static_atoms);
-    copy_all(element.template get_atoms<FluentTag>(), result.fluent_atoms);
-    copy_all(element.template get_atoms<DerivedTag>(), result.derived_atoms);
-    copy_all(element.template get_fterm_values<StaticTag>(), result.static_fterm_values);
-    copy_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
+    list_all(element.template get_predicates<StaticTag>(), result.static_predicates);
+    list_all(element.template get_predicates<FluentTag>(), result.fluent_predicates);
+    list_all(element.template get_predicates<DerivedTag>(), result.derived_predicates);
+    list_all(element.template get_functions<StaticTag>(), result.static_functions);
+    list_all(element.template get_functions<FluentTag>(), result.fluent_functions);
+    list_all(element.get_objects(), result.objects);
+    list_all(element.template get_atoms<StaticTag>(), result.static_atoms);
+    list_all(element.template get_atoms<FluentTag>(), result.fluent_atoms);
+    list_all(element.template get_atoms<DerivedTag>(), result.derived_atoms);
+    list_all(element.template get_fterm_values<StaticTag>(), result.static_fterm_values);
+    list_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
 
     if (const auto goal = element.get_goal())
-        urd::store(result.goal, copy(*goal, context).first);
+        urd::store(result.goal, *goal);
 }
 
 }

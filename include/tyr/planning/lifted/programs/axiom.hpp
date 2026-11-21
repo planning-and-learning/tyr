@@ -44,7 +44,6 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/lifted/programs/translation_context.hpp"
 
 #include <yggdrasil/formalism/row_view.hpp>
 
@@ -56,13 +55,11 @@ class AxiomEvaluatorProgram
 public:
     explicit AxiomEvaluatorProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
 
-    [[nodiscard]] const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     [[nodiscard]] const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
     [[nodiscard]] const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
 
 private:
-    TranslationContext<LiftedTag> m_translation_context;
     datalog::Program<LiftedTag> m_datalog_program;
 };
 

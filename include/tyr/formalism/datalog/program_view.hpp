@@ -23,6 +23,8 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <urd/elements/flat.hpp>
 
 namespace urd
@@ -63,23 +65,45 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_predicates() const noexcept
-    { return self().template member<::tyr::formalism::datalog::predicates_of<F, T>>(); }
+    {
+        return self().template member<::tyr::formalism::datalog::predicates_of<F, T>>();
+    }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
-    { return self().template member<::tyr::formalism::datalog::functions_of<F, T>>(); }
+    {
+        return self().template member<::tyr::formalism::datalog::functions_of<F, T>>();
+    }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
-    { return self().template member<::tyr::formalism::datalog::atoms_of<F, T>>(); }
+    {
+        return self().template member<::tyr::formalism::datalog::atoms_of<F, T>>();
+    }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept
-    { return self().template member<::tyr::formalism::datalog::fterm_values_of<F, T>>(); }
+    {
+        return self().template member<::tyr::formalism::datalog::fterm_values_of<F, T>>();
+    }
 };
 }  // namespace urd
+
+namespace tyr::formalism::datalog
+{
+/// The size of a table indexed by the indices of a program's rules: they sit in the program's layers, where its
+/// transforms left them, so they need not be dense.
+template<typename Rules>
+std::size_t rule_index_bound(const Rules& rules)
+{
+    auto bound = std::size_t { 0 };
+    for (const auto rule : rules)
+        bound = std::max(bound, static_cast<std::size_t>(rule.index().value) + 1);
+    return bound;
+}
+}
 
 #endif

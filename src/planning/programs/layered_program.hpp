@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SRC_PLANNING_PROGRAMS_TRANSLATED_PROGRAM_HPP_
-#define TYR_SRC_PLANNING_PROGRAMS_TRANSLATED_PROGRAM_HPP_
+#ifndef TYR_SRC_PLANNING_PROGRAMS_LAYERED_PROGRAM_HPP_
+#define TYR_SRC_PLANNING_PROGRAMS_LAYERED_PROGRAM_HPP_
 
 #include "common.hpp"
 #include "tyr/datalog/rule_mapping.hpp"
@@ -24,7 +24,6 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -42,6 +41,7 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -49,50 +49,22 @@
 namespace tyr::planning
 {
 
-/// Maps the symbols and rules of a program transformation's source program to its output.
-class SymbolRemapper
-{
-public:
-    SymbolRemapper(formalism::datalog::Repository& destination, const datalog::RuleMapping& rules) :
-        m_builder(),
-        m_context { m_builder, destination },
-        m_rules(&rules)
-    {
-    }
-
-    template<typename View>
-    auto symbol(View view)
-    { return formalism::copy(view, m_context).first; }
-
-    [[nodiscard]] auto rule(urd::index<formalism::datalog::Rule<LiftedTag>> rule) const { return m_rules->at(rule); }
-
-    TranslationContext<LiftedTag> translation_context(const TranslationContext<LiftedTag>& source) { return remap_translation_context(source, m_context); }
-
-private:
-    formalism::datalog::Builder m_builder;
-    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> m_context;
-    const datalog::RuleMapping* m_rules;
-};
-
-/// A Datalog program with the tables that refer to its symbols: Tables provide `Tables remap(SymbolRemapper&) const`.
-template<typename Tables>
-struct TranslatedProgram
+/// A Datalog program and the repository layer that holds it (over its task's repository).
+struct LayeredProgram
 {
     formalism::datalog::ProgramView<LiftedTag> program;
-    std::shared_ptr<formalism::datalog::Repository> repository;
-    Tables tables;
+    formalism::datalog::RepositoryPtr repository;
 };
 
-/// Applies a program transformation, `pass(program, destination, rules) -> program` that writes into a new repository
-/// and maps every source rule in `rules`, and remaps the tables to its output.
-template<typename Tables, typename Pass>
-TranslatedProgram<Tables> transform(const TranslatedProgram<Tables>& source, size_t num_objects, Pass&& pass)
+/// Applies a program transformation, `pass(program, destination, rules) -> program`, in a layer over the source's: the
+/// pass adds only its new records (the source's are found in the layers below, so the tables that refer to them stay
+/// valid) and maps every source rule in `rules`.
+template<typename Pass>
+LayeredProgram transform(const LayeredProgram& source, std::size_t num_objects, datalog::RuleMapping& rules, Pass&& pass)
 {
-    auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
-    auto rules = datalog::RuleMapping {};
+    auto repository = layer_over(source.repository, num_objects);
     const auto program = std::forward<Pass>(pass)(source.program, *repository, rules);
-    auto remapper = SymbolRemapper(*repository, rules);
-    return { program, std::move(repository), source.tables.remap(remapper) };
+    return { program, std::move(repository) };
 }
 
 inline auto decompose_static_literals_pass()

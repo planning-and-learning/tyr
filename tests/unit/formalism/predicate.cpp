@@ -1,4 +1,3 @@
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/predicate_data.hpp"
@@ -13,12 +12,6 @@ using PredicateView = urd::index_view<Predicate, tyr::formalism::planning::Repos
 
 template<typename Entity, typename Repository>
 struct PredicatePublicView;
-
-template<tyr::formalism::FactKind T>
-struct PredicatePublicView<tyr::formalism::Predicate<T>, tyr::formalism::datalog::Repository>
-{
-    using type = tyr::formalism::datalog::PredicateView<T>;
-};
 
 template<tyr::formalism::FactKind T>
 struct PredicatePublicView<tyr::formalism::Predicate<T>, tyr::formalism::planning::Repository>
@@ -41,9 +34,10 @@ concept PredicateContract = std::constructible_from<urd::index<Entity>, ygg::uin
 
 template<typename Repository, typename... Entities>
 consteval bool predicate_contracts(boost::mp11::mp_list<Entities...>)
-{ return (PredicateContract<Entities, Repository> && ...); }
+{
+    return (PredicateContract<Entities, Repository> && ...);
+}
 
-static_assert(predicate_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::PredicateTypes {}));
 static_assert(predicate_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::PredicateTypes {}));
 
 TEST(TyrFormalismPredicate, ExposesOwnedContract)

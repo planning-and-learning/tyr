@@ -18,10 +18,12 @@
 // The members of the planning repository, which the library's other sources only declare
 // (yggdrasil/formalism/repository.hpp). Compiled on its own, outside the unity batches (src/CMakeLists.txt).
 
+#include "tyr/formalism/datalog/repository.hpp"
+
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
 
-YGG_FORMALISM_REPOSITORY(, tyr::formalism::planning::Repository, 58, 8)
-YGG_FORMALISM_BUILDER(, tyr::formalism::planning::Builder, 66)
+YGG_FORMALISM_REPOSITORY(, tyr::formalism::planning::Repository, 63, 9)
+YGG_FORMALISM_BUILDER(, tyr::formalism::planning::Builder, 72)

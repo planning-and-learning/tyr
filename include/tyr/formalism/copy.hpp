@@ -21,6 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/write_context.hpp"
 
+#include <cassert>
 #include <urd/elements/children.hpp>
 #include <urd/elements/concepts.hpp>
 #include <utility>
@@ -46,6 +47,18 @@ std::pair<ygg::RowView<Rel, R>, bool> copy(ygg::RowView<Rel, S> element, WriteCo
         binding->values.push_back(copy(object, context).first.index().value);
 
     return context.destination().insert(*binding, context.builder());
+}
+
+/// A binding's row stored in `to`, whose layers share the frozen ancestor that holds the binding's relation and objects
+/// at the same indices (a program's layers and its task's): the relation and values are taken as they are, nothing else
+/// is interned. Its key, and whether it was stored in `to`'s own layer.
+template<typename Rel, typename S, typename R>
+std::pair<ygg::RowIndex<Rel>, bool> copy_row(ygg::RowView<Rel, S> row, R& to)
+{
+    const auto relation = row.get_relation().index();
+    assert(to.view(relation).get_name() == row.get_relation().get_name());
+    const auto [id, inserted] = to.insert_row(relation, row.get_values());
+    return { ygg::RowIndex<Rel> { relation, id }, inserted };
 }
 
 /// A record: its members copied, each child (every child of its builder, urd::build_from) and its

@@ -49,7 +49,6 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
@@ -112,7 +111,9 @@ RemapStatus classify_literal(formalism::planning::AtomView<GroundTag, T> atom,
 template<formalism::FactKind T>
 RemapStatus classify_literal(formalism::planning::LiteralView<GroundTag, T> literal,
                              const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
-{ return classify_literal(literal.get_atom(), literal.get_polarity(), atoms); }
+{
+    return classify_literal(literal.get_atom(), literal.get_polarity(), atoms);
+}
 
 struct RemappedFDRFact
 {
@@ -576,29 +577,13 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto fluent_atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
     auto derived_atoms = formalism::planning::AtomViewList<GroundTag, formalism::DerivedTag> {};
     {
-        auto merge_planning_context = formalism::WriteContext { builder, *repository };
-        const auto& d2p = ground_program.get_translation_context().d2p;
+        // The program adds no fluent predicates; its derived ones follow the task's (dense indices).
+        const auto num_derived_predicates = num_task_derived_predicates(task);
         for (const auto binding : fluent_bindings)
-        {
-            if (!d2p.fluent_to_fluent_predicate.contains(binding.get_relation()))
-                continue;
-            auto fluent_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(builder);
-            fluent_atom->row =
-                formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(binding, d2p.fluent_to_fluent_predicate, merge_planning_context)
-                    .first.index();
-            fluent_atoms.push_back(repository->insert(*fluent_atom, builder).first);
-        }
+            fluent_atoms.push_back(copy_ground_atom(binding, builder, *repository).first);
         for (const auto binding : derived_bindings)
-        {
-            // The task's derived predicates only: the program's own are derived too.
-            if (!d2p.derived_to_derived_predicate.contains(binding.get_relation()))
-                continue;
-            auto derived_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
-            derived_atom->row =
-                formalism::planning::merge_d2p<formalism::DerivedTag, formalism::DerivedTag>(binding, d2p.derived_to_derived_predicate, merge_planning_context)
-                    .first.index();
-            derived_atoms.push_back(repository->insert(*derived_atom, builder).first);
-        }
+            if (binding.get_relation().index().value < num_derived_predicates)
+                derived_atoms.push_back(copy_ground_atom(binding, builder, *repository).first);
     }
     std::sort(fluent_atoms.begin(), fluent_atoms.end());
     std::sort(derived_atoms.begin(), derived_atoms.end());

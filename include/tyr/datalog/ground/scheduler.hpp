@@ -95,11 +95,12 @@ public:
     explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program)
     {
         const auto rules = program.get_rules();
-        m_states.resize(rules.size());
-        m_conditions.resize(rules.size());
-        for (ygg::uint_t rule_index = 0; rule_index < rules.size(); ++rule_index)
+        const auto num_slots = formalism::datalog::rule_index_bound(rules);
+        m_states.resize(num_slots);
+        m_conditions.resize(num_slots);
+        for (const auto rule : rules)
         {
-            const auto rule = rules[rule_index];
+            const auto rule_index = static_cast<ygg::uint_t>(rule.index().value);
             const auto body = rule.get_body();
             const auto numeric_constraints = body.get_numeric_constraints().size();
             auto num_literals = size_t { 0 };
@@ -146,7 +147,9 @@ public:
 
     /// The cost a ready rule fires with: the aggregate of its conditions' costs.
     [[nodiscard]] Cost support(formalism::datalog::RuleView<GroundTag> rule) const noexcept
-    { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
+    {
+        return m_states[static_cast<ygg::uint_t>(rule.index().value)].support;
+    }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);

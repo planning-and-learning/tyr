@@ -693,7 +693,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
     const auto source_program = fixture.program();
     EXPECT_THROW(static_cast<void>(datalog::ConstProgramWorkspace<GroundTag> { source_program }), std::invalid_argument);
 
-    auto repository = tyr::formalism::datalog::Repository();
+    auto repository = tyr::formalism::datalog::Repository(&source_program.context());
     const auto program = tyr::datalog::remove_statically_inapplicable_rules(source_program, repository);
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     EXPECT_EQ(const_workspace.program.get_rules().size(), 2);

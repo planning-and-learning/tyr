@@ -1,5 +1,4 @@
 #include "tyr/formalism/copy.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
@@ -19,20 +18,8 @@
 template<typename Relation, typename Repository>
 struct RowPublicView;
 
-template<tyr::formalism::FactKind T>
-struct RowPublicView<tyr::formalism::Predicate<T>, tyr::formalism::datalog::Repository>
-{
-    using type = tyr::formalism::datalog::PredicateRowView<T>;
-};
-
-template<tyr::formalism::FactKind T>
-struct RowPublicView<tyr::formalism::Function<T>, tyr::formalism::datalog::Repository>
-{
-    using type = tyr::formalism::datalog::FunctionRowView<T>;
-};
-
 template<>
-struct RowPublicView<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, tyr::formalism::datalog::Repository>
+struct RowPublicView<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, tyr::formalism::planning::Repository>
 {
     using type = tyr::formalism::datalog::RuleRowView;
 };
@@ -80,9 +67,10 @@ concept RowContract =
 
 template<typename Repository, typename... Relations>
 consteval bool row_contracts(boost::mp11::mp_list<Relations...>)
-{ return (RowContract<Relations, Repository> && ...); }
+{
+    return (RowContract<Relations, Repository> && ...);
+}
 
-static_assert(row_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::RelationRepositoryTypes {}));
 static_assert(row_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::RelationRepositoryTypes {}));
 
 using Binding = ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>;
@@ -150,13 +138,6 @@ void check_binding_copy()
     EXPECT_FALSE(copy(source_function_binding, context).second);
 }
 }  // namespace
-
-TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects)
-{
-    check_binding_copy<tyr::formalism::datalog::Repository,
-                       tyr::formalism::datalog::Builder,
-                       tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>>();
-}
 
 TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects)
 {

@@ -49,8 +49,6 @@ add_library(
     formalism/planning/formatter.cpp
     formalism/planning/fdr_context.cpp
     formalism/planning/grounder.cpp
-    formalism/planning/merge_datalog.cpp
-    formalism/planning/merge_planning.cpp
     formalism/planning/loki_to_tyr.cpp
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp

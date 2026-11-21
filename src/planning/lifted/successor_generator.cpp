@@ -70,7 +70,9 @@ using BindingData = urd::builder<ygg::Row<formalism::planning::Action<LiftedTag>
 /// The action a binding names, read through `repository`: interned (a binding's relation is an interned action schema,
 /// as its rows' relation).
 formalism::planning::ActionView<LiftedTag> action_of(const BindingData& binding, const formalism::planning::Repository& repository)
-{ return repository.view(std::get<urd::interned_child<formalism::planning::Action<LiftedTag>, formalism::planning::Repository>>(binding.relation)); }
+{
+    return repository.view(std::get<urd::interned_child<formalism::planning::Action<LiftedTag>, formalism::planning::Repository>>(binding.relation));
+}
 
 void validate_task(const TaskPtr<LiftedTag>& task, const StateRepository<LiftedTag>& state_repository)
 {
@@ -139,7 +141,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     struct SchemaEvaluator
     {
         formalism::datalog::ProgramView<LiftedTag> program;
-        const P2DTranslationContext<LiftedTag>* input_translation;
+        const StateInputs* inputs;
         urd::Store<urd::sequence<datalog::Scheduler<LiftedTag>>> schedulers;
     };
 
@@ -388,7 +390,7 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     for (const auto& [action, schema] : definition.action_program.get_schema_programs())
         schema_evaluators.emplace(action,
                                   SchemaEvaluator { schema.program,
-                                                    &schema.input_translation,
+                                                    &schema.inputs,
                                                     datalog::create_schedulers(schema.strata, schema.listeners, schema.program.context(), schema.program) });
 }
 
@@ -400,10 +402,10 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Source& nod
     evaluator.facts.action = action ? std::optional(action->index()) : std::nullopt;
     evaluator.effect_atom_index.clear();
 
-    insert_extended_state(node.state(),
-                          *definition->task->get_repository(),
-                          schema ? *schema->input_translation : definition->action_program.get_translation_context().p2d,
-                          evaluator.workspace);
+    if (schema)
+        insert_extended_state(node.state(), *definition->task->get_repository(), *schema->inputs, evaluator.workspace);
+    else
+        insert_extended_state(node.state(), *definition->task->get_repository(), AllStateInputs {}, evaluator.workspace);
 
     auto ctx =
         datalog::ProgramExecutionContext<LiftedTag>::from_reset_workspace(evaluator.workspace, schema ? schema->schedulers : evaluator.workspace.schedulers);
@@ -547,7 +549,9 @@ SuccessorGenerator<LiftedTag>::SuccessorGenerator(SuccessorGenerator&&) noexcept
 SuccessorGenerator<LiftedTag>& SuccessorGenerator<LiftedTag>::operator=(SuccessorGenerator&&) noexcept = default;
 
 SuccessorGeneratorPtr<LiftedTag> SuccessorGenerator<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return SuccessorGeneratorPtr<LiftedTag>(new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context)))); }
+{
+    return SuccessorGeneratorPtr<LiftedTag>(new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context))));
+}
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
@@ -878,25 +882,33 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& 
                                                                   formalism::planning::ActionView<GroundTag> action,
                                                                   StateRepository<LiftedTag>& storage,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return m_impl->successor(*this, node, action, storage, axiom_evaluator); }
+{
+    return m_impl->successor(*this, node, action, storage, axiom_evaluator);
+}
 
 BuilderNode SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                               formalism::planning::ActionView<GroundTag> action,
                                                               Builder& storage,
                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return m_impl->successor(*this, node, action, storage, axiom_evaluator); }
+{
+    return m_impl->successor(*this, node, action, storage, axiom_evaluator);
+}
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                                   formalism::planning::ActionRowView binding,
                                                                   StateRepository<LiftedTag>& storage,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator); }
+{
+    return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator);
+}
 
 BuilderNode SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                               formalism::planning::ActionRowView binding,
                                                               Builder& storage,
                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator); }
+{
+    return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator);
+}
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                                   formalism::planning::ActionRowBuilderView binding,
@@ -920,29 +932,39 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& 
                                                                   const BindingData& binding,
                                                                   StateRepository<LiftedTag>& storage,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return m_impl->successor(*this, node, binding, storage, axiom_evaluator); }
+{
+    return m_impl->successor(*this, node, binding, storage, axiom_evaluator);
+}
 
 BuilderNode
 SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node, const BindingData& binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return m_impl->successor(*this, node, binding, storage, axiom_evaluator); }
+{
+    return m_impl->successor(*this, node, binding, storage, axiom_evaluator);
+}
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionRowView binding,
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return get_successor_node(node, binding, state_repository, axiom_evaluator).pack(); }
+{
+    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+}
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionView<GroundTag> action,
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return get_successor_node(node, action, state_repository, axiom_evaluator).pack(); }
+{
+    return get_successor_node(node, action, state_repository, axiom_evaluator).pack();
+}
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Source& node,
                                                                                const BindingData& binding,
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return get_successor_node(node, binding, state_repository, axiom_evaluator).pack(); }
+{
+    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+}
 
 template<typename Objects>
 ActionBindingStatus
@@ -1120,10 +1142,14 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,
                                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{ return get_initial_node(state_repository, axiom_evaluator).pack(); }
+{
+    return get_initial_node(state_repository, axiom_evaluator).pack();
+}
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_node(StateRepository<LiftedTag>& state_repository, urd::index<State<LiftedTag>> state_index)
-{ return get_node(state_repository, state_index).pack(); }
+{
+    return get_node(state_repository, state_index).pack();
+}
 
 formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(formalism::planning::ActionRowView binding)
 {

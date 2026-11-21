@@ -26,7 +26,6 @@
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
@@ -36,6 +35,7 @@
 #include "tyr/planning/state_storage/numeric.hpp"
 #include "tyr/planning/state_storage/tree_bitset/atom.hpp"
 #include "tyr/planning/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 #include <cassert>
 #include <fmt/ostream.h>
@@ -57,12 +57,8 @@ struct RPGPolicy<LiftedTag>
     static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
     translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::datalog::PredicateRowView<formalism::FluentTag> head)
     {
-        const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
-        if (!mapping.contains(head.get_relation()))
-            return std::nullopt;
-
-        auto merge_context = formalism::WriteContext { workspace.planning_builder, *definition.task->get_repository() };
-        return formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::FluentTag>(head, mapping, merge_context).first;
+        // Programs add no fluent predicates: the head's predicate is the task's.
+        return copy_ground_atom(head, workspace.planning_builder, *definition.task->get_repository()).first;
     }
 
     template<typename Workspace>
@@ -82,7 +78,9 @@ struct RPGPolicy<LiftedTag>
     }
 
     static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation<LiftedTag>& witness)
-    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation); }
+    {
+        return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation);
+    }
 
     /// Grounds every action of the witness's rule with the binding the witness recovers.
     template<typename Workspace, typename Callback>

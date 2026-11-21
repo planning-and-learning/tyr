@@ -18,7 +18,7 @@
 #include "tyr/planning/lifted/programs/action.hpp"
 
 #include "../../programs/common.hpp"
-#include "../../programs/translated_program.hpp"
+#include "../../programs/layered_program.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -47,7 +47,6 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -65,7 +64,6 @@ namespace
 {
 
 auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
-                           TranslationContext<LiftedTag>& translation_context,
                            AppPredicateToActionMapping& predicate_to_actions,
                            ConditionalEffectToPredicateMapping& effect_to_predicate,
                            formalism::datalog::Repository& repository)
@@ -74,23 +72,19 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
     auto context = formalism::WriteContext(builder, repository);
     auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
 
-    translate_task_symbols(task, true, translation_context, context, *program);
+    translate_task_symbols(task, *program);
 
-    // Appends the literals and numeric constraints of a planning condition to a Datalog condition.
+    // Appends the literals and numeric constraints of a planning condition to a rule's body: the task's records.
     const auto append_condition = [&](auto condition, auto& conj_cond)
     {
         for (const auto literal : condition.template get_literals<formalism::StaticTag>())
-            urd::append(conj_cond.static_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
-
+            urd::append(conj_cond.static_literals, literal);
         for (const auto literal : condition.template get_literals<formalism::FluentTag>())
-            urd::append(conj_cond.fluent_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
-
+            urd::append(conj_cond.fluent_literals, literal);
         for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
-            urd::append(conj_cond.derived_literals,
-                        formalism::planning::merge_p2d(literal, translation_context.p2d.derived_to_derived_predicate, context).first);
-
+            urd::append(conj_cond.derived_literals, literal);
         for (const auto numeric_constraint : condition.get_numeric_constraints())
-            urd::append(conj_cond.numeric_constraints, formalism::planning::merge_p2d(numeric_constraint, context).first);
+            urd::append(conj_cond.numeric_constraints, numeric_constraint);
     };
 
     for (const auto action : task.get_domain().get_actions())
@@ -102,29 +96,13 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
 
         urd::append(program->derived_predicates, applicability_predicate);
 
+        // The action's rule: its body is the action's precondition.
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
-
-        auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
-
         for (const auto variable : action.get_variables())
-            urd::append(rule->variables, formalism::copy(variable, context).first);
-
-        for (const auto variable : action.get_condition().get_variables())
-            urd::append(conj_cond->variables, formalism::copy(variable, context).first);
-
-        append_condition(action.get_condition(), *conj_cond);
-
-        const auto new_conj_cond = repository.insert(*conj_cond, builder).first;
-
-        urd::store(rule->body, new_conj_cond);
-
-        const auto applicability_atom = create_applicability_atom(action, context).first;
-
-        urd::append(rule->derived_heads, applicability_atom);
-
-        const auto new_rule = repository.insert(*rule, builder).first;
-
-        urd::append(program->rules, new_rule);
+            urd::append(rule->variables, variable);
+        urd::store(rule->body, action.get_condition());
+        urd::append(rule->derived_heads, create_applicability_atom(action, context).first);
+        urd::append(program->rules, repository.insert(*rule, builder).first);
 
         // A rule per conditional effect with variables or a condition: its atoms are the bindings for which the effect fires.
         for (const auto cond_eff : action.get_effects())
@@ -143,9 +121,9 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
             auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
             auto effect_condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
             for (const auto variable : action.get_variables())
-                urd::append(effect_condition->variables, formalism::copy(variable, context).first);
+                urd::append(effect_condition->variables, variable);
             for (const auto variable : cond_eff.get_variables())
-                urd::append(effect_condition->variables, formalism::copy(variable, context).first);
+                urd::append(effect_condition->variables, variable);
             urd::build_member(effect_rule->variables, effect_condition->variables, repository);
             append_condition(action.get_condition(), *effect_condition);
             append_condition(condition, *effect_condition);
@@ -168,42 +146,20 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
     return repository.insert(*program, builder).first;
 }
 
-struct ActionTables
-{
-    TranslationContext<LiftedTag> translation_context;
-    AppPredicateToActionMapping predicate_to_actions;
-    ConditionalEffectToPredicateMapping effect_to_predicate;
-
-    ActionTables remap(SymbolRemapper& remapper) const
-    {
-        auto result = ActionTables { remapper.translation_context(translation_context), {}, {} };
-        for (const auto& [predicate, action] : predicate_to_actions)
-            result.predicate_to_actions.emplace(remapper.symbol(predicate), action);
-        for (const auto& [effect, predicate] : effect_to_predicate)
-            result.effect_to_predicate.emplace(effect, remapper.symbol(predicate));
-        return result;
-    }
-};
-
-auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task,
-                                   TranslationContext<LiftedTag>& translation_context,
+auto create_action_datalog_program(const formalism::planning::PlanningTask<LiftedTag>& planning_task,
                                    AppPredicateToActionMapping& mapping,
                                    ApplicableActionProgram::SchemaPrograms& schema_programs,
                                    ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
+    const auto task = planning_task.get_task();
     const auto num_objects = task.get_num_objects();
-    auto source_repository = std::make_shared<formalism::datalog::Repository>(num_objects);
-    auto tables = ActionTables {};
-    const auto source_program =
-        create_action_program(task, tables.translation_context, tables.predicate_to_actions, tables.effect_to_predicate, *source_repository);
-    auto source = TranslatedProgram<ActionTables> { source_program, std::move(source_repository), std::move(tables) };
+    auto source_repository = layer_over(planning_task.get_repository(), num_objects);
+    const auto source_program = create_action_program(task, mapping, effect_to_predicate, *source_repository);
 
-    auto result = transform(source, num_objects, decompose_static_literals_pass());
+    auto rules = datalog::RuleMapping {};
+    const auto result = transform(LayeredProgram { source_program, std::move(source_repository) }, num_objects, rules, decompose_static_literals_pass());
     const auto program = result.program;
-    auto repository = std::move(result.repository);
-    translation_context = std::move(result.tables.translation_context);
-    mapping = std::move(result.tables.predicate_to_actions);
-    effect_to_predicate = std::move(result.tables.effect_to_predicate);
+    auto repository = result.repository;
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::WriteContext { builder, *repository };
 
@@ -212,7 +168,7 @@ auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task
     for (const auto rule : program.get_rules())
         rule_of.emplace(rule.get_derived_heads().front().get_predicate(), rule.index());
     auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
-    formalism::datalog::copy_except_rules(program, *schema, context);
+    formalism::datalog::list_except_rules(program, *schema);
     for (const auto& [predicate, action] : mapping)
     {
         schema->rules.clear();
@@ -220,16 +176,15 @@ auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task
         for (const auto effect : action.get_effects())
             if (const auto it = effect_to_predicate.find(std::pair(action, effect)); it != effect_to_predicate.end())
                 urd::append(schema->rules, repository->view(rule_of.at(it->second)));
-        schema_programs.try_emplace(action, repository->insert(*schema, builder).first, translation_context.p2d);
+        schema_programs.try_emplace(action, repository->insert(*schema, builder).first);
     }
     return datalog::Program<LiftedTag>(program, std::move(repository));
 }
 }
 
-ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program_,
-                                                      const P2DTranslationContext<LiftedTag>& translation_context) :
+ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program_) :
     program(program_),
-    input_translation(),
+    inputs(),
     strata(analysis::compute_rule_stratification(program)),
     listeners(analysis::compute_listeners(strata, program.context()))
 {
@@ -238,52 +193,52 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::Progra
     {
         // Negative literals also need the complete relation to check absence.
         return std::ranges::any_of(rules,
-                                   [&](auto rule)
-                                   {
+                                   [&](auto rule) {
                                        return std::ranges::any_of(rule.get_body().template get_literals<F>(),
                                                                   [&](auto literal) { return literal.get_atom().get_predicate() == predicate; });
                                    });
     };
-    for (const auto& [source, target] : translation_context.fluent_to_fluent_predicate)
-        if (reads_predicate(target))
-            input_translation.fluent_to_fluent_predicate.emplace(source, target);
-    for (const auto& [source, target] : translation_context.derived_to_derived_predicate)
-        if (reads_predicate(target))
-            input_translation.derived_to_derived_predicate.emplace(source, target);
+    // The program lists the task's fluent and derived predicates (and its own derived ones, which no state holds).
+    for (const auto predicate : program.get_predicates<formalism::FluentTag>())
+        if (reads_predicate(predicate))
+            inputs.fluent_predicates.insert(predicate);
+    for (const auto predicate : program.get_predicates<formalism::DerivedTag>())
+        if (reads_predicate(predicate))
+            inputs.derived_predicates.insert(predicate);
 
     for (const auto rule : rules)
     {
         const auto function_reads = formalism::datalog::collect_fluent_reads(rule);
-        for (const auto& [source, target] : translation_context.fluent_to_fluent_function)
-            if (std::ranges::any_of(function_reads, [&](auto term) { return term.get_function() == target; }))
-                input_translation.fluent_to_fluent_function.emplace(source, target);
+        for (const auto function : program.get_functions<formalism::FluentTag>())
+            if (std::ranges::any_of(function_reads, [&](auto term) { return term.get_function() == function; }))
+                inputs.fluent_functions.insert(function);
     }
 }
 
 ApplicableActionProgram::ApplicableActionProgram(const formalism::planning::PlanningTask<LiftedTag>& task) :
-    m_translation_context(),
     m_predicate_to_actions(),
     m_schema_programs(),
     m_conditional_effect_to_predicate(),
-    m_datalog_program(
-        create_action_datalog_program(task.get_task(), m_translation_context, m_predicate_to_actions, m_schema_programs, m_conditional_effect_to_predicate))
+    m_datalog_program(create_action_datalog_program(task, m_predicate_to_actions, m_schema_programs, m_conditional_effect_to_predicate))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }
-
-const TranslationContext<LiftedTag>& ApplicableActionProgram::get_translation_context() const noexcept { return m_translation_context; }
 
 const AppPredicateToActionMapping& ApplicableActionProgram::get_predicate_to_action_mapping() const noexcept { return m_predicate_to_actions; }
 
 const ApplicableActionProgram::SchemaPrograms& ApplicableActionProgram::get_schema_programs() const noexcept { return m_schema_programs; }
 
 const ConditionalEffectToPredicateMapping& ApplicableActionProgram::get_conditional_effect_to_predicate_mapping() const noexcept
-{ return m_conditional_effect_to_predicate; }
+{
+    return m_conditional_effect_to_predicate;
+}
 
 datalog::Program<LiftedTag>& ApplicableActionProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& ApplicableActionProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& ApplicableActionProgram::get_const_program_workspace() const noexcept
-{ return m_datalog_program.get_const_program_workspace(); }
+{
+    return m_datalog_program.get_const_program_workspace();
+}
 }

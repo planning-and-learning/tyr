@@ -27,6 +27,7 @@
 #include <tyr/formalism/datalog/formatter.hpp>
 #include <tyr/formalism/datalog/interning.hpp>
 #include <urd/python/bindings.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::formalism::datalog
@@ -46,6 +47,12 @@ void bind_rule(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_view<RuleView<GroundTag>>(m);
     ygg::bind_insert<Rule<GroundTag>>(repository);
     urd::python::bind_builder<Rule<GroundTag>, Repository>(m);
+
+    // The rows of lifted rules.
+    urd::python::bind_index<ygg::RowIndex<Rule<LiftedTag>>>(m);
+    urd::python::bind_data<ygg::Row<Rule<LiftedTag>>>(m);
+    urd::python::bind_view<ygg::RowView<Rule<LiftedTag>, Repository>>(m);
+    ygg::bind_insert<ygg::Row<Rule<LiftedTag>>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

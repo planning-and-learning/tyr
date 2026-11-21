@@ -44,7 +44,6 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -71,20 +70,19 @@ namespace
  */
 
 void append_from_condition(formalism::planning::ConjunctiveConditionView<LiftedTag> cond,
-                           const TranslationContext<LiftedTag>& translation_context,
                            formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                            urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     // Keep negated static atoms because they are monotonic
     for (const auto literal : cond.template get_literals<formalism::StaticTag>())
-        urd::append(conj_cond.static_literals, merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
+        urd::append(conj_cond.static_literals, literal);
     for (const auto literal : cond.template get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            urd::append(conj_cond.fluent_literals, merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
+            urd::append(conj_cond.fluent_literals, literal);
 
     for (const auto literal : cond.template get_literals<formalism::DerivedTag>())
         if (literal.get_polarity())
-            urd::append(conj_cond.derived_literals, merge_p2d(literal, translation_context.p2d.derived_to_derived_predicate, context).first);
+            urd::append(conj_cond.derived_literals, literal);
 };
 
 auto create_applicability_literal(formalism::planning::ActionView<LiftedTag> action,
@@ -99,7 +97,6 @@ auto create_applicability_literal(formalism::planning::ActionView<LiftedTag> act
 }
 
 auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action,
-                               const TranslationContext<LiftedTag>& translation_context,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
@@ -107,8 +104,8 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
     auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : action.get_variables())
-        urd::append(conj_cond->variables, formalism::copy(variable, context).first);
-    append_from_condition(action.get_condition(), translation_context, context, *conj_cond);
+        urd::append(conj_cond->variables, variable);
+    append_from_condition(action.get_condition(), context, *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
@@ -132,7 +129,6 @@ auto create_applicability_literal(formalism::planning::AxiomView<LiftedTag> axio
 }
 
 auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
-                               const TranslationContext<LiftedTag>& translation_context,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
@@ -140,8 +136,8 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
-        urd::append(conj_cond->variables, formalism::copy(variable, context).first);
-    append_from_condition(axiom.get_body(), translation_context, context, *conj_cond);
+        urd::append(conj_cond->variables, variable);
+    append_from_condition(axiom.get_body(), context, *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
@@ -157,7 +153,6 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                                     formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
                                     std::optional<formalism::datalog::PredicateView<formalism::DerivedTag>> effect_predicate,
-                                    const TranslationContext<LiftedTag>& translation_context,
                                     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
@@ -165,14 +160,14 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
     auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : action.get_variables())
-        urd::append(conj_cond->variables, formalism::copy(variable, context).first);
+        urd::append(conj_cond->variables, variable);
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-        urd::append(conj_cond->static_literals, merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
+        urd::append(conj_cond->static_literals, literal);
     urd::append(conj_cond->derived_literals, create_applicability_literal(action, context).first);
 
     for (const auto variable : cond_eff.get_variables())
-        urd::append(conj_cond->variables, formalism::copy(variable, context).first);
-    append_from_condition(cond_eff.get_condition(), translation_context, context, *conj_cond);
+        urd::append(conj_cond->variables, variable);
+    append_from_condition(cond_eff.get_condition(), context, *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
@@ -181,8 +176,7 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
     urd::store(rule->body, new_conj_cond);
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects
-            urd::append(rule->fluent_heads,
-                        formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first);
+            urd::append(rule->fluent_heads, literal.get_atom());
     if (effect_predicate)
     {
         auto effect_parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
@@ -200,7 +194,6 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
 
 auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                         formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag> effect,
-                        const TranslationContext<LiftedTag>& translation_context,
                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
@@ -208,9 +201,9 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
-        urd::append(conj_cond->variables, formalism::copy(variable, context).first);
+        urd::append(conj_cond->variables, variable);
     for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
-        urd::append(conj_cond->static_literals, merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
+        urd::append(conj_cond->static_literals, literal);
     urd::append(conj_cond->derived_literals, create_applicability_literal(axiom, context).first);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
@@ -225,7 +218,6 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 
 void translate_action_to_ground_rules(formalism::planning::ActionView<LiftedTag> action,
                                       urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program,
-                                      const TranslationContext<LiftedTag>& translation_context,
                                       formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                                       AppPredicateToActionMapping& predicate_to_actions,
                                       ConditionalEffectToPredicateMapping& effect_to_predicate)
@@ -237,7 +229,7 @@ void translate_action_to_ground_rules(formalism::planning::ActionView<LiftedTag>
 
     urd::append(program.derived_predicates, applicability_predicate);
 
-    const auto applicability_rule = create_applicability_rule(action, translation_context, context).first;
+    const auto applicability_rule = create_applicability_rule(action, context).first;
 
     urd::append(program.rules, applicability_rule);
 
@@ -256,7 +248,7 @@ void translate_action_to_ground_rules(formalism::planning::ActionView<LiftedTag>
         if (!effect_predicate && std::ranges::none_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
             continue;
 
-        urd::append(program.rules, create_ground_cond_effect_rule(action, cond_eff, effect_predicate, translation_context, context).first);
+        urd::append(program.rules, create_ground_cond_effect_rule(action, cond_eff, effect_predicate, context).first);
         if (effect_predicate)
             effect_to_predicate.emplace(std::pair(action, cond_eff), *effect_predicate);
     }
@@ -264,7 +256,6 @@ void translate_action_to_ground_rules(formalism::planning::ActionView<LiftedTag>
 
 void translate_axiom_to_delete_free_axiom_rules(formalism::planning::AxiomView<LiftedTag> axiom,
                                                 urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program,
-                                                const TranslationContext<LiftedTag>& translation_context,
                                                 formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                                                 GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms)
 {
@@ -274,20 +265,14 @@ void translate_axiom_to_delete_free_axiom_rules(formalism::planning::AxiomView<L
 
     predicate_to_axioms[applicability_predicate].push_back(axiom);
 
-    const auto applicability_rule = create_applicability_rule(axiom, translation_context, context).first;
+    const auto applicability_rule = create_applicability_rule(axiom, context).first;
 
     urd::append(program.rules, applicability_rule);
 
-    urd::append(program.rules,
-                create_effect_rule(axiom,
-                                   formalism::planning::merge_p2d(axiom.get_head(), translation_context.p2d.derived_to_derived_predicate, context).first,
-                                   translation_context,
-                                   context)
-                    .first);
+    urd::append(program.rules, create_effect_rule(axiom, axiom.get_head(), context).first);
 }
 
 auto create_ground_program(formalism::planning::TaskView<LiftedTag> task,
-                           TranslationContext<LiftedTag>& translation_context,
                            AppPredicateToActionMapping& predicate_to_actions,
                            GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
                            ConditionalEffectToPredicateMapping& effect_to_predicate,
@@ -297,58 +282,58 @@ auto create_ground_program(formalism::planning::TaskView<LiftedTag> task,
     auto context = formalism::WriteContext(builder, destination);
     auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
 
-    translate_task_symbols(task, true, translation_context, context, *program);
+    translate_task_symbols(task, *program);
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_ground_rules(action, *program, translation_context, context, predicate_to_actions, effect_to_predicate);
+        translate_action_to_ground_rules(action, *program, context, predicate_to_actions, effect_to_predicate);
 
     for (const auto axiom : task.get_domain().get_axioms())
-        translate_axiom_to_delete_free_axiom_rules(axiom, *program, translation_context, context, predicate_to_axioms);
+        translate_axiom_to_delete_free_axiom_rules(axiom, *program, context, predicate_to_axioms);
 
     for (const auto axiom : task.get_axioms())
-        translate_axiom_to_delete_free_axiom_rules(axiom, *program, translation_context, context, predicate_to_axioms);
+        translate_axiom_to_delete_free_axiom_rules(axiom, *program, context, predicate_to_axioms);
 
     return destination.insert(*program, builder).first;
 }
 
-static auto create_ground_datalog_program(formalism::planning::TaskView<LiftedTag> task,
-                                          TranslationContext<LiftedTag>& translation_context,
+static auto create_ground_datalog_program(const formalism::planning::PlanningTask<LiftedTag>& planning_task,
                                           AppPredicateToActionMapping& predicate_to_actions,
                                           GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
                                           ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
-    auto repository = std::make_shared<formalism::datalog::Repository>(task.get_num_objects());
-    auto program = create_ground_program(task, translation_context, predicate_to_actions, predicate_to_axioms, effect_to_predicate, *repository);
+    const auto task = planning_task.get_task();
+    auto repository = layer_over(planning_task.get_repository(), task.get_num_objects());
+    auto program = create_ground_program(task, predicate_to_actions, predicate_to_axioms, effect_to_predicate, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository));
 }
 
 }
 
 GroundTaskProgram::GroundTaskProgram(const formalism::planning::PlanningTask<LiftedTag>& task) :
-    m_translation_context(),
     m_predicate_to_actions(),
     m_predicate_to_axioms(),
     m_conditional_effect_to_predicate(),
-    m_datalog_program(
-        create_ground_datalog_program(task.get_task(), m_translation_context, m_predicate_to_actions, m_predicate_to_axioms, m_conditional_effect_to_predicate))
+    m_datalog_program(create_ground_datalog_program(task, m_predicate_to_actions, m_predicate_to_axioms, m_conditional_effect_to_predicate))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }
-
-const TranslationContext<LiftedTag>& GroundTaskProgram::get_translation_context() const noexcept { return m_translation_context; }
 
 const AppPredicateToActionMapping& GroundTaskProgram::get_predicate_to_action_mapping() const noexcept { return m_predicate_to_actions; }
 
 const GroundTaskProgram::AppPredicateToAxiomMapping& GroundTaskProgram::get_predicate_to_axiom_mapping() const noexcept { return m_predicate_to_axioms; }
 
 const ConditionalEffectToPredicateMapping& GroundTaskProgram::get_conditional_effect_to_predicate_mapping() const noexcept
-{ return m_conditional_effect_to_predicate; }
+{
+    return m_conditional_effect_to_predicate;
+}
 
 datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& GroundTaskProgram::get_const_program_workspace() const noexcept
-{ return m_datalog_program.get_const_program_workspace(); }
+{
+    return m_datalog_program.get_const_program_workspace();
+}
 
 }

@@ -31,6 +31,7 @@ void bind_module_definitions(nb::module_& m)
     auto planning_module = m.def_submodule("planning");
     planning::bind_module_definitions(planning_module);
 
+    // After planning: datalog binds its rules and programs on planning's repository class.
     auto datalog_module = m.def_submodule("datalog");
     datalog::bind_module_definitions(datalog_module);
 }

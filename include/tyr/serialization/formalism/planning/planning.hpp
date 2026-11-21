@@ -5,6 +5,7 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
@@ -39,7 +40,9 @@ namespace ygg::serialization
 {
 
 inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ParameterIndex& value, Dictionaries*)
-{ result = value.value; }
+{
+    result = value.value;
+}
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
@@ -320,6 +323,47 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 {
     ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("arg", [](const auto& value) -> decltype(auto) { return (value.get_arg()); });
+}
+
+/// The Datalog records the repository holds (the programs made from a task).
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::RuleView<T>>)
+{
+    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
+    {
+        ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
+    }
+    ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
+    ar.field("fluent_heads", [](const auto& value) -> decltype(auto) { return (value.get_fluent_heads()); });
+    ar.field("derived_heads", [](const auto& value) -> decltype(auto) { return (value.get_derived_heads()); });
+    ar.field("cost", [](const auto& value) -> decltype(auto) { return (value.get_cost()); });
+}
+
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::RuleBodyView>)
+{
+    ar.field("static_literals", [](const auto& value) -> decltype(auto) { return (value.get_static_literals()); });
+    ar.field("fluent_literals", [](const auto& value) -> decltype(auto) { return (value.get_fluent_literals()); });
+    ar.field("derived_literals", [](const auto& value) -> decltype(auto) { return (value.get_derived_literals()); });
+    ar.field("numeric_constraints", [](const auto& value) -> decltype(auto) { return (value.get_numeric_constraints()); });
+}
+
+template<class Archive, ::tyr::TaskKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::ProgramView<T>>)
+{
+    ar.field("static_predicates", [](const auto& value) -> decltype(auto) { return (value.get_static_predicates()); });
+    ar.field("fluent_predicates", [](const auto& value) -> decltype(auto) { return (value.get_fluent_predicates()); });
+    ar.field("derived_predicates", [](const auto& value) -> decltype(auto) { return (value.get_derived_predicates()); });
+    ar.field("static_functions", [](const auto& value) -> decltype(auto) { return (value.get_static_functions()); });
+    ar.field("fluent_functions", [](const auto& value) -> decltype(auto) { return (value.get_fluent_functions()); });
+    ar.field("objects", [](const auto& value) -> decltype(auto) { return (value.get_objects()); });
+    ar.field("static_atoms", [](const auto& value) -> decltype(auto) { return (value.get_static_atoms()); });
+    ar.field("fluent_atoms", [](const auto& value) -> decltype(auto) { return (value.get_fluent_atoms()); });
+    ar.field("derived_atoms", [](const auto& value) -> decltype(auto) { return (value.get_derived_atoms()); });
+    ar.field("static_fterm_values", [](const auto& value) -> decltype(auto) { return (value.get_static_fterm_values()); });
+    ar.field("fluent_fterm_values", [](const auto& value) -> decltype(auto) { return (value.get_fluent_fterm_values()); });
+    ar.field("goal", [](const auto& value) -> decltype(auto) { return (value.get_goal()); });
+    ar.field("rules", [](const auto& value) -> decltype(auto) { return (value.get_rules()); });
 }
 
 }

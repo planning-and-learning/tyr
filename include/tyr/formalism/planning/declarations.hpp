@@ -39,6 +39,37 @@
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
+namespace tyr::formalism::datalog
+{
+
+/**
+ * Formalism tag
+ */
+
+/// The body of a ground rule (and a program's goal): its static, fluent and derived literals and numeric constraints. A
+/// lifted rule's body is the shared formalism::ConjunctiveCondition<LiftedTag>.
+template<TaskKind T>
+    requires std::same_as<T, GroundTag>
+struct RuleBody
+{
+    static constexpr std::string_view name = urd::joined_name<"RuleBody", T::name>;
+};
+
+/// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
+template<TaskKind T>
+struct Rule
+{
+    static constexpr std::string_view name = urd::joined_name<"Rule", T::name>;
+};
+
+template<TaskKind T>
+struct Program
+{
+    static constexpr std::string_view name = urd::joined_name<"Program", T::name>;
+};
+
+}
+
 namespace tyr::formalism::planning
 {
 
@@ -162,6 +193,10 @@ using ControlTypes = boost::mp11::mp_list<ConditionalEffect<LiftedTag>,
 using StructureTypes = boost::mp11::mp_list<Action<LiftedTag>, Axiom<LiftedTag>>;
 using ProblemTypes = boost::mp11::mp_list<Metric, Domain, Task<LiftedTag>, Task<GroundTag>>;
 using ConditionTypes = boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveCondition<GroundTag>>;
+/// The Datalog programs made from a task: rules over its records (a lifted rule's body is a shared condition), the
+/// ground rules' bodies and the programs.
+using DatalogTypes = boost::mp11::
+    mp_list<datalog::Rule<LiftedTag>, datalog::RuleBody<GroundTag>, datalog::Rule<GroundTag>, datalog::Program<LiftedTag>, datalog::Program<GroundTag>>;
 
 using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                      PredicateTypes,
@@ -179,9 +214,10 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                      ProblemTypes,
                                                      FDRVariableTypes,
                                                      InvariantTypes,
-                                                     ConditionTypes>;
+                                                     ConditionTypes,
+                                                     DatalogTypes>;
 
-using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes>;
+using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes, boost::mp11::mp_list<datalog::Rule<LiftedTag>>>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 
 using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;

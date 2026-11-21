@@ -22,9 +22,10 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/write_context.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted/programs/translation_context.hpp"
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <urd/elements/flat.hpp>
 #include <utility>
@@ -53,17 +54,22 @@ std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
 create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
 
-/// The translation context with its Datalog symbols copied into the copy context's repository.
-TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source,
-                                                        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+/// A layer over `parent`, which stays frozen from here on: the layer's deleter holds the parent, so each layer keeps
+/// its chain alive (domain, task, program, transform layers, per-worker workspace).
+formalism::datalog::RepositoryPtr layer_over(std::shared_ptr<const formalism::datalog::Repository> parent, std::size_t num_objects);
 
-/// Translates the task's predicates (with its derived predicates where `with_derived`), functions, objects,
-/// atoms and function term values into `program`, and records the predicate and function mappings in `translation_context`.
-void translate_task_symbols(formalism::planning::TaskView<LiftedTag> task,
-                            bool with_derived,
-                            TranslationContext<LiftedTag>& translation_context,
-                            formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                            urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program);
+/// Lists the task's predicates (its derived ones too), functions, objects, static and fluent atoms and function term
+/// values in `program`, as the task's records: a program is a layer over the task's repository. The lists are dense: each
+/// record sits at the position of its index (a program never drops a predicate; unused ones have empty facts).
+template<TaskKind Kind>
+void translate_task_symbols(formalism::planning::TaskView<Kind> task, urd::builder<formalism::datalog::Program<Kind>, formalism::datalog::Repository>& program);
+
+/// The literal of an FDR fact's atom with the polarity, interned into the context's repository; none for a fact without
+/// an atom (a variable's none value).
+std::optional<formalism::datalog::LiteralView<GroundTag, formalism::FluentTag>>
+create_fact_literal(formalism::planning::FDRFactView<formalism::FluentTag> fact,
+                    bool polarity,
+                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
 
 /// The RPG heuristics charge each action rule a unit cost.
 inline void require_unit_cost(CostMode cost_mode)

@@ -49,7 +49,7 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/lifted/programs/translation_context.hpp"
+#include "tyr/planning/programs/state_inputs.hpp"
 
 #include <optional>
 #include <ranges>

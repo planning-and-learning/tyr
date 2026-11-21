@@ -122,7 +122,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<Lifted
 
     insert_unextended_state(StateContext<LiftedTag> { *m_impl->definition->task, state_builder, ygg::float_t { 0 } },
                             *m_impl->definition->task->get_repository(),
-                            program.get_translation_context().p2d,
+                            AllStateInputs {},
                             workspace);
 
     auto ctx = datalog::ProgramExecutionContext<LiftedTag>::from_reset_workspace(workspace);
@@ -130,7 +130,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<Lifted
 
     read_derived_atoms_from_fact_set(state_builder,
                                      *m_impl->definition->task->get_repository(),
-                                     program.get_translation_context().d2p,
+                                     num_task_derived_predicates(m_impl->definition->task->get_formalism_task().get_task()),
                                      workspace,
                                      evaluator.derived_bindings);
 }

@@ -103,12 +103,13 @@ static_assert(requires(Data& data, const View& view) {
 
 TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
 {
-    auto destination = tyr::formalism::datalog::Repository();
+    // The filter writes into a layer over the source program's repository: the kept rules are the source's.
+    auto source = tyr::formalism::datalog::Repository();
+    auto destination = std::optional<tyr::formalism::datalog::Repository> {};  // over the source once it is built
 
     auto filtered = std::optional<tyr::formalism::datalog::ProgramView<::tyr::GroundTag>> {};
     auto retained_predicate_source_index = static_cast<ygg::uint_t>(0);
     {
-        auto source = tyr::formalism::datalog::Repository();
         const auto intern = [&](auto data) { return ygg::formalism::insert(source, data).first; };
         const auto predicate = [&]<tyr::formalism::FactKind T>(const char* name)
         { return intern(urd::data<tyr::formalism::Predicate<T>> { std::string(name), 0 }); };
@@ -182,20 +183,23 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         program_data.fluent_fterm_values = { fluent_value.index() };
         program_data.goal = goal.index();
         program_data.rules = { removed_predicate_rule.index(), retained_predicate_rule.index() };
-        filtered = tyr::datalog::remove_statically_inapplicable_rules(intern(std::move(program_data)), destination);
+        const auto source_program = intern(std::move(program_data));
+        destination.emplace(&source);
+        filtered = tyr::datalog::remove_statically_inapplicable_rules(source_program, *destination);
     }
 
     ASSERT_TRUE(filtered.has_value());
     EXPECT_GT(retained_predicate_source_index, 0);
-    EXPECT_EQ(&filtered->context(), &destination);
+    EXPECT_EQ(&filtered->context(), &*destination);
     ASSERT_EQ(filtered->get_rules().size(), 1);
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().index()).value), 0);
+    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().index()).value), retained_predicate_source_index);
     EXPECT_EQ(filtered->get_rules().front().get_fluent_heads().front().get_predicate().get_name().str(), "retained-predicate");
     ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());
     EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ((destination.size<tyr::formalism::datalog::Rule<::tyr::GroundTag>>()), 1);
+    // No rule was added: the layers hold the source's two.
+    EXPECT_EQ((destination->size<tyr::formalism::datalog::Rule<::tyr::GroundTag>>()), 2);
 }
 
 }

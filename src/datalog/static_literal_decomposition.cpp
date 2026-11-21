@@ -137,7 +137,7 @@ private:
         if (relation.empty())
             return std::nullopt;
         // The literals that replace it number their variables as it does: they have its atom's parameters.
-        m_parameters = formalism::copy(literal.get_atom().get_parameters(), *m_context).first.index();
+        m_parameters = literal.get_atom().get_parameters().index();
         if (arity < 3)
             return urd::Store<urd::sequence<StaticLiteralIndex>> { create_projection_literal(relation, parameters) };
 
@@ -282,7 +282,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::WriteContext { builder, repository };
     auto output = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
-    formalism::datalog::copy_except_rules(program, *output, context);
+    formalism::datalog::list_except_rules(program, *output);
     // The static predicates come first in the repository, as the fact sets require.
     // The program's own static predicates and atoms: the output's, copied within this repository.
     auto static_facts = TaggedFactSets<formalism::StaticTag>(program.template get_predicates<formalism::StaticTag>(), repository);
@@ -292,7 +292,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     for (const auto rule : program.get_rules())
     {
         // Only rules of the program are inserted: rule workspaces are indexed by rule.
-        const auto body = formalism::copy(rule.get_body(), context).first;
+        const auto body = rule.get_body();
         auto condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
         auto decomposed = false;
         for (const auto literal : body.get_literals<formalism::StaticTag>())
@@ -308,9 +308,9 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
         }
         if (!decomposed)
         {
-            const auto copy = formalism::copy(rule, context).first.index();
-            urd::append(output->rules, repository.view(copy));
-            result.rules.emplace(rule.index(), copy);
+            // The rule as it is: the output's layer stands on the source's.
+            urd::append(output->rules, rule);
+            result.rules.emplace(rule.index(), rule.index());
             continue;
         }
 
@@ -329,9 +329,9 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
             urd::append(new_rule->variables, variable);
         urd::store(new_rule->body, new_body);
         for (const auto head : rule.get_heads<formalism::FluentTag>())
-            urd::append(new_rule->fluent_heads, formalism::copy(head, context).first);
+            urd::append(new_rule->fluent_heads, head);
         for (const auto head : rule.get_heads<formalism::DerivedTag>())
-            urd::append(new_rule->derived_heads, formalism::copy(head, context).first);
+            urd::append(new_rule->derived_heads, head);
         new_rule->cost = rule.get_cost();
         const auto rewritten = repository.insert(*new_rule, builder).first.index();
         urd::append(output->rules, repository.view(rewritten));

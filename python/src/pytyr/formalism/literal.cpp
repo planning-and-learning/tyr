@@ -16,7 +16,6 @@
  */
 
 #include "bindings.hpp"
-#include "pytyr/formalism/datalog/bindings.hpp"
 #include "pytyr/formalism/planning/bindings.hpp"
 #include "tyr/declarations.hpp"
 
@@ -25,16 +24,14 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/formalism/datalog/formatter.hpp>
-#include <tyr/formalism/datalog/interning.hpp>
 #include <tyr/formalism/declarations.hpp>
+#include <tyr/formalism/planning/formatter.hpp>
 #include <tyr/formalism/planning/interning.hpp>
 #include <urd/elements/view.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-/// Literals: their indices and data are the same for datalog and planning, bound once here (and built from either's
-/// views); their views are each repository's.
+/// Literals: their indices and data, bound here; their views, bound with the repository.
 namespace tyr::formalism
 {
 namespace
@@ -65,21 +62,6 @@ void bind_literal(nb::module_& m)
 }
 
 }  // namespace tyr::formalism
-
-namespace tyr::formalism::datalog
-{
-
-void bind_literal(nb::module_& m, RepositoryBinding& repository)
-{
-    bind_literal_view<LiftedTag, StaticTag>(m, repository);
-    bind_literal_view<LiftedTag, FluentTag>(m, repository);
-    bind_literal_view<LiftedTag, DerivedTag>(m, repository);
-    bind_literal_view<GroundTag, StaticTag>(m, repository);
-    bind_literal_view<GroundTag, FluentTag>(m, repository);
-    bind_literal_view<GroundTag, DerivedTag>(m, repository);
-}
-
-}  // namespace tyr::formalism::datalog
 
 namespace tyr::formalism::planning
 {

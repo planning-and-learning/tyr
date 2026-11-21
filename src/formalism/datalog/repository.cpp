@@ -15,19 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// The members of the datalog repository, which the library's other sources only declare
-// (yggdrasil/formalism/repository.hpp). Compiled on its own, outside the unity batches (src/CMakeLists.txt).
+// The repository of free relations. Compiled on its own, outside the unity batches (src/CMakeLists.txt).
 
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/free_relations.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
-
-YGG_FORMALISM_REPOSITORY(, tyr::formalism::datalog::Repository, 46, 7)
 
 // The repository of free relations (yggdrasil/formalism/free_relations.hpp), which the lifted Datalog database holds:
 // yggdrasil has no library of its own to instantiate it in.
 YGG_FORMALISM_REPOSITORY(, ygg::FreeRelationRepository, 2, 1)
 YGG_FORMALISM_REPOSITORY_SCHEMA(, ygg::FreeRelationRepository)
-YGG_FORMALISM_BUILDER(, tyr::formalism::datalog::Builder, 53)

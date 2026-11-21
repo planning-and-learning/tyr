@@ -112,7 +112,9 @@ Out write(Out out, const urd::index_view<tf::NumericEffect<T, F>, C>& value);
 /// A number of a function expression.
 template<typename Out>
 Out write(Out out, ygg::float_t value)
-{ return fmt::format_to(out, "{}", value); }
+{
+    return fmt::format_to(out, "{}", value);
+}
 
 /// A function expression or a term: the alternative it holds.
 template<typename Out, typename... Alternatives>
@@ -144,19 +146,27 @@ Out write_lifted_arguments(Out out, const View& value, std::string_view name)
 
 template<typename Out, typename C>
 Out write(Out out, const urd::index_view<tf::Object, C>& value)
-{ return fmt::format_to(out, "{}", value.get_name()); }
+{
+    return fmt::format_to(out, "{}", value.get_name());
+}
 
 template<typename Out, typename C>
 Out write(Out out, const urd::index_view<tf::Variable, C>& value)
-{ return fmt::format_to(out, "{}", value.get_name()); }
+{
+    return fmt::format_to(out, "{}", value.get_name());
+}
 
 template<typename Out, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Predicate<F>, C>& value)
-{ return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity()); }
+{
+    return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity());
+}
 
 template<typename Out, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Function<F>, C>& value)
-{ return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity()); }
+{
+    return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity());
+}
 
 template<typename Out, tyr::TaskKind T, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Atom<T, F>, C>& value)
@@ -285,85 +295,15 @@ Out write_rule_body(Out out, const Body& value)
 }
 }
 
-// The shared records' formatters for the datalog repository forward to the writers above.
-
-fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Object, td::Repository>>::format(const urd::index_view<tf::Object, td::Repository>& value,
-                                                                                                  fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Variable, td::Repository>>::format(const urd::index_view<tf::Variable, td::Repository>& value,
-                                                                                                    fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Predicate<F>, td::Repository>>::format(const urd::index_view<tf::Predicate<F>, td::Repository>& value,
-                                                                          fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Function<F>, td::Repository>>::format(const urd::index_view<tf::Function<F>, td::Repository>& value,
-                                                                         fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Atom<T, F>, td::Repository>>::format(const urd::index_view<tf::Atom<T, F>, td::Repository>& value,
-                                                                        fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Literal<T, F>, td::Repository>>::format(const urd::index_view<tf::Literal<T, F>, td::Repository>& value,
-                                                                           fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::FunctionTerm<T, F>, td::Repository>>::format(const urd::index_view<tf::FunctionTerm<T, F>, td::Repository>& value,
-                                                                                fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::FunctionTermValue<T, F>, td::Repository>>::format(const urd::index_view<tf::FunctionTermValue<T, F>, td::Repository>& value,
-                                                                                     fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::OperatorKind O>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::UnaryOperator<T, O>, td::Repository>>::format(const urd::index_view<tf::UnaryOperator<T, O>, td::Repository>& value,
-                                                                                 fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::OperatorKind O>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::BinaryOperator<T, O>, td::Repository>>::format(const urd::index_view<tf::BinaryOperator<T, O>, td::Repository>& value,
-                                                                                  fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::OperatorKind O>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::MultiOperator<T, O>, td::Repository>>::format(const urd::index_view<tf::MultiOperator<T, O>, td::Repository>& value,
-                                                                                 fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-template<tyr::TaskKind T, tf::FactKind F>
-fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, td::Repository>>::format(const urd::index_view<tf::NumericEffect<T, F>, td::Repository>& value,
-                                                                                 fmt::format_context& context) const
-{ return write(context.out(), value); }
-
-fmt::format_context::iterator fmt::formatter<urd::index_view<tf::ConjunctiveCondition<LiftedTag>, td::Repository>>::format(
-    const urd::index_view<tf::ConjunctiveCondition<LiftedTag>, td::Repository>& value,
-    fmt::format_context& context) const
-{ return write_rule_body(context.out(), value); }
+// Rules, their ground bodies and programs in Datalog syntax; the shared records they hold are written by the writers
+// above (the shared records' own formatters print PDDL, src/formalism/planning/formatter.cpp).
 
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<td::RuleBody<GroundTag>, td::Repository>>::format(const urd::index_view<td::RuleBody<GroundTag>, td::Repository>& value,
                                                                                  fmt::format_context& context) const
-{ return write_rule_body(context.out(), value); }
+{
+    return write_rule_body(context.out(), value);
+}
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Repository>>::format(const urd::index_view<td::Rule<T>, td::Repository>& value,
@@ -437,37 +377,6 @@ fmt::formatter<urd::index_view<td::Program<T>, td::Repository>>::format(const ur
     return out;
 }
 
-template<typename R>
-fmt::format_context::iterator fmt::formatter<ygg::RowView<R, td::Repository>>::format(const ygg::RowView<R, td::Repository>& value,
-                                                                                      fmt::format_context& context) const
-{
-    // A rule has no name: its binding is its values.
-    if constexpr (std::same_as<R, td::Rule<LiftedTag>>)
-        return fmt::format_to(context.out(), "{}", ygg::values_text<R>(value));
-    else
-    {
-        auto out = fmt::format_to(context.out(), "{}", value.get_relation().get_name());
-        if (value.get_values().empty())
-            return out;
-        out = fmt::format_to(out, "(");
-        for (std::size_t position = 0; position < value.get_values().size(); ++position)
-        {
-            if (position != 0)
-                out = fmt::format_to(out, ", ");
-            std::visit(
-                [&]<typename V>(V column)
-                {
-                    if constexpr (std::same_as<V, urd::index<tf::Object>>)
-                        out = fmt::format_to(out, "{}", urd::resolve(column, value.context()));
-                    else
-                        out = fmt::format_to(out, "{}", column);
-                },
-                value.get(position));
-        }
-        return fmt::format_to(out, ")");
-    }
-}
-
 /// One DOT graph per kind of binary dependency, named after it: the condition's parameters, adjacent where they occur
 /// together in a literal (or constraint) of that kind.
 fmt::format_context::iterator fmt::formatter<td::VariableDependencyGraph>::format(const td::VariableDependencyGraph& value, fmt::format_context& context) const
@@ -485,52 +394,8 @@ fmt::format_context::iterator fmt::formatter<td::VariableDependencyGraph>::forma
                           urd::to_dot(binary.numeric_constraint, parameter, urd::unlabeled, "numeric_constraint"));
 }
 
-// Each family's formatter, once for each record of the family the repository stores.
-template struct fmt::formatter<urd::index_view<tf::Predicate<tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Predicate<tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Predicate<tf::DerivedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Function<tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Function<tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Function<tf::AuxiliaryTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::DerivedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::DerivedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::DerivedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::DerivedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::AuxiliaryTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::AuxiliaryTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::AuxiliaryTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::UnaryOperator<LiftedTag, tf::ArithmeticOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<LiftedTag, tf::ArithmeticOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<LiftedTag, tf::BooleanOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::MultiOperator<LiftedTag, tf::ArithmeticOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::UnaryOperator<GroundTag, tf::ArithmeticOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::ArithmeticOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::BooleanOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::MultiOperator<GroundTag, tf::ArithmeticOperatorKind>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::FluentTag>, td::Repository>>;
+// Each family's formatter, once for each kind.
 template struct fmt::formatter<urd::index_view<td::Rule<LiftedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Rule<GroundTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Program<LiftedTag>, td::Repository>>;
 template struct fmt::formatter<urd::index_view<td::Program<GroundTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::DerivedTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Function<tf::StaticTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Function<tf::FluentTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Function<tf::AuxiliaryTag>, td::Repository>>;
-template struct fmt::formatter<ygg::RowView<td::Rule<LiftedTag>, td::Repository>>;

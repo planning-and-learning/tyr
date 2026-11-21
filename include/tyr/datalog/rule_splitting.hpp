@@ -44,7 +44,7 @@ struct RuleSplitting
         urd::Store<urd::sequence<ygg::uint_t>> source_positions;
     };
 
-    /// The rule that replaces each source rule: the main rule of a split one, or its copy.
+    /// The rule that replaces each source rule: the main rule of a split one, or the rule itself.
     RuleMapping rules;
     /// The origin of every rule that splitting created, main rules and projection rules alike.
     urd::Store<urd::map<Rule, Origin>> origins;
@@ -52,10 +52,10 @@ struct RuleSplitting
     urd::Store<urd::map<urd::index<formalism::Predicate<formalism::DerivedTag>>, Rule>> projection_rules;
 };
 
-/// Copies the program into the repository and projects the variables of its predicate rules that occur in no head and only
-/// in some preconditions: the preconditions that use such a variable are replaced by an atom over their variables that the
-/// rest of the rule needs, which a projection rule of cost 0 derives. Rules with numeric constraints are copied unchanged.
-/// The minimal sum and max costs of every atom are preserved.
+/// Writes the program into `repository`, a layer over the program's (adding only its new records), and projects the variables of its predicate rules that occur
+/// in no head and only in some preconditions: the preconditions that use such a variable are replaced by an atom over their variables that the rest of the rule
+/// needs, which a projection rule of cost 0 derives. Rules with numeric constraints are kept as they are. The minimal sum and max costs of every atom are
+/// preserved.
 formalism::datalog::ProgramView<LiftedTag>
 split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, RuleSplitting& splitting);
 

@@ -10,7 +10,7 @@ from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
 
 from pytyr import datalog, planning
-from pytyr.formalism import datalog as formalism_datalog, planning as formalism_planning
+from pytyr.formalism import planning as formalism_planning
 from pytyr.formalism.planning import Parser
 
 Node = planning.lifted.Node
@@ -92,7 +92,7 @@ def test_fact_sets_give_a_predicates_rows() -> None:
     facts = workspace.get_fluent_fact_sets()
 
     rows = list(facts.rows(0))
-    assert all(isinstance(row, formalism_datalog.RowPredicateFluent) for row in rows)
+    assert all(isinstance(row, formalism_planning.RowPredicateFluent) for row in rows)
 
     # The rows keep what they are read through alive.
     del facts, workspace, program, task

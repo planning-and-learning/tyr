@@ -1,4 +1,3 @@
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -13,12 +12,6 @@ using FunctionView = urd::index_view<Function, tyr::formalism::planning::Reposit
 
 template<typename Entity, typename Repository>
 struct FunctionPublicView;
-
-template<tyr::formalism::FactKind T>
-struct FunctionPublicView<tyr::formalism::Function<T>, tyr::formalism::datalog::Repository>
-{
-    using type = tyr::formalism::datalog::FunctionView<T>;
-};
 
 template<tyr::formalism::FactKind T>
 struct FunctionPublicView<tyr::formalism::Function<T>, tyr::formalism::planning::Repository>
@@ -41,9 +34,10 @@ concept FunctionContract = std::constructible_from<urd::index<Entity>, ygg::uint
 
 template<typename Repository, typename... Entities>
 consteval bool function_contracts(boost::mp11::mp_list<Entities...>)
-{ return (FunctionContract<Entities, Repository> && ...); }
+{
+    return (FunctionContract<Entities, Repository> && ...);
+}
 
-static_assert(function_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::FunctionTypes {}));
 static_assert(function_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::FunctionTypes {}));
 
 TEST(TyrFormalismFunction, ExposesOwnedContract)

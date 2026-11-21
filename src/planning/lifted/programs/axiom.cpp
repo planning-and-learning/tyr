@@ -18,7 +18,7 @@
 #include "tyr/planning/lifted/programs/axiom.hpp"
 
 #include "../../programs/common.hpp"
-#include "../../programs/translated_program.hpp"
+#include "../../programs/layered_program.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
@@ -60,7 +60,6 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -79,100 +78,71 @@ namespace tyr::planning
 {
 namespace
 {
-void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag> axiom_body,
-                        const TranslationContext<LiftedTag>& translation_context,
-                        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                        urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
-{
-    for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
-        urd::append(conj_cond.static_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first);
-
-    for (const auto literal : axiom_body.get_literals<formalism::FluentTag>())
-        urd::append(conj_cond.fluent_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first);
-
-    for (const auto literal : axiom_body.get_literals<formalism::DerivedTag>())
-        urd::append(conj_cond.derived_literals, formalism::planning::merge_p2d(literal, translation_context.p2d.derived_to_derived_predicate, context).first);
-
-    for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
-        urd::append(conj_cond.numeric_constraints, formalism::planning::merge_p2d(numeric_constraint, context).first);
-}
-
+/// The rule of an axiom: its body the axiom's body over the axiom's variables (the task's literals), its head the axiom's.
 auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
-                       const TranslationContext<LiftedTag>& translation_context,
                        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
-
     auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
+    const auto body = axiom.get_body();
     for (const auto variable : axiom.get_variables())
-        urd::append(conj_cond->variables, formalism::copy(variable, context).first);
+        urd::append(conj_cond->variables, variable);
+    for (const auto literal : body.get_literals<formalism::StaticTag>())
+        urd::append(conj_cond->static_literals, literal);
+    for (const auto literal : body.get_literals<formalism::FluentTag>())
+        urd::append(conj_cond->fluent_literals, literal);
+    for (const auto literal : body.get_literals<formalism::DerivedTag>())
+        urd::append(conj_cond->derived_literals, literal);
+    for (const auto numeric_constraint : body.get_numeric_constraints())
+        urd::append(conj_cond->numeric_constraints, numeric_constraint);
 
-    process_axiom_body(axiom.get_body(), translation_context, context, *conj_cond);
-
-    const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
-
-    urd::store(rule->body, new_conj_cond);
-
-    const auto new_head = formalism::planning::merge_p2d(axiom.get_head(), translation_context.p2d.derived_to_derived_predicate, context).first;
-
-    urd::append(rule->derived_heads, new_head);
+    urd::store(rule->body, context.destination().insert(*conj_cond, context.builder()).first);
+    urd::append(rule->derived_heads, axiom.get_head());
 
     return context.destination().insert(*rule, context.builder());
 }
 
-auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task,
-                          TranslationContext<LiftedTag>& translation_context,
-                          formalism::datalog::Repository& repository)
+auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task, formalism::datalog::Repository& repository)
 {
     auto builder = formalism::datalog::Builder();
     auto context = formalism::WriteContext(builder, repository);
     auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
 
-    translate_task_symbols(task, true, translation_context, context, *program);
+    translate_task_symbols(task, *program);
 
     for (const auto axiom : task.get_domain().get_axioms())
-        urd::append(program->rules, create_axiom_rule(axiom, translation_context, context).first);
+        urd::append(program->rules, create_axiom_rule(axiom, context).first);
     for (const auto axiom : task.get_axioms())
-        urd::append(program->rules, create_axiom_rule(axiom, translation_context, context).first);
+        urd::append(program->rules, create_axiom_rule(axiom, context).first);
 
     return repository.insert(*program, builder).first;
 }
 
-struct AxiomTables
+auto create_axiom_datalog_program(const formalism::planning::PlanningTask<LiftedTag>& planning_task)
 {
-    TranslationContext<LiftedTag> translation_context;
-
-    AxiomTables remap(SymbolRemapper& remapper) const { return { remapper.translation_context(translation_context) }; }
-};
-
-auto create_axiom_datalog_program(formalism::planning::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
-{
+    const auto task = planning_task.get_task();
     const auto num_objects = task.get_num_objects();
-    auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
-    auto tables = AxiomTables {};
-    const auto program = create_axiom_program(task, tables.translation_context, *repository);
-    auto source = TranslatedProgram<AxiomTables> { program, std::move(repository), std::move(tables) };
+    auto repository = layer_over(planning_task.get_repository(), num_objects);
+    const auto program = create_axiom_program(task, *repository);
 
-    auto result = transform(source, num_objects, decompose_static_literals_pass());
-    translation_context = std::move(result.tables.translation_context);
+    auto rules = datalog::RuleMapping {};
+    auto result = transform(LayeredProgram { program, std::move(repository) }, num_objects, rules, decompose_static_literals_pass());
     return datalog::Program<LiftedTag>(result.program, std::move(result.repository));
 }
 }
 
-AxiomEvaluatorProgram::AxiomEvaluatorProgram(const formalism::planning::PlanningTask<LiftedTag>& task) :
-    m_translation_context(),
-    m_datalog_program(create_axiom_datalog_program(task.get_task(), m_translation_context))
+AxiomEvaluatorProgram::AxiomEvaluatorProgram(const formalism::planning::PlanningTask<LiftedTag>& task) : m_datalog_program(create_axiom_datalog_program(task))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }
-
-const TranslationContext<LiftedTag>& AxiomEvaluatorProgram::get_translation_context() const noexcept { return m_translation_context; }
 
 datalog::Program<LiftedTag>& AxiomEvaluatorProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& AxiomEvaluatorProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& AxiomEvaluatorProgram::get_const_program_workspace() const noexcept
-{ return m_datalog_program.get_const_program_workspace(); }
+{
+    return m_datalog_program.get_const_program_workspace();
+}
 }

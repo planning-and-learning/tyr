@@ -50,7 +50,7 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted/programs/translation_context.hpp"
+#include "tyr/planning/programs/state_inputs.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
@@ -74,7 +74,6 @@ public:
 
     explicit GroundTaskProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
 
-    [[nodiscard]] const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
     [[nodiscard]] const AppPredicateToAxiomMapping& get_predicate_to_axiom_mapping() const noexcept;
     [[nodiscard]] const ConditionalEffectToPredicateMapping& get_conditional_effect_to_predicate_mapping() const noexcept;
@@ -83,7 +82,6 @@ public:
     [[nodiscard]] const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
 
 private:
-    TranslationContext<LiftedTag> m_translation_context;
     AppPredicateToActionMapping m_predicate_to_actions;
     AppPredicateToAxiomMapping m_predicate_to_axioms;
     ConditionalEffectToPredicateMapping m_conditional_effect_to_predicate;

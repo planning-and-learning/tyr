@@ -172,7 +172,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
         SCOPED_TRACE(action.get_name().str());
         const auto& schema = schemas.at(action);
         const auto& program = schema.program;
-        EXPECT_EQ(&program.context(), &global_program.context());
+        // Each schema program is a record of the action program's layer (the global program's may sit in a layer below it).
+        EXPECT_EQ(&program.context(), &action_program.get_datalog_program().get_program_repository());
         EXPECT_TRUE(
             std::ranges::equal(program.template get_predicates<formalism::StaticTag>(), global_program.template get_predicates<formalism::StaticTag>()));
         EXPECT_TRUE(
@@ -220,13 +221,13 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
     auto source = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     const auto& action_program = source->get_action_program();
-    EXPECT_EQ(action_program.get_translation_context().p2d.fluent_to_fluent_function.size(), 4);
+    EXPECT_EQ(action_program.get_datalog_program().get_program().get_functions<tyr::formalism::FluentTag>().size(), 4);
     for (const auto& [action, schema] : action_program.get_schema_programs())
     {
         const auto enabling = action.get_name().str() == "enable";
-        EXPECT_EQ(schema.input_translation.fluent_to_fluent_predicate.size(), enabling ? 1 : 0);
-        EXPECT_EQ(schema.input_translation.derived_to_derived_predicate.size(), 1);
-        EXPECT_EQ(schema.input_translation.fluent_to_fluent_function.size(), enabling ? 0 : 2);
+        EXPECT_EQ(schema.inputs.fluent_predicates.size(), enabling ? 1 : 0);
+        EXPECT_EQ(schema.inputs.derived_predicates.size(), 1);
+        EXPECT_EQ(schema.inputs.fluent_functions.size(), enabling ? 0 : 2);
     }
     const auto initial_node = source->get_initial_node(*state_repository, *axiom_evaluator);
     const auto bindings = source->get_applicable_action_bindings(initial_node);

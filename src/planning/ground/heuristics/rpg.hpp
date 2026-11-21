@@ -42,22 +42,26 @@ struct RPGPolicy<GroundTag>
     static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
     translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, formalism::datalog::PredicateRowView<formalism::FluentTag> head)
     {
-        const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_atom;
-        if (const auto it = mapping.find(head); it != mapping.end())
-            return it->second;
-        return std::nullopt;
+        // The head is a row of the task's: its atom, where the task has one.
+        return find_ground_atom(head, *definition.task->get_repository());
     }
 
     template<typename Workspace>
     static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
-    { materialize_goal(definition, workspace, source_goal); }
+    {
+        materialize_goal(definition, workspace, source_goal);
+    }
 
     template<typename Workspace>
     static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
-    { workspace.clear_costs(); }
+    {
+        workspace.clear_costs();
+    }
 
     static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation<GroundTag>& witness)
-    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key()); }
+    {
+        return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key());
+    }
 
     template<typename Workspace, typename Callback>
     static void

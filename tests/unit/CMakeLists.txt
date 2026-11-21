@@ -25,17 +25,9 @@ add_gtest(
 
 add_gtest(
     formalism_datalog_types
-    "formalism/datalog/atom.cpp"
-    "formalism/datalog/binary_operator.cpp"
     "formalism/datalog/conjunctive_condition.cpp"
-    "formalism/datalog/function_term.cpp"
-    "formalism/datalog/function_term_value.cpp"
-    "formalism/datalog/literal.cpp"
-    "formalism/datalog/numeric_effect.cpp"
     "formalism/datalog/program.cpp"
     "formalism/datalog/rule.cpp"
-    "formalism/datalog/multi_operator.cpp"
-    "formalism/datalog/unary_operator.cpp"
 )
 
 add_gtest(

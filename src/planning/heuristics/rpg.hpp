@@ -51,7 +51,6 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -111,15 +110,6 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
     auto merge_context = formalism::WriteContext { workspace.datalog_builder, destination };
     auto condition = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(merge_context.builder());
 
-    const auto translate_atom = [&](const auto atom)
-    {
-        const auto& p2d = definition.rpg_program.get_translation_context().p2d;
-        if constexpr (std::same_as<Kind, GroundTag>)
-            return p2d.fluent_to_fluent_atom.at(atom);
-        else
-            return formalism::planning::merge_p2d(atom, p2d.fluent_to_fluent_predicate, merge_context).first;
-    };
-
     for (const auto fact : source_goal.template get_facts<formalism::PositiveTag>())
     {
         const auto atom = fact.get_atom();
@@ -127,7 +117,8 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
             continue;
 
         auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder());
-        urd::store(literal->atom, translate_atom(*atom));
+        // The goal's atom, the task's: the program is a layer over the task's repository.
+        urd::store(literal->atom, *atom);
         literal->polarity = true;
         urd::append(condition->fluent_literals, merge_context.destination().insert(*literal, merge_context.builder()).first);
     }
@@ -191,10 +182,13 @@ protected:
     ygg::float_t evaluate_current_state(const StateView<Kind>& state)
     {
         const auto& repository = *m_definition->task->get_repository();
-        const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
         // LM-cut repeats this evaluation while retaining the current goal and cost overrides.
         m_workspace.facts.reset();
-        insert_unextended_state(StateContext<Kind> { *m_definition->task, state, ygg::float_t { 0 } }, repository, translation_context, m_workspace);
+        const auto state_context = StateContext<Kind> { *m_definition->task, state, ygg::float_t { 0 } };
+        if constexpr (std::same_as<Kind, GroundTag>)
+            insert_unextended_state(state_context, repository, m_workspace);
+        else
+            insert_unextended_state(state_context, repository, AllStateInputs {}, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         datalog::execute_model(ctx, *m_execution_context);
 

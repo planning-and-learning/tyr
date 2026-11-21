@@ -85,7 +85,7 @@
 
 namespace tyr::tests
 {
-static_assert(tyr::formalism::datalog::SymbolRepository::thread_safe && tyr::formalism::datalog::RelationRepository::thread_safe);
+static_assert(tyr::formalism::planning::SymbolRepository::thread_safe && tyr::formalism::planning::RelationRepository::thread_safe);
 
 namespace
 {

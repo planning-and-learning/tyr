@@ -50,8 +50,6 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/programs/translation_context.hpp"
-#include "tyr/planning/lifted/programs/translation_context.hpp"
 
 #include <concepts>
 #include <type_traits>
@@ -81,8 +79,6 @@ public:
     /// With split_rules, action rules project away the variables that only some of their preconditions use (lifted tasks only).
     explicit RPGProgram(const Task& task, CostMode cost_mode = CostMode::UNIT, bool split_rules = false);
 
-    [[nodiscard]] const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
-
     [[nodiscard]] const RuleToActionMapping& get_rule_to_action_mapping() const noexcept { return m_rule_to_action; }
 
     /// The splitting of the action rules, empty unless they were split.
@@ -97,7 +93,6 @@ public:
     [[nodiscard]] formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const { return m_datalog_program.get_program().get_goal().value(); }
 
 private:
-    TranslationContext<Kind> m_translation_context;
     RuleToActionMapping m_rule_to_action;
     datalog::RuleSplitting m_rule_splitting;
     datalog::Program<Kind> m_datalog_program;
