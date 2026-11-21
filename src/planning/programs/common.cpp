@@ -138,7 +138,7 @@ struct Layer
 
 /// Appends the records to `list`, asserting that each sits at the position of its index.
 template<typename List, typename Range>
-void append_dense(List& list, Range&& records)
+void append_dense(List& list, const Range& records)
 {
     for (const auto record : records)
     {
@@ -186,7 +186,7 @@ void translate_task_symbols(formalism::TaskView<Kind> task, urd::builder<formali
     append_dense(program.static_functions, task.get_domain().template get_functions<formalism::StaticTag>());
     append_dense(program.fluent_functions, task.get_domain().template get_functions<formalism::FluentTag>());
 
-    append_dense(program.objects, task.get_domain().template get_constants());
+    append_dense(program.objects, task.get_domain().get_constants());
     append_dense(program.objects, task.get_objects());
 
     for (const auto atom : task.template get_atoms<formalism::StaticTag>())
