@@ -100,9 +100,9 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     EXPECT_EQ(fmt::format("{}", std::make_pair(binding, tyr::formalism::PlanFormatting {})), "(move)");
 }
 
-// A binding copied into another repository: its action copied with its closure (at other indices there), its values
-// (objects) as they are.
-TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndKeepsBindingValues)
+// A binding copied into another repository: its action copied with its closure (at other indices there), its objects
+// copied as children (the same objects by name, at other indices there).
+TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndBindingObjects)
 {
     const auto parser = tyr::formalism::Parser(std::string(R"((define (domain transfer)
       (:requirements :strips :conditional-effects :fluents)
@@ -140,7 +140,8 @@ TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndKeepsBindingValues)
     EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
     EXPECT_EQ(fmt::format("{}", copied), fmt::format("{}", source_action));
     EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
-    EXPECT_EQ(copied_binding.value(0), binding.value(0));
+    EXPECT_NE(copied_binding.value(0), binding.value(0));
+    EXPECT_EQ(copied_binding.template resolve<tyr::formalism::Object>(0).get_name(), "truck");
     EXPECT_EQ(urd::copy(binding, destination, builder), copied_binding.index());  // interned once
 }
 
