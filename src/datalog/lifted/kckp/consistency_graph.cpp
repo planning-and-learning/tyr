@@ -732,7 +732,7 @@ create_ground_nullary_conjunctive_condition(formalism::RuleBodyView<LiftedTag> c
     auto conj_cond = formalism::checkout<formalism::RuleBody<GroundTag>>(builder);
 
     auto binding_empty = urd::flat_vector<urd::index<formalism::Object>> {};
-    auto grounder_context = formalism::WriteContext { builder, context, binding_empty };
+    auto grounder_context = formalism::GroundingContext { builder, context, binding_empty };
 
     const auto is_nullary = [](const auto& element) { return parameter_arity(element) == 0; };
 

@@ -166,7 +166,8 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
                                                                                              {
                                                                                                  ++calls;
                                                                                                  ar.field("predicate_name", value.get_relation().get_name());
-                                                                                                 ar.field("arguments", value.get_objects());
+                                                                                                 ar.field("arguments",
+                                                                                                          value.template resolve<tyr::formalism::Object>());
                                                                                                  ar.field("text", ygg::to_string(value));
                                                                                              });
     dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("predicates", "p");
@@ -277,7 +278,7 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("objects", "p"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("predicates", "o"), std::invalid_argument);
     auto repository = tyr::formalism::Repository();
-    dictionaries.serialize(make_atom(repository, "truck").get_row().get_objects()[0]);
+    dictionaries.serialize(make_atom(repository, "truck").get_row().template resolve<tyr::formalism::Object>()[0]);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("predicates", "p"), std::logic_error);
 }
 

@@ -24,7 +24,6 @@
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -36,23 +35,16 @@
 #include <concepts>
 #include <cstddef>
 #include <optional>
+#include <urd/elements/copy.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/copy.hpp>
 
 namespace tyr::planning
 {
-
-/// A program row's ground atom in `to` (the task's repository or a layer over it), interned there with its row.
-template<formalism::FactKind F>
-std::pair<formalism::AtomView<GroundTag, F>, bool> copy_ground_atom(formalism::PredicateRowView<F> row, formalism::Builder& builder, formalism::Repository& to)
-{
-    auto atom = formalism::checkout<formalism::Atom<GroundTag, F>>(builder);
-    urd::store(atom->row, urd::resolve(formalism::copy_row(row, to).first, to));
-    return to.insert(*atom, builder);
-}
 
 /// The ground atom of a row of `repository`'s, where it holds one.
 template<formalism::FactKind F>
@@ -96,13 +88,15 @@ void insert_unextended_state(const StateContext<LiftedTag>& state,
     {
         const auto atom = urd::resolve(atom_index, repository);
         if (inputs.reads(atom.get_predicate()))
-            datalog::insert(fact_sets, formalism::copy_row(atom.get_row(), workspace_repository).first);
+            datalog::insert(fact_sets, urd::copy(atom.get_row(), workspace_repository, workspace.datalog_builder));
     }
     for (const auto& [fterm_index, value] : state.numeric_storage().fterm_values())
     {
         const auto fterm = urd::resolve(fterm_index, repository);
         if (inputs.reads(fterm.get_function()))
-            datalog::insert(fact_sets, formalism::copy_row(fterm.get_row(), workspace_repository).first, ygg::ClosedInterval<ygg::float_t>(value, value));
+            datalog::insert(fact_sets,
+                            urd::copy(fterm.get_row(), workspace_repository, workspace.datalog_builder),
+                            ygg::ClosedInterval<ygg::float_t>(value, value));
     }
 }
 
@@ -120,7 +114,7 @@ void insert_extended_state(const StateContext<LiftedTag>& state,
     {
         const auto atom = urd::resolve(atom_index, repository);
         if (inputs.reads(atom.get_predicate()))
-            datalog::insert(fact_sets, formalism::copy_row(atom.get_row(), workspace_repository).first);
+            datalog::insert(fact_sets, urd::copy(atom.get_row(), workspace_repository, workspace.datalog_builder));
     }
 }
 
@@ -140,7 +134,11 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateReposi
             derived_bindings.push_back(binding);
 
     for (const auto binding : derived_bindings)
-        state.set(copy_ground_atom(binding, workspace.planning_builder, repository).first);
+    {
+        auto atom = formalism::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(workspace.planning_builder);
+        urd::store(atom->row, urd::copy(binding, repository, workspace.planning_builder));
+        state.set(repository.insert(*atom, workspace.planning_builder).first);
+    }
 }
 
 }

@@ -80,7 +80,7 @@ std::multiset<std::string> variable_texts(const planning::GroundTaskInstantiatio
         for (const auto atom : variable.get_atoms())
         {
             auto objects = urd::Store<urd::sequence<std::string>> {};
-            for (const auto object : atom.get_row().get_objects())
+            for (const auto object : atom.get_row().template resolve<tyr::formalism::Object>())
                 objects.push_back(fmt::format("{}", object.get_name()));
             names.push_back(fmt::format("{}({})", atom.get_predicate().get_name(), fmt::join(objects, ",")));
         }

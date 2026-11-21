@@ -61,8 +61,10 @@ struct FakeRow
 {
     urd::Store<urd::sequence<FakeObjectView>> objects;
 
-    /// Its objects, as a row's view gives them.
-    [[nodiscard]] const auto& get_objects() const noexcept { return objects; }
+    /// Its objects, as a row's view resolves them (resolve<Object>()).
+    template<typename T>
+    [[nodiscard]] const auto& resolve() const noexcept
+    { return objects; }
 };
 
 struct FakeGroundAtomView

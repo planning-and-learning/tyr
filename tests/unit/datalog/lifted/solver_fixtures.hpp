@@ -29,7 +29,6 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
@@ -228,7 +227,7 @@ void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<F>& fact_sets,
         auto bindings = urd::Store<urd::sequence<AtomBinding>> {};
         for (const auto binding : tyr::datalog::rows(fact_sets, set))
         {
-            const auto objects = binding.get_objects();
+            const auto objects = binding.template resolve<tyr::formalism::Object>();
             bindings.push_back(AtomBinding { ygg::to_string(objects | std::views::transform([](auto object) { return object.get_name(); })) });
         }
         std::ranges::sort(bindings, {}, &AtomBinding::objects);

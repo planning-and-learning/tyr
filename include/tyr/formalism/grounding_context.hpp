@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_WRITE_CONTEXT_HPP_
-#define TYR_FORMALISM_WRITE_CONTEXT_HPP_
+#ifndef TYR_FORMALISM_GROUNDING_CONTEXT_HPP_
+#define TYR_FORMALISM_GROUNDING_CONTEXT_HPP_
 
 #include "tyr/formalism/declarations.hpp"
 
@@ -27,15 +27,15 @@
 namespace tyr::formalism
 {
 
-/// Where grounding, copying or merging writes: a builder B and a destination repository R. Grounding also reads the
-/// objects bound to the parameters (binding()). The objects are the caller's and outlive the context.
+/// Where grounding writes: a builder B and a destination repository R, and the objects bound to the parameters
+/// (binding()). The objects are the caller's and outlive the context. (Copying is urd::copy.)
 template<typename B, typename R>
-class WriteContext
+class GroundingContext
 {
 public:
-    WriteContext(B& builder, R& destination) noexcept : m_builder(&builder), m_destination(&destination) {}
+    GroundingContext(B& builder, R& destination) noexcept : m_builder(&builder), m_destination(&destination) {}
 
-    WriteContext(B& builder, R& destination, urd::flat_vector<urd::index<Object>>& binding) noexcept :
+    GroundingContext(B& builder, R& destination, urd::flat_vector<urd::index<Object>>& binding) noexcept :
         m_builder(&builder),
         m_destination(&destination),
         m_binding(&binding)
@@ -48,7 +48,7 @@ public:
 
     [[nodiscard]] urd::flat_vector<urd::index<Object>>& binding() const noexcept
     {
-        assert(m_binding && "WriteContext: grounding needs a binding.");
+        assert(m_binding && "GroundingContext: grounding needs a binding.");
         return *m_binding;
     }
 

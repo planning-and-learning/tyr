@@ -453,7 +453,8 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
     auto& scratch_binding = *evaluator.scratch_action_binding;
 
     const auto state_context = node.state();
-    auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.scratch_objects };
+    auto grounder_context =
+        formalism::GroundingContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.scratch_objects };
     const auto& mapping = definition->action_program.get_predicate_to_action_mapping();
 
     for (const auto rule : program.get_rules())
@@ -505,7 +506,8 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node,
     for (const auto value : binding.values)
         evaluator.workspace.binding.push_back(urd::index<formalism::Object>(static_cast<std::uint32_t>(value)));
 
-    auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
+    auto grounder_context =
+        formalism::GroundingContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = node.state();
     const auto action = action_of(binding, *definition->task->get_repository());
 
@@ -965,7 +967,7 @@ ActionBindingStatus SuccessorGenerator<LiftedTag>::Impl::check_action_binding(co
         binding.values.push_back(object.value);
         evaluator.checked_objects.push_back(object);
     }
-    auto grounder = formalism::WriteContext { workspace.planning_builder, *task->get_repository(), evaluator.checked_objects };
+    auto grounder = formalism::GroundingContext { workspace.planning_builder, *task->get_repository(), evaluator.checked_objects };
     const auto state = node.state();
     if (!is_applicable(action.get_condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))
         return ActionBindingStatus::INAPPLICABLE;
@@ -1124,9 +1126,9 @@ formalism::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fo
     for (const auto object : binding.get<urd::index<formalism::Object>>())
         m_impl->evaluator.workspace.binding.push_back(object);
 
-    auto grounder_context = formalism::WriteContext { m_impl->evaluator.workspace.planning_builder,
-                                                      *m_impl->definition->task->get_repository(),
-                                                      m_impl->evaluator.workspace.binding };
+    auto grounder_context = formalism::GroundingContext { m_impl->evaluator.workspace.planning_builder,
+                                                          *m_impl->definition->task->get_repository(),
+                                                          m_impl->evaluator.workspace.binding };
     // Without a state, an effect has every completed binding that the static consistency graph of its rule allows.
     const auto action = binding.get_relation();
     const auto objects =

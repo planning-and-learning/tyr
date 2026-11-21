@@ -66,7 +66,7 @@ urd::flat_string create_triggered_name(formalism::ActionView<LiftedTag> action, 
 { return urd::flat_string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.index().value) }; }
 
 std::pair<formalism::PredicateView<formalism::DerivedTag>, bool>
-create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
 
@@ -77,7 +77,7 @@ create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalis
 }
 
 std::pair<formalism::AtomView<LiftedTag, formalism::DerivedTag>, bool>
-create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto atom = formalism::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(context.builder());
 
@@ -96,7 +96,7 @@ create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::Wr
 }
 
 std::pair<formalism::PredicateView<formalism::DerivedTag>, bool>
-create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
 
@@ -107,7 +107,7 @@ create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism:
 }
 
 std::pair<formalism::AtomView<LiftedTag, formalism::DerivedTag>, bool>
-create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto atom = formalism::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(context.builder());
 
@@ -163,7 +163,7 @@ urd::flat_string create_applicability_name(formalism::AxiomView<LiftedTag> axiom
 std::optional<formalism::LiteralView<GroundTag, formalism::FluentTag>>
 create_fact_literal(formalism::FDRFactView<formalism::FluentTag> fact,
                     bool polarity,
-                    formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+                    formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     const auto atom = fact.get_atom();
     if (!atom.has_value())

@@ -106,7 +106,7 @@ public:
         RuleExecutionContext<AP, TP, CP>* m_rctx;
         LiftedRuleWorkerT* m_ws_worker;
 
-        formalism::WriteContext<formalism::Builder, formalism::Repository> m_ground_context;
+        formalism::GroundingContext<formalism::Builder, formalism::Repository> m_ground_context;
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<AP, TP, CP>& rctx, LiftedRuleWorkerT& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}

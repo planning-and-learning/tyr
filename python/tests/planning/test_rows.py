@@ -1763,7 +1763,7 @@ def _check_action_binding_api_ground(task: planning.ground.Task) -> None:
 
     assert type(binding) is formalism.RowActionLifted
     assert successor_generator.ground_action(binding) == ground_action
-    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().get_objects()))
+    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().resolve_objects()))
     assert binding_successor == ground_action_successor
     packed_binding_successor = successor_generator.get_packed_successor_node(
         start_node, binding, state_repository, axiom_evaluator
@@ -1800,7 +1800,7 @@ def _check_action_binding_api_lifted(task: planning.lifted.Task) -> None:
 
     assert type(binding) is formalism.RowActionLifted
     assert successor_generator.ground_action(binding) == ground_action
-    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().get_objects()))
+    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().resolve_objects()))
     assert binding_successor == ground_action_successor
     packed_binding_successor = successor_generator.get_packed_successor_node(
         start_node, binding, state_repository, axiom_evaluator

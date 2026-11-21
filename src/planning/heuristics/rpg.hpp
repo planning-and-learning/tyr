@@ -107,8 +107,8 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         else
             return *workspace.workspace_repository;
     }();
-    auto write_context = formalism::WriteContext { workspace.datalog_builder, destination };
-    auto condition = formalism::checkout<formalism::RuleBody<GroundTag>>(write_context.builder());
+    auto grounding_context = formalism::GroundingContext { workspace.datalog_builder, destination };
+    auto condition = formalism::checkout<formalism::RuleBody<GroundTag>>(grounding_context.builder());
 
     for (const auto fact : source_goal.template get_facts<formalism::PositiveTag>())
     {
@@ -116,14 +116,14 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         if (!atom)
             continue;
 
-        auto literal = formalism::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(write_context.builder());
+        auto literal = formalism::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(grounding_context.builder());
         // The goal's atom, the task's: the program is a layer over the task's repository.
         urd::store(literal->atom, *atom);
         literal->polarity = true;
-        urd::append(condition->fluent_literals, write_context.destination().insert(*literal, write_context.builder()).first);
+        urd::append(condition->fluent_literals, grounding_context.destination().insert(*literal, grounding_context.builder()).first);
     }
 
-    workspace.tp.set_goals(write_context.destination().insert(*condition, write_context.builder()).first);
+    workspace.tp.set_goals(grounding_context.destination().insert(*condition, grounding_context.builder()).first);
 }
 
 template<typename Derived,

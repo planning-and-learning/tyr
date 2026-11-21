@@ -19,8 +19,8 @@
 #define TYR_SRC_PLANNING_PROGRAMS_COMMON_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/write_context.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <cstddef>
@@ -41,13 +41,13 @@ extern urd::flat_string create_applicability_name(formalism::AxiomView<LiftedTag
 /// The derived predicate that holds where the action (the axiom) is applicable, and its atom over the action's (the
 /// axiom's) parameters, interned into the context's repository.
 std::pair<formalism::PredicateView<formalism::DerivedTag>, bool>
-create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context);
 std::pair<formalism::AtomView<LiftedTag, formalism::DerivedTag>, bool>
-create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context);
 std::pair<formalism::PredicateView<formalism::DerivedTag>, bool>
-create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context);
 std::pair<formalism::AtomView<LiftedTag, formalism::DerivedTag>, bool>
-create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context);
 
 /// A layer over `parent`, which stays frozen from here on: the layer's deleter holds the parent, so each layer keeps
 /// its chain alive (domain, task, program, transform layers, per-worker workspace).
@@ -64,7 +64,7 @@ void translate_task_symbols(formalism::TaskView<Kind> task, urd::builder<formali
 std::optional<formalism::LiteralView<GroundTag, formalism::FluentTag>>
 create_fact_literal(formalism::FDRFactView<formalism::FluentTag> fact,
                     bool polarity,
-                    formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+                    formalism::GroundingContext<formalism::Builder, formalism::Repository>& context);
 
 /// The RPG heuristics charge each action rule a unit cost.
 inline void require_unit_cost(CostMode cost_mode)

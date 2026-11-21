@@ -69,7 +69,7 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
                            formalism::Repository& repository)
 {
     auto builder = formalism::Builder();
-    auto context = formalism::WriteContext(builder, repository);
+    auto context = formalism::GroundingContext(builder, repository);
     auto program = formalism::checkout<formalism::Program<LiftedTag>>(builder);
 
     translate_task_symbols(task, *program);
@@ -161,7 +161,7 @@ auto create_action_datalog_program(const formalism::PlanningTask<LiftedTag>& pla
     const auto program = result.program;
     auto repository = result.repository;
     auto builder = formalism::Builder {};
-    auto context = formalism::WriteContext { builder, *repository };
+    auto context = formalism::GroundingContext { builder, *repository };
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
     auto rule_of = urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, urd::index<formalism::Rule<LiftedTag>>>> {};

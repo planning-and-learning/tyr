@@ -33,7 +33,7 @@ template<>
 class RuleInstance<LiftedTag>
 {
 public:
-    RuleInstance(formalism::RuleView<LiftedTag> rule, formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder) :
+    RuleInstance(formalism::RuleView<LiftedTag> rule, formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder) :
         m_rule(rule),
         m_grounder(&grounder)
     {
@@ -62,7 +62,7 @@ public:
 
 private:
     formalism::RuleView<LiftedTag> m_rule;
-    formalism::WriteContext<formalism::Builder, formalism::Repository>* m_grounder;
+    formalism::GroundingContext<formalism::Builder, formalism::Repository>* m_grounder;
     mutable std::optional<formalism::RuleRowView> m_witness_key;
 };
 

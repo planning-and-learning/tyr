@@ -34,6 +34,7 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -43,7 +44,6 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/write_context.hpp"
 
 #include <yggdrasil/formalism/row_view.hpp>
 
@@ -55,41 +55,41 @@ namespace tyr::formalism
  */
 
 /// A lifted rule body as a ground rule's body.
-std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, WriteContext<Builder, Repository>& context);
+std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, GroundingContext<Builder, Repository>& context);
 
 /**
  * ground_binding
  */
 
 template<FactKind F>
-std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
+std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
 
 /// The key of the atom's row, interned as ground_binding does, without its view (which finds the layer that owns the row).
 template<FactKind F>
-std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
+std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
 
 /// Grounds the binding without interning the enclosing GroundFunctionTerm symbol.
 template<FactKind F>
-std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
+std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
 
-std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context);
+std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, GroundingContext<Builder, Repository>& context);
 
 /**
  * try_ground
  */
 
 template<FactKind F>
-std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
+std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
 
 template<FactKind F>
-std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
+std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
 
 /**
  * ground
  */
 
 /// Substitute terms into retained row values (objects as their canonical Values) without interning a binding.
-inline void ground(TermListView terms, const WriteContext<Builder, Repository>& context, std::vector<ygg::Value>& values)
+inline void ground(TermListView terms, const GroundingContext<Builder, Repository>& context, std::vector<ygg::Value>& values)
 {
     values.clear();
     for (const auto term : terms)
@@ -106,7 +106,7 @@ inline void ground(TermListView terms, const WriteContext<Builder, Repository>& 
             term);
 }
 
-inline std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, WriteContext<Builder, Repository>& context)
+inline std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto conj_cond = checkout<RuleBody<GroundTag>>(context.builder());
@@ -130,7 +130,7 @@ inline std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> e
  */
 
 template<FactKind F>
-std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
 
@@ -142,17 +142,17 @@ std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element,
 }
 
 template<FactKind F>
-std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
     const auto [key, created] = ground_row(element, context);
     return { context.destination().view(key), created };
 }
 
 template<FactKind F>
-std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 { return ground(element.get_terms(), element.get_function(), context); }
 
-inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
+inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Rule<LiftedTag>>>(context.builder());
 
@@ -168,7 +168,7 @@ inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, 
  */
 
 template<FactKind F>
-std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Function<F>>>(context.builder());
 
@@ -179,7 +179,7 @@ std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag,
 }
 
 template<FactKind F>
-std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
 
@@ -195,27 +195,29 @@ std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> ele
 namespace tyr::formalism
 {
 
-extern template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
-extern template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element,
+                                                                            GroundingContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element,
+                                                                            GroundingContext<Builder, Repository>& context);
 extern template std::pair<PredicateRowView<DerivedTag>, bool> ground_binding(AtomView<LiftedTag, DerivedTag> element,
-                                                                             WriteContext<Builder, Repository>& context);
+                                                                             GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
-                                                                           WriteContext<Builder, Repository>& context);
+                                                                           GroundingContext<Builder, Repository>& context);
 extern template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
-                                                                           WriteContext<Builder, Repository>& context);
+                                                                           GroundingContext<Builder, Repository>& context);
 
 extern template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
-                                                                             WriteContext<Builder, Repository>& context);
+                                                                             GroundingContext<Builder, Repository>& context);
 extern template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
-                                                                             WriteContext<Builder, Repository>& context);
+                                                                             GroundingContext<Builder, Repository>& context);
 
 extern template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element,
-                                                                              WriteContext<Builder, Repository>& context);
+                                                                              GroundingContext<Builder, Repository>& context);
 extern template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element,
-                                                                              WriteContext<Builder, Repository>& context);
+                                                                              GroundingContext<Builder, Repository>& context);
 extern template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element,
-                                                                               WriteContext<Builder, Repository>& context);
+                                                                               GroundingContext<Builder, Repository>& context);
 
 }
 

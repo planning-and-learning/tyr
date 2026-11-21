@@ -719,7 +719,7 @@ formalism::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_bindi
         return binding;
     const auto action = binding.get_relation();
     m_impl->get_schema_match_tree(action);
-    const auto objects = binding.get_objects();
+    const auto objects = binding.template resolve<formalism::Object>();
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
     if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(repository, value); }))

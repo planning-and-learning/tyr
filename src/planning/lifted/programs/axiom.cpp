@@ -78,7 +78,7 @@ namespace tyr::planning
 namespace
 {
 /// The rule of an axiom: its body the axiom's body over the axiom's variables (the task's literals), its head the axiom's.
-auto create_axiom_rule(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+auto create_axiom_rule(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
@@ -104,7 +104,7 @@ auto create_axiom_rule(formalism::AxiomView<LiftedTag> axiom, formalism::WriteCo
 auto create_axiom_program(formalism::TaskView<LiftedTag> task, formalism::Repository& repository)
 {
     auto builder = formalism::Builder();
-    auto context = formalism::WriteContext(builder, repository);
+    auto context = formalism::GroundingContext(builder, repository);
     auto program = formalism::checkout<formalism::Program<LiftedTag>>(builder);
 
     translate_task_symbols(task, *program);

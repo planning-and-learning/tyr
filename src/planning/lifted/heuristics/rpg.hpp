@@ -58,7 +58,10 @@ struct RPGPolicy<LiftedTag>
     translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::PredicateRowView<formalism::FluentTag> head)
     {
         // Programs add no fluent predicates: the head's predicate is the task's.
-        return copy_ground_atom(head, workspace.planning_builder, *definition.task->get_repository()).first;
+        auto& repository = *definition.task->get_repository();
+        auto atom = formalism::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(workspace.planning_builder);
+        urd::store(atom->row, urd::copy(head, repository, workspace.planning_builder));
+        return repository.insert(*atom, workspace.planning_builder).first;
     }
 
     template<typename Workspace>
@@ -91,7 +94,7 @@ struct RPGPolicy<LiftedTag>
         if (it == mapping.end())
             return;
 
-        auto grounder_context = formalism::WriteContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
+        auto grounder_context = formalism::GroundingContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
         auto recovered = false;
         const auto& origins = definition.rpg_program.get_rule_splitting().origins;
@@ -148,7 +151,7 @@ struct RPGPolicy<LiftedTag>
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
         for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
             binding.push_back(object);
-        auto grounder_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
+        auto grounder_context = formalism::GroundingContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
         const auto instance = datalog::RuleInstance<LiftedTag>(const_rule_workspace.get_rule(), grounder_context);
         std::forward<Callback>(callback)(instance);
     }

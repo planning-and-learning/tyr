@@ -111,7 +111,7 @@ void apply_lifted_effect(formalism::ConditionalEffectView<LiftedTag> cond_effect
                          urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                          StateContext<LiftedTag>& state_context,
                          const ApplicabilityContext& applicability_context,
-                         formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder_context,
+                         formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder_context,
                          formalism::FDRContext& fdr_context,
                          urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
                          urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
@@ -256,7 +256,7 @@ template ygg::float_t ActionExecutor::apply_action_unregistered(const StateConte
 
 bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<LiftedTag> action,
                                             const StateContext<LiftedTag>& state_context,
-                                            formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                                            formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
                                             const formalism::FDRContext& fdr,
                                             ForEachEffectBinding for_each_effect_binding)
 {
@@ -275,7 +275,7 @@ bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<LiftedTag> act
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                                        formalism::ActionView<LiftedTag> action,
-                                                       formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                                                       formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
                                                        formalism::FDRContext& fdr,
                                                        ForEachEffectBinding for_each_effect_binding,
                                                        urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,

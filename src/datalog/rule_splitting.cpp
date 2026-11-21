@@ -80,7 +80,7 @@ public:
 
     Splitter(urd::builder<formalism::Program<LiftedTag>, formalism::Repository>& program,
              RuleSplitting& splitting,
-             formalism::WriteContext<formalism::Builder, formalism::Repository>& context,
+             formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
              const TaggedFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_splitting(&splitting),
@@ -402,7 +402,7 @@ private:
 
     urd::builder<formalism::Program<LiftedTag>, formalism::Repository>* m_program;
     RuleSplitting* m_splitting;
-    formalism::WriteContext<formalism::Builder, formalism::Repository>* m_context;
+    formalism::GroundingContext<formalism::Builder, formalism::Repository>* m_context;
     const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
     /// The variables of the rule being split: the parameters of the atoms built for it before they are renumbered.
@@ -415,7 +415,7 @@ private:
 formalism::ProgramView<LiftedTag> split_rules(formalism::ProgramView<LiftedTag> program, formalism::Repository& repository, RuleSplitting& splitting)
 {
     auto builder = formalism::Builder {};
-    auto context = formalism::WriteContext { builder, repository };
+    auto context = formalism::GroundingContext { builder, repository };
     auto result = formalism::checkout<formalism::Program<LiftedTag>>(builder);
     formalism::list_except_rules(program, *result);
     // The static predicates come first in the repository, as the fact sets require.

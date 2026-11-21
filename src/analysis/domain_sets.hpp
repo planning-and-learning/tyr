@@ -142,7 +142,7 @@ void insert_into_predicate_domain_sets(formalism::AtomListView<GroundTag, T> ato
         auto& variable_domains = predicate_domain_sets.at(predicate.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : atom.get_row().get_objects())
+        for (const auto object : atom.get_row().template resolve<formalism::Object>())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -169,7 +169,7 @@ void insert_into_function_domain_sets(formalism::FunctionTermValueListView<Groun
         auto& variable_domains = function_domain_sets.at(function.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : fterm.get_row().get_objects())
+        for (const auto object : fterm.get_row().template resolve<formalism::Object>())
             variable_domains[pos++].objects.insert(object.index());
     }
 }

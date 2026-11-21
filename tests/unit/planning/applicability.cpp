@@ -4,13 +4,12 @@
 #include "planning/parser.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/write_context.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
@@ -38,12 +37,14 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <urd/elements/copy.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/copy.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 template<typename Kind, typename State>
@@ -102,7 +103,7 @@ bool has_marked_object(const tyr::planning::StateView<Kind>& state, std::string_
                                {
                                    const auto atom = fact.get_atom();
                                    return atom && atom->get_predicate().get_name().str() == "marked"
-                                          && atom->get_row().get_objects()[0].get_name().str() == object_name;
+                                          && atom->get_row().template resolve<tyr::formalism::Object>()[0].get_name().str() == object_name;
                                });
 }
 
@@ -307,15 +308,14 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
                                                                                "static-copy-problem.pddl"));
     auto destination = std::make_shared<tyr::formalism::Repository>(source->get_domain().get_repository().get());
     auto builder = tyr::formalism::Builder {};
-    auto context = tyr::formalism::WriteContext { builder, *destination };
     ASSERT_EQ(source->get_task().get_atoms<formalism::StaticTag>().size(), 1);
     ASSERT_EQ(source->get_task().get_goal().get_literals<formalism::StaticTag>().size(), 1);
     const auto source_present = source->get_task().get_atoms<formalism::StaticTag>()[0];
     const auto source_absent = source->get_task().get_goal().get_literals<formalism::StaticTag>()[0];
 
     // Reverse insertion order so source and destination atom indices differ.
-    const auto absent = tyr::formalism::copy(source_absent, context).first;
-    const auto present = tyr::formalism::copy(source_present, context).first;
+    const auto absent = destination->view(urd::copy(source_absent, *destination, builder));
+    const auto present = destination->view(urd::copy(source_present, *destination, builder));
     ASSERT_NE(present.index(), source_present.index());
     auto atoms = urd::flat_vector<urd::index<tyr::formalism::Atom<GroundTag, formalism::StaticTag>>> { present.index() };
     auto fterm_values = urd::flat_vector<urd::index<tyr::formalism::FunctionTermValue<GroundTag, formalism::StaticTag>>> {};

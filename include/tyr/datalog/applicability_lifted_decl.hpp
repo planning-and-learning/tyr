@@ -20,7 +20,7 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/write_context.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 
 #include <memory>
 
@@ -29,7 +29,7 @@ namespace tyr::datalog
 class ApplicabilityContext
 {
 public:
-    ApplicabilityContext(const FactSets& fact_sets, formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder) :
+    ApplicabilityContext(const FactSets& fact_sets, formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder) :
         m_fact_sets(&fact_sets),
         m_grounder(std::addressof(grounder))
     {
@@ -37,11 +37,11 @@ public:
 
     [[nodiscard]] const FactSets& fact_sets() const noexcept { return *m_fact_sets; }
 
-    [[nodiscard]] formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder() const noexcept { return *m_grounder; }
+    [[nodiscard]] formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder() const noexcept { return *m_grounder; }
 
 private:
     const FactSets* m_fact_sets;
-    formalism::WriteContext<formalism::Builder, formalism::Repository>* m_grounder;
+    formalism::GroundingContext<formalism::Builder, formalism::Repository>* m_grounder;
 };
 }
 

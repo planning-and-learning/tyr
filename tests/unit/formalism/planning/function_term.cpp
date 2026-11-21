@@ -1,4 +1,3 @@
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/parameters_data.hpp"
@@ -11,6 +10,8 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+#include <urd/elements/copy.hpp>
+#include <yggdrasil/formalism/copy.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_function_term
@@ -58,7 +59,7 @@ concept GroundFunctionTermContract = std::constructible_from<urd::index<Entity>,
                                             view.index();
                                             view.get_function();
                                             view.get_row();
-                                            view.get_row().get_objects();
+                                            view.get_row().template resolve<tyr::formalism::Object>();
                                             view.get_row().get_relation().index();
                                             { view == view } -> std::same_as<bool>;
                                             { view < view } -> std::same_as<bool>;
@@ -97,7 +98,7 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     ASSERT_TRUE(ground_function_term_created);
 
     EXPECT_EQ(ground_function_term.get_function().index(), function.index());
-    const auto objects = ground_function_term.get_row().get_objects();
+    const auto objects = ground_function_term.get_row().template resolve<tyr::formalism::Object>();
     ASSERT_EQ(objects.size(), 1);
     EXPECT_EQ(objects[0].index(), object.index());
     EXPECT_EQ(fmt::format("{}", binding), "(fuel truck)");
@@ -127,12 +128,10 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     term_data.terms.push_back(tyr::formalism::Term(tyr::formalism::ParameterIndex(0)));
     const auto term = tyr::formalism::insert(source, term_data).first;
     auto builder = tyr::formalism::Builder {};
-    auto context = tyr::formalism::WriteContext { builder, destination };
-    const auto [copied, inserted] = tyr::formalism::copy(term, context);
-    EXPECT_TRUE(inserted);
+    const auto copied = destination.view(urd::copy(term, destination, builder));
     EXPECT_EQ(copied.get_function(), target_function);
     EXPECT_EQ(urd::stored<tyr::formalism::Term>(copied.get_terms()[0]), urd::stored<tyr::formalism::Term>(term.get_terms()[0]));
-    EXPECT_FALSE(tyr::formalism::copy(term, context).second);
+    EXPECT_EQ(urd::copy(term, destination, builder), copied.index());  // interned once
 }
 
 }  // namespace tyr::tests::planning_function_term

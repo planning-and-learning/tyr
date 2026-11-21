@@ -68,12 +68,12 @@ namespace
 struct GroundProgramBuildContext
 {
     formalism::Builder builder;
-    formalism::WriteContext<formalism::Builder, formalism::Repository> write_context;
+    formalism::GroundingContext<formalism::Builder, formalism::Repository> grounding_context;
     urd::handle<urd::builder<formalism::Program<GroundTag>, formalism::Repository>> program;
 
     explicit GroundProgramBuildContext(formalism::Repository& repository) :
         builder(),
-        write_context(builder, repository),
+        grounding_context(builder, repository),
         program(formalism::checkout<formalism::Program<GroundTag>>(builder))
     {
     }
@@ -84,7 +84,7 @@ void fill_delete_free_condition(formalism::ConjunctiveConditionView<GroundTag> c
                                 urd::builder<formalism::RuleBody<GroundTag>, formalism::Repository>& result)
 {
     for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
-        if (const auto literal = create_fact_literal(fact, true, context.write_context))
+        if (const auto literal = create_fact_literal(fact, true, context.grounding_context))
             urd::append(result.fluent_literals, *literal);
 }
 
@@ -93,7 +93,7 @@ formalism::RuleBodyView<GroundTag> create_delete_free_condition(formalism::Conju
     auto result = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(condition, context, *result);
 
-    return context.write_context.destination().insert(*result, context.builder).first;
+    return context.grounding_context.destination().insert(*result, context.builder).first;
 }
 
 /// The body of a conditional effect's rule: the action's precondition and the effect's condition, delete-free.
@@ -104,7 +104,7 @@ formalism::RuleBodyView<GroundTag> create_delete_free_effect_condition(formalism
     auto result = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(action_condition, context, *result);
     fill_delete_free_condition(effect_condition, context, *result);
-    return context.write_context.destination().insert(*result, context.builder).first;
+    return context.grounding_context.destination().insert(*result, context.builder).first;
 }
 
 /// Identical rules are one rule: the second is not inserted.
@@ -116,9 +116,9 @@ create_ground_atom_rule(formalism::RuleBodyView<GroundTag> body,
 {
     auto rule = formalism::checkout<formalism::Rule<GroundTag>>(context.builder);
     urd::store(rule->body, body);
-    urd::build_member(rule->fluent_heads, heads, context.write_context.destination());
+    urd::build_member(rule->fluent_heads, heads, context.grounding_context.destination());
     rule->cost = cost;
-    return context.write_context.destination().insert(*rule, context.builder);
+    return context.grounding_context.destination().insert(*rule, context.builder);
 }
 
 void translate_action_to_delete_free_rules(formalism::ActionView<GroundTag> action,

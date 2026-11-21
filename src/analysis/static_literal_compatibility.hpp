@@ -227,7 +227,7 @@ public:
                 assigned.clear();
                 auto matches = true;
                 auto position = size_t { 0 };
-                for (const auto object : atom.get_row().get_objects())
+                for (const auto object : atom.get_row().template resolve<formalism::Object>())
                 {
                     if (position == terms.size())
                     {

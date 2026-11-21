@@ -18,9 +18,9 @@
 #ifndef TYR_FORMALISM_PLANNING_INTERNING_HPP_
 #define TYR_FORMALISM_PLANNING_INTERNING_HPP_
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/write_context.hpp"
 
 #include <yggdrasil/formalism/interning.hpp>
 
@@ -41,7 +41,7 @@ void prepare_for_insert(Repository&, urd::data<T>& data)
 /// ground repository holds every schema it grounds there: in the domain layer it shares with the lifted task, or, for the
 /// task's own derived predicates and axioms, as the copies instantiate_ground_task makes of them, in order.
 template<typename T>
-urd::index_view<T, Repository> schema_in_destination(urd::index_view<T, Repository> schema, WriteContext<Builder, Repository>& context)
+urd::index_view<T, Repository> schema_in_destination(urd::index_view<T, Repository> schema, GroundingContext<Builder, Repository>& context)
 { return context.destination().view(schema.index()); }
 
 }

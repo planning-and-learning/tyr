@@ -127,7 +127,7 @@ concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::ui
                                     view.index();
                                     view.get_predicate();
                                     view.get_row();
-                                    view.get_row().get_objects();
+                                    view.get_row().template resolve<tyr::formalism::Object>();
                                     view.get_row().get_relation().index();
                                     { view == view } -> std::same_as<bool>;
                                     { view < view } -> std::same_as<bool>;
@@ -167,7 +167,7 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(ground_atom.get_predicate().index(), predicate.index());
-    const auto objects = ground_atom.get_row().get_objects();
+    const auto objects = ground_atom.get_row().template resolve<tyr::formalism::Object>();
     ASSERT_EQ(objects.size(), 2);
     EXPECT_EQ(objects[0].index(), object.index());
     EXPECT_EQ(objects[1].index(), object.index());

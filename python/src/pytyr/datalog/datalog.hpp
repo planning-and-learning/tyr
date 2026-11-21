@@ -51,12 +51,14 @@
 #include <tyr/datalog/static_rule_filter.hpp>
 #include <tyr/datalog/statistics/program.hpp>
 #include <tyr/datalog/statistics/rule.hpp>
+#include <urd/elements/copy.hpp>
 #include <urd/python/owner.hpp>
 #include <urd/python/sequences/sequence.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/copy.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::datalog
@@ -275,34 +277,24 @@ void bind_workspace(nb::module_& m, const std::string& name)
             .def(
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom)
-                {
-                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(atom, context).first.get_row().index());
-                },
+                { return tyr::datalog::insert(self.facts.fact_sets, urd::copy(atom.get_row(), *self.workspace_repository, self.datalog_builder)); },
                 "atom"_a)
             .def(
                 "insert_fluent_binding",
                 [](Workspace& self, PredicateBinding binding)
-                {
-                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index());
-                },
+                { return tyr::datalog::insert(self.facts.fact_sets, urd::copy(binding, *self.workspace_repository, self.datalog_builder)); },
                 "binding"_a)
             .def(
                 "insert_derived_binding",
                 [](Workspace& self, formalism::PredicateRowView<formalism::DerivedTag> binding)
-                {
-                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index());
-                },
+                { return tyr::datalog::insert(self.facts.fact_sets, urd::copy(binding, *self.workspace_repository, self.datalog_builder)); },
                 "binding"_a)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
-                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
                     return tyr::datalog::insert(self.facts.fact_sets.template get<formalism::FluentTag>(),
-                                                formalism::copy(binding, context).first.index(),
+                                                urd::copy(binding, *self.workspace_repository, self.datalog_builder),
                                                 interval);
                 },
                 "binding"_a,

@@ -142,7 +142,7 @@ def _fact_atoms(facts: list[FDRFactFluentBorrowed]) -> list[AtomGroundFluent]:
 
 
 def _atom_text(atom: AtomGroundFluent) -> str:
-    return f"{atom.get_predicate().get_name()}({','.join(str(o.get_name()) for o in atom.get_row().get_objects())})"
+    return f"{atom.get_predicate().get_name()}({','.join(str(o.get_name()) for o in atom.get_row().resolve_objects())})"
 
 
 def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
@@ -170,7 +170,7 @@ def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
         assert group.invariant is not None
         assert group.invariant in invariants
         assert len(group.objects) == group.invariant.get_num_rigid_variables()
-        assert all(set(group.objects) <= set(atom.get_row().get_objects()) for atom in group.atoms)
+        assert all(set(group.objects) <= set(atom.get_row().resolve_objects()) for atom in group.atoms)
 
 
 def test_variables_trace_back_to_their_invariant(ferry: Ferry) -> None:

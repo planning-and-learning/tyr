@@ -413,7 +413,7 @@ def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
     this = weakref.proxy(holder)
 
     def project(atom: formalism.AtomGroundStatic) -> dict[str, object]:
-        return {"objects": [serialize(this.dictionaries, item) for item in atom.get_row().get_objects()]}
+        return {"objects": [serialize(this.dictionaries, item) for item in atom.get_row().resolve_objects()]}
 
     register_table(dictionaries, formalism.AtomGroundStatic, "atoms", "a", project=project)
     register_table(dictionaries, formalism.Object, "objects", "o")

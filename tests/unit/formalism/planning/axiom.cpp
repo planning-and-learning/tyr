@@ -63,7 +63,7 @@ static_assert(requires(const GroundAxiomView& view) {
     view.index();
     view.get_axiom();
     view.get_row();
-    view.get_row().get_objects();
+    view.get_row().template resolve<tyr::formalism::Object>();
     view.get_row().get_relation().index();
     view.get_body();
     view.get_head();

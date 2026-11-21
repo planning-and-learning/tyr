@@ -84,7 +84,7 @@ void append_from_condition(formalism::ConjunctiveConditionView<LiftedTag> cond,
             urd::append(conj_cond.derived_literals, literal);
 };
 
-auto create_applicability_literal(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+auto create_applicability_literal(formalism::ActionView<LiftedTag> action, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto literal = formalism::checkout<formalism::Literal<LiftedTag, formalism::DerivedTag>>(context.builder());
 
@@ -94,7 +94,7 @@ auto create_applicability_literal(formalism::ActionView<LiftedTag> action, forma
     return context.destination().insert(*literal, context.builder());
 }
 
-auto create_applicability_rule(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+auto create_applicability_rule(formalism::ActionView<LiftedTag> action, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
 
@@ -114,7 +114,7 @@ auto create_applicability_rule(formalism::ActionView<LiftedTag> action, formalis
     return context.destination().insert(*rule, context.builder());
 }
 
-auto create_applicability_literal(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+auto create_applicability_literal(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto literal = formalism::checkout<formalism::Literal<LiftedTag, formalism::DerivedTag>>(context.builder());
 
@@ -124,7 +124,7 @@ auto create_applicability_literal(formalism::AxiomView<LiftedTag> axiom, formali
     return context.destination().insert(*literal, context.builder());
 }
 
-auto create_applicability_rule(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+auto create_applicability_rule(formalism::AxiomView<LiftedTag> axiom, formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
 
@@ -148,7 +148,7 @@ auto create_applicability_rule(formalism::AxiomView<LiftedTag> axiom, formalism:
 auto create_ground_cond_effect_rule(formalism::ActionView<LiftedTag> action,
                                     formalism::ConditionalEffectView<LiftedTag> cond_eff,
                                     std::optional<formalism::PredicateView<formalism::DerivedTag>> effect_predicate,
-                                    formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+                                    formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
 
@@ -189,7 +189,7 @@ auto create_ground_cond_effect_rule(formalism::ActionView<LiftedTag> action,
 
 auto create_effect_rule(formalism::AxiomView<LiftedTag> axiom,
                         formalism::AtomView<LiftedTag, formalism::DerivedTag> effect,
-                        formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+                        formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
 
@@ -213,7 +213,7 @@ auto create_effect_rule(formalism::AxiomView<LiftedTag> axiom,
 
 void translate_action_to_ground_rules(formalism::ActionView<LiftedTag> action,
                                       urd::builder<formalism::Program<LiftedTag>, formalism::Repository>& program,
-                                      formalism::WriteContext<formalism::Builder, formalism::Repository>& context,
+                                      formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                                       AppPredicateToActionMapping& predicate_to_actions,
                                       ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
@@ -251,7 +251,7 @@ void translate_action_to_ground_rules(formalism::ActionView<LiftedTag> action,
 
 void translate_axiom_to_delete_free_axiom_rules(formalism::AxiomView<LiftedTag> axiom,
                                                 urd::builder<formalism::Program<LiftedTag>, formalism::Repository>& program,
-                                                formalism::WriteContext<formalism::Builder, formalism::Repository>& context,
+                                                formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                                                 GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms)
 {
     const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
@@ -274,7 +274,7 @@ auto create_ground_program(formalism::TaskView<LiftedTag> task,
                            formalism::Repository& destination)
 {
     auto builder = formalism::Builder();
-    auto context = formalism::WriteContext(builder, destination);
+    auto context = formalism::GroundingContext(builder, destination);
     auto program = formalism::checkout<formalism::Program<LiftedTag>>(builder);
 
     translate_task_symbols(task, *program);

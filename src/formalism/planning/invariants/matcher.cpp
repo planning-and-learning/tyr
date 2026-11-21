@@ -44,7 +44,7 @@ urd::data<Atom<LiftedTag, FluentTag>> lifted_record(AtomView<GroundTag, FluentTa
 {
     auto result = urd::data<Atom<LiftedTag, FluentTag>>();
     result.predicate = atom.get_predicate().index();
-    for (const auto object : atom.get_row().get_objects())
+    for (const auto object : atom.get_row().template resolve<::tyr::formalism::Object>())
         result.terms.push_back(Term(object.index()));
     return result;
 }

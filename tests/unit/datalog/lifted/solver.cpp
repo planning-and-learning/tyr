@@ -23,9 +23,11 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <tyr/datalog/lifted/program.hpp>
+#include <urd/elements/copy.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/copy.hpp>
 
 namespace tyr::tests
 {
@@ -88,7 +90,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     const auto objects = program.get_objects();
     ASSERT_EQ(objects.size(), 2);
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
-    auto context = tyr::formalism::WriteContext { builder, *fixture.repository, indices };
+    auto context = tyr::formalism::GroundingContext { builder, *fixture.repository, indices };
     auto prepared = tyr::formalism::checkout<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
     urd::store(prepared->relation, atom.get_predicate());
     tyr::formalism::ground(atom.get_terms(), context, prepared->values);
@@ -165,12 +167,12 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                     auto axiom_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(axiom_program.get_datalog_program());
                     solve_workspace(axiom_workspace);
 
-                    auto write_context = tyr::formalism::WriteContext { action_workspace.datalog_builder, *action_workspace.workspace_repository };
                     const auto copy_facts = [&](const auto& axiom_facts)
                     {
                         for (ygg::uint_t set = 0; set < axiom_facts.predicate.size(); ++set)
                             for (const auto binding : tyr::datalog::rows(axiom_facts, set))
-                                tyr::datalog::insert(action_workspace.facts.fact_sets, tyr::formalism::copy(binding, write_context).first.index());
+                                tyr::datalog::insert(action_workspace.facts.fact_sets,
+                                                     urd::copy(binding, *action_workspace.workspace_repository, action_workspace.datalog_builder));
                     };
                     copy_facts(axiom_workspace.facts.fact_sets.get<tyr::formalism::FluentTag>());
                     copy_facts(axiom_workspace.facts.fact_sets.get<tyr::formalism::DerivedTag>());

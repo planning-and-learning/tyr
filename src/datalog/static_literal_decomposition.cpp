@@ -21,7 +21,6 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_builder.hpp"
@@ -34,6 +33,7 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -67,7 +67,7 @@ public:
     using StaticLiteralIndex = urd::index<formalism::Literal<LiftedTag, formalism::StaticTag>>;
 
     Decomposer(urd::builder<formalism::Program<LiftedTag>, formalism::Repository>& program,
-               formalism::WriteContext<formalism::Builder, formalism::Repository>& context,
+               formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                const TaggedFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_context(&context),
@@ -266,7 +266,7 @@ private:
     }
 
     urd::builder<formalism::Program<LiftedTag>, formalism::Repository>* m_program;
-    formalism::WriteContext<formalism::Builder, formalism::Repository>* m_context;
+    formalism::GroundingContext<formalism::Builder, formalism::Repository>* m_context;
     const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_predicates = 0;
     /// The parameters of the literal being decomposed, those of the literals that replace it.
@@ -280,7 +280,7 @@ formalism::ProgramView<LiftedTag>
 decompose_static_literals(formalism::ProgramView<LiftedTag> program, formalism::Repository& repository, StaticLiteralDecomposition& result)
 {
     auto builder = formalism::Builder {};
-    auto context = formalism::WriteContext { builder, repository };
+    auto context = formalism::GroundingContext { builder, repository };
     auto output = formalism::checkout<formalism::Program<LiftedTag>>(builder);
     formalism::list_except_rules(program, *output);
     // The static predicates come first in the repository, as the fact sets require.

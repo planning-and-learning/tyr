@@ -211,8 +211,9 @@ bool is_at_location(const tyr::planning::StateView<Kind>& state, const formalism
                                [&](const auto fact_data)
                                {
                                    const auto atom = formalism::computed_fact_view(fact_data, repository).get_atom();
-                                   return atom && atom->get_predicate().get_name().str() == "at" && atom->get_row().get_objects().size() == 2
-                                          && atom->get_row().get_objects().back().get_name().str() == location;
+                                   return atom && atom->get_predicate().get_name().str() == "at"
+                                          && atom->get_row().template resolve<tyr::formalism::Object>().size() == 2
+                                          && atom->get_row().template resolve<tyr::formalism::Object>().back().get_name().str() == location;
                                });
 }
 

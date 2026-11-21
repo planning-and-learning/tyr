@@ -47,7 +47,7 @@ std::optional<urd::Store<urd::sequence<urd::index<Object>>>>
 extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
 {
     const auto terms = part.get_terms();
-    const auto objects = atom.get_row().get_objects();
+    const auto objects = atom.get_row().template resolve<::tyr::formalism::Object>();
     if (terms.size() != objects.size())
         return std::nullopt;
 
@@ -127,8 +127,8 @@ struct GroupKey : urd::compared_by_identity<GroupKey>
 
 bool structural_less(AtomView<GroundTag, FluentTag> lhs, AtomView<GroundTag, FluentTag> rhs)
 {
-    const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_row().get_objects());
-    const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_row().get_objects());
+    const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_row().template resolve<::tyr::formalism::Object>());
+    const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_row().template resolve<::tyr::formalism::Object>());
 
     return urd::Less<std::remove_cvref_t<decltype(lhs_key)>> {}(lhs_key, rhs_key);
 }

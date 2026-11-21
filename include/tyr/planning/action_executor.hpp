@@ -90,7 +90,7 @@ public:
     /// Whether the numeric effects of the action binding in `grounder` are valid together for the effect bindings that fire.
     bool is_applicable_if_fires(formalism::ActionView<LiftedTag> action,
                                 const StateContext<LiftedTag>& state_context,
-                                formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                                formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
                                 const formalism::FDRContext& fdr,
                                 ForEachEffectBinding for_each_effect_binding);
 
@@ -98,7 +98,7 @@ public:
     /// successor and writes the exact changes relative to the parent into `delta`; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                            formalism::ActionView<LiftedTag> action,
-                                           formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                                           formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
                                            formalism::FDRContext& fdr,
                                            ForEachEffectBinding for_each_effect_binding,
                                            urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,

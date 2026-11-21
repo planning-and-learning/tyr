@@ -380,7 +380,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
         if (atom.get_predicate().get_name() != "at")
             continue;
 
-        const auto object = atom.get_row().get_objects().front().get_name();
+        const auto object = atom.get_row().template resolve<tyr::formalism::Object>().front().get_name();
         if (object == "truck-1")
         {
             first_assignments.predicate.insert(atom);

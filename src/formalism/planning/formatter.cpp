@@ -296,7 +296,7 @@ fmt::formatter<urd::index_view<tf::Action<T>, tf::Repository>>::format(const urd
         // A ground action is named after its binding: its action's name and its objects, joined by -.
         const auto row = value.get_row();
         out = fmt::format_to(out, "(:action {}", row.get_relation().get_name());
-        for (auto object : row.get_objects())
+        for (auto object : row.template resolve<tf::Object>())
             out = fmt::format_to(out, "-{}", object.get_name());
         out = fmt::format_to(out, " :parameters () :precondition {} :effect ", value.get_condition());
         if (value.get_effects().size() == 1)
@@ -508,9 +508,8 @@ fmt::formatter<std::pair<tf::ActionRowView, tf::PlanFormatting>>::format(const s
                                                                          fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "({}", value.first.get_relation().get_original_name());
-    const auto objects = value.first.get_objects();
-    for (std::size_t position = 0; position < value.first.get_relation().get_original_arity(); ++position)
-        out = fmt::format_to(out, " {}", objects[static_cast<std::ptrdiff_t>(position)].get_name());
+    for (const auto object : value.first.template resolve<tf::Object>(0, value.first.get_relation().get_original_arity()))
+        out = fmt::format_to(out, " {}", object.get_name());
     return fmt::format_to(out, ")");
 }
 

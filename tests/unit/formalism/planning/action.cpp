@@ -1,4 +1,3 @@
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
@@ -12,6 +11,8 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+#include <urd/elements/copy.hpp>
+#include <yggdrasil/formalism/copy.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_action
@@ -99,7 +100,9 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     EXPECT_EQ(fmt::format("{}", std::make_pair(binding, tyr::formalism::PlanFormatting {})), "(move)");
 }
 
-TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
+// A binding copied into another repository: its action copied with its closure (at other indices there), its values
+// (objects) as they are.
+TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndKeepsBindingValues)
 {
     const auto parser = tyr::formalism::Parser(std::string(R"((define (domain transfer)
       (:requirements :strips :conditional-effects :fluents)
@@ -130,20 +133,15 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     const auto binding = tyr::formalism::insert(source, binding_data).first;
 
     auto builder = tyr::formalism::Builder {};
-    auto context = tyr::formalism::WriteContext { builder, destination };
-    const auto [copied_binding, inserted] = tyr::formalism::copy(binding, context);
-    ASSERT_TRUE(inserted);
+    const auto copied_binding = destination.view(urd::copy(binding, destination, builder));
     const auto copied = copied_binding.get_relation();
     EXPECT_EQ(&copied.context(), &destination);
     EXPECT_EQ(copied.get_original_name(), source_action.get_original_name());
     EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
     EXPECT_EQ(fmt::format("{}", copied), fmt::format("{}", source_action));
     EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
-    const auto copied_objects = copied_binding.get_objects();
-    ASSERT_EQ(copied_objects.size(), 1);
-    EXPECT_EQ(copied_objects[0].get_name(), "truck");
-    EXPECT_NE(copied_objects[0].index(), source_object.index());
-    EXPECT_FALSE(tyr::formalism::copy(binding, context).second);
+    EXPECT_EQ(copied_binding.value(0), binding.value(0));
+    EXPECT_EQ(urd::copy(binding, destination, builder), copied_binding.index());  // interned once
 }
 
 }
@@ -171,7 +169,7 @@ static_assert(requires(const GroundActionView& view) {
     view.index();
     view.get_action();
     view.get_row();
-    view.get_row().get_objects();
+    view.get_row().template resolve<tyr::formalism::Object>();
     view.get_row().get_relation().index();
     view.get_condition();
     view.get_effects();

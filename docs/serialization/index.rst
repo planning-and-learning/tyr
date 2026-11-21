@@ -74,7 +74,7 @@ Pass ``project`` to define a complete row with your own column names and values:
        "a",
        project=lambda binding: {
            "name": binding.get_relation().get_name(),
-           "objects": binding.get_objects(),
+           "objects": binding.resolve_objects(),
        },
    )
 

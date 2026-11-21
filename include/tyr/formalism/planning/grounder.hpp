@@ -21,11 +21,11 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -51,7 +51,6 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/write_context.hpp"
 
 #include <yggdrasil/formalism/row_view.hpp>
 
@@ -63,74 +62,76 @@ namespace tyr::formalism
  */
 
 template<FactKind T>
-std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context);
+std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, GroundingContext<Builder, Repository>& context);
 
 template<FactKind T>
-std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
+std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context);
 
-FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, WriteContext<Builder, Repository>& context);
+FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GroundingContext<Builder, Repository>& context);
 
 std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element,
-                                                                             WriteContext<Builder, Repository>& context);
+                                                                             GroundingContext<Builder, Repository>& context);
 
 template<OperatorKind O>
-std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, WriteContext<Builder, Repository>& context);
+std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GroundingContext<Builder, Repository>& context);
 
 std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element,
-                                                                             WriteContext<Builder, Repository>& context);
+                                                                             GroundingContext<Builder, Repository>& context);
 
 template<FactKind T>
-std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context);
+std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, GroundingContext<Builder, Repository>& context);
 
 template<FactKind T>
-std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
+std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context);
 
-urd::data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr);
+urd::data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr);
 
 template<FactKind T>
-std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
+std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context);
 
-urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr);
+urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr);
 
 std::pair<ConjunctiveConditionView<GroundTag>, bool>
-ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr);
+ground(ConjunctiveConditionView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr);
 
 template<FactKind T>
-std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
+std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context);
 
-std::pair<ConjunctiveEffectView<GroundTag>, bool> ground(ConjunctiveEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr);
+std::pair<ConjunctiveEffectView<GroundTag>, bool>
+ground(ConjunctiveEffectView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr);
 
-std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr);
+std::pair<ConditionalEffectView<GroundTag>, bool>
+ground(ConditionalEffectView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr);
 
-std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context);
+std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, GroundingContext<Builder, Repository>& context);
 
 /// Grounds the action binding in the context with its effects grounded for each completed binding that
 /// `for_each_effect_binding(effect, callback)` puts into the context's binding before calling `callback`.
 template<typename ForEachEffectBinding>
 std::pair<ActionView<GroundTag>, bool>
-ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding);
+ground(ActionView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding);
 
-std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context);
+std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, GroundingContext<Builder, Repository>& context);
 
 std::pair<AxiomView<GroundTag>, bool>
-ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr);
+ground(AxiomView<LiftedTag> element, GroundingContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr);
 
 /**
  * try_ground
  */
 
 template<FactKind T>
-std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
+std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context);
 
 template<FactKind T>
-std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
+std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context);
 
 /**
  * ground
  */
 
 template<FactKind T>
-std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context)
+std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Function<T>>>(context.builder());
 
@@ -155,7 +156,7 @@ std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> f
 }
 
 template<FactKind T>
-std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
+std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto fterm = checkout<FunctionTerm<GroundTag, T>>(context.builder());
@@ -167,7 +168,7 @@ std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTa
     return context.destination().insert(*fterm, context.builder());
 }
 
-inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, WriteContext<Builder, Repository>& context)
+inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GroundingContext<Builder, Repository>& context)
 {
     return std::visit(
         [&]<typename Alternative>(const Alternative& arg) -> FunctionExpressionView<GroundTag>
@@ -181,7 +182,7 @@ inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag
 }
 
 inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element,
-                                                                                    WriteContext<Builder, Repository>& context)
+                                                                                    GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto unary = checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
@@ -195,7 +196,7 @@ inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
 }
 
 template<OperatorKind O>
-std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, WriteContext<Builder, Repository>& context)
+std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto binary = checkout<BinaryOperator<GroundTag, O>>(context.builder());
@@ -210,7 +211,7 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
 }
 
 inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element,
-                                                                                    WriteContext<Builder, Repository>& context)
+                                                                                    GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto multi = checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
@@ -225,7 +226,7 @@ inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
 }
 
 template<FactKind T>
-std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context)
+std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Predicate<T>>>(context.builder());
 
@@ -250,7 +251,7 @@ std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T>
 }
 
 template<FactKind T>
-std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
+std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto atom = checkout<Atom<GroundTag, T>>(context.builder());
@@ -262,14 +263,14 @@ std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, W
     return context.destination().insert(*atom, context.builder());
 }
 
-inline urd::data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
+inline urd::data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
     const auto fact = fdr.get_fact(ground(element, context).first);
     return urd::make<FDRFact<FluentTag>>(fact.get_variable(), fact.get_value());
 }
 
 template<FactKind T>
-std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
+std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto ground_literal = checkout<Literal<GroundTag, T>>(context.builder());
@@ -282,7 +283,7 @@ std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> elem
     return context.destination().insert(*ground_literal, context.builder());
 }
 
-inline urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
+inline urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
     auto fact = ground(element.get_atom(), context, fdr);
     if (!element.get_polarity())
@@ -292,7 +293,7 @@ inline urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> el
 }
 
 inline std::pair<ConjunctiveConditionView<GroundTag>, bool>
-ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
+ground(ConjunctiveConditionView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
     // Fetch and clear
     auto conj_cond = checkout<ConjunctiveCondition<GroundTag>>(context.builder());
@@ -317,7 +318,7 @@ ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Reposi
 }
 
 template<FactKind T>
-std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
+std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
     // Fetch and clear
     auto numeric_effect = checkout<NumericEffect<GroundTag, T>>(context.builder());
@@ -332,7 +333,7 @@ std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<Lifted
 }
 
 inline std::pair<ConjunctiveEffectView<GroundTag>, bool>
-ground(ConjunctiveEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
+ground(ConjunctiveEffectView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
     // Fetch and clear
     auto conj_eff = checkout<ConjunctiveEffect<GroundTag>>(context.builder());
@@ -355,7 +356,7 @@ ground(ConjunctiveEffectView<LiftedTag> element, WriteContext<Builder, Repositor
 }
 
 inline std::pair<ConditionalEffectView<GroundTag>, bool>
-ground(ConditionalEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
+ground(ConditionalEffectView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
     // Fetch and clear
     auto cond_effect = checkout<ConditionalEffect<GroundTag>>(context.builder());
@@ -368,7 +369,7 @@ ground(ConditionalEffectView<LiftedTag> element, WriteContext<Builder, Repositor
     return context.destination().insert(*cond_effect, context.builder());
 }
 
-inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context)
+inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Action<LiftedTag>>>(context.builder());
 
@@ -382,7 +383,7 @@ inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, Write
 
 template<typename ForEachEffectBinding>
 std::pair<ActionView<GroundTag>, bool>
-ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding)
+ground(ActionView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding)
 {
     const auto binding = ground(element, context).first.index();
 
@@ -397,7 +398,7 @@ ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context
     return context.destination().insert(*action, context.builder());
 }
 
-inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context)
+inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Axiom<LiftedTag>>>(context.builder());
 
@@ -410,7 +411,7 @@ inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteCon
 }
 
 inline std::pair<AxiomView<GroundTag>, bool>
-ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr)
+ground(AxiomView<LiftedTag> element, GroundingContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr)
 {
     const auto binding = ground(element, context).first.index();
 
@@ -436,7 +437,7 @@ ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context,
  */
 
 template<FactKind T>
-std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
+std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Function<T>>>(context.builder());
 
@@ -468,7 +469,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 }
 
 template<FactKind T>
-std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
+std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Predicate<T>>>(context.builder());
 
@@ -506,60 +507,63 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 namespace tyr::formalism
 {
 extern template std::pair<FunctionRowView<StaticTag>, bool>
-ground(TermListView terms, FunctionView<StaticTag> function, WriteContext<Builder, Repository>& context);
+ground(TermListView terms, FunctionView<StaticTag> function, GroundingContext<Builder, Repository>& context);
 extern template std::pair<FunctionRowView<FluentTag>, bool>
-ground(TermListView terms, FunctionView<FluentTag> function, WriteContext<Builder, Repository>& context);
+ground(TermListView terms, FunctionView<FluentTag> function, GroundingContext<Builder, Repository>& context);
 extern template std::pair<FunctionRowView<AuxiliaryTag>, bool>
-ground(TermListView terms, FunctionView<AuxiliaryTag> function, WriteContext<Builder, Repository>& context);
+ground(TermListView terms, FunctionView<AuxiliaryTag> function, GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element,
-                                                                               WriteContext<Builder, Repository>& context);
+                                                                               GroundingContext<Builder, Repository>& context);
 extern template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> ground(FunctionTermView<LiftedTag, FluentTag> element,
-                                                                               WriteContext<Builder, Repository>& context);
+                                                                               GroundingContext<Builder, Repository>& context);
 extern template std::pair<FunctionTermView<GroundTag, AuxiliaryTag>, bool> ground(FunctionTermView<LiftedTag, AuxiliaryTag> element,
-                                                                                  WriteContext<Builder, Repository>& context);
+                                                                                  GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> element,
-                                                                                              WriteContext<Builder, Repository>& context);
+                                                                                              GroundingContext<Builder, Repository>& context);
 extern template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
-                                                                                           WriteContext<Builder, Repository>& context);
+                                                                                           GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<PredicateRowView<StaticTag>, bool>
-ground(TermListView terms, PredicateView<StaticTag> predicate, WriteContext<Builder, Repository>& context);
+ground(TermListView terms, PredicateView<StaticTag> predicate, GroundingContext<Builder, Repository>& context);
 extern template std::pair<PredicateRowView<FluentTag>, bool>
-ground(TermListView terms, PredicateView<FluentTag> predicate, WriteContext<Builder, Repository>& context);
+ground(TermListView terms, PredicateView<FluentTag> predicate, GroundingContext<Builder, Repository>& context);
 extern template std::pair<PredicateRowView<DerivedTag>, bool>
-ground(TermListView terms, PredicateView<DerivedTag> predicate, WriteContext<Builder, Repository>& context);
+ground(TermListView terms, PredicateView<DerivedTag> predicate, GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element,
-                                                                       WriteContext<Builder, Repository>& grounder_context);
+                                                                       GroundingContext<Builder, Repository>& grounder_context);
 extern template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedTag, FluentTag> element,
-                                                                       WriteContext<Builder, Repository>& grounder_context);
+                                                                       GroundingContext<Builder, Repository>& grounder_context);
 extern template std::pair<AtomView<GroundTag, DerivedTag>, bool> ground(AtomView<LiftedTag, DerivedTag> element,
-                                                                        WriteContext<Builder, Repository>& grounder_context);
+                                                                        GroundingContext<Builder, Repository>& grounder_context);
 
 extern template std::pair<LiteralView<GroundTag, StaticTag>, bool> ground(LiteralView<LiftedTag, StaticTag> element,
-                                                                          WriteContext<Builder, Repository>& context);
+                                                                          GroundingContext<Builder, Repository>& context);
 extern template std::pair<LiteralView<GroundTag, FluentTag>, bool> ground(LiteralView<LiftedTag, FluentTag> element,
-                                                                          WriteContext<Builder, Repository>& context);
+                                                                          GroundingContext<Builder, Repository>& context);
 extern template std::pair<LiteralView<GroundTag, DerivedTag>, bool> ground(LiteralView<LiftedTag, DerivedTag> element,
-                                                                           WriteContext<Builder, Repository>& context);
+                                                                           GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element,
-                                                                                WriteContext<Builder, Repository>& context);
+                                                                                GroundingContext<Builder, Repository>& context);
 extern template std::pair<NumericEffectView<GroundTag, AuxiliaryTag>, bool> ground(NumericEffectView<LiftedTag, AuxiliaryTag> element,
-                                                                                   WriteContext<Builder, Repository>& context);
+                                                                                   GroundingContext<Builder, Repository>& context);
 
 extern template std::optional<FunctionTermView<GroundTag, StaticTag>> try_ground(FunctionTermView<LiftedTag, StaticTag> element,
-                                                                                 WriteContext<Builder, Repository>& context);
+                                                                                 GroundingContext<Builder, Repository>& context);
 extern template std::optional<FunctionTermView<GroundTag, FluentTag>> try_ground(FunctionTermView<LiftedTag, FluentTag> element,
-                                                                                 WriteContext<Builder, Repository>& context);
+                                                                                 GroundingContext<Builder, Repository>& context);
 extern template std::optional<FunctionTermView<GroundTag, AuxiliaryTag>> try_ground(FunctionTermView<LiftedTag, AuxiliaryTag> element,
-                                                                                    WriteContext<Builder, Repository>& context);
+                                                                                    GroundingContext<Builder, Repository>& context);
 
-extern template std::optional<AtomView<GroundTag, StaticTag>> try_ground(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
-extern template std::optional<AtomView<GroundTag, FluentTag>> try_ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
-extern template std::optional<AtomView<GroundTag, DerivedTag>> try_ground(AtomView<LiftedTag, DerivedTag> element, WriteContext<Builder, Repository>& context);
+extern template std::optional<AtomView<GroundTag, StaticTag>> try_ground(AtomView<LiftedTag, StaticTag> element,
+                                                                         GroundingContext<Builder, Repository>& context);
+extern template std::optional<AtomView<GroundTag, FluentTag>> try_ground(AtomView<LiftedTag, FluentTag> element,
+                                                                         GroundingContext<Builder, Repository>& context);
+extern template std::optional<AtomView<GroundTag, DerivedTag>> try_ground(AtomView<LiftedTag, DerivedTag> element,
+                                                                          GroundingContext<Builder, Repository>& context);
 }
 
 #endif

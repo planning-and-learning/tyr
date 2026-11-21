@@ -94,7 +94,8 @@ void fill_delete_free_condition(formalism::ActionView<LiftedTag> action,
             urd::append(conj_cond.fluent_literals, literal);
 }
 
-auto create_delete_free_goal(formalism::ConjunctiveConditionView<GroundTag> goal, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+auto create_delete_free_goal(formalism::ConjunctiveConditionView<GroundTag> goal,
+                             formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto conj_cond = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder());
 
@@ -107,7 +108,7 @@ auto create_delete_free_goal(formalism::ConjunctiveConditionView<GroundTag> goal
 
 auto create_rpg_cond_effect_rule(formalism::ActionView<LiftedTag> action,
                                  formalism::ConditionalEffectView<LiftedTag> cond_eff,
-                                 formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
+                                 formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
 
@@ -130,7 +131,7 @@ auto create_rpg_cond_effect_rule(formalism::ActionView<LiftedTag> action,
 
 void translate_action_to_rpg_rules(formalism::ActionView<LiftedTag> action,
                                    urd::builder<formalism::Program<LiftedTag>, formalism::Repository>& program,
-                                   formalism::WriteContext<formalism::Builder, formalism::Repository>& context,
+                                   formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                                    RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
 {
     for (const auto cond_eff : action.get_effects())
@@ -148,7 +149,7 @@ void translate_action_to_rpg_rules(formalism::ActionView<LiftedTag> action,
 auto create_rpg_program(formalism::TaskView<LiftedTag> task, RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action, formalism::Repository& destination)
 {
     auto builder = formalism::Builder();
-    auto context = formalism::WriteContext(builder, destination);
+    auto context = formalism::GroundingContext(builder, destination);
     auto program = formalism::checkout<formalism::Program<LiftedTag>>(builder);
 
     translate_task_symbols(task, *program);
