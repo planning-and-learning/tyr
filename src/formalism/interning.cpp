@@ -16,7 +16,6 @@
  */
 
 #include "tyr/formalism/detail/repository_instantiations.hpp"
-
 #include "tyr/formalism/repository.hpp"
 
 TYR_FORMALISM_INTERNS()

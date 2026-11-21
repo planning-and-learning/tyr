@@ -26,16 +26,22 @@ namespace tyr::formalism
 template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
 template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
 template std::pair<PredicateRowView<DerivedTag>, bool> ground_binding(AtomView<LiftedTag, DerivedTag> element, GroundingContext<Builder, Repository>& context);
-template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
-template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-template std::pair<FunctionRowView<AuxiliaryTag>, bool> ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element, GroundingContext<Builder, Repository>& context);
-template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
-template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-template std::optional<FunctionRowView<AuxiliaryTag>> try_ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element, GroundingContext<Builder, Repository>& context);
+template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                    GroundingContext<Builder, Repository>& context);
+template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                    GroundingContext<Builder, Repository>& context);
+template std::pair<FunctionRowView<AuxiliaryTag>, bool> ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element,
+                                                                       GroundingContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                      GroundingContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                      GroundingContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<AuxiliaryTag>> try_ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element,
+                                                                         GroundingContext<Builder, Repository>& context);
 template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
 template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element, GroundingContext<Builder, Repository>& context);
-
+template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element,
+                                                                        GroundingContext<Builder, Repository>& context);
 
 template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element,
                                                                         GroundingContext<Builder, Repository>& context);
@@ -48,7 +54,6 @@ template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> 
                                                                                        GroundingContext<Builder, Repository>& context);
 template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                     GroundingContext<Builder, Repository>& context);
-
 
 template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element,
                                                                 GroundingContext<Builder, Repository>& grounder_context);

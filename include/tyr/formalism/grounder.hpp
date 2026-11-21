@@ -159,7 +159,6 @@ std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F
     return context.destination().insert(*binding, context.builder());
 }
 
-
 template<FactKind T>
 std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
@@ -297,7 +296,6 @@ std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> ele
     return context.destination().find(*binding, context.builder());
 }
 
-
 template<FactKind T>
 std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
@@ -332,19 +330,30 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
 namespace tyr::formalism
 {
-extern template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::pair<PredicateRowView<DerivedTag>, bool> ground_binding(AtomView<LiftedTag, DerivedTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::pair<FunctionRowView<AuxiliaryTag>, bool> ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::optional<FunctionRowView<AuxiliaryTag>> try_ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context);
-extern template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element, GroundingContext<Builder, Repository>& context);
-
+extern template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element,
+                                                                            GroundingContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element,
+                                                                            GroundingContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<DerivedTag>, bool> ground_binding(AtomView<LiftedTag, DerivedTag> element,
+                                                                             GroundingContext<Builder, Repository>& context);
+extern template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                           GroundingContext<Builder, Repository>& context);
+extern template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                           GroundingContext<Builder, Repository>& context);
+extern template std::pair<FunctionRowView<AuxiliaryTag>, bool> ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element,
+                                                                              GroundingContext<Builder, Repository>& context);
+extern template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                             GroundingContext<Builder, Repository>& context);
+extern template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                             GroundingContext<Builder, Repository>& context);
+extern template std::optional<FunctionRowView<AuxiliaryTag>> try_ground_binding(FunctionTermView<LiftedTag, AuxiliaryTag> element,
+                                                                                GroundingContext<Builder, Repository>& context);
+extern template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element,
+                                                                              GroundingContext<Builder, Repository>& context);
+extern template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element,
+                                                                              GroundingContext<Builder, Repository>& context);
+extern template std::optional<PredicateRowView<DerivedTag>> try_ground_binding(AtomView<LiftedTag, DerivedTag> element,
+                                                                               GroundingContext<Builder, Repository>& context);
 
 extern template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element,
                                                                                GroundingContext<Builder, Repository>& context);
@@ -357,7 +366,6 @@ extern template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>,
                                                                                               GroundingContext<Builder, Repository>& context);
 extern template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                            GroundingContext<Builder, Repository>& context);
-
 
 extern template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element,
                                                                        GroundingContext<Builder, Repository>& grounder_context);
