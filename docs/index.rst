@@ -17,13 +17,6 @@ The rules the planning-and-learning libraries share are documented in
 
 .. toctree::
    :maxdepth: 2
-   :caption: Database
-
-   database
-   incremental-relations
-
-.. toctree::
-   :maxdepth: 2
    :caption: Heuristics
 
    lmcut

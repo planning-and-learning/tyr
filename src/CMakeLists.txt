@@ -32,7 +32,6 @@ add_library(
     formalism/formatter.cpp
     formalism/repository.cpp
     formalism/planning/repository.cpp
-    formalism/datalog/repository.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
     formalism/datalog/variable_dependency_graph.cpp
@@ -75,43 +74,6 @@ add_library(
     datalog/ground/workspaces/program.cpp
     datalog/ground/solver.cpp
     datalog/lifted/scheduler.cpp
-    datalog/lifted/database/optimization/details/cost.cpp
-    datalog/lifted/database/optimization/details/estimation.cpp
-    datalog/lifted/database/optimization/details/join_block.cpp
-    datalog/lifted/database/optimization/details/normalization.cpp
-    datalog/lifted/database/optimization/details/optimization.cpp
-    datalog/lifted/database/optimization/details/structural.cpp
-    datalog/lifted/database/semantics/bound/query_evaluation.cpp
-    datalog/lifted/database/semantics/bound/union_normal_form.cpp
-    datalog/lifted/database/datalog/aggregate.cpp
-    datalog/lifted/database/datalog/construction.cpp
-    datalog/lifted/database/datalog/evaluator.cpp
-    datalog/lifted/database/datalog/formatter.cpp
-    datalog/lifted/database/datalog/goal_search.cpp
-    datalog/lifted/database/datalog/plain.cpp
-    datalog/lifted/database/datalog/planner.cpp
-    datalog/lifted/database/datalog/recursive.cpp
-    datalog/lifted/database/datalog/repository.cpp
-    datalog/lifted/database/datalog/strata.cpp
-    datalog/lifted/database/datalog/stratification.cpp
-    datalog/lifted/database/datalog/translation.cpp
-    datalog/lifted/database/datalog/weighted.cpp
-    datalog/lifted/database/semantics/details/distance.cpp
-    datalog/lifted/database/semantics/details/min_distance.cpp
-    datalog/lifted/database/semantics/details/plans.cpp
-    datalog/lifted/database/semantics/generic_join.cpp
-    datalog/lifted/database/semantics/incremental/delta.cpp
-    datalog/lifted/database/semantics/incremental/details/distance_repair.cpp
-    datalog/lifted/database/semantics/incremental/distance.cpp
-    datalog/lifted/database/semantics/incremental/join.cpp
-    datalog/lifted/database/semantics/incremental/projection.cpp
-    datalog/lifted/database/semantics/query_evaluation.cpp
-    datalog/lifted/database/syntax/copy.cpp
-    datalog/lifted/database/syntax/formatter.cpp
-    datalog/lifted/database/syntax/operator_builder.cpp
-    datalog/lifted/database/syntax/query.cpp
-    datalog/lifted/database/syntax/query_construction.cpp
-    datalog/lifted/database/syntax/query_repository.cpp
 
     planning/formatter.cpp
     planning/state_storage/numeric.cpp
@@ -179,12 +141,6 @@ brokkr_unity_directories(
         datalog
         datalog/ground/workspaces
         datalog/lifted
-        datalog/lifted/database/optimization/details
-        datalog/lifted/database/semantics
-        datalog/lifted/database/semantics/bound
-        datalog/lifted/database/semantics/details
-        datalog/lifted/database/semantics/incremental
-        datalog/lifted/database/syntax
         datalog/lifted/kckp
         datalog/lifted/kckp/workspaces
         datalog/lifted/workspaces
@@ -200,8 +156,8 @@ brokkr_unity_directories(
         planning/state_storage/tree_bitset
 )
 brokkr_unity_directories(core ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 3 DIRECTORIES formalism/planning)
-# Each repository's members, instantiated in their own source: the heaviest of the library's, each alone.
-set_source_files_properties(formalism/planning/repository.cpp formalism/datalog/repository.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+# The repository's members, instantiated in their own source: the heaviest of the library's, alone.
+set_source_files_properties(formalism/planning/repository.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
 
 # An executable shares the state of inline functions (a function's static, as yggdrasil's next_layer) with this

@@ -21,24 +21,6 @@ nanobind_add_module(
     module.cpp
     pytyr/module.cpp
     pytyr/serialization/module.cpp
-    pytyr/datalog/lifted/database/datalog.cpp
-    pytyr/datalog/lifted/database/distance.cpp
-    pytyr/datalog/lifted/database/evaluation.cpp
-    pytyr/datalog/lifted/database/module.cpp
-    pytyr/datalog/lifted/database/optimization.cpp
-    pytyr/datalog/lifted/database/syntax/antijoin.cpp
-    pytyr/datalog/lifted/database/syntax/difference.cpp
-    pytyr/datalog/lifted/database/syntax/empty.cpp
-    pytyr/datalog/lifted/database/syntax/generic_join.cpp
-    pytyr/datalog/lifted/database/syntax/input.cpp
-    pytyr/datalog/lifted/database/syntax/join.cpp
-    pytyr/datalog/lifted/database/syntax/project.cpp
-    pytyr/datalog/lifted/database/syntax/query.cpp
-    pytyr/datalog/lifted/database/syntax/rename.cpp
-    pytyr/datalog/lifted/database/syntax/select_equal.cpp
-    pytyr/datalog/lifted/database/syntax/select_value.cpp
-    pytyr/datalog/lifted/database/syntax/semijoin.cpp
-    pytyr/datalog/lifted/database/syntax/union.cpp
     ${PYTYR_FORMALISM_SOURCES}
     pytyr/datalog/module.cpp
     pytyr/datalog/ground/module.cpp
@@ -64,8 +46,8 @@ target_link_libraries(_pytyr PRIVATE tyr::core TBB::tbb)
 target_include_directories(_pytyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # The bindings of one directory bind types of one family and share most of their instantiations: batched, they compile
 # them once (brokkr's template rules, rule 11). formalism and formalism/planning exceed the heaviest translation unit
-# merged whole, so they are batched by at most 11 sources; database repeats file-local names.
-brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} DIRECTORIES pytyr/datalog/lifted/database/syntax pytyr/formalism/datalog)
+# merged whole, so they are batched by at most 11 sources.
+brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} DIRECTORIES pytyr/formalism/datalog)
 brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 11 DIRECTORIES pytyr/formalism pytyr/formalism/planning)
 # The bindings are the build's heaviest translation units: where memory is tight, cap how many compile at once
 # (-DTYR_PYTHON_COMPILE_JOBS=6 at -j12 lowers the peak memory by about 3 GB for 10 s more), so that they do not take
@@ -114,7 +96,6 @@ brokkr_install_python_files(
         pytyr/__init__.pyi
         pytyr/serialization/__init__.py
         pytyr/formalism/__init__.py
-        pytyr/datalog/lifted/database/__init__.py
         pytyr/datalog/__init__.py
         pytyr/datalog/ground/__init__.py
         pytyr/datalog/lifted/__init__.py

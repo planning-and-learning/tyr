@@ -9,7 +9,6 @@ planning/                                  by the component each measures
   algorithms/gbfs_lazy/gbfs.cpp            GBFS with add, FF, or LM-cut heuristic
   successor_generator.cpp                  Initial-state successors and bindings
   {ground,lifted}/schema_selection.cpp
-datalog/lifted/database/                   the database engine's benchmarks
 support/
   common.hpp                               what the planning benchmarks share
 suites/

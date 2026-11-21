@@ -35,4 +35,3 @@ from pytyr._pytyr.datalog.lifted import (
     WitnessAnnotation as WitnessAnnotation,
     compute_model as compute_model,
 )
-from pytyr.datalog.lifted import database as database
