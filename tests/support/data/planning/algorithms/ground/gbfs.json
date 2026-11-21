@@ -2881,13 +2881,13 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 972,
-                "num_expanded": 433,
-                "num_deadends": 28,
+                "num_generated_successors": 1734,
+                "num_expanded": 876,
+                "num_deadends": 71,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 72,
-                    "length": 72,
+                    "cost": 76,
+                    "length": 76,
                     "actions": [
                         "(move loc_3_6 loc_4_6 down)",
                         "(move loc_4_6 loc_4_7 right)",
@@ -2899,24 +2899,28 @@
                         "(move loc_8_8 loc_8_7 left)",
                         "(push loc_8_7 loc_7_7 loc_6_7 up box1)",
                         "(push loc_7_7 loc_6_7 loc_5_7 up box1)",
-                        "(push loc_6_7 loc_5_7 loc_4_7 up box1)",
-                        "(move loc_5_7 loc_5_6 left)",
-                        "(move loc_5_6 loc_4_6 up)",
-                        "(push loc_4_6 loc_4_7 loc_4_8 right box1)",
+                        "(move loc_6_7 loc_6_8 right)",
+                        "(move loc_6_8 loc_5_8 up)",
+                        "(move loc_5_8 loc_4_8 up)",
+                        "(move loc_4_8 loc_4_7 left)",
+                        "(move loc_4_7 loc_4_6 left)",
+                        "(move loc_4_6 loc_5_6 down)",
+                        "(push loc_5_6 loc_5_7 loc_5_8 right box1)",
+                        "(move loc_5_7 loc_6_7 down)",
+                        "(move loc_6_7 loc_6_8 right)",
+                        "(push loc_6_8 loc_5_8 loc_4_8 up box1)",
+                        "(move loc_5_8 loc_5_7 left)",
+                        "(move loc_5_7 loc_4_7 up)",
                         "(move loc_4_7 loc_3_7 up)",
                         "(move loc_3_7 loc_3_8 right)",
                         "(move loc_3_8 loc_3_9 right)",
                         "(push loc_3_9 loc_4_9 loc_5_9 down box2)",
-                        "(move loc_4_9 loc_4_10 right)",
-                        "(move loc_4_10 loc_5_10 down)",
-                        "(push loc_5_10 loc_5_9 loc_5_8 left box2)",
-                        "(push loc_5_9 loc_5_8 loc_5_7 left box2)",
-                        "(push loc_5_8 loc_5_7 loc_5_6 left box2)",
-                        "(move loc_5_7 loc_4_7 up)",
-                        "(move loc_4_7 loc_4_6 left)",
-                        "(push loc_4_6 loc_5_6 loc_6_6 down box2)",
-                        "(move loc_5_6 loc_5_7 right)",
-                        "(move loc_5_7 loc_6_7 down)",
+                        "(push loc_4_9 loc_5_9 loc_6_9 down box2)",
+                        "(move loc_5_9 loc_5_10 right)",
+                        "(move loc_5_10 loc_6_10 down)",
+                        "(push loc_6_10 loc_6_9 loc_6_8 left box2)",
+                        "(push loc_6_9 loc_6_8 loc_6_7 left box2)",
+                        "(push loc_6_8 loc_6_7 loc_6_6 left box2)",
                         "(push loc_6_7 loc_6_6 loc_6_5 left box2)",
                         "(move loc_6_6 loc_7_6 down)",
                         "(move loc_7_6 loc_7_5 left)",
@@ -2965,9 +2969,9 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 279,
-                "num_expanded": 120,
-                "num_deadends": 2,
+                "num_generated_successors": 271,
+                "num_expanded": 116,
+                "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 40,
@@ -3214,19 +3218,21 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 52,
-                "num_expanded": 20,
+                "num_generated_successors": 58,
+                "num_expanded": 22,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 5,
-                    "length": 5,
+                    "cost": 7,
+                    "length": 7,
                     "actions": [
                         "(pick-up truck-1 city-loc-3 package-2 capacity-3 capacity-4)",
-                        "(pick-up truck-1 city-loc-3 package-1 capacity-2 capacity-3)",
                         "(drive truck-1 city-loc-3 city-loc-2)",
-                        "(drop truck-1 city-loc-2 package-2 capacity-2 capacity-3)",
-                        "(drop truck-1 city-loc-2 package-1 capacity-3 capacity-4)"
+                        "(drop truck-1 city-loc-2 package-2 capacity-3 capacity-4)",
+                        "(drive truck-2 city-loc-1 city-loc-3)",
+                        "(pick-up truck-2 city-loc-3 package-1 capacity-2 capacity-3)",
+                        "(drive truck-2 city-loc-3 city-loc-2)",
+                        "(drop truck-2 city-loc-2 package-1 capacity-2 capacity-3)"
                     ]
                 }
             }

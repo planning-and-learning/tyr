@@ -95,7 +95,7 @@
                 },
                 "solution_arity": 1,
                 "num_generated_successors": 20,
-                "num_expanded": 18,
+                "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 2
             }
@@ -565,9 +565,9 @@
                 },
                 "solution_arity": 0,
                 "num_generated_successors": 45,
-                "num_expanded": 22,
+                "num_expanded": 4,
                 "num_deadends": 0,
-                "num_pruned": 323
+                "num_pruned": 45
             }
         },
         {
@@ -665,7 +665,7 @@
                 "num_generated_successors": 265,
                 "num_expanded": 268,
                 "num_deadends": 0,
-                "num_pruned": 1015
+                "num_pruned": 1073
             }
         },
         {

@@ -85,7 +85,7 @@
             "task_file": "classical/tests/airport/test-1.pddl",
             "blind_unit": {
                 "num_generated_successors": 18,
-                "num_expanded": 15,
+                "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -105,7 +105,7 @@
             },
             "blind_general": {
                 "num_generated_successors": 18,
-                "num_expanded": 15,
+                "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -125,8 +125,8 @@
             },
             "hmax_unit": {
                 "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
+                "num_expanded": 15,
+                "num_deadends": 7,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 8,
@@ -145,8 +145,8 @@
             },
             "hadd_unit": {
                 "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
+                "num_expanded": 15,
+                "num_deadends": 7,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 8,
@@ -185,8 +185,8 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 16,
-                "num_expanded": 8,
-                "num_deadends": 0,
+                "num_expanded": 15,
+                "num_deadends": 7,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 8,
@@ -2002,8 +2002,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 226,
-                "num_expanded": 30,
+                "num_generated_successors": 240,
+                "num_expanded": 44,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2038,8 +2038,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 226,
-                "num_expanded": 30,
+                "num_generated_successors": 240,
+                "num_expanded": 44,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2061,8 +2061,8 @@
             "domain_file": "classical/tests/philosophers/domain.pddl",
             "task_file": "classical/tests/philosophers/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
+                "num_generated_successors": 130,
+                "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2070,17 +2070,17 @@
                     "length": 18,
                     "actions": [
                         "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
                         "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
+                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
+                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
+                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
                         "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
                         "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
@@ -2091,8 +2091,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
+                "num_generated_successors": 130,
+                "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2100,17 +2100,17 @@
                     "length": 18,
                     "actions": [
                         "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
                         "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
+                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
+                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
+                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
                         "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
                         "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
@@ -2121,8 +2121,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
+                "num_generated_successors": 130,
+                "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2130,17 +2130,17 @@
                     "length": 18,
                     "actions": [
                         "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
                         "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
+                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
+                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
+                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
                         "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
                         "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
@@ -2151,8 +2151,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
+                "num_generated_successors": 130,
+                "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2160,17 +2160,17 @@
                     "length": 18,
                     "actions": [
                         "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
                         "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
+                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
+                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
+                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
                         "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
                         "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
@@ -2181,8 +2181,8 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
+                "num_generated_successors": 130,
+                "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2190,17 +2190,17 @@
                     "length": 18,
                     "actions": [
                         "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
                         "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
+                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
+                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
+                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
                         "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
                         "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
@@ -2211,8 +2211,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 127,
-                "num_expanded": 118,
+                "num_generated_successors": 130,
+                "num_expanded": 120,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2220,17 +2220,17 @@
                     "length": 18,
                     "actions": [
                         "(activate-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
-                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(queue-write philosopher-0 forks--pid-wfork forks-0- fork)",
                         "(advance-empty-queue-tail forks-0- queue-1 qs-0 qs-0 fork empty zero one)",
+                        "(activate-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
+                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
+                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-0 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-0 forks--pid-rfork forks-0- fork)",
                         "(advance-queue-head forks-0- queue-1 qs-0 qs-0 fork one zero)",
                         "(perform-trans philosopher-0 philosopher forks--pid-rfork state-6 state-3)",
                         "(activate-trans philosopher-0 philosopher forks-__-pidp1__2_-rfork state-3 state-4)",
-                        "(queue-write philosopher-1 forks--pid-wfork forks-1- fork)",
-                        "(advance-empty-queue-tail forks-1- queue-1 qs-0 qs-0 fork empty zero one)",
                         "(perform-trans philosopher-1 philosopher forks--pid-wfork state-1 state-6)",
                         "(activate-trans philosopher-1 philosopher forks--pid-rfork state-6 state-3)",
                         "(queue-read philosopher-1 forks--pid-rfork forks-1- fork)",
@@ -2510,7 +2510,7 @@
             },
             "hadd_unit": {
                 "num_generated_successors": 12,
-                "num_expanded": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2526,7 +2526,7 @@
             },
             "hff_unit": {
                 "num_generated_successors": 8,
-                "num_expanded": 5,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2542,7 +2542,7 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 12,
-                "num_expanded": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2681,8 +2681,8 @@
             "domain_file": "classical/tests/schedule/domain.pddl",
             "task_file": "classical/tests/schedule/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
+                "num_generated_successors": 90,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2695,8 +2695,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
+                "num_generated_successors": 90,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2709,8 +2709,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
+                "num_generated_successors": 90,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2723,8 +2723,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
+                "num_generated_successors": 90,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2737,7 +2737,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 61,
+                "num_generated_successors": 47,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -2751,8 +2751,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 368,
-                "num_expanded": 22,
+                "num_generated_successors": 90,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3124,8 +3124,8 @@
             "domain_file": "classical/tests/woodworking/domain.pddl",
             "task_file": "classical/tests/woodworking/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 11057,
-                "num_expanded": 7295,
+                "num_generated_successors": 11279,
+                "num_expanded": 7485,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3145,8 +3145,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 11416,
-                "num_expanded": 7069,
+                "num_generated_successors": 13009,
+                "num_expanded": 9139,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3166,9 +3166,9 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 1141,
-                "num_expanded": 320,
-                "num_deadends": 18,
+                "num_generated_successors": 935,
+                "num_expanded": 262,
+                "num_deadends": 16,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 9,
@@ -3187,8 +3187,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 158,
-                "num_expanded": 27,
+                "num_generated_successors": 170,
+                "num_expanded": 31,
                 "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
@@ -3234,8 +3234,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 158,
-                "num_expanded": 27,
+                "num_generated_successors": 170,
+                "num_expanded": 31,
                 "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
@@ -5143,8 +5143,8 @@
             "domain_file": "numeric/tests/rover/domain.pddl",
             "task_file": "numeric/tests/rover/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 1899,
-                "num_expanded": 575,
+                "num_generated_successors": 1860,
+                "num_expanded": 555,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5160,8 +5160,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 1823,
-                "num_expanded": 524,
+                "num_generated_successors": 1796,
+                "num_expanded": 510,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5177,8 +5177,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 181,
-                "num_expanded": 36,
+                "num_generated_successors": 176,
+                "num_expanded": 33,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -5211,8 +5211,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 181,
-                "num_expanded": 36,
+                "num_generated_successors": 176,
+                "num_expanded": 33,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

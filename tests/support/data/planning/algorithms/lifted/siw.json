@@ -95,7 +95,7 @@
                     ]
                 },
                 "num_generated_successors": 20,
-                "num_expanded": 18,
+                "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 2
             }
@@ -494,10 +494,10 @@
                         "(activate-trans philosopher-1 philosopher forks-__-pidp1__2_-rfork state-3 state-4)"
                     ]
                 },
-                "num_generated_successors": 93,
-                "num_expanded": 88,
+                "num_generated_successors": 96,
+                "num_expanded": 89,
                 "num_deadends": 0,
-                "num_pruned": 21
+                "num_pruned": 20
             }
         },
         {
@@ -611,7 +611,7 @@
                         "(do-roll b0)"
                     ]
                 },
-                "num_generated_successors": 38,
+                "num_generated_successors": 6,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0
@@ -763,7 +763,7 @@
             "default": {
                 "status": "EXHAUSTED",
                 "maximum_effective_width": 2,
-                "num_generated_successors": 216,
+                "num_generated_successors": 220,
                 "num_expanded": 169,
                 "num_deadends": 0,
                 "num_pruned": 538
@@ -1099,9 +1099,9 @@
                     ]
                 },
                 "num_generated_successors": 35,
-                "num_expanded": 29,
+                "num_expanded": 26,
                 "num_deadends": 0,
-                "num_pruned": 121
+                "num_pruned": 118
             }
         },
         {
