@@ -61,6 +61,7 @@
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/task_utils.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <cstddef>
 #include <limits>
@@ -157,14 +158,18 @@ public:
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
+    {
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+    }
 
     RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
+    {
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+    }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
@@ -202,7 +207,9 @@ protected:
 
     void set_action_binding_cost(formalism::planning::ActionRowView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
-    { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
+    {
+        m_workspace.cost_policy.set_action_cost(action_binding, cost);
+    }
 
     template<formalism::FactKind F>
     [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateRowView<F> head) const noexcept
@@ -223,7 +230,9 @@ protected:
     /// Calls back the binding of every action whose rule the witness instantiates; identical relaxed rules share one rule.
     template<typename Callback>
     void for_each_action_binding(const datalog::WitnessAnnotation<Kind>& witness, Callback callback)
-    { Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback); }
+    {
+        Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback);
+    }
 
     /// The binding of one action whose rule the witness instantiates, if any.
     std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation<Kind>& witness)
@@ -245,18 +254,22 @@ protected:
             atoms.push_back(*atom);
     }
 
-    /// Calls back the positive preconditions of kind F of the witness's rule instance: fluent atoms, or derived ones (the
-    /// atoms of split rules' projections).
-    template<formalism::FactKind F, typename Callback>
+    /// Calls back the positive preconditions of every mutable kind of the witness's rule instance: fluent atoms, and
+    /// derived ones (the atoms of split rules' projections). The instance is visited once.
+    template<typename Callback>
     void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind>& witness, Callback callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,
                                             [&](const auto& instance)
                                             {
-                                                for (const auto literal : instance.get_body().template get_literals<F>())
-                                                    if (literal.get_polarity())
-                                                        callback(instance.resolve(literal.get_atom()));
+                                                boost::mp11::mp_for_each<datalog::MutableTags>(
+                                                    [&]<typename F>(F)
+                                                    {
+                                                        for (const auto literal : instance.get_body().template get_literals<F>())
+                                                            if (literal.get_polarity())
+                                                                callback(instance.resolve(literal.get_atom()));
+                                                    });
                                             });
     }
 

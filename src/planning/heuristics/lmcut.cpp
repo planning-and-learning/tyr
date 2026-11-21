@@ -25,6 +25,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 
 #include <algorithm>
+#include <array>
 #include <boost/mp11.hpp>
 #include <cassert>
 #include <chrono>
@@ -82,101 +83,58 @@ struct LMCutImplementation :
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = formalism::planning::ActionRowView;
-    /// A fact: a fluent atom, or a derived one (the atom of a split rule's projection, were LM-cut's rules split).
-    using Node = std::variant<formalism::datalog::PredicateRowView<formalism::FluentTag>, formalism::datalog::PredicateRowView<formalism::DerivedTag>>;
+    /// A fact of kind F: a fluent atom, or a derived one (the atom of a split rule's projection, were LM-cut's rules split).
+    /// Every structure over the facts is kept per kind, of plain keys.
+    template<typename F>
+    using Fact = formalism::datalog::PredicateRowView<F>;
+    template<typename F>
+    using FactSet = urd::Store<urd::set<Fact<F>>>;
+    template<typename F>
+    using FactStack = urd::Store<urd::sequence<Fact<F>>>;
+    template<typename F>
+    using OptionalFact = std::optional<Fact<F>>;
+    static constexpr std::size_t num_kinds = boost::mp11::mp_size<datalog::MutableTags>::value;
+    static constexpr std::size_t no_dependent = std::numeric_limits<std::size_t>::max();
+    /// The first dependent of a fact in the dependent list of each kind, no_dependent where it has none.
+    using FirstDependents = std::array<std::size_t, num_kinds>;
+    static constexpr FirstDependents no_dependents = []
+    {
+        auto result = FirstDependents {};
+        result.fill(no_dependent);
+        return result;
+    }();
+    template<typename F>
+    using FirstDependentMap = urd::Store<urd::map<Fact<F>, FirstDependents>>;
+    /// The dependents of kind F, each with the next one of its fact in this list (the last names itself).
+    template<typename F>
+    using Dependents = urd::Store<urd::sequence<std::pair<Fact<F>, std::size_t>>>;
     using Witness = datalog::WitnessAnnotation<Kind>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
 
-    /// A set of nodes: a set of facts per kind, of plain keys, so that the fluent facts are kept as one kind's would be.
-    class NodeSet
-    {
-    public:
-        /// Whether the node was new.
-        bool insert(Node node)
-        {
-            return std::visit([&](const auto fact) { return get(fact).insert(fact).second; }, node);
-        }
-
-        [[nodiscard]] bool contains(Node node) const
-        {
-            return std::visit([&](const auto fact) { return get(fact).contains(fact); }, node);
-        }
-
-        void clear() noexcept { m_sets.clear(); }
-
-        /// Calls `callback` with each node, of each kind in turn.
-        template<typename Callback>
-        void for_each(Callback callback) const
-        {
-            boost::mp11::mp_for_each<datalog::MutableTags>(
-                [&]<typename F>(F)
-                {
-                    for (const auto fact : m_sets.template get<F>())
-                        callback(Node(fact));
-                });
-        }
-
-    private:
-        template<typename F>
-        using Set = urd::Store<urd::set<formalism::datalog::PredicateRowView<F>>>;
-
-        template<formalism::FactKind F>
-        Set<F>& get(formalism::datalog::PredicateRowView<F>)
-        { return m_sets.template get<F>(); }
-
-        template<formalism::FactKind F>
-        [[nodiscard]] const Set<F>& get(formalism::datalog::PredicateRowView<F>) const
-        { return m_sets.template get<F>(); }
-
-        datalog::MutableFamily<Set> m_sets;
-    };
-
-    /// A map from nodes: a map per kind, of plain keys.
-    template<typename Value>
-    class NodeMap
-    {
-    public:
-        /// The value of the node, `value` where it had none.
-        Value& try_emplace(Node node, Value value)
-        {
-            return std::visit([&](const auto fact) -> Value& { return get(fact).try_emplace(fact, value).first->second; }, node);
-        }
-
-        /// The value of the node, if it has one.
-        [[nodiscard]] const Value* find(Node node) const
-        {
-            return std::visit(
-                [&](const auto fact) -> const Value*
-                {
-                    const auto& map = get(fact);
-                    const auto it = map.find(fact);
-                    return it != map.end() ? &it->second : nullptr;
-                },
-                node);
-        }
-
-        void clear() noexcept { m_maps.clear(); }
-
-    private:
-        template<typename F>
-        using Map = urd::Store<urd::map<formalism::datalog::PredicateRowView<F>, Value>>;
-
-        template<formalism::FactKind F>
-        Map<F>& get(formalism::datalog::PredicateRowView<F>)
-        { return m_maps.template get<F>(); }
-
-        template<formalism::FactKind F>
-        [[nodiscard]] const Map<F>& get(formalism::datalog::PredicateRowView<F>) const
-        { return m_maps.template get<F>(); }
-
-        datalog::MutableFamily<Map> m_maps;
-    };
-
-    /// The arc of an achiever: its residual cost and its source, none for a rule without preconditions.
+    /// The arc of an achiever: its residual cost and its source, a fact of one kind, none for a rule without preconditions.
     struct Arc
     {
         datalog::Cost cost { 0 };
-        std::optional<Node> source;
+        datalog::MutableFamily<OptionalFact> source;
+
+        [[nodiscard]] bool has_source() const
+        {
+            auto result = false;
+            source.for_each([&](const auto& fact) { result = result || fact.has_value(); });
+            return result;
+        }
+
+        /// Calls `callback` with the source, if any.
+        template<typename Callback>
+        void visit_source(Callback callback) const
+        {
+            source.for_each(
+                [&](const auto& fact)
+                {
+                    if (fact)
+                        callback(*fact);
+                });
+        }
     };
 
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition, ygg::ExecutionContextPtr execution_context);
@@ -197,26 +155,29 @@ private:
     };
 
     Arc get_arc(const Witness& witness);
-    [[nodiscard]] datalog::Cost get_node_cost(Node node) const;
-    [[nodiscard]] bool is_state_node(Node node) const;
-    template<typename Callback>
-    void for_each_node_achiever(Node node, Callback callback);
-    void append_cut_frontier_atom(Node node, CutFrontierAtoms& atoms);
+    template<formalism::FactKind F>
+    [[nodiscard]] bool is_state_node(Fact<F> fact) const;
+    void append_cut_frontier_atom(Fact<formalism::FluentTag> fact, CutFrontierAtoms& atoms);
+    void append_cut_frontier_atom(Fact<formalism::DerivedTag> fact, CutFrontierAtoms& atoms);
     void mark_goal_zone();
     void mark_before_goal_zone();
     void extract_cut(CutFrontierAtoms* cut_frontier_atoms);
 
+    /// Pops a fact of the first kind whose stack is not empty and calls `callback` with it; false where every stack is empty.
+    template<typename Callback>
+    static bool pop(datalog::MutableFamily<FactStack>& stacks, Callback callback);
+
     /// The costs the cuts of this evaluation charged so far.
     urd::Store<urd::map<ActionBinding, datalog::Cost>> m_action_credits;
-    /// The zones of the current round. The dependents of a node are the explored nodes with an arc from it, a list: the
-    /// node's first dependent, and with each dependent the next one of that node.
-    NodeSet m_goal_zone;
-    NodeSet m_before_goal_zone;
-    NodeSet m_explored;
-    NodeMap<std::size_t> m_first_dependent;
-    urd::Store<urd::sequence<std::pair<Node, std::size_t>>> m_dependents;
-    urd::Store<urd::sequence<Node>> m_stack;
-    urd::Store<urd::sequence<Node>> m_base;
+    /// The zones of the current round. The dependents of a fact are the explored facts with an arc from it, a list per kind:
+    /// the fact's first dependent of each kind, and with each dependent the next one of that fact.
+    datalog::MutableFamily<FactSet> m_goal_zone;
+    datalog::MutableFamily<FactSet> m_before_goal_zone;
+    datalog::MutableFamily<FactSet> m_explored;
+    datalog::MutableFamily<FirstDependentMap> m_first_dependent;
+    datalog::MutableFamily<Dependents> m_dependents;
+    datalog::MutableFamily<FactStack> m_stack;
+    datalog::MutableFamily<FactStack> m_base;
     /// The cut of the current round and its least residual cost.
     datalog::Cost m_cut_cost;
     urd::Store<urd::set<ActionBinding>> m_cut;
@@ -236,7 +197,9 @@ template<TaskKind Kind>
 LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context) :
     Base(source, std::move(execution_context)),
     m_cut_cost(std::numeric_limits<datalog::Cost>::max())
-{ this->workspace().tp.set_early_termination(false); }
+{
+    this->workspace().tp.set_early_termination(false);
+}
 
 template<TaskKind Kind>
 ygg::float_t LMCutImplementation<Kind>::evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms)
@@ -280,57 +243,61 @@ typename LMCutImplementation<Kind>::Arc LMCutImplementation<Kind>::get_arc(const
 {
     auto arc = Arc {};
     auto body_cost = static_cast<datalog::Cost>(0);
-    // The preconditions of every mutable kind, as FF walks them.
-    boost::mp11::mp_for_each<datalog::MutableTags>(
-        [&]<typename F>(F)
-        {
-            this->template for_each_witness_precondition<F>(witness,
-                                                            [&](const auto precondition)
-                                                            {
-                                                                const auto cost = this->get_predicate_cost(precondition);
-                                                                if (!arc.source || cost > body_cost)
-                                                                {
-                                                                    body_cost = cost;
-                                                                    arc.source = Node(precondition);
-                                                                }
-                                                            });
-        });
+    // The preconditions of every mutable kind, as FF walks them; the first of maximal cost is the source.
+    this->for_each_witness_precondition(witness,
+                                        [&]<formalism::FactKind F>(const Fact<F> precondition)
+                                        {
+                                            const auto cost = this->get_predicate_cost(precondition);
+                                            if (!arc.has_source() || cost > body_cost)
+                                            {
+                                                body_cost = cost;
+                                                arc.source.for_each([](auto& fact) { fact.reset(); });
+                                                arc.source.template get<F>() = precondition;
+                                            }
+                                        });
     arc.cost = witness.get_cost() > body_cost ? witness.get_cost() - body_cost : static_cast<datalog::Cost>(0);
     return arc;
 }
 
 /// A fact of the state. Every path of the justification graph starts here.
 template<TaskKind Kind>
-bool LMCutImplementation<Kind>::is_state_node(Node node) const
+template<formalism::FactKind F>
+bool LMCutImplementation<Kind>::is_state_node(Fact<F> fact) const
 {
-    return std::visit(
-        [&](const auto fact)
-        {
-            const auto* annotation = this->workspace().annotations.find(fact.index());
-            return annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation);
-        },
-        node);
+    const auto* annotation = this->workspace().annotations.find(fact.index());
+    return annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation);
 }
 
+/// The planning atom of a fluent fact.
 template<TaskKind Kind>
-datalog::Cost LMCutImplementation<Kind>::get_node_cost(Node node) const
+void LMCutImplementation<Kind>::append_cut_frontier_atom(Fact<formalism::FluentTag> fact, CutFrontierAtoms& atoms)
 {
-    return std::visit([&](const auto fact) { return this->get_predicate_cost(fact); }, node);
+    this->append_planning_cut_frontier_atom(fact, atoms);
+}
+
+/// A derived fact, an atom of the program's own, has no planning atom.
+template<TaskKind Kind>
+void LMCutImplementation<Kind>::append_cut_frontier_atom(Fact<formalism::DerivedTag>, CutFrontierAtoms&)
+{
 }
 
 template<TaskKind Kind>
 template<typename Callback>
-void LMCutImplementation<Kind>::for_each_node_achiever(Node node, Callback callback)
+bool LMCutImplementation<Kind>::pop(datalog::MutableFamily<FactStack>& stacks, Callback callback)
 {
-    std::visit([&](const auto fact) { this->for_each_achiever(fact, callback); }, node);
-}
-
-/// The planning atom of a fluent node; a derived node, an atom of the program's own, has none.
-template<TaskKind Kind>
-void LMCutImplementation<Kind>::append_cut_frontier_atom(Node node, CutFrontierAtoms& atoms)
-{
-    if (const auto* fact = std::get_if<formalism::datalog::PredicateRowView<formalism::FluentTag>>(&node))
-        this->append_planning_cut_frontier_atom(*fact, atoms);
+    auto popped = false;
+    boost::mp11::mp_for_each<datalog::MutableTags>(
+        [&]<typename F>(F)
+        {
+            auto& stack = stacks.template get<F>();
+            if (popped || stack.empty())
+                return;
+            const auto fact = stack.back();
+            stack.pop_back();
+            popped = true;
+            callback(fact);
+        });
+    return popped;
 }
 
 /// The goal zone: the goal's precondition choice, the first goal fact of maximal cost, closed backwards over the zero-cost
@@ -348,93 +315,128 @@ void LMCutImplementation<Kind>::mark_goal_zone()
                 for (const auto literal : goal->template get_literals<F>())
                     if (const auto head = literal.get_atom().get_row(); !seeded && literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
                     {
-                        m_goal_zone.insert(Node(head));
-                        m_stack.push_back(Node(head));
+                        m_goal_zone.template get<F>().insert(head);
+                        m_stack.template get<F>().push_back(head);
                         seeded = true;
                     }
             });
     }
 
-    while (!m_stack.empty())
+    while (pop(m_stack,
+               [&](const auto fact)
+               {
+                   this->for_each_achiever(fact,
+                                           [&](const Witness& witness)
+                                           {
+                                               const auto arc = get_arc(witness);
+                                               if (arc.cost != 0)
+                                                   return;
+                                               arc.visit_source(
+                                                   [&]<formalism::FactKind G>(const Fact<G> source)
+                                                   {
+                                                       if (m_goal_zone.template get<G>().insert(source).second)
+                                                           m_stack.template get<G>().push_back(source);
+                                                   });
+                                           });
+               }))
     {
-        const auto node = m_stack.back();
-        m_stack.pop_back();
-        for_each_node_achiever(node,
-                               [&](const Witness& witness)
-                               {
-                                   const auto arc = get_arc(witness);
-                                   if (arc.cost == 0 && arc.source && m_goal_zone.insert(*arc.source))
-                                       m_stack.push_back(*arc.source);
-                               });
     }
 }
 
-/// The before-goal zone: the nodes the state reaches without entering the goal zone, among the nodes the cut queries. The
-/// sources of the action arcs into the goal zone are explored backwards once, recording for each node the explored nodes it
-/// has an arc to, and reachability is then propagated forwards from the state nodes, so that cycles do not cut it off.
+/// The before-goal zone: the facts the state reaches without entering the goal zone, among the facts the cut queries. The
+/// sources of the action arcs into the goal zone are explored backwards once, recording for each fact the explored facts it
+/// has an arc to, and reachability is then propagated forwards from the state facts, so that cycles do not cut it off.
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::mark_before_goal_zone()
 {
-    m_goal_zone.for_each(
-        [&](const Node head)
+    boost::mp11::mp_for_each<datalog::MutableTags>(
+        [&]<typename F>(F)
         {
-            for_each_node_achiever(head,
-                                   [&](const Witness& witness)
-                                   {
-                                       if (!this->is_action_witness(witness))
-                                           return;
-                                       const auto arc = get_arc(witness);
-                                       if (arc.cost > 0 && arc.source && !m_goal_zone.contains(*arc.source))
-                                           m_stack.push_back(*arc.source);
-                                   });
+            for (const auto head : m_goal_zone.template get<F>())
+                this->for_each_achiever(head,
+                                        [&](const Witness& witness)
+                                        {
+                                            if (!this->is_action_witness(witness))
+                                                return;
+                                            const auto arc = get_arc(witness);
+                                            if (arc.cost == 0)
+                                                return;
+                                            arc.visit_source(
+                                                [&]<formalism::FactKind G>(const Fact<G> source)
+                                                {
+                                                    if (!m_goal_zone.template get<G>().contains(source))
+                                                        m_stack.template get<G>().push_back(source);
+                                                });
+                                        });
         });
 
-    while (!m_stack.empty())
-    {
-        const auto node = m_stack.back();
-        m_stack.pop_back();
-        if (!m_explored.insert(node))
-            continue;
-        if (is_state_node(node))
-        {
-            m_base.push_back(node);
-            continue;
-        }
+    while (pop(m_stack,
+               [&]<formalism::FactKind F>(const Fact<F> fact)
+               {
+                   if (!m_explored.template get<F>().insert(fact).second)
+                       return;
+                   if (is_state_node(fact))
+                   {
+                       m_base.template get<F>().push_back(fact);
+                       return;
+                   }
 
-        auto has_arc = false;
-        for_each_node_achiever(node,
-                               [&](const Witness& witness)
-                               {
-                                   has_arc = true;
-                                   const auto arc = get_arc(witness);
-                                   if (!arc.source)
-                                   {
-                                       m_base.push_back(node);
-                                       return;
-                                   }
-                                   if (m_goal_zone.contains(*arc.source))
-                                       return;
-                                   auto& first = m_first_dependent.try_emplace(*arc.source, m_dependents.size());
-                                   m_dependents.emplace_back(node, std::exchange(first, m_dependents.size()));
-                                   m_stack.push_back(*arc.source);
-                               });
-        if (!has_arc)
-            m_base.push_back(node);
+                   auto has_arc = false;
+                   this->for_each_achiever(fact,
+                                           [&](const Witness& witness)
+                                           {
+                                               has_arc = true;
+                                               const auto arc = get_arc(witness);
+                                               if (!arc.has_source())
+                                               {
+                                                   m_base.template get<F>().push_back(fact);
+                                                   return;
+                                               }
+                                               arc.visit_source(
+                                                   [&]<formalism::FactKind G>(const Fact<G> source)
+                                                   {
+                                                       if (m_goal_zone.template get<G>().contains(source))
+                                                           return;
+                                                       auto& dependents = m_dependents.template get<F>();
+                                                       auto& firsts = m_first_dependent.template get<G>().try_emplace(source, no_dependents).first->second;
+                                                       auto& first = firsts[boost::mp11::mp_find<datalog::MutableTags, F>::value];
+                                                       if (first == no_dependent)
+                                                           first = dependents.size();
+                                                       dependents.emplace_back(fact, std::exchange(first, dependents.size()));
+                                                       m_stack.template get<G>().push_back(source);
+                                                   });
+                                           });
+                   if (!has_arc)
+                       m_base.template get<F>().push_back(fact);
+               }))
+    {
     }
 
-    while (!m_base.empty())
+    while (pop(m_base,
+               [&]<formalism::FactKind F>(const Fact<F> fact)
+               {
+                   if (!m_before_goal_zone.template get<F>().insert(fact).second)
+                       return;
+                   const auto& first_dependents = m_first_dependent.template get<F>();
+                   const auto it = first_dependents.find(fact);
+                   if (it == first_dependents.end())
+                       return;
+                   boost::mp11::mp_for_each<datalog::MutableTags>(
+                       [&]<typename G>(G)
+                       {
+                           const auto& dependents = m_dependents.template get<G>();
+                           const auto first = it->second[boost::mp11::mp_find<datalog::MutableTags, G>::value];
+                           if (first == no_dependent)
+                               return;
+                           for (auto dependent = first;; dependent = dependents[dependent].second)
+                           {
+                               m_base.template get<G>().push_back(dependents[dependent].first);
+                               if (dependents[dependent].second == dependent)  // the last names itself
+                                   break;
+                           }
+                       });
+               }))
     {
-        const auto node = m_base.back();
-        m_base.pop_back();
-        if (!m_before_goal_zone.insert(node))
-            continue;
-        if (const auto* first = m_first_dependent.find(node))
-            for (auto dependent = *first;; dependent = m_dependents[dependent].second)
-            {
-                m_base.push_back(m_dependents[dependent].first);
-                if (m_dependents[dependent].second == dependent)  // the last names itself
-                    break;
-            }
     }
 }
 
@@ -442,13 +444,14 @@ void LMCutImplementation<Kind>::mark_before_goal_zone()
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms)
 {
-    m_goal_zone.clear();
-    m_before_goal_zone.clear();
-    m_explored.clear();
-    m_first_dependent.clear();
-    m_dependents.clear();
-    m_stack.clear();
-    m_base.clear();
+    const auto clear_each = [](auto& family) { family.for_each([](auto& member) { member.clear(); }); };
+    clear_each(m_goal_zone);
+    clear_each(m_before_goal_zone);
+    clear_each(m_explored);
+    clear_each(m_first_dependent);
+    clear_each(m_dependents);
+    clear_each(m_stack);
+    clear_each(m_base);
     m_cut_cost = std::numeric_limits<datalog::Cost>::max();
     m_cut.clear();
     {
@@ -461,23 +464,29 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
     }
 
     const auto stopwatch = ygg::StopwatchScope(m_statistics.cut_time);
-    m_goal_zone.for_each(
-        [&](const Node head)
+    boost::mp11::mp_for_each<datalog::MutableTags>(
+        [&]<typename F>(F)
         {
-            for_each_node_achiever(head,
-                                   [&](const Witness& witness)
-                                   {
-                                       if (!this->is_action_witness(witness))
-                                           return;
-                                       const auto arc = get_arc(witness);
-                                       if (arc.cost == 0 || (arc.source && !m_before_goal_zone.contains(*arc.source)))
-                                           return;
+            for (const auto head : m_goal_zone.template get<F>())
+                this->for_each_achiever(head,
+                                        [&](const Witness& witness)
+                                        {
+                                            if (!this->is_action_witness(witness))
+                                                return;
+                                            const auto arc = get_arc(witness);
+                                            if (arc.cost == 0)
+                                                return;
+                                            auto from_before_goal_zone = true;
+                                            arc.visit_source([&]<formalism::FactKind G>(const Fact<G> source)
+                                                             { from_before_goal_zone = m_before_goal_zone.template get<G>().contains(source); });
+                                            if (!from_before_goal_zone)
+                                                return;
 
-                                       m_cut_cost = std::min(m_cut_cost, arc.cost);
-                                       this->for_each_action_binding(witness, [&](const auto action_binding) { m_cut.insert(action_binding); });
-                                       if (cut_frontier_atoms)
-                                           append_cut_frontier_atom(head, *cut_frontier_atoms);
-                                   });
+                                            m_cut_cost = std::min(m_cut_cost, arc.cost);
+                                            this->for_each_action_binding(witness, [&](const auto action_binding) { m_cut.insert(action_binding); });
+                                            if (cut_frontier_atoms)
+                                                append_cut_frontier_atom(head, *cut_frontier_atoms);
+                                        });
         });
 }
 
@@ -518,13 +527,17 @@ struct LMCutHeuristic<Kind>::Impl
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
     ygg::float_t evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
-    { return m_implementation.evaluate(state, cut_frontier_atoms); }
+    {
+        return m_implementation.evaluate(state, cut_frontier_atoms);
+    }
 
     void print_summary(size_t verbosity) const { m_implementation.print_summary(verbosity); }
 
 private:
     static Implementation make_implementation(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-    { return Implementation(std::make_shared<detail::RPGDefinition<Kind>>(std::move(task), cost_mode), std::move(execution_context)); }
+    {
+        return Implementation(std::make_shared<detail::RPGDefinition<Kind>>(std::move(task), cost_mode), std::move(execution_context));
+    }
 
     Implementation m_implementation;
 };
@@ -551,15 +564,21 @@ LMCutHeuristic<Kind>& LMCutHeuristic<Kind>::operator=(LMCutHeuristic&&) noexcept
 
 template<TaskKind Kind>
 LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{ return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
+{
+    return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode);
+}
 
 template<TaskKind Kind>
 void LMCutHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{ m_impl->set_goal(goal); }
+{
+    m_impl->set_goal(goal);
+}
 
 template<TaskKind Kind>
 ygg::float_t LMCutHeuristic<Kind>::evaluate(const StateView<Kind>& state)
-{ return m_impl->evaluate(state); }
+{
+    return m_impl->evaluate(state);
+}
 
 template<TaskKind Kind>
 formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const StateView<Kind>& state)
@@ -573,11 +592,15 @@ formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristi
 
 template<TaskKind Kind>
 HeuristicPtr<Kind> LMCutHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
+{
+    return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 
 template<TaskKind Kind>
 void LMCutHeuristic<Kind>::print_summary(size_t verbosity) const
-{ m_impl->print_summary(verbosity); }
+{
+    m_impl->print_summary(verbosity);
+}
 
 template class LMCutHeuristic<GroundTag>;
 template class LMCutHeuristic<LiftedTag>;
