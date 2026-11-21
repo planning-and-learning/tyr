@@ -111,9 +111,7 @@ RemapStatus classify_literal(formalism::planning::AtomView<GroundTag, T> atom,
 template<formalism::FactKind T>
 RemapStatus classify_literal(formalism::planning::LiteralView<GroundTag, T> literal,
                              const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
-{
-    return classify_literal(literal.get_atom(), literal.get_polarity(), atoms);
-}
+{ return classify_literal(literal.get_atom(), literal.get_polarity(), atoms); }
 
 struct RemappedFDRFact
 {
@@ -550,18 +548,18 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto ground_task = formalism::planning::checkout<formalism::planning::Task<GroundTag>>(builder);
 
-    auto merge_context = formalism::WriteContext { builder, *repository };
+    auto write_context = formalism::WriteContext { builder, *repository };
 
     ground_task->name = task.get_name();
     urd::store(ground_task->domain, task.get_domain());
     for (const auto predicate : task.get_derived_predicates())
-        urd::append(ground_task->derived_predicates, copy(predicate, merge_context).first);
+        urd::append(ground_task->derived_predicates, copy(predicate, write_context).first);
     for (const auto object : task.get_objects())
-        urd::append(ground_task->objects, copy(object, merge_context).first);
+        urd::append(ground_task->objects, copy(object, write_context).first);
 
     auto initial_atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
-        initial_atoms.push_back(copy(atom, merge_context).first);
+        initial_atoms.push_back(copy(atom, write_context).first);
 
     /**
      * Create ground atoms
@@ -612,29 +610,29 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto static_atoms = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::StaticTag>>>();  // the static state's
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
     {
-        const auto copied = copy(atom, merge_context).first;
+        const auto copied = copy(atom, write_context).first;
         urd::append(ground_task->static_atoms, copied);
         static_atoms.push_back(copied.index());
     }
     for (const auto atom : fluent_atoms)
-        urd::append(ground_task->fluent_atoms, copy(atom, merge_context).first);
+        urd::append(ground_task->fluent_atoms, copy(atom, write_context).first);
     for (const auto atom : derived_atoms)
-        urd::append(ground_task->derived_atoms, copy(atom, merge_context).first);
+        urd::append(ground_task->derived_atoms, copy(atom, write_context).first);
     auto static_fterm_values = urd::flat_vector<urd::index<formalism::FunctionTermValue<GroundTag, formalism::StaticTag>>>();
     for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
     {
-        const auto copied = copy(fterm_value, merge_context).first;
+        const auto copied = copy(fterm_value, write_context).first;
         urd::append(ground_task->static_fterm_values, copied);
         static_fterm_values.push_back(copied.index());
     }
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
-        urd::append(ground_task->fluent_fterm_values, copy(fterm_value, merge_context).first);
+        urd::append(ground_task->fluent_fterm_values, copy(fterm_value, write_context).first);
     if (task.get_auxiliary_fterm_value().has_value())
-        urd::store(ground_task->auxiliary_fterm_value, copy(task.get_auxiliary_fterm_value().value(), merge_context).first);
+        urd::store(ground_task->auxiliary_fterm_value, copy(task.get_auxiliary_fterm_value().value(), write_context).first);
     if (task.get_metric())
-        urd::store(ground_task->metric, copy(task.get_metric().value(), merge_context).first);
+        urd::store(ground_task->metric, copy(task.get_metric().value(), write_context).first);
     for (const auto axiom : task.get_axioms())
-        urd::append(ground_task->axioms, copy(axiom, merge_context).first);
+        urd::append(ground_task->axioms, copy(axiom, write_context).first);
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context->get_variables())
@@ -642,7 +640,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
-        if (const auto fact = std::as_const(*fdr_context).get_fact(copy(atom, merge_context).first))
+        if (const auto fact = std::as_const(*fdr_context).get_fact(copy(atom, write_context).first))
             urd::build_member(ground_task->fluent_facts.emplace_back(),
                               urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact->get_variable(), fact->get_value()),
                               *repository);
@@ -651,7 +649,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     /// --- Create FDR goal
     const auto goal_or_nullopt =
-        create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, static_state, *fdr_context, merge_context);
+        create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, static_state, *fdr_context, write_context);
     if (goal_or_nullopt.has_value())
         urd::store(ground_task->goal, *goal_or_nullopt);
     else

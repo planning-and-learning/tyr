@@ -112,9 +112,7 @@ Out write(Out out, const urd::index_view<tf::NumericEffect<T, F>, C>& value);
 /// A number of a function expression.
 template<typename Out>
 Out write(Out out, ygg::float_t value)
-{
-    return fmt::format_to(out, "{}", value);
-}
+{ return fmt::format_to(out, "{}", value); }
 
 /// A function expression or a term: the alternative it holds.
 template<typename Out, typename... Alternatives>
@@ -146,27 +144,19 @@ Out write_lifted_arguments(Out out, const View& value, std::string_view name)
 
 template<typename Out, typename C>
 Out write(Out out, const urd::index_view<tf::Object, C>& value)
-{
-    return fmt::format_to(out, "{}", value.get_name());
-}
+{ return fmt::format_to(out, "{}", value.get_name()); }
 
 template<typename Out, typename C>
 Out write(Out out, const urd::index_view<tf::Variable, C>& value)
-{
-    return fmt::format_to(out, "{}", value.get_name());
-}
+{ return fmt::format_to(out, "{}", value.get_name()); }
 
 template<typename Out, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Predicate<F>, C>& value)
-{
-    return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity());
-}
+{ return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity()); }
 
 template<typename Out, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Function<F>, C>& value)
-{
-    return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity());
-}
+{ return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity()); }
 
 template<typename Out, tyr::TaskKind T, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Atom<T, F>, C>& value)
@@ -301,9 +291,7 @@ Out write_rule_body(Out out, const Body& value)
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<td::RuleBody<GroundTag>, td::Repository>>::format(const urd::index_view<td::RuleBody<GroundTag>, td::Repository>& value,
                                                                                  fmt::format_context& context) const
-{
-    return write_rule_body(context.out(), value);
-}
+{ return write_rule_body(context.out(), value); }
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Repository>>::format(const urd::index_view<td::Rule<T>, td::Repository>& value,

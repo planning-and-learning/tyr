@@ -18,8 +18,8 @@
 #include "tyr/datalog/static_rule_filter.hpp"
 
 #include "tyr/datalog/applicability.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_builder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/detail/repository_instantiations.hpp"
 

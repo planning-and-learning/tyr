@@ -33,12 +33,12 @@ def test_repository_accepts_object_counts() -> None:
     parent.insert(formalism.ObjectData("first"))[0]
     second = parent.insert(formalism.ObjectData("second"))[0]
     predicate = parent.insert(formalism.PredicateStaticData("predicate", 1))[0]
-    binding = parent.insert(formalism.RowPredicateStaticData(predicate, [second.index()]))[0]
+    binding = parent.insert(formalism.RowPredicateStaticData(predicate.index(), [second.index().value]))[0]
     assert list(binding.get_values()) == [second.index().value]
 
     child = planning.Repository(parent, num_objects=3)
     third = child.insert(formalism.ObjectData("third"))[0]
-    binding = child.insert(formalism.RowPredicateStaticData(predicate, [third.index()]))[0]
+    binding = child.insert(formalism.RowPredicateStaticData(predicate.index(), [third.index().value]))[0]
     assert list(binding.get_values()) == [third.index().value]
 
 
@@ -61,9 +61,9 @@ def test_inserted_binding_children_retain_repository() -> None:
     repository = planning.Repository()
     obj, _ = repository.insert(formalism.ObjectData("retained"))
     predicate, _ = repository.insert(formalism.PredicateStaticData("p", 1))
-    binding, inserted = repository.insert(formalism.RowPredicateStaticData(predicate, [obj.index()]))
+    binding, inserted = repository.insert(formalism.RowPredicateStaticData(predicate.index(), [obj.index().value]))
     assert inserted is True
-    duplicate, inserted = repository.insert(formalism.RowPredicateStaticData(predicate, [obj.index()]))
+    duplicate, inserted = repository.insert(formalism.RowPredicateStaticData(predicate.index(), [obj.index().value]))
     assert inserted is False
     assert duplicate == binding
     child = binding.get_relation()  # a child view of the row: its predicate

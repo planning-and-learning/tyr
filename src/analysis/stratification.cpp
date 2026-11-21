@@ -71,7 +71,7 @@ struct RelationVertexMap
 
 /// Calls `function` with each head of the rule, of each kind.
 template<typename Function>
-void for_each_head(formalism::datalog::RuleView<LiftedTag> rule, Function&& function)
+void for_each_head(formalism::datalog::RuleView<LiftedTag> rule, Function function)
 {
     for (const auto head : rule.get_heads<formalism::FluentTag>())
         function(head);

@@ -94,4 +94,36 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
 
 }  // namespace urd
 
+namespace tyr::formalism::datalog
+{
+
+/// Lists everything of the program but its rules in a program builder of a layer over the program's (its records, as
+/// they are).
+template<TaskKind T>
+void list_except_rules(ProgramView<T> element, urd::builder<Program<T>, Repository>& result)
+{
+    const auto list_all = [&](const auto elements, auto& destination)
+    {
+        for (const auto e : elements)
+            urd::append(destination, e);
+    };
+
+    list_all(element.template get_predicates<StaticTag>(), result.static_predicates);
+    list_all(element.template get_predicates<FluentTag>(), result.fluent_predicates);
+    list_all(element.template get_predicates<DerivedTag>(), result.derived_predicates);
+    list_all(element.template get_functions<StaticTag>(), result.static_functions);
+    list_all(element.template get_functions<FluentTag>(), result.fluent_functions);
+    list_all(element.get_objects(), result.objects);
+    list_all(element.template get_atoms<StaticTag>(), result.static_atoms);
+    list_all(element.template get_atoms<FluentTag>(), result.fluent_atoms);
+    list_all(element.template get_atoms<DerivedTag>(), result.derived_atoms);
+    list_all(element.template get_fterm_values<StaticTag>(), result.static_fterm_values);
+    list_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
+
+    if (const auto goal = element.get_goal())
+        urd::store(result.goal, *goal);
+}
+
+}
+
 #endif

@@ -25,7 +25,6 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
@@ -142,7 +141,5 @@ datalog::Program<LiftedTag>& AxiomEvaluatorProgram::get_datalog_program() noexce
 const datalog::Program<LiftedTag>& AxiomEvaluatorProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& AxiomEvaluatorProgram::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
+{ return m_datalog_program.get_const_program_workspace(); }
 }

@@ -107,8 +107,8 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         else
             return *workspace.workspace_repository;
     }();
-    auto merge_context = formalism::WriteContext { workspace.datalog_builder, destination };
-    auto condition = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(merge_context.builder());
+    auto write_context = formalism::WriteContext { workspace.datalog_builder, destination };
+    auto condition = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(write_context.builder());
 
     for (const auto fact : source_goal.template get_facts<formalism::PositiveTag>())
     {
@@ -116,14 +116,14 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         if (!atom)
             continue;
 
-        auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder());
+        auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(write_context.builder());
         // The goal's atom, the task's: the program is a layer over the task's repository.
         urd::store(literal->atom, *atom);
         literal->polarity = true;
-        urd::append(condition->fluent_literals, merge_context.destination().insert(*literal, merge_context.builder()).first);
+        urd::append(condition->fluent_literals, write_context.destination().insert(*literal, write_context.builder()).first);
     }
 
-    workspace.tp.set_goals(merge_context.destination().insert(*condition, merge_context.builder()).first);
+    workspace.tp.set_goals(write_context.destination().insert(*condition, write_context.builder()).first);
 }
 
 template<typename Derived,
@@ -149,18 +149,14 @@ public:
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    {
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
-    }
+    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
 
     RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    {
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
-    }
+    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
@@ -201,9 +197,7 @@ protected:
 
     void set_action_binding_cost(formalism::planning::ActionRowView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
-    {
-        m_workspace.cost_policy.set_action_cost(action_binding, cost);
-    }
+    { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
 
     template<formalism::FactKind F>
     [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateRowView<F> head) const noexcept
@@ -224,9 +218,7 @@ protected:
     /// Calls back the binding of every action whose rule the witness instantiates; identical relaxed rules share one rule.
     template<typename Callback>
     void for_each_action_binding(const datalog::WitnessAnnotation<Kind>& witness, Callback callback)
-    {
-        Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback);
-    }
+    { Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback); }
 
     /// The binding of one action whose rule the witness instantiates, if any.
     std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation<Kind>& witness)

@@ -70,7 +70,6 @@ namespace
  */
 
 void append_from_condition(formalism::planning::ConjunctiveConditionView<LiftedTag> cond,
-                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                            urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     // Keep negated static atoms because they are monotonic
@@ -105,7 +104,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
 
     for (const auto variable : action.get_variables())
         urd::append(conj_cond->variables, variable);
-    append_from_condition(action.get_condition(), context, *conj_cond);
+    append_from_condition(action.get_condition(), *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
@@ -137,7 +136,7 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 
     for (const auto variable : axiom.get_variables())
         urd::append(conj_cond->variables, variable);
-    append_from_condition(axiom.get_body(), context, *conj_cond);
+    append_from_condition(axiom.get_body(), *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
@@ -167,7 +166,7 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
 
     for (const auto variable : cond_eff.get_variables())
         urd::append(conj_cond->variables, variable);
-    append_from_condition(cond_eff.get_condition(), context, *conj_cond);
+    append_from_condition(cond_eff.get_condition(), *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
@@ -323,17 +322,13 @@ const AppPredicateToActionMapping& GroundTaskProgram::get_predicate_to_action_ma
 const GroundTaskProgram::AppPredicateToAxiomMapping& GroundTaskProgram::get_predicate_to_axiom_mapping() const noexcept { return m_predicate_to_axioms; }
 
 const ConditionalEffectToPredicateMapping& GroundTaskProgram::get_conditional_effect_to_predicate_mapping() const noexcept
-{
-    return m_conditional_effect_to_predicate;
-}
+{ return m_conditional_effect_to_predicate; }
 
 datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& GroundTaskProgram::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
+{ return m_datalog_program.get_const_program_workspace(); }
 
 }

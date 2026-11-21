@@ -60,14 +60,10 @@ namespace tyr::planning
 {
 
 urd::flat_string create_applicability_name(formalism::planning::ActionView<LiftedTag> action)
-{
-    return urd::flat_string { std::string { "@" } + action.get_name().str() + std::string("_") + std::to_string(action.index().value) };
-}
+{ return urd::flat_string { std::string { "@" } + action.get_name().str() + std::string("_") + std::to_string(action.index().value) }; }
 
 urd::flat_string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff)
-{
-    return urd::flat_string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.index().value) };
-}
+{ return urd::flat_string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.index().value) }; }
 
 std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
 create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,

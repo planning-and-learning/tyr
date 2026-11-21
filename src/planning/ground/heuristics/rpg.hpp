@@ -48,20 +48,14 @@ struct RPGPolicy<GroundTag>
 
     template<typename Workspace>
     static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
-    {
-        materialize_goal(definition, workspace, source_goal);
-    }
+    { materialize_goal(definition, workspace, source_goal); }
 
     template<typename Workspace>
     static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
-    {
-        workspace.clear_costs();
-    }
+    { workspace.clear_costs(); }
 
     static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation<GroundTag>& witness)
-    {
-        return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key());
-    }
+    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key()); }
 
     template<typename Workspace, typename Callback>
     static void

@@ -78,9 +78,7 @@ struct RPGPolicy<LiftedTag>
     }
 
     static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation<LiftedTag>& witness)
-    {
-        return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation);
-    }
+    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation); }
 
     /// Grounds every action of the witness's rule with the binding the witness recovers.
     template<typename Workspace, typename Callback>

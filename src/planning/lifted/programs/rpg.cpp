@@ -24,7 +24,6 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -66,7 +65,6 @@ namespace tyr::planning
 namespace
 {
 void append_variable(formalism::planning::VariableView variable,
-                     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                      urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     const auto child = urd::child<formalism::Variable, formalism::datalog::Repository>(variable.index());
@@ -77,12 +75,11 @@ void append_variable(formalism::planning::VariableView variable,
 /// The relaxation holds no values of functions: the numeric constraints of a condition are taken to hold.
 void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> action,
                                 formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
-                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                                 urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::datalog::Repository>& conj_cond)
 {
     // Action parameter may get deleted.
     for (const auto& variable : action.get_variables())
-        append_variable(variable, context, conj_cond);
+        append_variable(variable, conj_cond);
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
         urd::append(conj_cond.static_literals, literal);
     for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
@@ -90,7 +87,7 @@ void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> actio
             urd::append(conj_cond.fluent_literals, literal);
 
     for (const auto variable : cond_eff.get_variables())
-        append_variable(variable, context, conj_cond);
+        append_variable(variable, conj_cond);
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::StaticTag>())
         urd::append(conj_cond.static_literals, literal);
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::FluentTag>())
@@ -118,7 +115,7 @@ auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> acti
 
     auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
-    fill_delete_free_condition(action, cond_eff, context, *conj_cond);
+    fill_delete_free_condition(action, cond_eff, *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 

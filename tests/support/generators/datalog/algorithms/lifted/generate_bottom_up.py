@@ -22,8 +22,14 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr import datalog
-from pytyr.formalism.planning import PredicateDerived, PredicateFluent, RowPredicateDerived, RowPredicateFluent
-from pytyr.formalism.planning import LiftedPlanningTask, Parser
+from pytyr.formalism.planning import (
+    LiftedPlanningTask,
+    Parser,
+    PredicateDerived,
+    PredicateFluent,
+    RowPredicateDerived,
+    RowPredicateFluent,
+)
 from pytyr.planning import lifted as planning
 
 ROOT = Path(__file__).resolve().parents[6]
@@ -70,14 +76,19 @@ Row = RowPredicateFluent | RowPredicateDerived
 def predicate_rows(
     program: datalog.lifted.Program, workspace: Workspace
 ) -> list[tuple[PredicateFluent | PredicateDerived, list[Row]]]:
-    """The rows `workspace` holds of each fluent, then each derived, predicate of `program`, by ascending predicate index."""
+    """The rows `workspace` holds of each fluent, then each derived, predicate of `program`.
+
+    Predicates come by ascending index.
+    """
     result: list[tuple[PredicateFluent | PredicateDerived, list[Row]]] = []
     for fact_sets, predicates in (
         (workspace.get_fluent_fact_sets(), program.get_program().get_fluent_predicates()),
         (workspace.get_derived_fact_sets(), program.get_program().get_derived_predicates()),
     ):
-        for predicate in sorted(predicates, key=lambda predicate: int(predicate.index())):
-            result.append((predicate, list(fact_sets.rows(int(predicate.index())))))
+        result.extend(
+            (predicate, list(fact_sets.rows(int(predicate.index()))))
+            for predicate in sorted(predicates, key=lambda predicate: int(predicate.index()))
+        )
     return result
 
 
@@ -105,7 +116,9 @@ def atoms_by_predicate(
     workspace: Workspace,
     effect_programs: planning.ApplicableActionProgram | planning.GroundTaskProgram | None = None,
 ) -> list[PredicateAtoms]:
-    """The fluent and derived atoms by predicate, without the predicates of the conditional effects of `effect_programs`.
+    """The fluent and derived atoms by predicate.
+
+    The predicates of the conditional effects of `effect_programs` are left out.
 
     Those predicates are internal to the action and ground task programs; the solver test leaves them out the same way.
     """

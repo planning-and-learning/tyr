@@ -199,9 +199,7 @@ struct InsertConstantPolicy
 
     template<typename Element>
     [[nodiscard]] bool should_skip(Element) const
-    {
-        return false;
-    }
+    { return false; }
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
@@ -239,15 +237,11 @@ struct RestrictPolicy
 
     template<typename Element>
     [[nodiscard]] bool should_skip(Element) const
-    {
-        return false;
-    }
+    { return false; }
 
     template<formalism::FactKind T>
     [[nodiscard]] bool should_skip(formalism::planning::LiteralView<LiftedTag, T> literal) const
-    {
-        return !literal.get_polarity();
-    }
+    { return !literal.get_polarity(); }
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
@@ -286,9 +280,7 @@ struct LiftPolicy
 
     template<typename Element>
     [[nodiscard]] bool should_skip(Element) const
-    {
-        return false;
-    }
+    { return false; }
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
 
@@ -334,9 +326,7 @@ void apply_policy(ygg::float_t, Policy&)
 
 template<typename Policy>
 void apply_policy(formalism::planning::UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
-{
-    apply_policy(element.get_arg(), policy);
-}
+{ apply_policy(element.get_arg(), policy); }
 
 template<formalism::OperatorKind O, typename Policy>
 void apply_policy(formalism::planning::BinaryOperatorView<LiftedTag, O> element, Policy& policy)

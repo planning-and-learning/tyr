@@ -147,9 +147,7 @@ public:
 
     /// The cost a ready rule fires with: the aggregate of its conditions' costs.
     [[nodiscard]] Cost support(formalism::datalog::RuleView<GroundTag> rule) const noexcept
-    {
-        return m_states[static_cast<ygg::uint_t>(rule.index().value)].support;
-    }
+    { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);

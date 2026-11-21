@@ -34,9 +34,7 @@ concept FunctionContract = std::constructible_from<urd::index<Entity>, ygg::uint
 
 template<typename Repository, typename... Entities>
 consteval bool function_contracts(boost::mp11::mp_list<Entities...>)
-{
-    return (FunctionContract<Entities, Repository> && ...);
-}
+{ return (FunctionContract<Entities, Repository> && ...); }
 
 static_assert(function_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::FunctionTypes {}));
 

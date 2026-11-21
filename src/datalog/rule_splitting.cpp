@@ -21,9 +21,9 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_builder.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -174,9 +174,7 @@ private:
 
     template<formalism::FactKind F>
     [[nodiscard]] Parameters parameters_of(urd::index<formalism::Literal<LiftedTag, F>> literal) const
-    {
-        return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()));
-    }
+    { return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination())); }
 
     [[nodiscard]] Parameters parameters_of(const Body& body) const
     {

@@ -22,7 +22,6 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -60,8 +59,6 @@ namespace tyr::planning
 {
 
 std::size_t num_task_derived_predicates(formalism::planning::TaskView<LiftedTag> task)
-{
-    return task.get_domain().get_predicates<formalism::DerivedTag>().size() + task.get_derived_predicates().size();
-}
+{ return task.get_domain().get_predicates<formalism::DerivedTag>().size() + task.get_derived_predicates().size(); }
 
 }

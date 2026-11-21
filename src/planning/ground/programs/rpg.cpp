@@ -23,7 +23,6 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -69,12 +68,12 @@ namespace
 struct GroundProgramBuildContext
 {
     formalism::datalog::Builder builder;
-    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> merge_context;
+    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> write_context;
     urd::handle<urd::builder<formalism::datalog::Program<GroundTag>, formalism::datalog::Repository>> program;
 
     explicit GroundProgramBuildContext(formalism::datalog::Repository& repository) :
         builder(),
-        merge_context(builder, repository),
+        write_context(builder, repository),
         program(formalism::datalog::checkout<formalism::datalog::Program<GroundTag>>(builder))
     {
     }
@@ -85,7 +84,7 @@ void fill_delete_free_condition(formalism::planning::ConjunctiveConditionView<Gr
                                 urd::builder<formalism::datalog::RuleBody<GroundTag>, formalism::datalog::Repository>& result)
 {
     for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
-        if (const auto literal = create_fact_literal(fact, true, context.merge_context))
+        if (const auto literal = create_fact_literal(fact, true, context.write_context))
             urd::append(result.fluent_literals, *literal);
 }
 
@@ -95,7 +94,7 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condi
     auto result = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(condition, context, *result);
 
-    return context.merge_context.destination().insert(*result, context.builder).first;
+    return context.write_context.destination().insert(*result, context.builder).first;
 }
 
 /// The body of a conditional effect's rule: the action's precondition and the effect's condition, delete-free.
@@ -107,7 +106,7 @@ create_delete_free_effect_condition(formalism::planning::ConjunctiveConditionVie
     auto result = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(action_condition, context, *result);
     fill_delete_free_condition(effect_condition, context, *result);
-    return context.merge_context.destination().insert(*result, context.builder).first;
+    return context.write_context.destination().insert(*result, context.builder).first;
 }
 
 /// Identical rules are one rule: the second is not inserted.
@@ -119,9 +118,9 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag>>(context.builder);
     urd::store(rule->body, body);
-    urd::build_member(rule->fluent_heads, heads, context.merge_context.destination());
+    urd::build_member(rule->fluent_heads, heads, context.write_context.destination());
     rule->cost = cost;
-    return context.merge_context.destination().insert(*rule, context.builder);
+    return context.write_context.destination().insert(*rule, context.builder);
 }
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<GroundTag> action,

@@ -45,15 +45,11 @@ using tyr::LiftedTag;
 
 fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Object, tp::Repository>>::format(const urd::index_view<tf::Object, tp::Repository>& value,
                                                                                                   fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "{}", value.get_name());
-}
+{ return fmt::format_to(context.out(), "{}", value.get_name()); }
 
 fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Variable, tp::Repository>>::format(const urd::index_view<tf::Variable, tp::Repository>& value,
                                                                                                     fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "{}", value.get_name());
-}
+{ return fmt::format_to(context.out(), "{}", value.get_name()); }
 
 template<tf::FactKind F>
 fmt::format_context::iterator
@@ -137,17 +133,13 @@ template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::FunctionTermValue<T, F>, tp::Repository>>::format(const urd::index_view<tf::FunctionTermValue<T, F>, tp::Repository>& value,
                                                                                      fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "(= {} {})", value.get_fterm(), value.get_value());
-}
+{ return fmt::format_to(context.out(), "(= {} {})", value.get_fterm(), value.get_value()); }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::UnaryOperator<T, O>, tp::Repository>>::format(const urd::index_view<tf::UnaryOperator<T, O>, tp::Repository>& value,
                                                                                  fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "({} {})", value.get_operation(), value.get_arg());
-}
+{ return fmt::format_to(context.out(), "({} {})", value.get_operation(), value.get_arg()); }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
@@ -178,9 +170,7 @@ template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, tp::Repository>>::format(const urd::index_view<tf::NumericEffect<T, F>, tp::Repository>& value,
                                                                                  fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "({} {} {})", value.get_operation(), value.get_fterm(), value.get_fexpr());
-}
+{ return fmt::format_to(context.out(), "({} {} {})", value.get_operation(), value.get_fterm(), value.get_fexpr()); }
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
@@ -350,9 +340,7 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Axiom<T>, tp::R
 
 fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Metric, tp::Repository>>::format(const urd::index_view<tp::Metric, tp::Repository>& value,
                                                                                                   fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "(:metric {} {})", value.get_optimization_direction(), value.get_fexpr());
-}
+{ return fmt::format_to(context.out(), "(:metric {} {})", value.get_optimization_direction(), value.get_fexpr()); }
 
 // A domain: its sections each on a line of their own, one level deeper, its predicates and functions one per line
 // another level deeper (as loki writes a domain). Its requirements are those a normalized domain may use, and those of
@@ -510,15 +498,11 @@ fmt::format_context::iterator fmt::formatter<tp::ActionRowBuilderView>::format(c
 }
 
 fmt::format_context::iterator fmt::formatter<tp::PlanningDomain>::format(const tp::PlanningDomain& value, fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "{}", value.get_domain());
-}
+{ return fmt::format_to(context.out(), "{}", value.get_domain()); }
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator fmt::formatter<tp::PlanningTask<T>>::format(const tp::PlanningTask<T>& value, fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "{}\n{}", value.get_task().get_domain(), value.get_task());
-}
+{ return fmt::format_to(context.out(), "{}\n{}", value.get_task().get_domain(), value.get_task()); }
 
 fmt::format_context::iterator
 fmt::formatter<std::pair<tp::ActionRowView, tp::PlanFormatting>>::format(const std::pair<tp::ActionRowView, tp::PlanFormatting>& value,
@@ -534,9 +518,7 @@ fmt::formatter<std::pair<tp::ActionRowView, tp::PlanFormatting>>::format(const s
 fmt::format_context::iterator
 fmt::formatter<std::pair<tp::ActionView<GroundTag>, tp::PlanFormatting>>::format(const std::pair<tp::ActionView<GroundTag>, tp::PlanFormatting>& value,
                                                                                  fmt::format_context& context) const
-{
-    return fmt::format_to(context.out(), "{}", std::make_pair(value.first.get_row(), value.second));
-}
+{ return fmt::format_to(context.out(), "{}", std::make_pair(value.first.get_row(), value.second)); }
 
 // Each family's formatter, once for each record of the family the repository stores.
 template struct fmt::formatter<urd::index_view<tf::Predicate<tf::StaticTag>, tp::Repository>>;
@@ -604,15 +586,11 @@ template struct fmt::formatter<tp::PlanningTask<GroundTag>>;
 
 fmt::format_context::iterator fmt::formatter<tyr::formalism::planning::FDRValue>::format(const tyr::formalism::planning::FDRValue& value,
                                                                                          fmt::format_context& ctx) const
-{
-    return fmt::format_to(ctx.out(), "{}", value.value);
-}
+{ return fmt::format_to(ctx.out(), "{}", value.value); }
 
 fmt::format_context::iterator fmt::formatter<tyr::formalism::OptimizationDirection>::format(tyr::formalism::OptimizationDirection value,
                                                                                             fmt::format_context& ctx) const
-{
-    return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-}
+{ return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 
 template<typename T>
 fmt::format_context::iterator

@@ -22,9 +22,9 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_builder.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -193,7 +193,8 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::Progra
     {
         // Negative literals also need the complete relation to check absence.
         return std::ranges::any_of(rules,
-                                   [&](auto rule) {
+                                   [&](auto rule)
+                                   {
                                        return std::ranges::any_of(rule.get_body().template get_literals<F>(),
                                                                   [&](auto literal) { return literal.get_atom().get_predicate() == predicate; });
                                    });
@@ -229,16 +230,12 @@ const AppPredicateToActionMapping& ApplicableActionProgram::get_predicate_to_act
 const ApplicableActionProgram::SchemaPrograms& ApplicableActionProgram::get_schema_programs() const noexcept { return m_schema_programs; }
 
 const ConditionalEffectToPredicateMapping& ApplicableActionProgram::get_conditional_effect_to_predicate_mapping() const noexcept
-{
-    return m_conditional_effect_to_predicate;
-}
+{ return m_conditional_effect_to_predicate; }
 
 datalog::Program<LiftedTag>& ApplicableActionProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& ApplicableActionProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& ApplicableActionProgram::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
+{ return m_datalog_program.get_const_program_workspace(); }
 }

@@ -58,9 +58,7 @@ ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag
                     program.get_objects().size(),
                     static_fact_sets),
     rules()
-{
-    initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules);
-}
+{ initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules); }
 
 KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                              formalism::datalog::ProgramView<LiftedTag> program,
@@ -68,9 +66,7 @@ KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                              const MutableFactSets& fact_sets) :
     assignment_sets(program, domains, fact_sets),
     rules()
-{
-    initialize_rule_workspaces(const_workspace, rules);
-}
+{ initialize_rule_workspaces(const_workspace, rules); }
 
 void KCKPWorkspace::clear()
 {

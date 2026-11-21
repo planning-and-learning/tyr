@@ -34,9 +34,7 @@ concept PredicateContract = std::constructible_from<urd::index<Entity>, ygg::uin
 
 template<typename Repository, typename... Entities>
 consteval bool predicate_contracts(boost::mp11::mp_list<Entities...>)
-{
-    return (PredicateContract<Entities, Repository> && ...);
-}
+{ return (PredicateContract<Entities, Repository> && ...); }
 
 static_assert(predicate_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::PredicateTypes {}));
 

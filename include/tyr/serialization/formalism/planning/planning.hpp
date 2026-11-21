@@ -40,9 +40,7 @@ namespace ygg::serialization
 {
 
 inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ParameterIndex& value, Dictionaries*)
-{
-    result = value.value;
-}
+{ result = value.value; }
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
