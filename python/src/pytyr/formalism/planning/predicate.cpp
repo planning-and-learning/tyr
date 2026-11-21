@@ -23,7 +23,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/interning.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>

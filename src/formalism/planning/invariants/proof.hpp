@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_PROOF_HPP_
 
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
