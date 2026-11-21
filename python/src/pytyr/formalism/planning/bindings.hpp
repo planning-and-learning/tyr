@@ -22,12 +22,12 @@
 
 #include <tyr/formalism/planning/declarations.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 using RepositoryBinding = nb::class_<Repository>;
 
-void bind_formalism(nb::module_& m);
+void bind_planning_formalism(nb::module_& m);
 void bind_parser(nb::module_& m);
 
 void bind_row(nb::module_& m, RepositoryBinding& repository);
@@ -62,6 +62,6 @@ namespace invariant
 void bind_invariants(nb::module_& m);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism
 
 #endif

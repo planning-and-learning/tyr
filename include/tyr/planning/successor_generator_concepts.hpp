@@ -52,23 +52,23 @@ struct ActionBindingResult;
 
 /// Ground enumeration borrows compiled bindings; lifted enumeration borrows reusable binding data.
 template<TaskKind Kind>
-using ActionBindingView = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionRowView, formalism::planning::ActionRowBuilderView>;
+using ActionBindingView = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::ActionRowView, formalism::ActionRowBuilderView>;
 
 /// The action schema a lifted binding names: an interned row's relation, or a borrowed binding's (a builder's), which is
 /// the interned schema it was staged with (std::bad_variant_access where it is not interned).
 /// Whether a binding reads its relation as an action view (an interned row, a record's borrowed view).
 template<typename Binding>
 concept ReadsActionView = requires(const Binding& binding) {
-    { binding.get_relation() } -> std::same_as<formalism::planning::ActionView<LiftedTag>>;
+    { binding.get_relation() } -> std::same_as<formalism::ActionView<LiftedTag>>;
 };
 
 template<typename Binding>
-formalism::planning::ActionView<LiftedTag> action_of(const Binding& binding)
+formalism::ActionView<LiftedTag> action_of(const Binding& binding)
 {
     if constexpr (ReadsActionView<Binding>)
         return binding.get_relation();
     else
-        return std::get<formalism::planning::ActionView<LiftedTag>>(binding.get_relation());
+        return std::get<formalism::ActionView<LiftedTag>>(binding.get_relation());
 }
 
 /// Borrowed lists append distinct builders without invalidating previous outputs or the source.

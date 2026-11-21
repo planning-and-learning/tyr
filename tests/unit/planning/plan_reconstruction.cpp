@@ -587,7 +587,7 @@ void expect_action_sequence_replay(const tyr::planning::TaskPtr<Kind>& task)
         EXPECT_EQ(empty.get_cost(), 0);
 
         auto node = start.unpack();
-        auto actions = urd::Store<urd::sequence<formalism::planning::ActionRowView>> {};
+        auto actions = urd::Store<urd::sequence<formalism::ActionRowView>> {};
         for (const auto name : { "first", "second" })
         {
             const auto applicable = generator->get_applicable_action_bindings(node);
@@ -1295,7 +1295,7 @@ void expect_parallel_brfs_exhaustion(const tyr::planning::TaskPtr<Kind>& task, R
 
 TEST(TyrPlanningPlanReconstructionTest, ReplaysKnownActionsWithMetricsAndOwnedPackedStates)
 {
-    auto lifted = tyr::planning::Task<LiftedTag>::create(formalism::planning::Parser(R"(
+    auto lifted = tyr::planning::Task<LiftedTag>::create(formalism::Parser(R"(
 (define (domain action-replay)
   (:requirements :adl :derived-predicates :action-costs)
   (:predicates (start) (middle) (ready) (done))
@@ -1306,7 +1306,7 @@ TEST(TyrPlanningPlanReconstructionTest, ReplaysKnownActionsWithMetricsAndOwnedPa
   (:action second :parameters () :precondition (ready)
     :effect (and (not (middle)) (done) (increase (total-cost) 7))))
 )",
-                                                                                     "action-replay-domain.pddl")
+                                                                           "action-replay-domain.pddl")
                                                              .parse_task(R"(
 (define (problem action-replay-problem)
   (:domain action-replay)

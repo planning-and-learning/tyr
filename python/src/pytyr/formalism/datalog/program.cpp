@@ -29,7 +29,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 namespace
@@ -53,4 +53,4 @@ void bind_program(nb::module_& m, RepositoryBinding& repository)
     bind_program_kind<GroundTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::datalog
+}  // namespace tyr::formalism

@@ -21,7 +21,7 @@
 
 #ifndef TYR_HEADER_INSTANTIATION
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 template std::pair<FunctionRowView<StaticTag>, bool> ground(TermListView terms, FunctionView<StaticTag> function, WriteContext<Builder, Repository>& context);
 template std::pair<FunctionRowView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, WriteContext<Builder, Repository>& context);

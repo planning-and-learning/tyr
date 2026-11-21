@@ -40,9 +40,7 @@ class Node;
 
 /// A node and the action binding that reached it: by default an interned binding; a borrowed one (ActionBindingView,
 /// runir's rule evaluation) before it is materialized.
-template<TaskKind Kind,
-         StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding = formalism::planning::ActionRowView>
+template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>, ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding = formalism::ActionRowView>
 struct LabeledNode;
 
 template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
@@ -51,9 +49,7 @@ using NodeList = urd::Store<urd::sequence<Node<Kind, State>>>;
 template<TaskKind Kind>
 using PackedNodeList = urd::Store<urd::sequence<PackedNode<Kind>>>;
 
-template<TaskKind Kind,
-         StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding = formalism::planning::ActionRowView>
+template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>, ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding = formalism::ActionRowView>
 using LabeledNodeList = urd::Store<urd::sequence<LabeledNode<Kind, State, Binding>>>;
 
 template<TaskKind Kind>

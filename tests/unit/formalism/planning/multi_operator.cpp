@@ -18,34 +18,33 @@ namespace tyr::tests::planning_multi_operator
 {
 
 template<typename Entity>
-concept MultiOperatorContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
-    && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>,
-                    std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
-           data.index;
-           { data.operation } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>&>;
-           { data == data } -> std::same_as<bool>;
-           view.index();
-           { view.get_operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
-           view.get_args();
-           { view == view } -> std::same_as<bool>;
-           { view < view } -> std::same_as<bool>;
-       };
+concept MultiOperatorContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                                && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::Repository>>
+                                && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>,
+                                                std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>
+                                && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::Repository>& view) {
+                                       data.index;
+                                       { data.operation } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>&>;
+                                       { data == data } -> std::same_as<bool>;
+                                       view.index();
+                                       { view.get_operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
+                                       view.get_args();
+                                       { view == view } -> std::same_as<bool>;
+                                       { view < view } -> std::same_as<bool>;
+                                   };
 
 using Lifted = tyr::formalism::MultiOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
 using Ground = tyr::formalism::MultiOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
 
-static_assert(urd::resolves<tyr::formalism::planning::Repository, Lifted>);
-static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::planning::Repository, Lifted>);
-static_assert(!ygg::formalism::SupportsSymbol<tyr::formalism::planning::Repository, int>);
+static_assert(urd::resolves<tyr::formalism::Repository, Lifted>);
+static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::Repository, Lifted>);
+static_assert(!ygg::formalism::SupportsSymbol<tyr::formalism::Repository, int>);
 static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
-static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::Repository>,
+                           tyr::formalism::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::Repository>,
+                           tyr::formalism::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
 {
@@ -55,7 +54,7 @@ TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
 
 TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
 {
-    auto repository = tyr::formalism::planning::Repository();
+    auto repository = tyr::formalism::Repository();
 
     for (const auto op : { tyr::formalism::ArithmeticOperatorKind::Add, tyr::formalism::ArithmeticOperatorKind::Mul })
     {
@@ -66,7 +65,7 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
         data.args.emplace_back(1.0);
 
         EXPECT_FALSE(std::is_sorted(data.args.begin(), data.args.end()));
-        const auto [view, inserted] = tyr::formalism::planning::insert(repository, data);
+        const auto [view, inserted] = tyr::formalism::insert(repository, data);
         EXPECT_TRUE(inserted);
         EXPECT_EQ(data.index, view.index());
         EXPECT_TRUE(std::is_sorted(data.args.begin(), data.args.end()));
@@ -76,7 +75,7 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
 
         std::swap(data.args[0], data.args[2]);
         data.index = urd::index<Lifted>();
-        const auto [duplicate, duplicate_inserted] = tyr::formalism::planning::insert(repository, data);
+        const auto [duplicate, duplicate_inserted] = tyr::formalism::insert(repository, data);
         EXPECT_FALSE(duplicate_inserted);
         EXPECT_EQ(duplicate, view);
         EXPECT_EQ(data.index, view.index());

@@ -68,13 +68,13 @@ void BitPositionsRepository<U, Context>::unpack(const Handle& packed, Unpacked& 
     unpacked.indices.insert(m_buffer.begin(), m_buffer.end());
 }
 
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
 
 }

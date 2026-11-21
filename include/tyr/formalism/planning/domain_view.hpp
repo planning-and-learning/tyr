@@ -31,7 +31,7 @@
 namespace urd
 {
 template<typename V>
-struct view_mixin<::tyr::formalism::planning::Domain, V>
+struct view_mixin<::tyr::formalism::Domain, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -60,12 +60,12 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
     auto get_predicates() const noexcept
-    { return self().template member<::tyr::formalism::planning::predicates_of<T>>(); }
+    { return self().template member<::tyr::formalism::domain_predicates_of<T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
     auto get_functions() const noexcept
-    { return self().template member<::tyr::formalism::planning::functions_of<T>>(); }
+    { return self().template member<::tyr::formalism::domain_functions_of<T>>(); }
 };
 }  // namespace urd
 

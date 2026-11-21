@@ -82,19 +82,19 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
 TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
 {
     auto fixture = make_lifted_predicate_program();
-    auto builder = tyr::formalism::datalog::Builder {};
+    auto builder = tyr::formalism::Builder {};
     const auto program = fixture.program.get_program();
     const auto atom = program.get_rules()[0].get_body().get_literals<tyr::formalism::FluentTag>()[0].get_atom();
     const auto objects = program.get_objects();
     ASSERT_EQ(objects.size(), 2);
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
     auto context = tyr::formalism::WriteContext { builder, *fixture.repository, indices };
-    auto prepared = tyr::formalism::datalog::checkout<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
+    auto prepared = tyr::formalism::checkout<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
     urd::store(prepared->relation, atom.get_predicate());
-    tyr::formalism::datalog::ground(atom.get_terms(), context, prepared->values);
+    tyr::formalism::ground(atom.get_terms(), context, prepared->values);
 
     indices[0] = objects[1].index();
-    const auto nested = tyr::formalism::datalog::ground_binding(atom, context).first;
+    const auto nested = tyr::formalism::ground_binding(atom, context).first;
     EXPECT_EQ(nested.get<urd::index<tyr::formalism::Object>>(0), objects[1].index());
     ASSERT_EQ(prepared->values.size(), 1);
     EXPECT_EQ(prepared->values[0], objects[0].index().value);

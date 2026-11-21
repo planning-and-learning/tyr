@@ -69,8 +69,8 @@ struct builder<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>, C>
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;
-    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> positive_facts;
-    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> negative_facts;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> positive_facts;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> negative_facts;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>>, C>
         numeric_constraints;
 

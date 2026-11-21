@@ -35,7 +35,7 @@ void compute_state_delta(const StateContext<Kind>& parent, const StateContext<Ki
     const auto num_variables = std::max(parent.fact_storage().num_variables(), successor.fact_storage().num_variables());
     for (size_t i = 0; i < num_variables; ++i)
     {
-        const auto variable = urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
+        const auto variable = urd::index<formalism::FDRVariable<formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
         const auto from = parent.fact_storage().get(variable);
         const auto to = successor.fact_storage().get(variable);
         if (from != to)

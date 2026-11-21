@@ -71,13 +71,13 @@ public:
     [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return { state_index, this }; }
 
     /// A state's storage being built, read through its task's formalism repository (a state's view reads its storages so).
-    [[nodiscard]] FactStorageView<Kind> view(const urd::builder<FactStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
+    [[nodiscard]] FactStorageView<Kind> view(const urd::builder<FactStorage<Kind>, formalism::Repository>& storage) const noexcept
     { return { &storage, get_task()->get_repository().get() }; }
 
-    [[nodiscard]] AtomStorageView<Kind> view(const urd::builder<AtomStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
+    [[nodiscard]] AtomStorageView<Kind> view(const urd::builder<AtomStorage<Kind>, formalism::Repository>& storage) const noexcept
     { return { &storage, get_task()->get_repository().get() }; }
 
-    [[nodiscard]] NumericStorageView<Kind> view(const urd::builder<NumericStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
+    [[nodiscard]] NumericStorageView<Kind> view(const urd::builder<NumericStorage<Kind>, formalism::Repository>& storage) const noexcept
     { return { &storage, get_task()->get_repository().get() }; }
 
     /// A state record or a storage record held outside the repository, as its view here (a storage record's packed key
@@ -106,21 +106,20 @@ public:
     StateView<Kind> unpack(const urd::data<State<Kind>>& packed) const;
 
     /// A state's storage unpacked from this repository's (urd::resolution<PackedStorage<S>>).
-    urd::builder<FactStorage<Kind>, formalism::planning::Repository> unpack(const PackedStorage<FactStorage<Kind>>& packed) const;
-    urd::builder<AtomStorage<Kind>, formalism::planning::Repository> unpack(const PackedStorage<AtomStorage<Kind>>& packed) const;
-    urd::builder<NumericStorage<Kind>, formalism::planning::Repository> unpack(const PackedStorage<NumericStorage<Kind>>& packed) const;
+    urd::builder<FactStorage<Kind>, formalism::Repository> unpack(const PackedStorage<FactStorage<Kind>>& packed) const;
+    urd::builder<AtomStorage<Kind>, formalism::Repository> unpack(const PackedStorage<AtomStorage<Kind>>& packed) const;
+    urd::builder<NumericStorage<Kind>, formalism::Repository> unpack(const PackedStorage<NumericStorage<Kind>>& packed) const;
 
     StateView<Kind>
     create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                 const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>& fluent_facts,
+                 const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>& fluent_facts,
                  const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values);
     /// The facts as views: borrowed (stored facts, FDRFactView) or owned (a state's, computed on the fly).
     template<typename FactView>
-        requires std::same_as<typename FactView::value_type, formalism::planning::FDRFact<formalism::FluentTag>>
-    StateView<Kind>
-    create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                 const urd::Store<urd::sequence<FactView>>& fluent_facts,
-                 const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
+        requires std::same_as<typename FactView::value_type, formalism::FDRFact<formalism::FluentTag>>
+    StateView<Kind> create_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                                 const urd::Store<urd::sequence<FactView>>& fluent_facts,
+                                 const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
 
     std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> get_state_builder() const;
 

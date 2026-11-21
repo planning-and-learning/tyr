@@ -22,17 +22,17 @@
 namespace tyr::datalog
 {
 
-FactsWorkspace<GroundTag>::FactsWorkspace(formalism::datalog::ProgramView<GroundTag> program, const formalism::datalog::Repository& workspace_repository) :
+FactsWorkspace<GroundTag>::FactsWorkspace(formalism::ProgramView<GroundTag> program, const formalism::Repository& workspace_repository) :
     fact_sets(program, workspace_repository)
 { insert_program_facts(fact_sets, program); }
 
 void FactsWorkspace<GroundTag>::reset() { clear(fact_sets); }
 
-ConstFactsWorkspace<GroundTag>::ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
-                                                    formalism::datalog::FunctionListView<formalism::StaticTag> functions,
-                                                    formalism::datalog::AtomListView<GroundTag, formalism::StaticTag> atoms,
-                                                    formalism::datalog::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
-                                                    const formalism::datalog::Repository& program_repository) :
+ConstFactsWorkspace<GroundTag>::ConstFactsWorkspace(formalism::PredicateListView<formalism::StaticTag> predicates,
+                                                    formalism::FunctionListView<formalism::StaticTag> functions,
+                                                    formalism::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                                                    formalism::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
+                                                    const formalism::Repository& program_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, program_repository)
 {
 }

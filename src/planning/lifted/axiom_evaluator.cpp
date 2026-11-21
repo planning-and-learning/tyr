@@ -104,7 +104,7 @@ struct AxiomWorkspace<LiftedTag>
 
     ygg::ExecutionContextPtr execution_context;
     std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
-    urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::DerivedTag>>> derived_bindings;
+    urd::Store<urd::sequence<formalism::PredicateRowView<formalism::DerivedTag>>> derived_bindings;
 };
 }
 

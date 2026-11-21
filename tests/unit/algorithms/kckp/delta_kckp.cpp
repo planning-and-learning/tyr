@@ -321,7 +321,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
             if (object.get_name() == "loc-x0-y0")
                 binding.values.push_back(object.index().value);
         ASSERT_EQ(binding.values.size(), 1);
-        assignments.predicate.insert(tyr::formalism::planning::insert(*additional.workspace_repository, binding).first);
+        assignments.predicate.insert(tyr::formalism::insert(*additional.workspace_repository, binding).first);
         break;
     }
     update();

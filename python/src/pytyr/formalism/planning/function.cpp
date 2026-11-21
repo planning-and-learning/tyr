@@ -27,7 +27,7 @@
 #include <tyr/formalism/planning/interning.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 namespace
@@ -48,4 +48,4 @@ void bind_function(nb::module_& m, RepositoryBinding& repository)
     bind_function_view<AuxiliaryTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

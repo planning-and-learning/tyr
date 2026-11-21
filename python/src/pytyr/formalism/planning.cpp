@@ -34,14 +34,14 @@
 #include <urd/store.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 /**
- * bind_module_definitions
+ * bind_planning_module_definitions
  */
 
-void bind_module_definitions(nb::module_& m)
+void bind_planning_module_definitions(nb::module_& m)
 {
     using namespace nb::literals;
     bind_parser(m);
@@ -68,7 +68,7 @@ void bind_module_definitions(nb::module_& m)
 
     bind_variable_domains(m);
 
-    bind_formalism(m);
+    bind_planning_formalism(m);
 
     /**
      * FDRContext

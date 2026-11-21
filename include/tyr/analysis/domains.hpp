@@ -33,13 +33,13 @@
 
 namespace tyr::analysis
 {
-ProgramVariableDomains compute_variable_domains(formalism::datalog::ProgramView<LiftedTag> program);
+ProgramVariableDomains compute_variable_domains(formalism::ProgramView<LiftedTag> program);
 
-ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> program);
+ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program);
 
-TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<LiftedTag> task);
+TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task);
 
-TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::planning::Repository& repository);
+TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::Repository& repository);
 }
 
 #endif

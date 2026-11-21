@@ -80,7 +80,7 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto make_task = [&]
     {
-        const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(R"(
+        const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(R"(
 (define (domain borrowed-state)
   (:requirements :adl :numeric-fluents :derived-predicates)
   (:predicates (on) (live))
@@ -89,7 +89,7 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
   (:action disable :parameters () :precondition (on)
     :effect (and (not (on)) (increase (value) 1))))
 )",
-                                                                                                         "borrowed-state-domain.pddl")
+                                                                                               "borrowed-state-domain.pddl")
                                                                             .parse_task(R"(
 (define (problem borrowed-state-problem)
   (:domain borrowed-state)
@@ -143,7 +143,7 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
 TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
 {
     const auto execution_context = ygg::ExecutionContext::create(1);
-    const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(R"(
+    const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(R"(
 (define (domain mutex-membership)
   (:requirements :strips :typing)
   (:types place)
@@ -152,7 +152,7 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     :precondition (and (at ?from) (next ?from ?to))
     :effect (and (not (at ?from)) (at ?to))))
 )",
-                                                                                                     "mutex-membership-domain.pddl")
+                                                                                           "mutex-membership-domain.pddl")
                                                                         .parse_task(R"(
 (define (problem mutex-membership-problem)
   (:domain mutex-membership)

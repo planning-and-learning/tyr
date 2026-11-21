@@ -22,7 +22,7 @@
 
 #include <urd/elements/flat.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 template<TaskKind T>
 using ActionIndex = urd::index<Action<T>>;

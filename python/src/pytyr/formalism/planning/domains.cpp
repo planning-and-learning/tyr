@@ -27,7 +27,7 @@
 
 namespace nb = nanobind;
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 namespace

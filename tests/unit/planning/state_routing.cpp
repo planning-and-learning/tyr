@@ -149,16 +149,13 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     {
         auto canonical_facts = repository->get_state_builder();
         auto trailing_zero_facts = repository->get_state_builder();
-        const auto low_variable = urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(0);
-        const auto high_variable = urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(1000);
-        canonical_facts->set(urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::planning::FDRValue { 1 }));
-        trailing_zero_facts->set(
-            urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::planning::FDRValue { 1 }));
-        trailing_zero_facts->set(
-            urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue { 1 }));
-        trailing_zero_facts->set(
-            urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue::none()));
-        EXPECT_EQ(urd::resolve(trailing_zero_facts->fact_storage, *task->get_repository()).get(low_variable), tyr::formalism::planning::FDRValue { 1 });
+        const auto low_variable = urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(0);
+        const auto high_variable = urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(1000);
+        canonical_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::FDRValue { 1 }));
+        trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::FDRValue { 1 }));
+        trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue { 1 }));
+        trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue::none()));
+        EXPECT_EQ(urd::resolve(trailing_zero_facts->fact_storage, *task->get_repository()).get(low_variable), tyr::formalism::FDRValue { 1 });
         EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *canonical_facts, ygg::float_t { 0 } }),
                   dist_hash.hash(tyr::planning::StateContext { *task, *trailing_zero_facts, ygg::float_t { 0 } }));
 
@@ -166,14 +163,13 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         for (ygg::uint_t mask = 0; mask < 256; ++mask)
         {
             auto state = repository->get_state_builder();
-            state->set(urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(
-                urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(44),
-                tyr::formalism::planning::FDRValue { 1 }));
+            state->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(44),
+                                                                                     tyr::formalism::FDRValue { 1 }));
             for (ygg::uint_t bit = 0; bit < 8; ++bit)
                 if (mask & (ygg::uint_t { 1 } << bit))
-                    state->set(urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(
-                        urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(6 + bit),
-                        tyr::formalism::planning::FDRValue { 1 }));
+                    state->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(
+                        urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(6 + bit),
+                        tyr::formalism::FDRValue { 1 }));
             owners.insert(ygg::uint_t((dist_hash.owner(tyr::planning::StateContext { *task, *state, ygg::float_t { 0 } }, 16)).value));
         }
         EXPECT_EQ(owners.size(), 16);
@@ -238,7 +234,7 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto bindings = generator->get_applicable_action_bindings(initial_node);
     const auto reach_landmark = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "reach-landmark"; });
     ASSERT_NE(reach_landmark, bindings.end());
-    auto side = std::optional<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>> {};
+    auto side = std::optional<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>> {};
     for (const auto conditional_effect : generator->ground_action(*reach_landmark).get_effects())
         for (const auto fact : conditional_effect.get_effect().template get_facts<tyr::formalism::PositiveTag>())
             if (const auto atom = fact.get_atom(); atom && atom->get_predicate().get_name().str() == "side")

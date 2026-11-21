@@ -29,7 +29,7 @@
 
 /// A fact: its variable and value.
 template<::tyr::formalism::FactKind T, typename V>
-struct urd::view_mixin<::tyr::formalism::planning::FDRFact<T>, V>
+struct urd::view_mixin<::tyr::formalism::FDRFact<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -39,7 +39,7 @@ public:
 
     auto get_value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
 
-    auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
+    auto has_value() const noexcept { return get_value() != ::tyr::formalism::FDRValue::none(); }
 
     auto get_atom_index() const noexcept
     { return has_value() ? std::make_optional(self().context()[get_variable().index()].atoms[get_value().value - 1]) : std::nullopt; }
@@ -57,28 +57,28 @@ public:
 /// A stored fact (a member of a condition or effect) read through a context: its borrowed view, through the context that
 /// owns its variable. Never a temporary: a fact computed on the fly is viewed by computed_fact_view.
 template<::tyr::formalism::FactKind T>
-struct urd::resolution<urd::data<::tyr::formalism::planning::FDRFact<T>>>
+struct urd::resolution<urd::data<::tyr::formalism::FDRFact<T>>>
 {
     /// Through the context that owns its variable (the formalism repository, also where `context` passes it on).
     template<typename C>
-    static auto of(const urd::data<::tyr::formalism::planning::FDRFact<T>>& fact, const C& context)
+    static auto of(const urd::data<::tyr::formalism::FDRFact<T>>& fact, const C& context)
     {
         const auto& owner = context.view(fact.variable).context();
-        return urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, std::remove_cvref_t<decltype(owner)>> { &fact, &owner };
+        return urd::borrowed_view<::tyr::formalism::FDRFact<T>, std::remove_cvref_t<decltype(owner)>> { &fact, &owner };
     }
 
     template<typename C>
-    static void of(const urd::data<::tyr::formalism::planning::FDRFact<T>>&& fact, const C& context) = delete;
+    static void of(const urd::data<::tyr::formalism::FDRFact<T>>&& fact, const C& context) = delete;
 };
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 /// A fact computed on the fly (a state's): its view holds it, through the context that owns its variable.
 template<FactKind T, typename C>
 urd::owning_view<FDRFact<T>, C> computed_fact_view(urd::data<FDRFact<T>> fact, const C& context)
 { return { fact, &context.view(fact.variable).context() }; }
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism
 
-static_assert(std::is_trivially_copyable_v<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>);
+static_assert(std::is_trivially_copyable_v<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>);
 
 #endif

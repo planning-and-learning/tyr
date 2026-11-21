@@ -30,7 +30,7 @@
 #include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 namespace
 {
@@ -106,4 +106,4 @@ std::optional<InvariantSubstitution> match_invariant_against_ground_atom(std::si
     return std::move(result->sigma);
 }
 
-}  // namespace tyr::formalism::planning::invariant
+}  // namespace tyr::formalism::invariant

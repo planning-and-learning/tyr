@@ -33,7 +33,7 @@
 namespace tyr::analysis
 {
 
-using TypedRuleStratum = urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>;
+using TypedRuleStratum = urd::flat_vector<urd::index<formalism::Rule<LiftedTag>>>;
 
 using RuleStratum = TypedRuleStratum;
 
@@ -42,7 +42,7 @@ struct RuleStrata
     urd::Store<urd::sequence<RuleStratum>> data;
 };
 
-RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag> program);
+RuleStrata compute_rule_stratification(formalism::ProgramView<LiftedTag> program);
 }
 
 #endif

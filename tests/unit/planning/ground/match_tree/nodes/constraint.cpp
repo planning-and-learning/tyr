@@ -22,5 +22,5 @@ concept NumericConstraintSelectorContract =
            view.get_dontcare_child();
        };
 
-using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::Action<::tyr::GroundTag>, tyr::formalism::Axiom<::tyr::GroundTag>>;
 static_assert([]<typename... Tags>(boost::mp11::mp_list<Tags...>) { return (NumericConstraintSelectorContract<Tags> && ...); }(MatchTreeTags {}));

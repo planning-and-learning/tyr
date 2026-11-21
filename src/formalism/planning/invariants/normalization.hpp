@@ -21,7 +21,7 @@
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 /// Drops atoms another atom covers and variables no atom uses (renumbering the rest), then sorts the atoms.

@@ -30,7 +30,7 @@
 namespace urd
 {
 template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::datalog::Program<T>, V>
+struct view_mixin<::tyr::formalism::Program<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -65,26 +65,26 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_predicates() const noexcept
-    { return self().template member<::tyr::formalism::datalog::predicates_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::program_predicates_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
-    { return self().template member<::tyr::formalism::datalog::functions_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::program_functions_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
-    { return self().template member<::tyr::formalism::datalog::atoms_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::program_atoms_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept
-    { return self().template member<::tyr::formalism::datalog::fterm_values_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::program_fterm_values_of<F, T>>(); }
 };
 }  // namespace urd
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 /// The size of a table indexed by the indices of a program's rules: they sit in the program's layers, where its
 /// transforms left them, so they need not be dense.

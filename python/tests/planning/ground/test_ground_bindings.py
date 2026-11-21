@@ -6,9 +6,8 @@ from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
 
-from pytyr import planning
-from pytyr.formalism import planning as formalism_planning
-from pytyr.formalism.planning import Parser
+from pytyr import formalism, planning
+from pytyr.formalism import Parser
 
 Node = planning.ground.Node
 StateBuilderShared = planning.ground.StateBuilderShared
@@ -223,11 +222,11 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
     class PythonHeuristic(planning.ground.Heuristic):
         def __init__(self) -> None:
             super().__init__()
-            self.goal: formalism_planning.ConjunctiveConditionGround | None = None
+            self.goal: formalism.ConjunctiveConditionGround | None = None
             self.saw_state = False
 
         @override
-        def set_goal(self, goal: formalism_planning.ConjunctiveConditionGround) -> None:
+        def set_goal(self, goal: formalism.ConjunctiveConditionGround) -> None:
             self.goal = goal
 
         @override

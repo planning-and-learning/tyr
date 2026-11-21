@@ -118,14 +118,11 @@ using StateBuilderView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, 
 /// A state's storages being built, borrowed, read through the formalism repository their indices point into: its fluent
 /// facts, derived atoms and numeric values.
 template<TaskKind Kind>
-using FactStorageView =
-    urd::borrowed_view<FactStorage<Kind>, formalism::planning::Repository, urd::builder<FactStorage<Kind>, formalism::planning::Repository>>;
+using FactStorageView = urd::borrowed_view<FactStorage<Kind>, formalism::Repository, urd::builder<FactStorage<Kind>, formalism::Repository>>;
 template<TaskKind Kind>
-using AtomStorageView =
-    urd::borrowed_view<AtomStorage<Kind>, formalism::planning::Repository, urd::builder<AtomStorage<Kind>, formalism::planning::Repository>>;
+using AtomStorageView = urd::borrowed_view<AtomStorage<Kind>, formalism::Repository, urd::builder<AtomStorage<Kind>, formalism::Repository>>;
 template<TaskKind Kind>
-using NumericStorageView =
-    urd::borrowed_view<NumericStorage<Kind>, formalism::planning::Repository, urd::builder<NumericStorage<Kind>, formalism::planning::Repository>>;
+using NumericStorageView = urd::borrowed_view<NumericStorage<Kind>, formalism::Repository, urd::builder<NumericStorage<Kind>, formalism::Repository>>;
 /// A registered state, packed: the view of its record's index, through its repository, which must outlive it (a
 /// PackedNode keeps it alive; unpack() gives its StateView).
 template<TaskKind Kind>

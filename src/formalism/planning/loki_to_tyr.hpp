@@ -43,7 +43,7 @@
 #include <utility>
 #include <variant>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 using PredicateViewVariant = std::variant<PredicateView<StaticTag>, PredicateView<FluentTag>, PredicateView<DerivedTag>>;

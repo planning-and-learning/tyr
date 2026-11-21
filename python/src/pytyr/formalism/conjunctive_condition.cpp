@@ -54,7 +54,7 @@ void bind_conjunctive_condition(nb::module_& m)
 
 }  // namespace tyr::formalism
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository)
@@ -66,4 +66,4 @@ void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository)
     bind_conjunctive_condition_view<GroundTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

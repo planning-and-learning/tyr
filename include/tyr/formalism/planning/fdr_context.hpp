@@ -61,7 +61,7 @@
 #include <vector>
 #include <yggdrasil/formalism/row_data.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 class FDRContext

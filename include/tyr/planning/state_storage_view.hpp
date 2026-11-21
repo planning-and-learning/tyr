@@ -46,10 +46,10 @@ private:
 public:
     [[nodiscard]] decltype(auto) get_values() const noexcept { return self().template member<&urd::record_of<V>::values>(); }
 
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
+    [[nodiscard]] ::tyr::formalism::FDRValue get(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
     {
         assert(static_cast<ygg::uint_t>(index.value) < get_values().size());
-        return ::tyr::formalism::planning::FDRValue(get_values()[static_cast<ygg::uint_t>(index.value)]);
+        return ::tyr::formalism::FDRValue(get_values()[static_cast<ygg::uint_t>(index.value)]);
     }
 
     /// The number of variables, as resized to the task's.
@@ -58,15 +58,15 @@ public:
     /// The facts whose value is not none, by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {
-        using ::tyr::formalism::planning::FDRValue;
+        using ::tyr::formalism::FDRValue;
         const auto* values = &get_values();
         return std::views::iota(std::size_t { 0 }, values->size())
                | std::views::filter([values](std::size_t i) { return FDRValue((*values)[i]) != FDRValue::none(); })
                | std::views::transform(
                    [values](std::size_t i)
                    {
-                       return urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> {
-                           urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> { static_cast<ygg::uint_t>(i) },
+                       return urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> {
+                           urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> { static_cast<ygg::uint_t>(i) },
                            FDRValue((*values)[i])
                        };
                    });
@@ -97,8 +97,8 @@ private:
 public:
     [[nodiscard]] decltype(auto) get_indices() const noexcept { return self().template member<&urd::record_of<V>::indices>(); }
 
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    { return ::tyr::formalism::planning::FDRValue(get_indices().contains(static_cast<ygg::uint_t>(index.value))); }
+    [[nodiscard]] ::tyr::formalism::FDRValue get(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
+    { return ::tyr::formalism::FDRValue(get_indices().contains(static_cast<ygg::uint_t>(index.value))); }
 
     /// One past the last variable set: variables past it are none.
     [[nodiscard]] std::size_t num_variables() const { return get_indices().significant_words().size_bytes() * CHAR_BIT; }
@@ -109,9 +109,9 @@ public:
         return urd::transform(get_indices(),
                               [](ygg::uint_t i)
                               {
-                                  return urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> {
-                                      urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> { i },
-                                      ::tyr::formalism::planning::FDRValue { 1 }
+                                  return urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> {
+                                      urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> { i },
+                                      ::tyr::formalism::FDRValue { 1 }
                                   };
                               });
     }

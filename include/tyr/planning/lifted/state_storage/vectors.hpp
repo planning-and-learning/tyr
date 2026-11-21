@@ -83,21 +83,19 @@ private:
 
 template<typename... Tags, bool ThreadSafe>
 class StateComponentRepository<FactStorage<LiftedTag>, Vectors<Tags...>, ThreadSafe> :
-    public BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>,
-                                  StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
+    public BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
 public:
-    using BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>,
+    using BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>,
                                  StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
 };
 
 template<typename... Tags, bool ThreadSafe>
 class StateComponentRepository<AtomStorage<LiftedTag>, Vectors<Tags...>, ThreadSafe> :
-    public BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>,
-                                  StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
+    public BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
 public:
-    using BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>,
+    using BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>,
                                  StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
 };
 

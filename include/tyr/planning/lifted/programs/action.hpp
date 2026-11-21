@@ -66,18 +66,18 @@ public:
     struct SchemaProgram
     {
         /// The schema's program, reading of a state what its rules read.
-        explicit SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program);
+        explicit SchemaProgram(formalism::ProgramView<LiftedTag> program);
 
-        formalism::datalog::ProgramView<LiftedTag> program;
+        formalism::ProgramView<LiftedTag> program;
         StateInputs inputs;
         analysis::RuleStrata strata;
         analysis::ListenerStrata listeners;
     };
 
     /// A program per action schema with its action rule and the rules of its conditional effects.
-    using SchemaPrograms = urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, SchemaProgram>>;
+    using SchemaPrograms = urd::Store<urd::map<formalism::ActionView<LiftedTag>, SchemaProgram>>;
 
-    explicit ApplicableActionProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
+    explicit ApplicableActionProgram(const formalism::PlanningTask<LiftedTag>& task);
 
     [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
     [[nodiscard]] const SchemaPrograms& get_schema_programs() const noexcept;

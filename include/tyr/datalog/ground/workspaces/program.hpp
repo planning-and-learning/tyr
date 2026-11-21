@@ -44,7 +44,7 @@ namespace tyr::datalog
 struct GroundRuleDependencies
 {
 private:
-    using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
+    using Rules = urd::Store<urd::sequence<formalism::RuleView<GroundTag>>>;
 
     template<typename F>
     using PreconditionToRules = DenseRelationMap<formalism::PredicateTag, F, Rules>;
@@ -53,7 +53,7 @@ public:
     MutableFamily<PreconditionToRules> precondition_to_rules;
 
     /// Sized for the predicates of each mutable kind of the program.
-    explicit GroundRuleDependencies(formalism::datalog::ProgramView<GroundTag> program)
+    explicit GroundRuleDependencies(formalism::ProgramView<GroundTag> program)
     {
         boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
                                               { precondition_to_rules.template get<F>().initialize(program.template get_predicates<F>().size()); });
@@ -61,18 +61,18 @@ public:
 
     /// The rules that wait on the fact, if any.
     template<formalism::FactKind F>
-    [[nodiscard]] const Rules* find(formalism::datalog::PredicateRowIndex<F> fact) const noexcept
+    [[nodiscard]] const Rules* find(formalism::PredicateRowIndex<F> fact) const noexcept
     { return precondition_to_rules.template get<F>().find(fact); }
 };
 
 template<>
 struct ConstProgramWorkspace<GroundTag>
 {
-    formalism::datalog::ProgramView<GroundTag> program;
+    formalism::ProgramView<GroundTag> program;
     ConstFactsWorkspace<GroundTag> facts;
     GroundRuleDependencies dependencies;
 
-    explicit ConstProgramWorkspace(formalism::datalog::ProgramView<GroundTag> program);
+    explicit ConstProgramWorkspace(formalism::ProgramView<GroundTag> program);
 };
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -87,7 +87,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     CostBuckets cost_buckets;
     PendingPredicateAchieverFamily<GroundTag> pending_achievers;
     Scheduler<GroundTag> scheduler;
-    formalism::datalog::Builder datalog_builder;
+    formalism::Builder datalog_builder;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP()) :
         const_workspace(&cws),

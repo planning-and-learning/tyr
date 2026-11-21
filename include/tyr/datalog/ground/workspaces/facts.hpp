@@ -38,13 +38,13 @@ struct FactsWorkspace<GroundTag>
     MutableFactSets fact_sets;
 
     /// The program's facts of each mutable kind.
-    FactsWorkspace(formalism::datalog::ProgramView<GroundTag> program, const formalism::datalog::Repository& workspace_repository);
+    FactsWorkspace(formalism::ProgramView<GroundTag> program, const formalism::Repository& workspace_repository);
 
     template<formalism::FactKind F>
-    bool insert(formalism::datalog::PredicateRowIndex<F> binding)
+    bool insert(formalism::PredicateRowIndex<F> binding)
     { return tyr::datalog::insert(fact_sets, binding); }
 
-    bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+    bool insert(formalism::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
     { return tyr::datalog::insert(fact_sets.get<formalism::FluentTag>(), binding, interval); }
 
     void reset();
@@ -55,11 +55,11 @@ struct ConstFactsWorkspace<GroundTag>
 {
     TaggedFactSets<formalism::StaticTag> fact_sets;
 
-    explicit ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
-                                 formalism::datalog::FunctionListView<formalism::StaticTag> functions,
-                                 formalism::datalog::AtomListView<GroundTag, formalism::StaticTag> atoms,
-                                 formalism::datalog::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
-                                 const formalism::datalog::Repository& program_repository);
+    explicit ConstFactsWorkspace(formalism::PredicateListView<formalism::StaticTag> predicates,
+                                 formalism::FunctionListView<formalism::StaticTag> functions,
+                                 formalism::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                                 formalism::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
+                                 const formalism::Repository& program_repository);
 };
 
 }

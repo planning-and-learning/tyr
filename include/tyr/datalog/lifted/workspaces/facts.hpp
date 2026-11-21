@@ -34,10 +34,10 @@ struct FactsWorkspace<LiftedTag>
     MutableFactSets delta_fact_sets;  ///< Facts committed since the rules last ran.
 
     /// The program's facts of each mutable kind.
-    FactsWorkspace(formalism::datalog::ProgramView<LiftedTag> program, const formalism::datalog::Repository& workspace_repository);
+    FactsWorkspace(formalism::ProgramView<LiftedTag> program, const formalism::Repository& workspace_repository);
 
     template<formalism::FactKind F>
-    bool insert(formalism::datalog::PredicateRowIndex<F> binding)
+    bool insert(formalism::PredicateRowIndex<F> binding)
     {
         if (!tyr::datalog::insert(fact_sets, binding))
             return false;
@@ -45,12 +45,12 @@ struct FactsWorkspace<LiftedTag>
         return true;
     }
 
-    bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+    bool insert(formalism::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
     { return tyr::datalog::insert(fact_sets.get<formalism::FluentTag>(), binding, interval); }
 
     void reset();
 
-    const formalism::datalog::Repository* repository;  ///< The workspace repository the bindings live in (or below).
+    const formalism::Repository* repository;  ///< The workspace repository the bindings live in (or below).
 };
 
 template<>
@@ -58,11 +58,11 @@ struct ConstFactsWorkspace<LiftedTag>
 {
     TaggedFactSets<formalism::StaticTag> fact_sets;
 
-    explicit ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
-                                 formalism::datalog::FunctionListView<formalism::StaticTag> functions,
-                                 formalism::datalog::AtomListView<GroundTag, formalism::StaticTag> atoms,
-                                 formalism::datalog::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
-                                 const formalism::datalog::Repository& program_repository);
+    explicit ConstFactsWorkspace(formalism::PredicateListView<formalism::StaticTag> predicates,
+                                 formalism::FunctionListView<formalism::StaticTag> functions,
+                                 formalism::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                                 formalism::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
+                                 const formalism::Repository& program_repository);
 };
 
 }

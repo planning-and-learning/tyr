@@ -121,7 +121,7 @@ public:
 private:
     /// The goal atoms of kind F, by their position among all goal atoms.
     template<typename F>
-    using GoalPositions = urd::Store<urd::map<formalism::datalog::PredicateRowIndex<F>, size_t>>;
+    using GoalPositions = urd::Store<urd::map<formalism::PredicateRowIndex<F>, size_t>>;
 
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
     /// constraints, propositional rules only, one stratum, and annotations without achievers.
@@ -256,7 +256,7 @@ private:
             [&]<typename F>(F)
             {
                 for (const auto head_atom : ctx.in().cws_rule().get_rule().template get_heads<F>())
-                    heads.template get<F>().push_back(formalism::datalog::ground_row(head_atom, out.ground_context()).first);
+                    heads.template get<F>().push_back(formalism::ground_row(head_atom, out.ground_context()).first);
             });
         insert_propositional_update(std::as_const(heads), input, out.head_updates(), out.delta_annotations());
     }
@@ -388,7 +388,7 @@ private:
             {
                 for (const auto head_atom : in.cws_rule().get_rule().template get_heads<F>())
                 {
-                    const auto head = formalism::datalog::ground_row(head_atom, ground_context).first;
+                    const auto head = formalism::ground_row(head_atom, ground_context).first;
                     if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<F>(), head))
                         continue;
                     heads.template get<F>().push_back(head);

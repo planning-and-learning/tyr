@@ -35,7 +35,7 @@ template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::AtomSelectorNode<Tag>, C>
 {
     urd::index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
-    urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, ::tyr::formalism::planning::Repository> atom;
+    urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, ::tyr::formalism::Repository> atom;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> true_child;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> false_child;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> dontcare_child;

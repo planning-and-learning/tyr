@@ -23,7 +23,7 @@
 #include <loki/loki.hpp>
 #include <yggdrasil/io/project_path.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 Parser::Parser(const std::filesystem::path& domain_filepath,

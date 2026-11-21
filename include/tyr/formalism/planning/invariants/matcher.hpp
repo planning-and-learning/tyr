@@ -31,7 +31,7 @@
 #include <urd/store.hpp>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 /// A set of binding indices.
 using BindingSet = urd::Store<urd::set<std::size_t>, urd::dense>;

@@ -11,15 +11,15 @@ namespace tyr::tests::planning_conditional_effect
 namespace lifted_tests
 {
 
-using ConditionalEffectIndex = urd::index<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
-using ConditionalEffectData = urd::data<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
-using ConditionalEffectView = urd::index_view<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ConditionalEffectIndex = urd::index<tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>;
+using ConditionalEffectData = urd::data<tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>;
+using ConditionalEffectView = urd::index_view<tyr::formalism::ConditionalEffect<::tyr::LiftedTag>, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<ConditionalEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConditionalEffectIndex>);
 static_assert(std::totally_ordered<ConditionalEffectData>);
 static_assert(std::totally_ordered<ConditionalEffectView>);
-static_assert(std::same_as<ConditionalEffectView, tyr::formalism::planning::ConditionalEffectView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ConditionalEffectView, tyr::formalism::ConditionalEffectView<::tyr::LiftedTag>>);
 static_assert(requires(ConditionalEffectData& data) {
     data.index;
     data.variables;
@@ -42,15 +42,15 @@ static_assert(requires(const ConditionalEffectView& view) {
 namespace ground_tests
 {
 
-using GroundConditionalEffectIndex = urd::index<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
-using GroundConditionalEffectData = urd::data<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
-using GroundConditionalEffectView = urd::index_view<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundConditionalEffectIndex = urd::index<tyr::formalism::ConditionalEffect<::tyr::GroundTag>>;
+using GroundConditionalEffectData = urd::data<tyr::formalism::ConditionalEffect<::tyr::GroundTag>>;
+using GroundConditionalEffectView = urd::index_view<tyr::formalism::ConditionalEffect<::tyr::GroundTag>, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<GroundConditionalEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConditionalEffectIndex>);
 static_assert(std::totally_ordered<GroundConditionalEffectData>);
 static_assert(std::totally_ordered<GroundConditionalEffectView>);
-static_assert(std::same_as<GroundConditionalEffectView, tyr::formalism::planning::ConditionalEffectView<::tyr::GroundTag>>);
+static_assert(std::same_as<GroundConditionalEffectView, tyr::formalism::ConditionalEffectView<::tyr::GroundTag>>);
 static_assert(requires(GroundConditionalEffectData& data) {
     data.index;
     data.condition;

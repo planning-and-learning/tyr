@@ -29,8 +29,8 @@ class ApplicabilityContext
 {
 public:
     ApplicabilityContext(const StateContext<LiftedTag>& state,
-                         formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
-                         const formalism::planning::FDRContext& fdr) :
+                         formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                         const formalism::FDRContext& fdr) :
         m_state(&state),
         m_grounder(&grounder),
         m_fdr(&fdr)
@@ -39,14 +39,14 @@ public:
 
     [[nodiscard]] const StateContext<LiftedTag>& state() const noexcept { return *m_state; }
 
-    [[nodiscard]] formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder() const noexcept { return *m_grounder; }
+    [[nodiscard]] formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder() const noexcept { return *m_grounder; }
 
-    [[nodiscard]] const formalism::planning::FDRContext& fdr() const noexcept { return *m_fdr; }
+    [[nodiscard]] const formalism::FDRContext& fdr() const noexcept { return *m_fdr; }
 
 private:
     const StateContext<LiftedTag>* m_state;
-    formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>* m_grounder;
-    const formalism::planning::FDRContext* m_fdr;
+    formalism::WriteContext<formalism::Builder, formalism::Repository>* m_grounder;
+    const formalism::FDRContext* m_fdr;
 };
 }
 

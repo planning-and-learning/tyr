@@ -46,8 +46,8 @@ struct ConstKCKPWorkspace
     TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
     ConstRuleWorkspaces rules;
 
-    ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag> program,
-                       formalism::datalog::Repository& program_repository,
+    ConstKCKPWorkspace(formalism::ProgramView<LiftedTag> program,
+                       formalism::Repository& program_repository,
                        analysis::ProgramAnalysis& analysis,
                        const TaggedFactSets<formalism::StaticTag>& static_fact_sets);
 };
@@ -60,7 +60,7 @@ struct KCKPWorkspace
     RuleWorkspaces rules;
 
     KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
-                  formalism::datalog::ProgramView<LiftedTag> program,
+                  formalism::ProgramView<LiftedTag> program,
                   const analysis::ProgramVariableDomains& domains,
                   const MutableFactSets& fact_sets);
 

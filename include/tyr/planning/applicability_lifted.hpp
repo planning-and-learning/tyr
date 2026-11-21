@@ -79,65 +79,65 @@ namespace tyr::planning
 
 ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context);
 
-bool evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::BooleanOperatorKind> element, const ApplicabilityContext& context);
+bool evaluate(formalism::BinaryOperatorView<LiftedTag, formalism::BooleanOperatorKind> element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::FunctionTermView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::FunctionTermView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::FunctionTermView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
-ygg::float_t evaluate(formalism::planning::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context);
 
 template<formalism::FactKind T>
-ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context);
+ygg::float_t evaluate(formalism::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context);
 
 /**
  * is_applicable
  */
 
-bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
 
 template<formalism::FactKind T>
-bool is_applicable(formalism::planning::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context);
+bool is_applicable(formalism::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::planning::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::planning::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context);
+bool is_applicable(formalism::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, formalism::FluentTag> element,
+bool is_applicable(formalism::NumericEffectView<LiftedTag, formalism::FluentTag> element,
                    const ApplicabilityContext& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
-bool is_applicable(formalism::planning::NumericEffectOperatorListView<LiftedTag, formalism::FluentTag> elements,
+bool is_applicable(formalism::NumericEffectOperatorListView<LiftedTag, formalism::FluentTag> elements,
                    const ApplicabilityContext& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
-bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
 // ConjunctiveCondition
 
-bool is_applicable(formalism::planning::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context);
 
 // ConjunctiveEffect
 
-bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> element,
+bool is_applicable(formalism::ConjunctiveEffectView<LiftedTag> element,
                    const ApplicabilityContext& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
 // Axiom
 
-bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::AxiomView<LiftedTag> element, const ApplicabilityContext& context);
 
 /**
  * evaluate
@@ -145,10 +145,10 @@ bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const Appl
 
 inline ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext&) { return element; }
 
-inline ygg::float_t evaluate(formalism::planning::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
 { return formalism::apply(element.get_operation(), evaluate(element.get_arg(), context)); }
 
-inline ygg::float_t evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
 {
     // Sequenced: evaluation grounds subterms (mutating the context), and argument evaluation order
     // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
@@ -157,7 +157,7 @@ inline ygg::float_t evaluate(formalism::planning::BinaryOperatorView<LiftedTag, 
     return formalism::apply(element.get_operation(), lhs, rhs);
 }
 
-inline bool evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::BooleanOperatorKind> element, const ApplicabilityContext& context)
+inline bool evaluate(formalism::BinaryOperatorView<LiftedTag, formalism::BooleanOperatorKind> element, const ApplicabilityContext& context)
 {
     // Sequenced: evaluation grounds subterms (mutating the context), and argument evaluation order
     // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
@@ -166,7 +166,7 @@ inline bool evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalis
     return formalism::apply(element.get_operation(), lhs, rhs);
 }
 
-inline ygg::float_t evaluate(formalism::planning::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
 {
     const auto child_fexprs = element.get_args();
 
@@ -177,34 +177,34 @@ inline ygg::float_t evaluate(formalism::planning::MultiOperatorView<LiftedTag, f
                            { return formalism::apply(element.get_operation(), value, evaluate(child_expr, context)); });
 }
 
-inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::FunctionTermView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
 {
-    const auto fterm_or_nullopt = formalism::planning::try_ground(element, context.grounder());
+    const auto fterm_or_nullopt = formalism::try_ground(element, context.grounder());
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
     return context.state().task().get_static_state().get(*fterm_or_nullopt);
 }
 
-inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::FunctionTermView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
 {
-    const auto fterm_or_nullopt = formalism::planning::try_ground(element, context.grounder());
+    const auto fterm_or_nullopt = formalism::try_ground(element, context.grounder());
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
     return context.state().numeric_storage().get(fterm_or_nullopt->index());
 }
 
-inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::AuxiliaryTag>, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::FunctionTermView<LiftedTag, formalism::AuxiliaryTag>, const ApplicabilityContext& context)
 { return context.state().auxiliary_value(); }
 
-inline ygg::float_t evaluate(formalism::planning::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
+inline ygg::float_t evaluate(formalism::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element);
 }
 
 template<formalism::FactKind T>
-ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context)
+ygg::float_t evaluate(formalism::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
     // Sequenced for the same reason as the arithmetic binary operator above.
     const auto fexpr_value = evaluate(element.get_fexpr(), context);
@@ -216,18 +216,18 @@ ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, T> eleme
  * is_applicable
  */
 
-inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
 {
-    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder());
+    const auto atom_or_nullopt = formalism::try_ground(element.get_atom(), context.grounder());
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
     return context.state().task().get_static_state().test(*atom_or_nullopt) == element.get_polarity();
 }
 
-inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
 {
-    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder());
+    const auto atom_or_nullopt = formalism::try_ground(element.get_atom(), context.grounder());
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
@@ -240,9 +240,9 @@ inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism:
     return (context.state().fact_storage().get(fact.get_variable().index()) == fact.get_value()) == element.get_polarity();
 }
 
-inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context)
 {
-    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder());
+    const auto atom_or_nullopt = formalism::try_ground(element.get_atom(), context.grounder());
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
@@ -250,28 +250,27 @@ inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism:
 }
 
 template<formalism::FactKind T>
-bool is_applicable(formalism::planning::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context)
+bool is_applicable(formalism::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-inline bool is_applicable(formalism::planning::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(element, context); }
+inline bool is_applicable(formalism::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context) { return evaluate(element, context); }
 
-inline bool is_applicable(formalism::planning::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, formalism::FluentTag> element,
+inline bool is_applicable(formalism::NumericEffectView<LiftedTag, formalism::FluentTag> element,
                           const ApplicabilityContext& context,
-                          formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+                          formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    auto fterm = formalism::planning::try_ground(element.get_fterm(), context.grounder());
+    auto fterm = formalism::try_ground(element.get_fterm(), context.grounder());
     if (!fterm.has_value())
     {
         if (element.get_operation() == formalism::NumericEffectOperatorKind::Assign)
-            fterm = formalism::planning::ground(element.get_fterm(), context.grounder()).first;
+            fterm = formalism::ground(element.get_fterm(), context.grounder()).first;
         else
             return false;
     }
@@ -282,7 +281,7 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
 
     // Check non-conflicting effects
     const auto family = formalism::effect_family(element.get_operation());
-    if (!formalism::planning::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.value]))
+    if (!formalism::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.value]))
         return false;  /// incompatible effects
 
     ref_fluent_effect_families[fterm_index.value] = family;
@@ -298,14 +297,14 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
     return !std::isnan(evaluate(element.get_fexpr(), context));
 }
 
-inline bool is_applicable(formalism::planning::NumericEffectOperatorListView<LiftedTag, formalism::FluentTag> elements,
+inline bool is_applicable(formalism::NumericEffectOperatorListView<LiftedTag, formalism::FluentTag> elements,
                           const ApplicabilityContext& context,
-                          formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+                          formalism::EffectFamilyList& ref_fluent_effect_families)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context, ref_fluent_effect_families); });
 }
 
-inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
 {
     // Check fexpr is well-defined in context
     return !std::isnan(evaluate(element.get_fexpr(), context));
@@ -313,7 +312,7 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
 
 // ConjunctiveCondition
 
-inline bool is_applicable(formalism::planning::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context)
 {
     return is_applicable(element.template get_literals<formalism::StaticTag>(), context)  //
            && is_applicable(element.template get_literals<formalism::FluentTag>(), context)
@@ -323,9 +322,8 @@ inline bool is_applicable(formalism::planning::ConjunctiveConditionView<LiftedTa
 
 // ConjunctiveEffect
 
-inline bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> element,
-                          const ApplicabilityContext& context,
-                          formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+inline bool
+is_applicable(formalism::ConjunctiveEffectView<LiftedTag> element, const ApplicabilityContext& context, formalism::EffectFamilyList& ref_fluent_effect_families)
 {
     return is_applicable(element.get_numeric_effects(), context, ref_fluent_effect_families)
            && (!element.get_auxiliary_numeric_effect().has_value() || is_applicable(element.get_auxiliary_numeric_effect().value(), context));
@@ -333,8 +331,7 @@ inline bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> 
 
 // Axiom
 
-inline bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const ApplicabilityContext& context)
-{ return is_applicable(element.get_body(), context); }
+inline bool is_applicable(formalism::AxiomView<LiftedTag> element, const ApplicabilityContext& context) { return is_applicable(element.get_body(), context); }
 
 }
 
@@ -344,8 +341,8 @@ namespace tyr::planning
 {
 // NumericEffectView
 
-extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
-extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
+extern template ygg::float_t evaluate(formalism::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+extern template ygg::float_t evaluate(formalism::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
 /**
  * is_applicable
@@ -353,9 +350,9 @@ extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<Lif
 
 // LiteralListView
 
-extern template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
-extern template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
-extern template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
 }
 

@@ -10,8 +10,8 @@ namespace tyr::tests::planning_fdr_variable
 
 template<typename Entity>
 concept FdrVariableContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
-                              && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
-                              && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
+                              && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::Repository>>
+                              && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::Repository>& view) {
                                      data.index;
                                      data.atoms;
                                      { data == data } -> std::same_as<bool>;
@@ -22,8 +22,8 @@ concept FdrVariableContract = std::constructible_from<urd::index<Entity>, ygg::u
                                      { view < view } -> std::same_as<bool>;
                                  };
 
-static_assert(FdrVariableContract<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>);
-static_assert(std::same_as<urd::index_view<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::FDRVariableView<tyr::formalism::FluentTag>>);
+static_assert(FdrVariableContract<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>, tyr::formalism::Repository>,
+                           tyr::formalism::FDRVariableView<tyr::formalism::FluentTag>>);
 
 }  // namespace tyr::tests::planning_fdr_variable

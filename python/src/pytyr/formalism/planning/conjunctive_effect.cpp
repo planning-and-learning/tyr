@@ -29,7 +29,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 namespace
@@ -53,4 +53,4 @@ void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository)
     bind_conjunctive_effect_kind<GroundTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

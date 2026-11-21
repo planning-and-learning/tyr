@@ -35,7 +35,7 @@ class StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<Kind, Tag, ThreadSafe>;
-    using Unpacked = urd::builder<NumericStorage<Kind>, formalism::planning::Repository>;
+    using Unpacked = urd::builder<NumericStorage<Kind>, formalism::Repository>;
     using Handle = typename Context::FloatVectorSet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);

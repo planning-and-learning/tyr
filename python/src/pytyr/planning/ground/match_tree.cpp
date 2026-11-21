@@ -62,8 +62,8 @@ void bind_match_tree_nodes(nb::module_& m)
 
 void bind_match_tree(nb::module_& m)
 {
-    bind_match_tree_nodes<formalism::planning::Action<GroundTag>>(m);
-    bind_match_tree_nodes<formalism::planning::Axiom<GroundTag>>(m);
+    bind_match_tree_nodes<formalism::Action<GroundTag>>(m);
+    bind_match_tree_nodes<formalism::Axiom<GroundTag>>(m);
 }
 
 }  // namespace tyr::planning

@@ -161,7 +161,7 @@ public:
                            std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> target,
                            const StateDelta& delta,
                            ygg::float_t auxiliary_value,
-                           formalism::planning::ActionRowView action,
+                           formalism::ActionRowView action,
                            SuccessorMetadataT<SearchPolicy> metadata)
     {
         const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);

@@ -43,8 +43,8 @@ private:
     using Source = SourceNode<LiftedTag>;
     using BuilderNode = Node<LiftedTag, StateBuilderView<LiftedTag>>;
     using Builder = urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>;
-    using Bindings = urd::Store<urd::sequence<formalism::planning::ActionRowView>>;
-    using BindingData = urd::builder<ygg::Row<formalism::planning::Action<LiftedTag>>, formalism::planning::Repository>;
+    using Bindings = urd::Store<urd::sequence<formalism::ActionRowView>>;
+    using BindingData = urd::builder<ygg::Row<formalism::Action<LiftedTag>>, formalism::Repository>;
 
     explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
 
@@ -64,15 +64,15 @@ public:
     /// callback's state; for another state it throws logic_error.
     /// Ground tuples absent from the compiled action set are INAPPLICABLE; lifted domain failures are OUTSIDE_PARAMETER_DOMAIN.
     /// Accepts repository-backed and data-backed action bindings without publishing them.
-    template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
+    template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
     ActionBindingStatus check_action_binding(const Source& node, Binding binding);
 
     /// Retains a borrowed binding after validating schema, object ownership and arity, without checking applicability.
-    formalism::planning::ActionRowView materialize_action_binding(ActionBindingView<LiftedTag> binding);
+    formalism::ActionRowView materialize_action_binding(ActionBindingView<LiftedTag> binding);
 
     /// Checks the same contract as check_action_binding and publishes only an applicable binding.
     /// The returned binding borrows the task repository. May be called from a binding callback.
-    template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
+    template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
     ActionBindingResult try_get_applicable_action_binding(const Source& node, Binding binding);
 
     // Successors are generated into builders: caller-owned builders give borrowed nodes; a state repository gives each
@@ -91,20 +91,20 @@ public:
                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
                              NodeList<LiftedTag, StateBuilderView<LiftedTag>>& out_nodes);
     NodeList<LiftedTag> get_successor_nodes(const Source& node,
-                                            formalism::planning::ActionView<LiftedTag> action,
+                                            formalism::ActionView<LiftedTag> action,
                                             StateRepository<LiftedTag>& storage,
                                             AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_successor_nodes(const Source& node,
-                             formalism::planning::ActionView<LiftedTag> action,
+                             formalism::ActionView<LiftedTag> action,
                              StateRepository<LiftedTag>& storage,
                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
                              NodeList<LiftedTag>& out_nodes);
     NodeList<LiftedTag, StateBuilderView<LiftedTag>> get_successor_nodes(const Source& node,
-                                                                         formalism::planning::ActionView<LiftedTag> action,
+                                                                         formalism::ActionView<LiftedTag> action,
                                                                          SuccessorBuilders<LiftedTag>& storage,
                                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_successor_nodes(const Source& node,
-                             formalism::planning::ActionView<LiftedTag> action,
+                             formalism::ActionView<LiftedTag> action,
                              SuccessorBuilders<LiftedTag>& storage,
                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
                              NodeList<LiftedTag, StateBuilderView<LiftedTag>>& out_nodes);
@@ -122,62 +122,57 @@ public:
                                      AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                      LabeledNodeList<LiftedTag, StateBuilderView<LiftedTag>>& out_nodes);
     LabeledNodeList<LiftedTag> get_labeled_successor_nodes(const Source& node,
-                                                           formalism::planning::ActionView<LiftedTag> action,
+                                                           formalism::ActionView<LiftedTag> action,
                                                            StateRepository<LiftedTag>& storage,
                                                            AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_labeled_successor_nodes(const Source& node,
-                                     formalism::planning::ActionView<LiftedTag> action,
+                                     formalism::ActionView<LiftedTag> action,
                                      StateRepository<LiftedTag>& storage,
                                      AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                      LabeledNodeList<LiftedTag>& out_nodes);
     LabeledNodeList<LiftedTag, StateBuilderView<LiftedTag>> get_labeled_successor_nodes(const Source& node,
-                                                                                        formalism::planning::ActionView<LiftedTag> action,
+                                                                                        formalism::ActionView<LiftedTag> action,
                                                                                         SuccessorBuilders<LiftedTag>& storage,
                                                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_labeled_successor_nodes(const Source& node,
-                                     formalism::planning::ActionView<LiftedTag> action,
+                                     formalism::ActionView<LiftedTag> action,
                                      SuccessorBuilders<LiftedTag>& storage,
                                      AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                      LabeledNodeList<LiftedTag, StateBuilderView<LiftedTag>>& out_nodes);
 
     // Single successors of an action, an interned binding, a borrowed binding (validated) or raw binding data (not interned).
     Node<LiftedTag> get_successor_node(const Source& node,
-                                       formalism::planning::ActionView<GroundTag> action,
+                                       formalism::ActionView<GroundTag> action,
                                        StateRepository<LiftedTag>& storage,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    BuilderNode
-    get_successor_node(const Source& node, formalism::planning::ActionView<GroundTag> action, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    BuilderNode get_successor_node(const Source& node, formalism::ActionView<GroundTag> action, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    Node<LiftedTag>
+    get_successor_node(const Source& node, formalism::ActionRowView binding, StateRepository<LiftedTag>& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    BuilderNode get_successor_node(const Source& node, formalism::ActionRowView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     Node<LiftedTag> get_successor_node(const Source& node,
-                                       formalism::planning::ActionRowView binding,
+                                       formalism::ActionRowBuilderView binding,
                                        StateRepository<LiftedTag>& storage,
                                        AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    BuilderNode
-    get_successor_node(const Source& node, formalism::planning::ActionRowView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    Node<LiftedTag> get_successor_node(const Source& node,
-                                       formalism::planning::ActionRowBuilderView binding,
-                                       StateRepository<LiftedTag>& storage,
-                                       AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    BuilderNode
-    get_successor_node(const Source& node, formalism::planning::ActionRowBuilderView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+    BuilderNode get_successor_node(const Source& node, formalism::ActionRowBuilderView binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     Node<LiftedTag>
     get_successor_node(const Source& node, const BindingData& binding, StateRepository<LiftedTag>& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     BuilderNode get_successor_node(const Source& node, const BindingData& binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    formalism::planning::ActionView<GroundTag> ground_action(formalism::planning::ActionRowView binding);
+    formalism::ActionView<GroundTag> ground_action(formalism::ActionRowView binding);
 
     Bindings get_applicable_action_bindings(const Source& node);
     void get_applicable_action_bindings(const Source& node, Bindings& out_bindings);
-    Bindings get_applicable_action_bindings(const Source& node, formalism::planning::ActionView<LiftedTag> action);
-    void get_applicable_action_bindings(const Source& node, formalism::planning::ActionView<LiftedTag> action, Bindings& out_bindings);
+    Bindings get_applicable_action_bindings(const Source& node, formalism::ActionView<LiftedTag> action);
+    void get_applicable_action_bindings(const Source& node, formalism::ActionView<LiftedTag> action, Bindings& out_bindings);
 
     /// Callbacks return true to continue, false to stop. The result is true iff enumeration was exhausted.
     /// Enumeration must not reenter this generator's enumeration APIs: they share scratch storage, and reentering throws logic_error.
     /// Generating a single successor of the callback's state inside an action-binding callback is supported; another state throws
     /// logic_error.
     /// Builder successor callbacks reuse the supplied builder; copy results before the next callback.
-    bool for_each_applicable_action_binding(const Source& node, const std::function<bool(formalism::planning::ActionRowView)>& callback);
+    bool for_each_applicable_action_binding(const Source& node, const std::function<bool(formalism::ActionRowView)>& callback);
     bool for_each_applicable_action_binding(const Source& node,
-                                            formalism::planning::ActionView<LiftedTag> action,
-                                            const std::function<bool(formalism::planning::ActionRowView)>& callback);
+                                            formalism::ActionView<LiftedTag> action,
+                                            const std::function<bool(formalism::ActionRowView)>& callback);
     bool for_each_successor_node(const Source& node,
                                  StateRepository<LiftedTag>& storage,
                                  AxiomEvaluator<LiftedTag>& axiom_evaluator,
@@ -185,12 +180,12 @@ public:
     bool
     for_each_successor_node(const Source& node, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator, const std::function<bool(BuilderNode)>& callback);
     bool for_each_successor_node(const Source& node,
-                                 formalism::planning::ActionView<LiftedTag> action,
+                                 formalism::ActionView<LiftedTag> action,
                                  StateRepository<LiftedTag>& storage,
                                  AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                  const std::function<bool(Node<LiftedTag>)>& callback);
     bool for_each_successor_node(const Source& node,
-                                 formalism::planning::ActionView<LiftedTag> action,
+                                 formalism::ActionView<LiftedTag> action,
                                  Builder& storage,
                                  AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                  const std::function<bool(BuilderNode)>& callback);
@@ -203,12 +198,12 @@ public:
                                          AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                          const std::function<bool(LabeledNode<LiftedTag, StateBuilderView<LiftedTag>>)>& callback);
     bool for_each_labeled_successor_node(const Source& node,
-                                         formalism::planning::ActionView<LiftedTag> action,
+                                         formalism::ActionView<LiftedTag> action,
                                          StateRepository<LiftedTag>& storage,
                                          AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                          const std::function<bool(LabeledNode<LiftedTag>)>& callback);
     bool for_each_labeled_successor_node(const Source& node,
-                                         formalism::planning::ActionView<LiftedTag> action,
+                                         formalism::ActionView<LiftedTag> action,
                                          Builder& storage,
                                          AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                          const std::function<bool(LabeledNode<LiftedTag, StateBuilderView<LiftedTag>>)>& callback);
@@ -218,14 +213,14 @@ public:
     /// The same continuation and non-reentrancy rules as the indexed binding callbacks apply.
     bool for_each_borrowed_applicable_action_binding(const Source& node, const std::function<bool(ActionBindingView<LiftedTag>)>& callback);
     bool for_each_borrowed_applicable_action_binding(const Source& node,
-                                                     formalism::planning::ActionView<LiftedTag> action,
+                                                     formalism::ActionView<LiftedTag> action,
                                                      const std::function<bool(ActionBindingView<LiftedTag>)>& callback);
 
     /// The predicate inspects condition-matching candidates before effect compatibility is checked.
     /// Rejected candidates do not reach callback. stop is polled before enumeration and each candidate.
     /// Predicate bindings are borrowed for that call only; successor generation belongs in callback.
     bool for_each_borrowed_applicable_action_binding(const Source& node,
-                                                     formalism::planning::ActionView<LiftedTag> action,
+                                                     formalism::ActionView<LiftedTag> action,
                                                      const std::function<bool(ActionBindingView<LiftedTag>)>& accept,
                                                      const std::function<bool(ActionBindingView<LiftedTag>)>& callback,
                                                      const std::function<bool()>& stop);
@@ -234,11 +229,11 @@ public:
     PackedNode<LiftedTag> get_packed_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
     PackedNode<LiftedTag> get_packed_node(StateRepository<LiftedTag>& state_repository, urd::index<State<LiftedTag>> state_index);
     PackedNode<LiftedTag> get_packed_successor_node(const Source& node,
-                                                    formalism::planning::ActionRowView binding,
+                                                    formalism::ActionRowView binding,
                                                     StateRepository<LiftedTag>& state_repository,
                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator);
     PackedNode<LiftedTag> get_packed_successor_node(const Source& node,
-                                                    formalism::planning::ActionView<GroundTag> action,
+                                                    formalism::ActionView<GroundTag> action,
                                                     StateRepository<LiftedTag>& state_repository,
                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator);
     PackedNode<LiftedTag> get_packed_successor_node(const Source& node,
@@ -252,11 +247,11 @@ public:
                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                     PackedNodeList<LiftedTag>& out_nodes);
     PackedNodeList<LiftedTag> get_packed_successor_nodes(const Source& node,
-                                                         formalism::planning::ActionView<LiftedTag> action,
+                                                         formalism::ActionView<LiftedTag> action,
                                                          StateRepository<LiftedTag>& state_repository,
                                                          AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_packed_successor_nodes(const Source& node,
-                                    formalism::planning::ActionView<LiftedTag> action,
+                                    formalism::ActionView<LiftedTag> action,
                                     StateRepository<LiftedTag>& state_repository,
                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                     PackedNodeList<LiftedTag>& out_nodes);
@@ -267,11 +262,11 @@ public:
                                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                             PackedLabeledNodeList<LiftedTag>& out_nodes);
     PackedLabeledNodeList<LiftedTag> get_packed_labeled_successor_nodes(const Source& node,
-                                                                        formalism::planning::ActionView<LiftedTag> action,
+                                                                        formalism::ActionView<LiftedTag> action,
                                                                         StateRepository<LiftedTag>& state_repository,
                                                                         AxiomEvaluator<LiftedTag>& axiom_evaluator);
     void get_packed_labeled_successor_nodes(const Source& node,
-                                            formalism::planning::ActionView<LiftedTag> action,
+                                            formalism::ActionView<LiftedTag> action,
                                             StateRepository<LiftedTag>& state_repository,
                                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
                                             PackedLabeledNodeList<LiftedTag>& out_nodes);
@@ -279,7 +274,7 @@ public:
     /// Writes an unregistered successor without axiom closure, and its exact changes relative to `node` into `out_delta`.
     /// Use get_successor_node() for a completed borrowed successor.
     /// Pass the same pooled builder and auxiliary value to finalize_successor_state() to intern it.
-    ygg::float_t generate_successor_state(const Source& node, formalism::planning::ActionRowView binding, Builder& out_state, StateDelta& out_delta);
+    ygg::float_t generate_successor_state(const Source& node, formalism::ActionRowView binding, Builder& out_state, StateDelta& out_delta);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,

@@ -48,7 +48,7 @@
 #include <urd/store.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 /**
  * Forward declarations

@@ -24,7 +24,7 @@ namespace
 
 /// How many of each part a task and its domain have, as tests/support/generators/formalism/planning/
 /// generate_parser_counts_suite.py records them.
-boost::json::object counts(tyr::formalism::planning::TaskView<::tyr::LiftedTag> task)
+boost::json::object counts(tyr::formalism::TaskView<::tyr::LiftedTag> task)
 {
     const auto domain = task.get_domain();
     return boost::json::object {
@@ -78,7 +78,7 @@ TEST(TyrFormalismPlanningFormatter, PrintsTheParserCountsSuiteAsPddlThatParsesBa
             options.add_action_costs = configuration.at("parser_options").as_object().at("add_action_costs").as_bool();
             const auto expected = boost::json::object { { "domain", configuration.at("domain") }, { "task", configuration.at("task") } };
 
-            auto parser = tyr::formalism::planning::Parser(domain_file, options);
+            auto parser = tyr::formalism::Parser(domain_file, options);
             const auto task = parser.parse_task(task_file, options);
             EXPECT_EQ(counts(task.get_task()), expected);
 
@@ -92,7 +92,7 @@ TEST(TyrFormalismPlanningFormatter, PrintsTheParserCountsSuiteAsPddlThatParsesBa
             auto loki_parser = loki::semantic::Parser(domain_text, options);
             static_cast<void>(loki_parser.parse_task(problem_text));
 
-            auto reparser = tyr::formalism::planning::Parser(domain_text, std::nullopt, options);
+            auto reparser = tyr::formalism::Parser(domain_text, std::nullopt, options);
             const auto reparsed = reparser.parse_task(problem_text, std::nullopt, options);
             EXPECT_EQ(counts(reparsed.get_task()), expected);
             EXPECT_EQ(fmt::format("{}", reparsed), text);

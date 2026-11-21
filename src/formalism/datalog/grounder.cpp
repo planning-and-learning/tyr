@@ -21,7 +21,7 @@
 
 #ifndef TYR_HEADER_INSTANTIATION
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);

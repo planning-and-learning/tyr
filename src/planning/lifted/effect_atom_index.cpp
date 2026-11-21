@@ -27,7 +27,7 @@ namespace tyr::planning
 EffectAtomIndex::EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
                                  const ConditionalEffectToPredicateMapping& effect_to_predicate,
                                  const datalog::TaggedFactSets<formalism::DerivedTag>& facts,
-                                 const formalism::datalog::Repository& repository) :
+                                 const formalism::Repository& repository) :
     m_effect_to_predicate(&effect_to_predicate),
     m_facts(&facts),
     m_repository(&repository)
@@ -43,8 +43,8 @@ void EffectAtomIndex::clear() noexcept
 }
 
 std::optional<std::pair<EffectAtomIndex::Atoms::const_iterator, EffectAtomIndex::Atoms::const_iterator>>
-EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
-                           formalism::planning::ConditionalEffectView<LiftedTag> effect,
+EffectAtomIndex::get_atoms(formalism::ActionView<LiftedTag> action,
+                           formalism::ConditionalEffectView<LiftedTag> effect,
                            std::span<const urd::index<formalism::Object>> binding)
 {
     const auto effect_predicate = m_effect_to_predicate->find(std::pair(action, effect));
@@ -63,8 +63,8 @@ EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
 }
 
 void EffectAtomIndex::rebuild(Groups& groups,
-                              formalism::datalog::PredicateView<formalism::DerivedTag> effect_predicate,
-                              formalism::datalog::PredicateView<formalism::DerivedTag> applicability_predicate,
+                              formalism::PredicateView<formalism::DerivedTag> effect_predicate,
+                              formalism::PredicateView<formalism::DerivedTag> applicability_predicate,
                               size_t action_arity)
 {
     const auto atoms = datalog::rows(*m_facts, effect_predicate.index().value);
@@ -85,7 +85,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
     groups.current = true;
 }
 
-std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::PredicateView<formalism::DerivedTag> applicability_predicate,
+std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::PredicateView<formalism::DerivedTag> applicability_predicate,
                                                      std::span<const urd::index<formalism::Object>> binding)
 {
     m_lookup.values.clear();

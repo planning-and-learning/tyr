@@ -20,7 +20,7 @@ from typing import Any
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 
-from pytyr.formalism.planning import (
+from pytyr.formalism import (
     Invariant,
     InvariantOrderCriterion,
     InvariantOrderOptions,

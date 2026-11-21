@@ -36,11 +36,11 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
+struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::planning::Task<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Task<::tyr::LiftedTag>> index;
     urd::flat_string name;
-    urd::index<::tyr::formalism::planning::Domain> domain;
+    urd::index<::tyr::formalism::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> objects;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_atoms;
@@ -49,13 +49,13 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
     urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal;
-    urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
+    urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric;
+    urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms;
 
     data() = default;
 
     data(urd::flat_string name_,
-         urd::index<::tyr::formalism::planning::Domain> domain_,
+         urd::index<::tyr::formalism::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> objects_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_atoms_,
@@ -64,8 +64,8 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
          urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal_,
-         urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_) :
+         urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric_,
+         urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_) :
         index(),
         name(std::move(name_)),
         domain(domain_),
@@ -139,11 +139,11 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
+struct data<::tyr::formalism::Task<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::planning::Task<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::Task<::tyr::GroundTag>> index;
     urd::flat_string name;
-    urd::index<::tyr::formalism::planning::Domain> domain;
+    urd::index<::tyr::formalism::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> objects;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_atoms;
@@ -153,19 +153,19 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
     urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal;
-    urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
+    urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric;
+    urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms;
 
     /// FDR-related
-    urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables;
-    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>>> ground_actions;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>> ground_axioms;
+    urd::flat_vector<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables;
+    urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts;
+    urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::GroundTag>>> ground_actions;
+    urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>>> ground_axioms;
 
     data() = default;
 
     data(urd::flat_string name_,
-         urd::index<::tyr::formalism::planning::Domain> domain_,
+         urd::index<::tyr::formalism::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> objects_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_atoms_,
@@ -175,12 +175,12 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
          urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal_,
-         urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables_,
-         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>>> ground_actions_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>> ground_axioms_) :
+         urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric_,
+         urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_,
+         urd::flat_vector<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables_,
+         urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts_,
+         urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::GroundTag>>> ground_actions_,
+         urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>>> ground_axioms_) :
         index(),
         name(std::move(name_)),
         domain(domain_),
@@ -256,21 +256,21 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 
 }
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 /// The member holding the F-atoms of a task: a ground task also holds derived atoms.
 template<FactKind F, TaskKind T>
-inline constexpr auto atoms_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Task<T>>::static_atoms, &urd::data<Task<T>>::fluent_atoms>;
+inline constexpr auto task_atoms_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Task<T>>::static_atoms, &urd::data<Task<T>>::fluent_atoms>;
 template<FactKind F>
-inline constexpr auto atoms_of<F, GroundTag> = tagged_member_pointer<StaticFluentDerivedTags,
-                                                                     F,
-                                                                     &urd::data<Task<GroundTag>>::static_atoms,
-                                                                     &urd::data<Task<GroundTag>>::fluent_atoms,
-                                                                     &urd::data<Task<GroundTag>>::derived_atoms>;
+inline constexpr auto task_atoms_of<F, GroundTag> = tagged_member_pointer<StaticFluentDerivedTags,
+                                                                          F,
+                                                                          &urd::data<Task<GroundTag>>::static_atoms,
+                                                                          &urd::data<Task<GroundTag>>::fluent_atoms,
+                                                                          &urd::data<Task<GroundTag>>::derived_atoms>;
 
 /// The member holding the F-function term values of a task.
 template<FactKind F, TaskKind T>
-inline constexpr auto fterm_values_of =
+inline constexpr auto task_fterm_values_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Task<T>>::static_fterm_values, &urd::data<Task<T>>::fluent_fterm_values>;
 }
 

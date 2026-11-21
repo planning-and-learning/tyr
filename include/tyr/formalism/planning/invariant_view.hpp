@@ -24,7 +24,7 @@
 namespace urd
 {
 template<typename V>
-struct view_mixin<::tyr::formalism::planning::Invariant, V>
+struct view_mixin<::tyr::formalism::Invariant, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }

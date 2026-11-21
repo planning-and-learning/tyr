@@ -9,8 +9,8 @@
 
 using VariableData = urd::data<tyr::formalism::Variable>;
 using VariableIndex = urd::index<tyr::formalism::Variable>;
-using VariableView = urd::index_view<tyr::formalism::Variable, tyr::formalism::planning::Repository>;
-using DatalogVariableView = urd::index_view<tyr::formalism::Variable, tyr::formalism::datalog::Repository>;
+using VariableView = urd::index_view<tyr::formalism::Variable, tyr::formalism::Repository>;
+using DatalogVariableView = urd::index_view<tyr::formalism::Variable, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<VariableIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<VariableIndex>);
@@ -28,8 +28,8 @@ concept VariableViewContract = std::totally_ordered<View> && requires(const View
 
 static_assert(VariableViewContract<VariableView>);
 static_assert(VariableViewContract<DatalogVariableView>);
-static_assert(std::same_as<VariableView, tyr::formalism::planning::VariableView>);
-static_assert(std::same_as<DatalogVariableView, tyr::formalism::datalog::VariableView>);
+static_assert(std::same_as<VariableView, tyr::formalism::VariableView>);
+static_assert(std::same_as<DatalogVariableView, tyr::formalism::VariableView>);
 
 TEST(TyrFormalismVariable, ExposesOwnedContract)
 {

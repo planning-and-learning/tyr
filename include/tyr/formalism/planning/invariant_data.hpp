@@ -33,9 +33,9 @@ namespace urd
 /// A synthesized invariant (Helmert 2009): at most one atom of the instance that binds the rigid variables
 /// [0, num_rigid_variables) is true, where the counted variable num_rigid_variables ranges over all objects.
 template<>
-struct data<::tyr::formalism::planning::Invariant>
+struct data<::tyr::formalism::Invariant>
 {
-    urd::index<::tyr::formalism::planning::Invariant> index;
+    urd::index<::tyr::formalism::Invariant> index;
     ygg::uint_t num_rigid_variables = 0;
     ygg::uint_t num_counted_variables = 0;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms;

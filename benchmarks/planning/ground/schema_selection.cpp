@@ -49,14 +49,13 @@ using tyr::LiftedTag;
 
 namespace
 {
-using Tree = tyr::planning::match_tree::MatchTree<tyr::formalism::planning::Action<GroundTag>>;
-using Forest =
-    urd::Store<urd::map<tyr::formalism::planning::ActionView<LiftedTag>, tyr::planning::match_tree::MatchTreePtr<tyr::formalism::planning::Action<GroundTag>>>>;
+using Tree = tyr::planning::match_tree::MatchTree<tyr::formalism::Action<GroundTag>>;
+using Forest = urd::Store<urd::map<tyr::formalism::ActionView<LiftedTag>, tyr::planning::match_tree::MatchTreePtr<tyr::formalism::Action<GroundTag>>>>;
 
 struct PreparedCase
 {
     tyr::planning::TaskPtr<GroundTag> task;
-    tyr::planning::match_tree::MatchTreePtr<tyr::formalism::planning::Action<GroundTag>> tree;
+    tyr::planning::match_tree::MatchTreePtr<tyr::formalism::Action<GroundTag>> tree;
     Forest forest;
     tyr::planning::SuccessorGeneratorPtr<GroundTag> generator;
 };
@@ -69,7 +68,7 @@ struct BenchmarkCase
 
 Forest make_forest(const tyr::planning::Task<GroundTag>& task)
 {
-    auto groups = urd::Store<urd::map<tyr::formalism::planning::ActionView<LiftedTag>, tyr::formalism::planning::ActionViewList<GroundTag>>> {};
+    auto groups = urd::Store<urd::map<tyr::formalism::ActionView<LiftedTag>, tyr::formalism::ActionViewList<GroundTag>>> {};
     for (const auto schema : task.get_task().get_domain().get_actions())
         groups.try_emplace(schema);
     for (const auto action : task.get_task().get_ground_actions())
@@ -82,8 +81,8 @@ Forest make_forest(const tyr::planning::Task<GroundTag>& task)
 
 void generate_forest(Forest& forest,
                      const tyr::planning::StateContext<GroundTag>& context,
-                     tyr::formalism::planning::ActionViewList<GroundTag>& scratch,
-                     tyr::formalism::planning::ActionViewList<GroundTag>& out)
+                     tyr::formalism::ActionViewList<GroundTag>& scratch,
+                     tyr::formalism::ActionViewList<GroundTag>& out)
 {
     out.clear();
     for (auto& [schema, tree] : forest)
@@ -110,13 +109,12 @@ try
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
     {
-        auto lifted_task =
-            tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
+        auto lifted_task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
         prepared.task = lifted_task->instantiate_ground_task(*execution_context).task;
         if (prepared.task)
         {
             const auto actions = prepared.task->get_task().get_ground_actions();
-            prepared.tree = Tree::create(tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_repository());
+            prepared.tree = Tree::create(tyr::formalism::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_repository());
             prepared.forest = make_forest(*prepared.task);
             prepared.generator = std::make_shared<tyr::planning::SuccessorGenerator<GroundTag>>(prepared.task, execution_context);
         }
@@ -128,7 +126,7 @@ try
         return;
     }
     const auto actions = task->get_task().get_ground_actions();
-    const auto all_actions = tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end());
+    const auto all_actions = tyr::formalism::ActionViewList<GroundTag>(actions.begin(), actions.end());
     auto tree = prepared.tree->make_worker();
     auto forest = Forest {};
     for (const auto& [schema, prototype] : prepared.forest)
@@ -138,9 +136,9 @@ try
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = generator->get_initial_node(*repository, *evaluator);
     const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state(), node.get_metric());
-    auto applicable = tyr::formalism::planning::ActionViewList<GroundTag> {};
-    auto scratch = tyr::formalism::planning::ActionViewList<GroundTag> {};
-    auto expected = tyr::formalism::planning::ActionViewList<GroundTag> {};
+    auto applicable = tyr::formalism::ActionViewList<GroundTag> {};
+    auto scratch = tyr::formalism::ActionViewList<GroundTag> {};
+    auto expected = tyr::formalism::ActionViewList<GroundTag> {};
     tree->generate(context, expected);
     generate_forest(forest, context, scratch, applicable);
     const auto by_index = [](auto lhs, auto rhs) { return lhs.index() < rhs.index(); };
@@ -168,7 +166,7 @@ try
     if (expected != applicable)
         throw std::runtime_error("Selected schema match tree disagrees with global filtering.");
 
-    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>> {};
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
     auto successors = tyr::planning::LabeledNodeList<GroundTag> {};
     auto executor = tyr::planning::ActionExecutor {};
     const auto generate = [&]

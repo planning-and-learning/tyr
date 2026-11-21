@@ -4,19 +4,18 @@
 import pytest
 
 from pytyr import formalism
-from pytyr.formalism import ObjectData, datalog, planning
-from pytyr.formalism.planning import OptimizationDirection
+from pytyr.formalism import ObjectData, OptimizationDirection
 
 
 def test_optimization_directions_are_distinct() -> None:
     assert OptimizationDirection.Minimize != OptimizationDirection.Maximize
 
 
-def test_shared_types_are_in_formalism_only() -> None:
+def test_formalism_is_one_module() -> None:
     for name in ("BooleanOperatorKind", "ArithmeticOperatorKind", "NumericEffectOperatorKind", "ObjectData"):
         assert hasattr(formalism, name)
-        assert not hasattr(planning, name)
-        assert not hasattr(datalog, name)
+    assert not hasattr(formalism, "planning")
+    assert not hasattr(formalism, "datalog")
     assert formalism.BooleanOperatorKind.Eq != formalism.BooleanOperatorKind.Ne
 
 

@@ -62,7 +62,7 @@ class StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadS
 {
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
-    using Unpacked = urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>;
+    using Unpacked = urd::builder<FactStorage<GroundTag>, formalism::Repository>;
     using Handle = typename Context::ArraySet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);
@@ -88,7 +88,7 @@ class StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadS
 {
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
-    using Unpacked = urd::builder<AtomStorage<GroundTag>, formalism::planning::Repository>;
+    using Unpacked = urd::builder<AtomStorage<GroundTag>, formalism::Repository>;
     using Handle = typename Context::ArraySet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);

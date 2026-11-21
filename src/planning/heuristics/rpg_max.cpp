@@ -64,7 +64,7 @@ MaxRPGHeuristicPtr<Kind> MaxRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::
 { return std::make_shared<MaxRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
-void MaxRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+void MaxRPGHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>

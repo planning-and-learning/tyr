@@ -26,7 +26,7 @@
 #include <urd/store.hpp>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 /// Invariant orders for GroundTaskInstantiationOptions::invariant_order, computed from the invariants alone.

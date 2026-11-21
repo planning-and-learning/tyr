@@ -29,7 +29,7 @@
 namespace urd
 {
 template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::planning::ConjunctiveEffect<T>, V>
+struct view_mixin<::tyr::formalism::ConjunctiveEffect<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -55,7 +55,7 @@ public:
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template member<::tyr::formalism::planning::effect_facts_of<F>>(); }
+    { return self().template member<::tyr::formalism::effect_facts_of<F>>(); }
 };
 }  // namespace urd
 

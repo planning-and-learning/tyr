@@ -64,9 +64,9 @@ void bind_multi_operator(nb::module_& m)
 
 }  // namespace tyr::formalism
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_multi_operator(nb::module_& m, RepositoryBinding& repository) { bind_multi_operator_views(m, repository); }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

@@ -35,9 +35,9 @@ namespace urd
 
 /// The builder of Axiom: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::Axiom<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> body;
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C> head;
@@ -50,10 +50,10 @@ struct builder<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, C>
 
 /// The builder of Axiom: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Axiom<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::Axiom<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
-    urd::built_t<ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>, C> row;
+    urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
+    urd::built_t<ygg::RowIndex<::tyr::formalism::Axiom<::tyr::LiftedTag>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> body;
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> head;
 

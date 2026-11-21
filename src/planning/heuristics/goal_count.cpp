@@ -34,7 +34,7 @@ std::shared_ptr<GoalCountHeuristic<Kind>> GoalCountHeuristic<Kind>::create(std::
 { return std::make_shared<GoalCountHeuristic<Kind>>(std::move(task)); }
 
 template<TaskKind Kind>
-void GoalCountHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+void GoalCountHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_goal = goal; }
 
 template<TaskKind Kind>

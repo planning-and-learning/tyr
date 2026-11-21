@@ -82,9 +82,9 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
            },
            "predicate"_a,
            nb::keep_alive<0, 1>())
-        .def("contains", [](const Sets& self, formalism::datalog::PredicateRowIndex<T> fact) { return contains(self, fact); }, "fact"_a);
+        .def("contains", [](const Sets& self, formalism::PredicateRowIndex<T> fact) { return contains(self, fact); }, "fact"_a);
     if constexpr (has_function_facts<T>)
-        cls.def("value", [](const Sets& self, formalism::datalog::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
+        cls.def("value", [](const Sets& self, formalism::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
 }
 
 inline void bind_fact_sets(nb::module_& m)
@@ -118,7 +118,7 @@ void bind_task_annotations(nb::module_& m)
     using namespace nb::literals;
     using WitnessAnnotationT = WitnessAnnotation<Kind>;
     using PredicateAnnotationStore = PredicateAnnotations<Kind>;
-    using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using PredicateKey = formalism::PredicateRowIndex<formalism::FluentTag>;
 
     auto witness_annotation_cls = nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
                                       .def(nb::init<RuleKey<Kind>, Cost>(), "rule_key"_a, "cost"_a)
@@ -185,7 +185,7 @@ void bind_task_policies(nb::module_& m)
         .def(
             "find_achievers",
             [](const MaxMinCostAnnotationWithAchievers& self,
-               formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+               formalism::PredicateRowIndex<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
@@ -245,8 +245,8 @@ void bind_workspace(nb::module_& m, const std::string& name)
 
     if constexpr (std::same_as<Kind, GroundTag>)
     {
-        using Atom = formalism::datalog::AtomView<GroundTag, formalism::FluentTag>;
-        using FunctionTerm = formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>;
+        using Atom = formalism::AtomView<GroundTag, formalism::FluentTag>;
+        using FunctionTerm = formalism::FunctionTermView<GroundTag, formalism::FluentTag>;
 
         cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
@@ -262,9 +262,9 @@ void bind_workspace(nb::module_& m, const std::string& name)
     }
     else
     {
-        using Atom = formalism::datalog::AtomView<GroundTag, formalism::FluentTag>;
-        using PredicateBinding = formalism::datalog::PredicateRowView<formalism::FluentTag>;
-        using FunctionBinding = formalism::datalog::FunctionRowView<formalism::FluentTag>;
+        using Atom = formalism::AtomView<GroundTag, formalism::FluentTag>;
+        using PredicateBinding = formalism::PredicateRowView<formalism::FluentTag>;
+        using FunctionBinding = formalism::FunctionRowView<formalism::FluentTag>;
 
         cls.def(
                "get_workspace_repository",
@@ -290,7 +290,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "binding"_a)
             .def(
                 "insert_derived_binding",
-                [](Workspace& self, formalism::datalog::PredicateRowView<formalism::DerivedTag> binding)
+                [](Workspace& self, formalism::PredicateRowView<formalism::DerivedTag> binding)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
                     return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index());
@@ -338,7 +338,7 @@ void bind_configuration(nb::module_& m, const char* prefix)
         cls.def("initialize", [](Context& self) { self.initialize(); })
             .def(
                 "initialize",
-                [](Context& self, const urd::Store<urd::sequence<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms)
+                [](Context& self, const urd::Store<urd::sequence<formalism::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms)
                 { self.initialize(fluent_atoms); },
                 "fluent_atoms"_a);
     }

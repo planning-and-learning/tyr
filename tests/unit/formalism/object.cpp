@@ -12,8 +12,8 @@
 
 using ObjectData = urd::data<tyr::formalism::Object>;
 using ObjectIndex = urd::index<tyr::formalism::Object>;
-using ObjectView = urd::index_view<tyr::formalism::Object, tyr::formalism::planning::Repository>;
-using DatalogObjectView = urd::index_view<tyr::formalism::Object, tyr::formalism::datalog::Repository>;
+using ObjectView = urd::index_view<tyr::formalism::Object, tyr::formalism::Repository>;
+using DatalogObjectView = urd::index_view<tyr::formalism::Object, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<ObjectIndex, ygg::uint_t>);
 static_assert(requires(ObjectData& data) {
@@ -28,8 +28,8 @@ concept ObjectViewContract = std::totally_ordered<View> && requires(const View& 
 
 static_assert(ObjectViewContract<ObjectView>);
 static_assert(ObjectViewContract<DatalogObjectView>);
-static_assert(std::same_as<ObjectView, tyr::formalism::planning::ObjectView>);
-static_assert(std::same_as<DatalogObjectView, tyr::formalism::datalog::ObjectView>);
+static_assert(std::same_as<ObjectView, tyr::formalism::ObjectView>);
+static_assert(std::same_as<DatalogObjectView, tyr::formalism::ObjectView>);
 static_assert(std::totally_ordered<ObjectIndex>);
 static_assert(std::totally_ordered<ObjectData>);
 
@@ -62,21 +62,21 @@ concept SymbolContextFor = requires(const C& context) {
 
 struct ObjectContext
 {
-    const tyr::formalism::planning::Repository* repository;
+    const tyr::formalism::Repository* repository;
 
-    [[maybe_unused]] friend const tyr::formalism::planning::Repository& get_repository(const ObjectContext& context) noexcept { return *context.repository; }
+    [[maybe_unused]] friend const tyr::formalism::Repository& get_repository(const ObjectContext& context) noexcept { return *context.repository; }
 };
 
-static_assert(SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
+static_assert(SymbolRepositoryFor<tyr::formalism::Repository, tyr::formalism::Object>);
 static_assert(SymbolContextFor<ObjectContext, tyr::formalism::Object>);
 static_assert(!SymbolContextFor<int, tyr::formalism::Object>);
 }
 
 TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
 {
-    auto repository = tyr::formalism::planning::Repository();
+    auto repository = tyr::formalism::Repository();
     auto data = ObjectData(std::string("truck"));
-    const auto object = tyr::formalism::planning::insert(repository, data).first;
+    const auto object = tyr::formalism::insert(repository, data).first;
     const auto view = repository.view(object.index());
     EXPECT_EQ(view, object);
     EXPECT_EQ(&view.context(), &repository);

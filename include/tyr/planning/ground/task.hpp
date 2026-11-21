@@ -59,7 +59,7 @@ template<>
 class Task<GroundTag>
 {
 public:
-    explicit Task(formalism::planning::PlanningTask<GroundTag> task);
+    explicit Task(formalism::PlanningTask<GroundTag> task);
 
     [[nodiscard]] const auto& get_formalism_task() const noexcept { return m_task; }
 
@@ -78,9 +78,9 @@ public:
     [[nodiscard]] bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 private:
-    formalism::planning::PlanningTask<GroundTag> m_task;
-    formalism::planning::RepositoryPtr m_repository;
-    formalism::planning::FDRContextPtr m_fdr_context;
+    formalism::PlanningTask<GroundTag> m_task;
+    formalism::RepositoryPtr m_repository;
+    formalism::FDRContextPtr m_fdr_context;
 
     StaticState m_static_state;
 };

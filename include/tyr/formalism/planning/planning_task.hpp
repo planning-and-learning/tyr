@@ -36,7 +36,7 @@ struct TaskVariableDomains;
 struct TaskVariableDomainsView;
 }
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 template<TaskKind T>

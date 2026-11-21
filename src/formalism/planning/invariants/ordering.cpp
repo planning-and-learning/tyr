@@ -36,7 +36,7 @@
 #include <variant>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 namespace
 {
@@ -167,4 +167,4 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
     }
 }
 
-}  // namespace tyr::formalism::planning::invariant
+}  // namespace tyr::formalism::invariant

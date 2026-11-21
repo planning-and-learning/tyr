@@ -39,20 +39,20 @@ namespace tyr::planning
 class StaticState
 {
 public:
-    StaticState(formalism::planning::AtomListView<GroundTag, formalism::StaticTag> atoms,
-                formalism::planning::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values);
+    StaticState(formalism::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                formalism::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values);
 
     template<TaskKind Kind>
-    explicit StaticState(formalism::planning::TaskView<Kind> task);
+    explicit StaticState(formalism::TaskView<Kind> task);
 
     [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> index) const { return m_atoms.contains(index); }
 
     [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
     { return m_numeric_variables.visit(index, std::identity {}, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
-    [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
+    [[nodiscard]] bool test(formalism::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
 
-    [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept { return get(fterm.index()); }
+    [[nodiscard]] ygg::float_t get(formalism::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept { return get(fterm.index()); }
 
     /// In ascending order.
     [[nodiscard]] auto get_atoms() const noexcept { return std::views::all(m_atoms); }

@@ -29,7 +29,7 @@
 namespace urd
 {
 template<typename V>
-struct view_mixin<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>, V>
+struct view_mixin<::tyr::formalism::RuleBody<::tyr::GroundTag>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -46,7 +46,7 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    { return self().template member<::tyr::formalism::datalog::rule_body_literals_of<F>>(); }
+    { return self().template member<::tyr::formalism::rule_body_literals_of<F>>(); }
 
     static constexpr auto functions() noexcept { return urd::Functions<> {}; }
 };

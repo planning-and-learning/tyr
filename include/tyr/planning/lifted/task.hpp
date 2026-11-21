@@ -63,9 +63,9 @@ template<>
 class Task<LiftedTag>
 {
 public:
-    explicit Task(formalism::planning::PlanningTask<LiftedTag> task);
+    explicit Task(formalism::PlanningTask<LiftedTag> task);
 
-    static TaskPtr<LiftedTag> create(formalism::planning::PlanningTask<LiftedTag> task);
+    static TaskPtr<LiftedTag> create(formalism::PlanningTask<LiftedTag> task);
 
     GroundTaskInstantiationResult instantiate_ground_task(ygg::ExecutionContext& execution_context,
                                                           const GroundTaskInstantiationOptions& options = GroundTaskInstantiationOptions());
@@ -91,9 +91,9 @@ public:
     [[nodiscard]] bool has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
 
 private:
-    formalism::planning::PlanningTask<LiftedTag> m_task;
-    formalism::planning::RepositoryPtr m_repository;
-    formalism::planning::FDRContextPtr m_fdr_context;
+    formalism::PlanningTask<LiftedTag> m_task;
+    formalism::RepositoryPtr m_repository;
+    formalism::FDRContextPtr m_fdr_context;
 
     StaticState m_static_state;
 };

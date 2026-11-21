@@ -35,7 +35,7 @@ template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>, C>
 {
     urd::index<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> index;
-    urd::built_t<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, ::tyr::formalism::planning::Repository> fact;
+    urd::built_t<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>, ::tyr::formalism::Repository> fact;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> true_child;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> dontcare_child;
 

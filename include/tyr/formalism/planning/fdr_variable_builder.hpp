@@ -33,9 +33,9 @@ namespace urd
 
 /// The builder of FDRVariable: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind T, typename C>
-struct builder<::tyr::formalism::planning::FDRVariable<T>, C>
+struct builder<::tyr::formalism::FDRVariable<T>, C>
 {
-    urd::index<::tyr::formalism::planning::FDRVariable<T>> index;
+    urd::index<::tyr::formalism::FDRVariable<T>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>>, C> atoms;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &builder::atoms>> {}; }

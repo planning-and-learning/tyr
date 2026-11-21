@@ -41,7 +41,7 @@ namespace tyr::planning
 struct ActionBindingResult
 {
     ActionBindingStatus status = ActionBindingStatus::INAPPLICABLE;
-    std::optional<formalism::planning::ActionRowView> binding;
+    std::optional<formalism::ActionRowView> binding;
 };
 
 /// The node successors are generated from, borrowed for one call: a registered node, or a node over a state builder.

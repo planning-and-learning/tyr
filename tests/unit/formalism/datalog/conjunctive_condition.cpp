@@ -16,13 +16,13 @@ namespace lifted_tests
 using Entity = tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::ConjunctiveConditionView<::tyr::LiftedTag>>);
+static_assert(std::same_as<View, tyr::formalism::RuleBodyView<::tyr::LiftedTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
@@ -43,16 +43,16 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-using Entity = tyr::formalism::datalog::RuleBody<::tyr::GroundTag>;
+using Entity = tyr::formalism::RuleBody<::tyr::GroundTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag>>);
+static_assert(std::same_as<View, tyr::formalism::RuleBodyView<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_literals;

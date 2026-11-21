@@ -30,14 +30,14 @@ namespace urd
 {
 
 template<::tyr::formalism::FactKind T>
-struct data<::tyr::formalism::planning::FDRFact<T>>
+struct data<::tyr::formalism::FDRFact<T>>
 {
-    urd::index<::tyr::formalism::planning::FDRVariable<T>> variable;
-    ::tyr::formalism::planning::FDRValue value;
+    urd::index<::tyr::formalism::FDRVariable<T>> variable;
+    ::tyr::formalism::FDRValue value;
 
     data() = default;
 
-    data(urd::index<::tyr::formalism::planning::FDRVariable<T>> variable_, ::tyr::formalism::planning::FDRValue value_) : variable(variable_), value(value_) {}
+    data(urd::index<::tyr::formalism::FDRVariable<T>> variable_, ::tyr::formalism::FDRValue value_) : variable(variable_), value(value_) {}
 
     static constexpr bool copyable() noexcept
     {

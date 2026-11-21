@@ -18,14 +18,14 @@ from pathlib import Path
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.formalism import ObjectIndex
 
-from pytyr.formalism import ParameterIndex
-from pytyr.formalism.planning import (
+from pytyr.formalism import (
     Invariant,
     InvariantMatchData,
     InvariantMatcher,
     InvariantQueryResult,
     InvariantQueryWorkspace,
     ObjectSubstitution,
+    ParameterIndex,
     Parser,
     TaskVariableDomains,
     synthesize_invariants,

@@ -35,15 +35,15 @@ namespace urd
 
 /// The builder of Action: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Action<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::Action<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Action<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<urd::flat_string, C> original_name;
     urd::built_t<ygg::uint_t, C> original_arity = 0;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>>, C> effects;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>>, C> effects;
 
     static constexpr auto fields() noexcept
     {
@@ -61,12 +61,12 @@ struct builder<::tyr::formalism::planning::Action<::tyr::LiftedTag>, C>
 
 /// The builder of Action: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Action<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::Action<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>> index;
-    urd::built_t<ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>>, C> row;
+    urd::index<::tyr::formalism::Action<::tyr::GroundTag>> index;
+    urd::built_t<ygg::RowIndex<::tyr::formalism::Action<::tyr::LiftedTag>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>>, C> effects;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>>, C> effects;
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"row", &builder::row>, urd::field<"condition", &builder::condition>, urd::field<"effects", &builder::effects>> {}; }

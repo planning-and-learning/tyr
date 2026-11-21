@@ -80,12 +80,12 @@ namespace match_tree_details
 {
 
 using PreconditionVariant = std::variant<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>,
-                                         formalism::planning::FDRVariableView<formalism::FluentTag>,
-                                         urd::data<formalism::planning::FDRFact<formalism::FluentTag>>,
+                                         formalism::FDRVariableView<formalism::FluentTag>,
+                                         urd::data<formalism::FDRFact<formalism::FluentTag>>,
                                          urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>;
 
 template<typename Tag>
-using ElementView = urd::index_view<Tag, formalism::planning::Repository>;
+using ElementView = urd::index_view<Tag, formalism::Repository>;
 
 template<typename Tag>
 using ElementViews = urd::Store<urd::sequence<ElementView<Tag>>>;
@@ -94,7 +94,7 @@ template<typename Tag>
 using ElementSpan = std::span<ElementView<Tag>>;
 
 template<typename Tag>
-using Builder = std::conditional_t<std::same_as<Tag, formalism::planning::Action<GroundTag>>, GroundActionBuilder, GroundAxiomBuilder>;
+using Builder = std::conditional_t<std::same_as<Tag, formalism::Action<GroundTag>>, GroundActionBuilder, GroundAxiomBuilder>;
 
 template<typename Tag>
 using SortedPreconditions = urd::Store<urd::sequence<std::pair<PreconditionVariant, ElementViews<Tag>>>>;
@@ -104,7 +104,7 @@ using PreconditionOccurrences = urd::Store<urd::map<PreconditionVariant, Element
 
 template<typename Tag>
 using PreconditionDetails =
-    urd::Store<urd::map<ElementView<Tag>, urd::Store<urd::map<PreconditionVariant, std::variant<std::monostate, bool, formalism::planning::FDRValue>>>>>;
+    urd::Store<urd::map<ElementView<Tag>, urd::Store<urd::map<PreconditionVariant, std::variant<std::monostate, bool, formalism::FDRValue>>>>>;
 
 template<typename Tag>
 struct BaseEntry
@@ -163,7 +163,7 @@ struct AtomStackEntry
         false_elements(false_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
-    { urd::build_member(result->atom, atom, repository.template get<formalism::planning::Repository>()); }
+    { urd::build_member(result->atom, atom, repository.template get<formalism::Repository>()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -186,7 +186,7 @@ struct VariableStackEntry
 
     VariableStackEntry(Builder<Tag>& builder,
                        BaseEntry<Tag> base_,
-                       formalism::planning::FDRVariableView<formalism::FluentTag> variable,
+                       formalism::FDRVariableView<formalism::FluentTag> variable,
                        urd::Store<urd::sequence<ElementSpan<Tag>>> domain_elements_,
                        urd::Store<urd::sequence<ygg::uint_t>> forward_,
                        ElementSpan<Tag> dontcare_elements_) :
@@ -219,14 +219,14 @@ struct NegativeFactStackEntry
     NegativeFactStackEntry(Builder<Tag>& builder,
                            const Repository<Tag>& repository,
                            BaseEntry<Tag> base_,
-                           urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+                           urd::data<formalism::FDRFact<formalism::FluentTag>> fact,
                            ElementSpan<Tag> true_elements_,
                            ElementSpan<Tag> dontcare_elements_) :
         base(base_),
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
-    { urd::build_member(result->fact, fact, repository.template get<formalism::planning::Repository>()); }
+    { urd::build_member(result->fact, fact, repository.template get<formalism::Repository>()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -253,7 +253,7 @@ struct ConstraintStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    { urd::build_member(result->constraint, constraint, repository.template get<formalism::planning::Repository>()); }
+    { urd::build_member(result->constraint, constraint, repository.template get<formalism::Repository>()); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
 
@@ -429,9 +429,9 @@ template<typename Tag>
 void push_result(GeneratorStackEntry<Tag>&, const Node<Tag>&, const Repository<Tag>&)
 { throw std::logic_error("Unexpected case."); }
 
-inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return el.get_body(); }
+inline auto get_condition(formalism::AxiomView<GroundTag> el) { return el.get_body(); }
 
-inline auto get_condition(formalism::planning::ActionView<GroundTag> el) { return el.get_condition(); }
+inline auto get_condition(formalism::ActionView<GroundTag> el) { return el.get_condition(); }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> atom,
@@ -478,7 +478,7 @@ static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(urd::index<for
 }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism::planning::FDRVariableView<formalism::FluentTag> variable,
+static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism::FDRVariableView<formalism::FluentTag> variable,
                                                                       BaseEntry<Tag> base,
                                                                       const PreconditionDetails<Tag>& details,
                                                                       Builder<Tag>& builder)
@@ -492,7 +492,7 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism:
         if (!details.at(e).contains(variable))
             return domain_size;  // dontcare
 
-        const auto value = std::get<formalism::planning::FDRValue>(details.at(e).at(variable));
+        const auto value = std::get<formalism::FDRValue>(details.at(e).at(variable));
         return value.value;
     };
 
@@ -536,7 +536,7 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism:
 }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(urd::data<formalism::FDRFact<formalism::FluentTag>> fact,
                                                                            BaseEntry<Tag> base,
                                                                            const PreconditionDetails<Tag>& details,
                                                                            Builder<Tag>& builder,
@@ -619,9 +619,9 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
     return std::visit(
         [&]<typename Alternative>(const Alternative& arg)
         {
-            if constexpr (std::same_as<Alternative, formalism::planning::FDRVariableView<formalism::FluentTag>>)
+            if constexpr (std::same_as<Alternative, formalism::FDRVariableView<formalism::FluentTag>>)
                 return try_create_variable_stack_entry(arg, base, details, builder);
-            else if constexpr (std::same_as<Alternative, urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>)
+            else if constexpr (std::same_as<Alternative, urd::data<formalism::FDRFact<formalism::FluentTag>>>)
                 return try_create_negative_fact_stack_entry(arg, base, details, builder, repository);
             else if constexpr (std::same_as<Alternative, urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>>)
                 return try_create_atom_stack_entry(arg, base, details, builder, repository);
@@ -657,8 +657,8 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 // NOLINTEND(misc-use-internal-linkage)
 
 template<typename Tag>
-MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements_,
-                          std::shared_ptr<const formalism::planning::Repository> context_) :
+MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::Repository>>> elements_,
+                          std::shared_ptr<const formalism::Repository> context_) :
     m_definition(),
     m_evaluator()
 {
@@ -686,7 +686,7 @@ MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalis
 
         for (const auto fact : condition.template get_facts<formalism::NegativeTag>())
         {
-            const auto key = urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value());
+            const auto key = urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value());
             occurrences[key].push_back(element);
             details[element][key] = std::monostate {};
         }
@@ -797,8 +797,8 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 }
 
 template<typename Tag>
-MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
-                                         std::shared_ptr<const formalism::planning::Repository> context)
+MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::Repository>>> elements,
+                                         std::shared_ptr<const formalism::Repository> context)
 { return std::make_unique<MatchTree<Tag>>(std::move(elements), std::move(context)); }
 
 template<typename Tag>
@@ -807,7 +807,7 @@ MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
 
 template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
-                              urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>>& out_applicable_elements)
+                              urd::Store<urd::sequence<urd::index_view<Tag, formalism::Repository>>>& out_applicable_elements)
 {
     out_applicable_elements.clear();
     auto& stack = m_evaluator.stack;
@@ -885,15 +885,15 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
     }
 }
 
-template class MatchTree<formalism::planning::Action<GroundTag>>;
-template class MatchTree<formalism::planning::Axiom<GroundTag>>;
+template class MatchTree<formalism::Action<GroundTag>>;
+template class MatchTree<formalism::Axiom<GroundTag>>;
 
 }
 
 TYR_MATCH_TREE_INTERNS()
 
 // The repositories' symbols, which the library's other sources only declare (yggdrasil/formalism/symbol_context.hpp).
-YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::planning::Action<tyr::GroundTag>>, 5)
-YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::planning::Axiom<tyr::GroundTag>>, 5)
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::Action<tyr::GroundTag>>, 5)
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::Axiom<tyr::GroundTag>>, 5)
 YGG_FORMALISM_BUILDER(, tyr::planning::match_tree::GroundActionBuilder, 5)
 YGG_FORMALISM_BUILDER(, tyr::planning::match_tree::GroundAxiomBuilder, 5)

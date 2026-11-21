@@ -49,9 +49,9 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 {
     const ConstProgramWorkspace<LiftedTag>* const_workspace;
-    const formalism::datalog::Repository* program_repository;
+    const formalism::Repository* program_repository;
     /// Holds what evaluation derives; the program's repository is its parent.
-    formalism::datalog::RepositoryPtr workspace_repository;
+    formalism::RepositoryPtr workspace_repository;
 
     FactsWorkspace<LiftedTag> facts;
 
@@ -67,8 +67,8 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     /// The evaluation engine's own state (KCKP: assignment sets and rule workspaces).
     KCKPWorkspace engine;
 
-    formalism::planning::Builder planning_builder;
-    formalism::datalog::Builder datalog_builder;
+    formalism::Builder planning_builder;
+    formalism::Builder datalog_builder;
 
     urd::flat_vector<urd::index<formalism::Object>> binding;
 

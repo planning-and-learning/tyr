@@ -78,11 +78,10 @@ namespace tyr::planning
 namespace
 {
 /// The rule of an axiom: its body the axiom's body over the axiom's variables (the task's literals), its head the axiom's.
-auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
-                       formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_axiom_rule(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
-    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
+    auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
+    auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     const auto body = axiom.get_body();
     for (const auto variable : axiom.get_variables())
@@ -102,11 +101,11 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     return context.destination().insert(*rule, context.builder());
 }
 
-auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task, formalism::datalog::Repository& repository)
+auto create_axiom_program(formalism::TaskView<LiftedTag> task, formalism::Repository& repository)
 {
-    auto builder = formalism::datalog::Builder();
+    auto builder = formalism::Builder();
     auto context = formalism::WriteContext(builder, repository);
-    auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
+    auto program = formalism::checkout<formalism::Program<LiftedTag>>(builder);
 
     translate_task_symbols(task, *program);
 
@@ -118,7 +117,7 @@ auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task, formali
     return repository.insert(*program, builder).first;
 }
 
-auto create_axiom_datalog_program(const formalism::planning::PlanningTask<LiftedTag>& planning_task)
+auto create_axiom_datalog_program(const formalism::PlanningTask<LiftedTag>& planning_task)
 {
     const auto task = planning_task.get_task();
     const auto num_objects = task.get_num_objects();
@@ -131,7 +130,7 @@ auto create_axiom_datalog_program(const formalism::planning::PlanningTask<Lifted
 }
 }
 
-AxiomEvaluatorProgram::AxiomEvaluatorProgram(const formalism::planning::PlanningTask<LiftedTag>& task) : m_datalog_program(create_axiom_datalog_program(task))
+AxiomEvaluatorProgram::AxiomEvaluatorProgram(const formalism::PlanningTask<LiftedTag>& task) : m_datalog_program(create_axiom_datalog_program(task))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

@@ -35,9 +35,9 @@ namespace urd
 
 /// The builder of RuleBody: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::RuleBody<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_literals;

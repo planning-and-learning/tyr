@@ -75,7 +75,7 @@ struct ApplicabilityCache
 
 /// The heads of kind F of a rule's binding.
 template<typename F>
-using HeadBindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<F>>>;
+using HeadBindings = urd::Store<urd::sequence<formalism::PredicateRowIndex<F>>>;
 
 template<>
 struct RuleWorkspace<LiftedTag>
@@ -142,7 +142,7 @@ struct RuleWorkspace<LiftedTag>
 
         void clear() noexcept;
 
-        formalism::datalog::Builder builder;
+        formalism::Builder builder;
         urd::flat_vector<urd::index<formalism::Object>> binding;
 
         Iteration iteration;
@@ -180,18 +180,15 @@ public:
     [[nodiscard]] const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
     /// Builds the rule's conditions in `repository` with `builder`, which the rules of a program share.
-    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_,
-                       formalism::datalog::Builder& builder,
-                       formalism::datalog::Repository& repository,
-                       kckp::Graph compatibility_graph);
+    ConstRuleWorkspace(formalism::RuleView<LiftedTag> rule_, formalism::Builder& builder, formalism::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
-    formalism::datalog::RuleView<LiftedTag> rule;
-    formalism::datalog::ConjunctiveConditionView<GroundTag> nullary_condition;
-    formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition;
-    formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition;
-    formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_overapproximation_condition;
-    formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition;
+    formalism::RuleView<LiftedTag> rule;
+    formalism::RuleBodyView<GroundTag> nullary_condition;
+    formalism::RuleBodyView<LiftedTag> unary_overapproximation_condition;
+    formalism::RuleBodyView<LiftedTag> binary_overapproximation_condition;
+    formalism::RuleBodyView<LiftedTag> conflicting_overapproximation_condition;
+    formalism::RuleBodyView<LiftedTag> hyperedge_condition;
 
     StaticConsistencyGraph static_consistency_graph;
 };

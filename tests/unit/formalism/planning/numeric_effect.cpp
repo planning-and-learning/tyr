@@ -18,9 +18,9 @@ namespace lifted_tests
 template<typename Entity>
 concept NumericEffectContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::Repository>>
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, tyr::formalism::NumericEffectOperatorKind>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::Repository>& view) {
            data.index;
            { data.operation } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            { data == data } -> std::same_as<bool>;
@@ -37,10 +37,10 @@ using Auxiliary = tyr::formalism::NumericEffect<::tyr::LiftedTag, tyr::formalism
 
 static_assert(NumericEffectContract<Fluent>);
 static_assert(NumericEffectContract<Auxiliary>);
-static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::NumericEffectView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
-static_assert(std::same_as<urd::index_view<Auxiliary, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::NumericEffectView<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>>);
+static_assert(
+    std::same_as<urd::index_view<Fluent, tyr::formalism::Repository>, tyr::formalism::NumericEffectView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
+static_assert(
+    std::same_as<urd::index_view<Auxiliary, tyr::formalism::Repository>, tyr::formalism::NumericEffectView<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>>);
 static_assert(tyr::formalism::to_string(tyr::formalism::NumericEffectOperatorKind::ScaleDown) == "scale-down");
 static_assert(tyr::formalism::effect_family(tyr::formalism::NumericEffectOperatorKind::Decrease) == tyr::formalism::EffectFamily::IncreaseDecrease);
 
@@ -61,9 +61,9 @@ namespace ground_tests
 template<typename Entity>
 concept GroundNumericEffectContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::Repository>>
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, tyr::formalism::NumericEffectOperatorKind>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::Repository>& view) {
            data.index;
            { data.operation } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            { data == data } -> std::same_as<bool>;
@@ -80,10 +80,10 @@ using Auxiliary = tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism
 
 static_assert(GroundNumericEffectContract<Fluent>);
 static_assert(GroundNumericEffectContract<Auxiliary>);
-static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::NumericEffectView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
-static_assert(std::same_as<urd::index_view<Auxiliary, tyr::formalism::planning::Repository>,
-                           tyr::formalism::planning::NumericEffectView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
+static_assert(
+    std::same_as<urd::index_view<Fluent, tyr::formalism::Repository>, tyr::formalism::NumericEffectView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(
+    std::same_as<urd::index_view<Auxiliary, tyr::formalism::Repository>, tyr::formalism::NumericEffectView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
 
 TEST(TyrFormalismPlanningGroundNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 {

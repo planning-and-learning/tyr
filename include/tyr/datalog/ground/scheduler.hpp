@@ -92,10 +92,10 @@ class Scheduler<GroundTag>
 public:
     /// What a run starts from is computed once here, by rule: the number of its conditions (fluent and derived literals and
     /// numeric constraints), the rules without any, the rules with numeric constraints.
-    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program)
+    explicit Scheduler(formalism::ProgramView<GroundTag> program) : m_program(program)
     {
         const auto rules = program.get_rules();
-        const auto num_slots = formalism::datalog::rule_index_bound(rules);
+        const auto num_slots = formalism::rule_index_bound(rules);
         m_states.resize(num_slots);
         m_conditions.resize(num_slots);
         for (const auto rule : rules)
@@ -133,7 +133,7 @@ public:
     /// One condition of `rule` holds, of cost `cost`, aggregated into its support by `aggregate`: a fact of its body is
     /// committed (or given before the run). A rule whose conditions all hold is ready: it fires with its support.
     template<typename Aggregate>
-    void satisfy(formalism::datalog::RuleView<GroundTag> rule, Cost cost, const Aggregate& aggregate)
+    void satisfy(formalism::RuleView<GroundTag> rule, Cost cost, const Aggregate& aggregate)
     {
         auto& state = m_states[static_cast<ygg::uint_t>(rule.index().value)];
         assert(state.unsatisfied_count > 0);
@@ -146,8 +146,7 @@ public:
     auto& ready() noexcept { return m_ready; }
 
     /// The cost a ready rule fires with: the aggregate of its conditions' costs.
-    [[nodiscard]] Cost support(formalism::datalog::RuleView<GroundTag> rule) const noexcept
-    { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
+    [[nodiscard]] Cost support(formalism::RuleView<GroundTag> rule) const noexcept { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -174,17 +173,17 @@ public:
 
 private:
     template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated(formalism::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void update_numeric_constraint_satisfaction(formalism::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated_for(formalism::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
+    using Rules = urd::Store<urd::sequence<formalism::RuleView<GroundTag>>>;
 
-    formalism::datalog::ProgramView<GroundTag> m_program;
+    formalism::ProgramView<GroundTag> m_program;
     RuleStates m_states;
     /// By rule: the number of its conditions, fluent and derived literals and numeric constraints.
     urd::Store<urd::sequence<ygg::uint_t>> m_conditions;

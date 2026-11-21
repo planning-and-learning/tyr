@@ -8,15 +8,15 @@
 
 using Predicate = tyr::formalism::Predicate<tyr::formalism::StaticTag>;
 using PredicateData = urd::data<Predicate>;
-using PredicateView = urd::index_view<Predicate, tyr::formalism::planning::Repository>;
+using PredicateView = urd::index_view<Predicate, tyr::formalism::Repository>;
 
 template<typename Entity, typename Repository>
 struct PredicatePublicView;
 
 template<tyr::formalism::FactKind T>
-struct PredicatePublicView<tyr::formalism::Predicate<T>, tyr::formalism::planning::Repository>
+struct PredicatePublicView<tyr::formalism::Predicate<T>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::planning::PredicateView<T>;
+    using type = tyr::formalism::PredicateView<T>;
 };
 
 template<typename Entity, typename Repository>
@@ -36,7 +36,7 @@ template<typename Repository, typename... Entities>
 consteval bool predicate_contracts(boost::mp11::mp_list<Entities...>)
 { return (PredicateContract<Entities, Repository> && ...); }
 
-static_assert(predicate_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::PredicateTypes {}));
+static_assert(predicate_contracts<tyr::formalism::Repository>(tyr::formalism::PredicateTypes {}));
 
 TEST(TyrFormalismPredicate, ExposesOwnedContract)
 {

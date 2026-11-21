@@ -28,7 +28,7 @@
 namespace urd
 {
 template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::planning::ConditionalEffect<T>, V>
+struct view_mixin<::tyr::formalism::ConditionalEffect<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }

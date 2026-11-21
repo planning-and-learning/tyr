@@ -47,18 +47,15 @@
 
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 /**
  * ground
  */
 
-/// The shared records are grounded as the planning formalism grounds them (one repository holds both).
-using planning::ground;
-
 /// A lifted rule body as a ground rule's body.
-std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context);
+std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, WriteContext<Builder, Repository>& context);
 
 /**
  * ground_binding
@@ -109,10 +106,10 @@ inline void ground(TermListView terms, const WriteContext<Builder, Repository>& 
             term);
 }
 
-inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context)
+inline std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto conj_cond = datalog::checkout<RuleBody<GroundTag>>(context.builder());
+    auto conj_cond = checkout<RuleBody<GroundTag>>(context.builder());
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())
@@ -135,7 +132,7 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
 template<FactKind F>
 std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = datalog::checkout<ygg::Row<Predicate<F>>>(context.builder());
+    auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
 
     urd::store(binding->relation, element.get_predicate());
     ground(element.get_terms(), context, binding->values);
@@ -157,7 +154,7 @@ std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F
 
 inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = datalog::checkout<ygg::Row<Rule<LiftedTag>>>(context.builder());
+    auto binding = checkout<ygg::Row<Rule<LiftedTag>>>(context.builder());
 
     urd::store(binding->relation, element);
     for (const auto object : context.binding())
@@ -173,7 +170,7 @@ inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, 
 template<FactKind F>
 std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = datalog::checkout<ygg::Row<Function<F>>>(context.builder());
+    auto binding = checkout<ygg::Row<Function<F>>>(context.builder());
 
     urd::store(binding->relation, element.get_function());
     ground(element.get_terms(), context, binding->values);
@@ -184,7 +181,7 @@ std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag,
 template<FactKind F>
 std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = datalog::checkout<ygg::Row<Predicate<F>>>(context.builder());
+    auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
 
     urd::store(binding->relation, element.get_predicate());
     ground(element.get_terms(), context, binding->values);
@@ -195,7 +192,7 @@ std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> ele
 
 #ifndef TYR_HEADER_INSTANTIATION
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 extern template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);

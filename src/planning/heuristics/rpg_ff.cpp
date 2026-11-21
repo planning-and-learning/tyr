@@ -54,7 +54,7 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) : Base(source, std::move(execution_context)) { initialize_markings(); }
 
-    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+    void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
     {
         Base::set_goal(goal);
         m_relaxed_plan.clear();
@@ -98,7 +98,7 @@ private:
     }
 
     template<formalism::FactKind F>
-    void extract_relaxed_plan(formalism::datalog::PredicateRowView<F> head)
+    void extract_relaxed_plan(formalism::PredicateRowView<F> head)
     {
         auto& markings = m_predicate_markings.template get<F>();
         assert(static_cast<ygg::uint_t>(head.index().relation.value) < markings.size());
@@ -128,7 +128,7 @@ private:
         urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<F>>>>, urd::dense, urd::proportional_clear>>>;
 
     datalog::MutableFamily<PredicateMarkings> m_predicate_markings;
-    urd::Store<urd::set<formalism::planning::ActionRowView>> m_relaxed_plan;
+    urd::Store<urd::set<formalism::ActionRowView>> m_relaxed_plan;
 };
 
 template<TaskKind Kind>
@@ -156,7 +156,7 @@ FFRPGHeuristicPtr<Kind> FFRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::Ex
 { return std::make_shared<FFRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
-void FFRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+void FFRPGHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
@@ -168,7 +168,7 @@ HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr ex
 { return HeuristicPtr<Kind>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
-const urd::Store<urd::set<formalism::planning::ActionRowView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
+const urd::Store<urd::set<formalism::ActionRowView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
 { return &m_impl->get_relaxed_plan(); }
 
 template<TaskKind Kind>

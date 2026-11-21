@@ -28,7 +28,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 namespace
@@ -49,4 +49,4 @@ void bind_predicate(nb::module_& m, RepositoryBinding& repository)
     bind_predicate_view<DerivedTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

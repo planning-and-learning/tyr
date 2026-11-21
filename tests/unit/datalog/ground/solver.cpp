@@ -37,9 +37,9 @@ namespace tyr::tests
 {
 namespace
 {
-using GroundAtomViews = urd::Store<urd::sequence<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag>>>;
-using StaticGroundAtomViews = urd::Store<urd::sequence<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::StaticTag>>>;
-using PredicateRowViews = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag>>>;
+using GroundAtomViews = urd::Store<urd::sequence<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>>>;
+using StaticGroundAtomViews = urd::Store<urd::sequence<tyr::formalism::AtomView<GroundTag, tyr::formalism::StaticTag>>>;
+using PredicateRowViews = urd::Store<urd::sequence<tyr::formalism::PredicateRowView<tyr::formalism::FluentTag>>>;
 
 template<typename Context>
 PredicateRowViews binding_views(const Context& ctx)
@@ -52,7 +52,7 @@ PredicateRowViews binding_views(const Context& ctx)
     return result;
 }
 
-PredicateRowViews binding_views(std::initializer_list<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag>> atoms)
+PredicateRowViews binding_views(std::initializer_list<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>> atoms)
 {
     auto result = PredicateRowViews {};
     for (const auto atom : atoms)
@@ -62,16 +62,16 @@ PredicateRowViews binding_views(std::initializer_list<tyr::formalism::datalog::A
 
 struct GroundQueueFixture
 {
-    tyr::formalism::datalog::Repository repository = tyr::formalism::datalog::Repository();
+    tyr::formalism::Repository repository = tyr::formalism::Repository();
     urd::Store<urd::sequence<urd::index<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>> static_predicates;
     urd::Store<urd::sequence<urd::index<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>> fluent_predicates;
     urd::Store<urd::sequence<urd::index<tyr::formalism::Function<tyr::formalism::FluentTag>>>> fluent_functions;
     StaticGroundAtomViews initial_static_atoms;
     GroundAtomViews initial_fluent_atoms;
     urd::Store<urd::sequence<urd::index<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>>> initial_fluent_fterm_values;
-    urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>> ground_rules;
+    urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>> ground_rules;
 
-    tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> fluent_atom(const std::string& name)
+    tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> fluent_atom(const std::string& name)
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(name, 0);
         const auto [predicate, predicate_inserted] = ygg::formalism::insert(repository, predicate_builder);
@@ -87,14 +87,14 @@ struct GroundQueueFixture
         return ygg::formalism::insert(repository, atom_builder).first;
     }
 
-    tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>
-    fluent_literal(tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> atom, bool polarity = true)
+    tyr::formalism::LiteralView<GroundTag, tyr::formalism::FluentTag> fluent_literal(tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> atom,
+                                                                                     bool polarity = true)
     {
         auto literal_builder = urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::FluentTag>>(atom.index(), polarity);
         return ygg::formalism::insert(repository, literal_builder).first;
     }
 
-    tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::StaticTag> static_atom(const std::string& name)
+    tyr::formalism::AtomView<GroundTag, tyr::formalism::StaticTag> static_atom(const std::string& name)
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::StaticTag>>(name, 0);
         const auto [predicate, predicate_inserted] = ygg::formalism::insert(repository, predicate_builder);
@@ -109,14 +109,14 @@ struct GroundQueueFixture
         return ygg::formalism::insert(repository, atom_builder).first;
     }
 
-    tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::StaticTag>
-    static_literal(tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::StaticTag> atom, bool polarity = true)
+    tyr::formalism::LiteralView<GroundTag, tyr::formalism::StaticTag> static_literal(tyr::formalism::AtomView<GroundTag, tyr::formalism::StaticTag> atom,
+                                                                                     bool polarity = true)
     {
         auto literal_builder = urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::StaticTag>>(atom.index(), polarity);
         return ygg::formalism::insert(repository, literal_builder).first;
     }
 
-    tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> fluent_function_term(const std::string& name)
+    tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag> fluent_function_term(const std::string& name)
     {
         auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(name, 0);
         const auto function = ygg::formalism::insert(repository, function_builder).first;
@@ -130,17 +130,17 @@ struct GroundQueueFixture
         return ygg::formalism::insert(repository, term_builder).first;
     }
 
-    void initial_fluent_function_value(tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> term, ygg::float_t value)
+    void initial_fluent_function_value(tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag> term, ygg::float_t value)
     {
         auto value_builder = urd::data<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(term.index(), value);
         initial_fluent_fterm_values.push_back(ygg::formalism::insert(repository, value_builder).first.index());
     }
 
-    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
-    condition(std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals = {},
-              std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::StaticTag>> static_literals = {})
+    tyr::formalism::RuleBodyView<GroundTag>
+    condition(std::initializer_list<tyr::formalism::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals = {},
+              std::initializer_list<tyr::formalism::LiteralView<GroundTag, tyr::formalism::StaticTag>> static_literals = {})
     {
-        auto condition_builder = urd::data<tyr::formalism::datalog::RuleBody<GroundTag>>();
+        auto condition_builder = urd::data<tyr::formalism::RuleBody<GroundTag>>();
         for (const auto literal : fluent_literals)
             condition_builder.fluent_literals.push_back(literal.index());
         for (const auto literal : static_literals)
@@ -148,10 +148,8 @@ struct GroundQueueFixture
         return ygg::formalism::insert(repository, condition_builder).first;
     }
 
-    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
-    numeric_condition(tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> term,
-                      tyr::formalism::BooleanOperatorKind op,
-                      ygg::float_t value)
+    tyr::formalism::RuleBodyView<GroundTag>
+    numeric_condition(tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag> term, tyr::formalism::BooleanOperatorKind op, ygg::float_t value)
     {
         auto comparison_builder = urd::data<tyr::formalism::BinaryOperator<GroundTag, tyr::formalism::BooleanOperatorKind>>(
             op,
@@ -159,17 +157,16 @@ struct GroundQueueFixture
             tyr::formalism::FunctionExpression<GroundTag>(value));
         const auto comparison = ygg::formalism::insert(repository, comparison_builder).first;
 
-        auto condition_builder = urd::data<tyr::formalism::datalog::RuleBody<GroundTag>>();
+        auto condition_builder = urd::data<tyr::formalism::RuleBody<GroundTag>>();
         condition_builder.numeric_constraints.emplace_back(comparison.index());
         return ygg::formalism::insert(repository, condition_builder).first;
     }
 
     /// Identical rules are one rule: a rule already in the program is not added again.
-    tyr::formalism::datalog::RuleView<GroundTag> rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
-                                                      tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head,
-                                                      ygg::float_t cost = 0)
+    tyr::formalism::RuleView<GroundTag>
+    rule(tyr::formalism::RuleBodyView<GroundTag> body, tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> head, ygg::float_t cost = 0)
     {
-        auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag>>();
+        auto rule_builder = urd::data<tyr::formalism::Rule<GroundTag>>();
         rule_builder.body = body.index();
         rule_builder.fluent_heads.push_back(head.index());
         rule_builder.cost = cost;
@@ -180,7 +177,7 @@ struct GroundQueueFixture
     }
 
     /// A body that holds wherever the empty one does, but a rule of its own: a true static atom of its own name.
-    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> distinct_true_condition(const std::string& name)
+    tyr::formalism::RuleBodyView<GroundTag> distinct_true_condition(const std::string& name)
     {
         const auto atom = static_atom(name);
         initial_static_atoms.push_back(atom);
@@ -188,18 +185,17 @@ struct GroundQueueFixture
     }
 
     /// As distinct_true_condition, with the fluent literals of `fluent_literals`.
-    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
-    distinct_true_condition(const std::string& name,
-                            std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals)
+    tyr::formalism::RuleBodyView<GroundTag>
+    distinct_true_condition(const std::string& name, std::initializer_list<tyr::formalism::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals)
     {
         const auto atom = static_atom(name);
         initial_static_atoms.push_back(atom);
         return condition(fluent_literals, { static_literal(atom) });
     }
 
-    tyr::formalism::datalog::ProgramView<GroundTag> program()
+    tyr::formalism::ProgramView<GroundTag> program()
     {
-        auto program_builder = urd::data<tyr::formalism::datalog::Program<GroundTag>>();
+        auto program_builder = urd::data<tyr::formalism::Program<GroundTag>>();
         program_builder.static_predicates.insert(program_builder.static_predicates.end(), static_predicates.begin(), static_predicates.end());
         program_builder.fluent_predicates.insert(program_builder.fluent_predicates.end(), fluent_predicates.begin(), fluent_predicates.end());
         program_builder.fluent_functions.insert(program_builder.fluent_functions.end(), fluent_functions.begin(), fluent_functions.end());
@@ -215,10 +211,9 @@ struct GroundQueueFixture
     }
 };
 
-urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>>
-rule_indices(const urd::Store<urd::sequence<tyr::formalism::datalog::RuleView<GroundTag>>>& rules)
+urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>> rule_indices(const urd::Store<urd::sequence<tyr::formalism::RuleView<GroundTag>>>& rules)
 {
-    auto indices = urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>> {};
+    auto indices = urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>> {};
     for (const auto rule : rules)
         indices.push_back(rule.index());
     return indices;
@@ -365,8 +360,8 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
     ASSERT_NE(a_rules, nullptr);
     ASSERT_NE(d_rules, nullptr);
     EXPECT_EQ(rule_indices(*a_rules),
-              (urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>>({ fixture.ground_rules[0], fixture.ground_rules[1] })));
-    EXPECT_EQ(rule_indices(*d_rules), (urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>>({ fixture.ground_rules[2] })));
+              (urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>>({ fixture.ground_rules[0], fixture.ground_rules[1] })));
+    EXPECT_EQ(rule_indices(*d_rules), (urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>>({ fixture.ground_rules[2] })));
 }
 
 TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCounts)
@@ -385,7 +380,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     const auto* a_rules = dependencies.find(a.get_row().index());
 
     ASSERT_NE(a_rules, nullptr);
-    EXPECT_EQ(rule_indices(*a_rules), (urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>>({ fixture.ground_rules[0] })));
+    EXPECT_EQ(rule_indices(*a_rules), (urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>>({ fixture.ground_rules[0] })));
 
     ctx.initialize(fixture.initial_fluent_atoms);
     EXPECT_EQ(ctx.out().scheduler().get_states()[fixture.ground_rules[0].value].unsatisfied_count, 0);
@@ -693,7 +688,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
     const auto source_program = fixture.program();
     EXPECT_THROW(static_cast<void>(datalog::ConstProgramWorkspace<GroundTag> { source_program }), std::invalid_argument);
 
-    auto repository = tyr::formalism::datalog::Repository(&source_program.context());
+    auto repository = tyr::formalism::Repository(&source_program.context());
     const auto program = tyr::datalog::remove_statically_inapplicable_rules(source_program, repository);
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     EXPECT_EQ(const_workspace.program.get_rules().size(), 2);

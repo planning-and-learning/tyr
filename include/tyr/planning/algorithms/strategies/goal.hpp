@@ -59,13 +59,13 @@ class ConjunctiveGoalStrategy : public GoalStrategy<Kind>
 public:
     ConjunctiveGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
 
-    ConjunctiveGoalStrategy(formalism::planning::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
+    ConjunctiveGoalStrategy(formalism::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
 
-    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_goal = goal; }
+    void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) { m_goal = goal; }
 
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(task); }
 
-    static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+    static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(formalism::ConjunctiveConditionView<GroundTag> goal)
     { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(m_goal); }
@@ -84,7 +84,7 @@ private:
         return is_dynamically_applicable(m_goal, state_context);
     }
 
-    formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
+    formalism::ConjunctiveConditionView<GroundTag> m_goal;
 };
 
 template<TaskKind Kind>
@@ -93,11 +93,11 @@ class SerializedGoalStrategy : public GoalStrategy<Kind>
 public:
     SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
 
-    SerializedGoalStrategy(formalism::planning::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
+    SerializedGoalStrategy(formalism::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
 
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<SerializedGoalStrategy<Kind>>(task); }
 
-    static std::shared_ptr<SerializedGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+    static std::shared_ptr<SerializedGoalStrategy<Kind>> create(formalism::ConjunctiveConditionView<GroundTag> goal)
     { return std::make_shared<SerializedGoalStrategy<Kind>>(goal); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(m_goal); }
@@ -136,7 +136,7 @@ private:
         return result;
     }
 
-    formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
+    formalism::ConjunctiveConditionView<GroundTag> m_goal;
 };
 
 template<TaskKind Kind>

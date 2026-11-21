@@ -40,11 +40,11 @@ struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
 {
     urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>>, C> indices;
 
-    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
+    void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
         assert(fact.value.value < 2);  // Lifted fluent variables are binary.
         const auto index = static_cast<ygg::uint_t>(fact.variable.value);
-        if (fact.value != ::tyr::formalism::planning::FDRValue::none())
+        if (fact.value != ::tyr::formalism::FDRValue::none())
             indices.insert(index);
         else
             indices.erase(index);

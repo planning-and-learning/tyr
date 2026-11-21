@@ -34,7 +34,7 @@
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 namespace
@@ -65,4 +65,4 @@ void bind_row(nb::module_& m, RepositoryBinding& repository)
     bind_row_view<Function<AuxiliaryTag>>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

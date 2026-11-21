@@ -39,7 +39,7 @@
 namespace tyr::analysis
 {
 
-using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>>;
+using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::Rule<LiftedTag>>>>;
 
 /// The rules of a stratum that read the predicates of kind F, by predicate.
 template<formalism::FactKind F>
@@ -79,7 +79,7 @@ struct ListenerStrata
     urd::Store<urd::sequence<ListenerStratum>> data;
 };
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::datalog::Repository& context);
+ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::Repository& context);
 }
 
 #endif

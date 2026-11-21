@@ -62,21 +62,19 @@ struct TaggedFactSets
 {
     urd::Store<urd::sequence<PredicateFacts<T>>> predicate;
     urd::Store<urd::sequence<FunctionFacts<T>>> function;
-    const formalism::datalog::Repository* repository = nullptr;
+    const formalism::Repository* repository = nullptr;
 
     /// No predicate, no function and no repository yet: a member of MutableFactSets before it is sized.
     TaggedFactSets() = default;
 
     /// Sized for the predicates (and functions) of kind T of the program, without facts.
     template<TaskKind K>
-    TaggedFactSets(formalism::datalog::ProgramView<K> program, const formalism::datalog::Repository& repository_);
+    TaggedFactSets(formalism::ProgramView<K> program, const formalism::Repository& repository_);
 
-    TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
-                   formalism::datalog::FunctionListView<T> functions,
-                   const formalism::datalog::Repository& repository_);
+    TaggedFactSets(formalism::PredicateListView<T> predicates, formalism::FunctionListView<T> functions, const formalism::Repository& repository_);
 
     /// Facts of predicates only (no functions).
-    TaggedFactSets(formalism::datalog::PredicateListView<T> predicates, const formalism::datalog::Repository& repository_) :
+    TaggedFactSets(formalism::PredicateListView<T> predicates, const formalism::Repository& repository_) :
         predicate(predicates.size()),
         function(),
         repository(&repository_)
@@ -84,11 +82,11 @@ struct TaggedFactSets
     }
 
     /// With the atoms and function values given.
-    TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
-                   formalism::datalog::FunctionListView<T> functions,
-                   formalism::datalog::AtomListView<GroundTag, T> atoms,
-                   formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values,
-                   const formalism::datalog::Repository& repository_);
+    TaggedFactSets(formalism::PredicateListView<T> predicates,
+                   formalism::FunctionListView<T> functions,
+                   formalism::AtomListView<GroundTag, T> atoms,
+                   formalism::FunctionTermValueListView<GroundTag, T> fterm_values,
+                   const formalism::Repository& repository_);
 };
 
 /// The facts of the predicate at `index`, as row views.
@@ -99,20 +97,20 @@ template<formalism::FactKind T>
 /// The fact of the function at `index` with row `row`, as a row view.
 template<formalism::FactKind T>
 [[nodiscard]] auto row(const TaggedFactSets<T>& facts, ygg::uint_t index, urd::index<ygg::Row<formalism::Function<T>>> id)
-{ return facts.repository->view(formalism::datalog::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(index), id }); }
+{ return facts.repository->view(formalism::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(index), id }); }
 
 /// Adds the fact; whether it is new.
 template<formalism::FactKind T>
-bool insert(TaggedFactSets<T>& facts, formalism::datalog::PredicateRowIndex<T> fact)
+bool insert(TaggedFactSets<T>& facts, formalism::PredicateRowIndex<T> fact)
 { return facts.predicate[fact.relation.value].insert(fact.row).second; }
 
 template<formalism::FactKind T>
-[[nodiscard]] bool contains(const TaggedFactSets<T>& facts, formalism::datalog::PredicateRowIndex<T> fact)
+[[nodiscard]] bool contains(const TaggedFactSets<T>& facts, formalism::PredicateRowIndex<T> fact)
 { return facts.predicate[fact.relation.value].contains(fact.row); }
 
 /// Widens the fact's interval by `interval` (its hull), adding it where it has none; whether the interval changed.
 template<formalism::FactKind T>
-bool insert(TaggedFactSets<T>& facts, formalism::datalog::FunctionRowIndex<T> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool insert(TaggedFactSets<T>& facts, formalism::FunctionRowIndex<T> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     auto& values = facts.function[fact.relation.value];
     const auto [it, inserted] = values.try_emplace(fact.row, interval);
@@ -128,7 +126,7 @@ bool insert(TaggedFactSets<T>& facts, formalism::datalog::FunctionRowIndex<T> fa
 
 /// The fact's interval; empty where it has none.
 template<formalism::FactKind T>
-[[nodiscard]] ygg::ClosedInterval<ygg::float_t> value(const TaggedFactSets<T>& facts, formalism::datalog::FunctionRowIndex<T> fact)
+[[nodiscard]] ygg::ClosedInterval<ygg::float_t> value(const TaggedFactSets<T>& facts, formalism::FunctionRowIndex<T> fact)
 {
     const auto& values = facts.function[fact.relation.value];
     return values.contains(fact.row) ? values.at(fact.row) : ygg::ClosedInterval<ygg::float_t>();
@@ -144,7 +142,7 @@ bool insert(TaggedFactSets<T>& facts, const TaggedFactSets<T>& other)
             changed |= facts.predicate[i].insert(row).second;
     for (ygg::uint_t i = 0; i < other.function.size(); ++i)
         for (const auto& [row, interval] : other.function[i])
-            changed |= insert(facts, formalism::datalog::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(i), row }, interval);
+            changed |= insert(facts, formalism::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(i), row }, interval);
     return changed;
 }
 
@@ -159,9 +157,9 @@ void clear(TaggedFactSets<T>& facts) noexcept
 }
 
 template<formalism::FactKind T>
-TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
-                                  formalism::datalog::FunctionListView<T> functions,
-                                  const formalism::datalog::Repository& repository_) :
+TaggedFactSets<T>::TaggedFactSets(formalism::PredicateListView<T> predicates,
+                                  formalism::FunctionListView<T> functions,
+                                  const formalism::Repository& repository_) :
     predicate(predicates.size()),
     function(functions.size()),
     repository(&repository_)
@@ -174,7 +172,7 @@ TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predi
 
 template<formalism::FactKind T>
 template<TaskKind K>
-TaggedFactSets<T>::TaggedFactSets(formalism::datalog::ProgramView<K> program, const formalism::datalog::Repository& repository_) :
+TaggedFactSets<T>::TaggedFactSets(formalism::ProgramView<K> program, const formalism::Repository& repository_) :
     predicate(program.template get_predicates<T>().size()),
     function(),
     repository(&repository_)
@@ -185,7 +183,7 @@ TaggedFactSets<T>::TaggedFactSets(formalism::datalog::ProgramView<K> program, co
 
 /// Adds the program's facts of kind T: its atoms, and its function values where the kind has them.
 template<formalism::FactKind T, TaskKind K>
-void insert_program_facts(TaggedFactSets<T>& facts, formalism::datalog::ProgramView<K> program)
+void insert_program_facts(TaggedFactSets<T>& facts, formalism::ProgramView<K> program)
 {
     for (const auto atom : program.template get_atoms<T>())
         insert(facts, atom.get_row().index());
@@ -195,11 +193,11 @@ void insert_program_facts(TaggedFactSets<T>& facts, formalism::datalog::ProgramV
 }
 
 template<formalism::FactKind T>
-TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
-                                  formalism::datalog::FunctionListView<T> functions,
-                                  formalism::datalog::AtomListView<GroundTag, T> atoms,
-                                  formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values,
-                                  const formalism::datalog::Repository& repository_) :
+TaggedFactSets<T>::TaggedFactSets(formalism::PredicateListView<T> predicates,
+                                  formalism::FunctionListView<T> functions,
+                                  formalism::AtomListView<GroundTag, T> atoms,
+                                  formalism::FunctionTermValueListView<GroundTag, T> fterm_values,
+                                  const formalism::Repository& repository_) :
     TaggedFactSets(predicates, functions, repository_)
 {
     for (const auto atom : atoms)
@@ -219,7 +217,7 @@ public:
 
     /// Sized for the predicates (and functions) of each mutable kind of the program, without facts.
     template<TaskKind K>
-    MutableFactSets(formalism::datalog::ProgramView<K> program, const formalism::datalog::Repository& repository)
+    MutableFactSets(formalism::ProgramView<K> program, const formalism::Repository& repository)
     {
         boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { this->template get<F>() = TaggedFactSets<F>(program, repository); });
     }
@@ -227,16 +225,16 @@ public:
 
 /// Adds the fact; whether it is new.
 template<formalism::FactKind F>
-bool insert(MutableFactSets& facts, formalism::datalog::PredicateRowIndex<F> fact)
+bool insert(MutableFactSets& facts, formalism::PredicateRowIndex<F> fact)
 { return insert(facts.template get<F>(), fact); }
 
 template<formalism::FactKind F>
-[[nodiscard]] bool contains(const MutableFactSets& facts, formalism::datalog::PredicateRowIndex<F> fact)
+[[nodiscard]] bool contains(const MutableFactSets& facts, formalism::PredicateRowIndex<F> fact)
 { return contains(facts.template get<F>(), fact); }
 
 /// Adds the program's facts of each mutable kind.
 template<TaskKind K>
-void insert_program_facts(MutableFactSets& facts, formalism::datalog::ProgramView<K> program)
+void insert_program_facts(MutableFactSets& facts, formalism::ProgramView<K> program)
 {
     boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { insert_program_facts(facts.template get<F>(), program); });
 }

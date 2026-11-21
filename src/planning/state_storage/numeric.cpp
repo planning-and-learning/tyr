@@ -34,7 +34,7 @@ StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::StateComponentR
 namespace
 {
 template<TaskKind Kind>
-void canonicalize(urd::builder<NumericStorage<Kind>, formalism::planning::Repository>& unpacked)
+void canonicalize(urd::builder<NumericStorage<Kind>, formalism::Repository>& unpacked)
 {
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);

@@ -63,7 +63,7 @@ void bind_literal(nb::module_& m)
 
 }  // namespace tyr::formalism
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_literal(nb::module_& m, RepositoryBinding& repository)
@@ -76,4 +76,4 @@ void bind_literal(nb::module_& m, RepositoryBinding& repository)
     bind_literal_view<GroundTag, DerivedTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

@@ -30,34 +30,32 @@
 
 /// A ground rule's body: its literals and constraints, separated by commas.
 template<>
-struct fmt::formatter<urd::index_view<tyr::formalism::datalog::RuleBody<tyr::GroundTag>, tyr::formalism::datalog::Repository>> :
-    tyr::formalism::detail::without_format_spec
+struct fmt::formatter<urd::index_view<tyr::formalism::RuleBody<tyr::GroundTag>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::RuleBody<tyr::GroundTag>, tyr::formalism::datalog::Repository>& value,
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::RuleBody<tyr::GroundTag>, tyr::formalism::Repository>& value,
                                          fmt::format_context& context) const;
 };
 
 /// A rule: heads :- body.  % cost c (its heads separated by commas; without a body, heads.).
 template<tyr::TaskKind T>
-struct fmt::formatter<urd::index_view<tyr::formalism::datalog::Rule<T>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+struct fmt::formatter<urd::index_view<tyr::formalism::Rule<T>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::Rule<T>, tyr::formalism::datalog::Repository>& value,
-                                         fmt::format_context& context) const;
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Rule<T>, tyr::formalism::Repository>& value, fmt::format_context& context) const;
 };
 
 /// A program: its predicates, functions and objects as comments, then its facts, function values and rules, one per line, and its goal as a query ?- body.
 template<tyr::TaskKind T>
-struct fmt::formatter<urd::index_view<tyr::formalism::datalog::Program<T>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+struct fmt::formatter<urd::index_view<tyr::formalism::Program<T>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::Program<T>, tyr::formalism::datalog::Repository>& value,
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Program<T>, tyr::formalism::Repository>& value,
                                          fmt::format_context& context) const;
 };
 
 /// A condition's variable dependency graph: one DOT graph per kind of binary dependency.
 template<>
-struct fmt::formatter<tyr::formalism::datalog::VariableDependencyGraph> : tyr::formalism::detail::without_format_spec
+struct fmt::formatter<tyr::formalism::VariableDependencyGraph> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const tyr::formalism::datalog::VariableDependencyGraph& value, fmt::format_context& context) const;
+    fmt::format_context::iterator format(const tyr::formalism::VariableDependencyGraph& value, fmt::format_context& context) const;
 };
 
 #endif

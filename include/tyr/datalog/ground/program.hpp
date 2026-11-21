@@ -28,7 +28,7 @@ template<>
 class Program<GroundTag>
 {
 public:
-    Program(formalism::datalog::ProgramView<GroundTag> program, formalism::datalog::RepositoryPtr program_repository);
+    Program(formalism::ProgramView<GroundTag> program, formalism::RepositoryPtr program_repository);
 
     [[nodiscard]] auto get_program() const noexcept { return m_const_program_workspace.program; }
 
@@ -39,7 +39,7 @@ public:
     [[nodiscard]] const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:
-    formalism::datalog::RepositoryPtr m_program_repository;
+    formalism::RepositoryPtr m_program_repository;
     ConstProgramWorkspace<GroundTag> m_const_program_workspace;
 };
 

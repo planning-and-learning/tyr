@@ -71,7 +71,7 @@ struct RelationVertexMap
 
 /// Calls `function` with each head of the rule, of each kind.
 template<typename Function>
-void for_each_head(formalism::datalog::RuleView<LiftedTag> rule, Function function)
+void for_each_head(formalism::RuleView<LiftedTag> rule, Function function)
 {
     for (const auto head : rule.get_heads<formalism::FluentTag>())
         function(head);
@@ -79,10 +79,7 @@ void for_each_head(formalism::datalog::RuleView<LiftedTag> rule, Function functi
         function(head);
 }
 
-void add_body_dependencies(formalism::datalog::RuleView<LiftedTag> rule,
-                           ygg::uint_t head_vertex,
-                           const RelationVertexMap& vertices,
-                           stratification::DepGraph& graph)
+void add_body_dependencies(formalism::RuleView<LiftedTag> rule, ygg::uint_t head_vertex, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
     const auto add_literal_dependency = [&](const auto literal)
     {
@@ -97,7 +94,7 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag> rule,
     for (const auto literal : rule.get_body().template get_literals<formalism::DerivedTag>())
         add_literal_dependency(literal);
 
-    for (const auto term : formalism::datalog::collect_fluent_reads(rule))
+    for (const auto term : formalism::collect_fluent_reads(rule))
     {
         auto ep = stratification::EdgeProps {};
         ep.kind = stratification::EdgeKind::NonStrict;
@@ -106,16 +103,16 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag> rule,
 }
 
 template<formalism::FactKind F>
-ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, F> head, const RelationVertexMap& vertices)
+ygg::uint_t get_head_vertex(formalism::AtomView<LiftedTag, F> head, const RelationVertexMap& vertices)
 { return vertices.get_vertex(head.get_predicate().index()); }
 
-void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
+void add_rule_dependencies(formalism::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
     for (const auto rule : program.get_rules())
         for_each_head(rule, [&](const auto head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
 }
 
-void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
+void bucket_rules_by_stratum(formalism::ProgramView<LiftedTag> program,
                              const RelationVertexMap& vertices,
                              const urd::Store<urd::sequence<ygg::uint_t>>& relation_stratum,
                              urd::Store<urd::sequence<RuleStratum>>& buckets)
@@ -139,7 +136,7 @@ void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
 }  // namespace
 
 // Build dependency graph: nodes = fluent and derived predicates and fluent functions.
-static stratification::DepGraph build_dependency_graph(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices)
+static stratification::DepGraph build_dependency_graph(formalism::ProgramView<LiftedTag> program, const RelationVertexMap& vertices)
 {
     stratification::DepGraph graph(vertices.size());
 
@@ -148,7 +145,7 @@ static stratification::DepGraph build_dependency_graph(formalism::datalog::Progr
     return graph;
 }
 
-RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag> program)
+RuleStrata compute_rule_stratification(formalism::ProgramView<LiftedTag> program)
 {
     const auto vertices = RelationVertexMap {
         program.get_predicates<formalism::FluentTag>().size(),

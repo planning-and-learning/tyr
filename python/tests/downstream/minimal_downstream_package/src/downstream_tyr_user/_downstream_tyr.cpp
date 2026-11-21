@@ -23,8 +23,8 @@ namespace nb = nanobind;
 
 namespace
 {
-[[maybe_unused]] [[gnu::used]] void link_planning_view_methods(tyr::formalism::planning::TaskView<tyr::LiftedTag> task,
-                                                               tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag> fact)
+[[maybe_unused]] [[gnu::used]] void link_planning_view_methods(tyr::formalism::TaskView<tyr::LiftedTag> task,
+                                                               tyr::formalism::FDRFactView<tyr::formalism::FluentTag> fact)
 {
     static_cast<void>(task.get_goal());
     static_cast<void>(fact.get_atom());

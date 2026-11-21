@@ -40,9 +40,9 @@ namespace urd
 
 /// The builder of Program: its record's members, each in its built form (urd::built_t).
 template<::tyr::TaskKind T, typename C>
-struct builder<::tyr::formalism::datalog::Program<T>, C>
+struct builder<::tyr::formalism::Program<T>, C>
 {
-    urd::index<::tyr::formalism::datalog::Program<T>> index;
+    urd::index<::tyr::formalism::Program<T>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
@@ -54,8 +54,8 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>>, C> derived_atoms;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_fterm_values;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> fluent_fterm_values;
-    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>>, C> goal;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>>, C> rules;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>>>, C> goal;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Rule<T>>>, C> rules;
 
     static constexpr auto fields() noexcept
     {
@@ -94,7 +94,7 @@ struct builder<::tyr::formalism::datalog::Program<T>, C>
 
 }  // namespace urd
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 /// Lists everything of the program but its rules in a program builder of a layer over the program's (its records, as

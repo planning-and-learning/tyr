@@ -34,7 +34,7 @@ void bind_ground_module_definitions(nb::module_& m)
     nb::class_<ConstWorkspace>(m, "ConstProgramWorkspace").def("get_program", [](const ConstWorkspace& self) { return self.program; });
 
     nb::class_<ProgramT>(m, "Program")
-        .def(nb::init<formalism::datalog::ProgramView<GroundTag>, formalism::datalog::RepositoryPtr>(), "program"_a, "repository"_a)
+        .def(nb::init<formalism::ProgramView<GroundTag>, formalism::RepositoryPtr>(), "program"_a, "repository"_a)
         .def("get_program", &ProgramT::get_program)
         .def("get_program_repository", nb::overload_cast<>(&ProgramT::get_program_repository), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);

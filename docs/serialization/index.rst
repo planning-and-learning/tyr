@@ -42,9 +42,9 @@ Use a native type's ``Fields`` enum to inspect the ordered default column names 
 
 .. code:: python
 
-   from pytyr.formalism import planning as fp
+   from pytyr import formalism
 
-   list(fp.RowActionLifted.Fields.__members__)  # ["relation", "objects"]
+   list(formalism.RowActionLifted.Fields.__members__)  # ["relation", "objects"]
 
 This describes the native declaration; registration's ``fields`` selection and ``project`` callback do not change it.
 
@@ -54,8 +54,8 @@ completion and selections checked against the registered native type:
 .. code:: python
 
    register_table(
-       dictionaries, fp.RowActionLifted, "actions", "a",
-       fields=[fp.RowActionLifted.Fields.objects],
+       dictionaries, formalism.RowActionLifted, "actions", "a",
+       fields=[formalism.RowActionLifted.Fields.objects],
    )
 
 ``fields=None`` keeps all declared fields; ``fields=[]`` creates empty rows. Selection happens before recursive
@@ -69,7 +69,7 @@ Pass ``project`` to define a complete row with your own column names and values:
 
    register_table(
        dictionaries,
-       fp.RowActionLifted,
+       formalism.RowActionLifted,
        "actions",
        "a",
        project=lambda binding: {
@@ -79,7 +79,7 @@ Pass ``project`` to define a complete row with your own column names and values:
    )
 
 The callable receives the native entity and returns a dictionary. Its values are recursively serialized using the same
-registry, so the example also requires an ``fp.Object`` table before serialization. The projected row replaces the
+registry, so the example also requires an ``formalism.Object`` table before serialization. The projected row replaces the
 declared fields. If ``fields`` is also supplied, it selects the projected column names before recursive conversion,
 retaining the order returned by the callable. Without ``project``, the native schema is unchanged.
 

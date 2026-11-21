@@ -42,13 +42,13 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 class VariableDependencyGraph
 {
 public:
-    explicit VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition);
+    explicit VariableDependencyGraph(RuleBodyView<LiftedTag> condition);
 
     [[nodiscard]] const auto& unary() const noexcept { return m_unary_dependencies; }
 

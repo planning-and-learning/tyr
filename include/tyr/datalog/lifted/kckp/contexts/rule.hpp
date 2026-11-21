@@ -106,7 +106,7 @@ public:
         RuleExecutionContext<AP, TP, CP>* m_rctx;
         LiftedRuleWorkerT* m_ws_worker;
 
-        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> m_ground_context;
+        formalism::WriteContext<formalism::Builder, formalism::Repository> m_ground_context;
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<AP, TP, CP>& rctx, LiftedRuleWorkerT& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}
@@ -163,7 +163,7 @@ struct RuleExecutionContext
         RuleWorkspace<LiftedTag>* m_ws_rule;
     };
 
-    RuleExecutionContext(urd::index<formalism::datalog::Rule<LiftedTag>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
+    RuleExecutionContext(urd::index<formalism::Rule<LiftedTag>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
         m_ctx(&ctx),
         m_in(get_cws_rule(ctx.in().program().engine().rules, rule)),
         m_out(*ctx.out().program().engine().rules[static_cast<ygg::uint_t>(rule.value)])
@@ -199,7 +199,7 @@ struct RuleExecutionContext
 
 private:
     /// Every rule a stratum schedules has a const workspace.
-    static const ConstRuleWorkspace<LiftedTag>& get_cws_rule(const auto& cws_rules, urd::index<formalism::datalog::Rule<LiftedTag>> rule) noexcept
+    static const ConstRuleWorkspace<LiftedTag>& get_cws_rule(const auto& cws_rules, urd::index<formalism::Rule<LiftedTag>> rule) noexcept
     {
         const auto& cws_rule = cws_rules[static_cast<ygg::uint_t>(rule.value)];
         URD_ASSUME(cws_rule.has_value());

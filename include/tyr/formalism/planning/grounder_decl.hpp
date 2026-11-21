@@ -27,7 +27,7 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 template<typename T>
 struct GrounderCacheEntry;

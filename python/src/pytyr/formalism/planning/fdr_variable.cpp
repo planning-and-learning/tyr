@@ -28,7 +28,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
@@ -40,4 +40,4 @@ void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_builder<FDRVariable<FluentTag>, Repository>(m);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

@@ -35,9 +35,9 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::Domain>
+struct data<::tyr::formalism::Domain>
 {
-    urd::index<::tyr::formalism::planning::Domain> index;
+    urd::index<::tyr::formalism::Domain> index;
     urd::flat_string name;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates;
@@ -46,8 +46,8 @@ struct data<::tyr::formalism::planning::Domain>
     urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>> fluent_functions;
     urd::flat_optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> constants;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>> actions;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
+    urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::LiftedTag>>> actions;
+    urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms;
 
     data() = default;
 
@@ -59,8 +59,8 @@ struct data<::tyr::formalism::planning::Domain>
          urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>> fluent_functions_,
          urd::flat_optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> constants_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>> actions_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_) :
+         urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::LiftedTag>>> actions_,
+         urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_) :
         index(),
         name(std::move(name_)),
         static_predicates(std::move(static_predicates_)),
@@ -127,19 +127,20 @@ struct data<::tyr::formalism::planning::Domain>
 
 }
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 /// The member holding the F-predicates of a domain.
 template<FactKind F>
-inline constexpr auto predicates_of = tagged_member_pointer<StaticFluentDerivedTags,
-                                                            F,
-                                                            &urd::data<Domain>::static_predicates,
-                                                            &urd::data<Domain>::fluent_predicates,
-                                                            &urd::data<Domain>::derived_predicates>;
+inline constexpr auto domain_predicates_of = tagged_member_pointer<StaticFluentDerivedTags,
+                                                                   F,
+                                                                   &urd::data<Domain>::static_predicates,
+                                                                   &urd::data<Domain>::fluent_predicates,
+                                                                   &urd::data<Domain>::derived_predicates>;
 
 /// The member holding the F-functions of a domain.
 template<FactKind F>
-inline constexpr auto functions_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Domain>::static_functions, &urd::data<Domain>::fluent_functions>;
+inline constexpr auto domain_functions_of =
+    tagged_member_pointer<StaticFluentTags, F, &urd::data<Domain>::static_functions, &urd::data<Domain>::fluent_functions>;
 }
 
 #endif

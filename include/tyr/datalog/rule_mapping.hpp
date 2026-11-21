@@ -32,7 +32,7 @@ namespace tyr::datalog
 
 /// The rule of a program transformation's output that replaces each rule of its source program, rewritten or copied; source
 /// rules index the source program's repository.
-using RuleMapping = urd::Store<urd::map<urd::index<formalism::datalog::Rule<LiftedTag>>, urd::index<formalism::datalog::Rule<LiftedTag>>>>;
+using RuleMapping = urd::Store<urd::map<urd::index<formalism::Rule<LiftedTag>>, urd::index<formalism::Rule<LiftedTag>>>>;
 
 }
 

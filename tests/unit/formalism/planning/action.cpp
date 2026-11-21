@@ -20,15 +20,15 @@ namespace tyr::tests::planning_action
 namespace lifted_tests
 {
 
-using ActionIndex = urd::index<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
-using ActionData = urd::data<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
-using ActionView = urd::index_view<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ActionIndex = urd::index<tyr::formalism::Action<::tyr::LiftedTag>>;
+using ActionData = urd::data<tyr::formalism::Action<::tyr::LiftedTag>>;
+using ActionView = urd::index_view<tyr::formalism::Action<::tyr::LiftedTag>, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<ActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ActionIndex>);
 static_assert(std::totally_ordered<ActionData>);
 static_assert(std::totally_ordered<ActionView>);
-static_assert(std::same_as<ActionView, tyr::formalism::planning::ActionView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ActionView, tyr::formalism::ActionView<::tyr::LiftedTag>>);
 static_assert(requires(ActionData& data) {
     data.index;
     data.name;
@@ -54,14 +54,14 @@ static_assert(requires(const ActionView& view) {
 
 TEST(TyrFormalismPlanningAction, PreservesOriginalArityAfterNormalization)
 {
-    const auto parser = tyr::formalism::planning::Parser(std::string(R"((define (domain witness)
+    const auto parser = tyr::formalism::Parser(std::string(R"((define (domain witness)
       (:requirements :strips :existential-preconditions)
       (:predicates (edge ?x ?y) (done ?x))
       (:action mark
         :parameters (?x)
         :precondition (exists (?w) (edge ?x ?w))
         :effect (done ?x))))"),
-                                                         std::nullopt);
+                                               std::nullopt);
     const auto domain = parser.get_domain();
     const auto actions = domain.get_domain().get_actions();
     ASSERT_EQ(actions.size(), 1);
@@ -71,7 +71,7 @@ TEST(TyrFormalismPlanningAction, PreservesOriginalArityAfterNormalization)
 
 TEST(TyrFormalismPlanningAction, FormatsBinding)
 {
-    auto repository = tyr::formalism::planning::Repository();
+    auto repository = tyr::formalism::Repository();
 
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?internal"));
     const auto [variable, variable_created] = ygg::formalism::insert(repository, variable_data);
@@ -89,19 +89,19 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
-    auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::Action<::tyr::LiftedTag>>> {};
     binding_data.relation = action.index();
     binding_data.values.push_back(object.index().value);
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
     EXPECT_EQ(fmt::format("{}", binding), "(move-internal truck)");
-    EXPECT_EQ(fmt::format("{}", std::make_pair(binding, tyr::formalism::planning::PlanFormatting {})), "(move)");
+    EXPECT_EQ(fmt::format("{}", std::make_pair(binding, tyr::formalism::PlanFormatting {})), "(move)");
 }
 
 TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
 {
-    const auto parser = tyr::formalism::planning::Parser(std::string(R"((define (domain transfer)
+    const auto parser = tyr::formalism::Parser(std::string(R"((define (domain transfer)
       (:requirements :strips :conditional-effects :fluents)
       (:predicates (ready ?x) (done ?x))
       (:functions (fuel ?x))
@@ -109,27 +109,27 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
         :parameters (?x)
         :precondition (ready ?x)
         :effect (and (when (ready ?x) (done ?x)) (decrease (fuel ?x) 1)))))"),
-                                                         std::nullopt);
+                                               std::nullopt);
     const auto domain = parser.get_domain();
     const auto source_action = domain.get_domain().get_actions().front();
-    auto source = tyr::formalism::planning::Repository(&source_action.context());
-    auto destination = tyr::formalism::planning::Repository();
+    auto source = tyr::formalism::Repository(&source_action.context());
+    auto destination = tyr::formalism::Repository();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    const auto source_object = tyr::formalism::planning::insert(source, object_data).first;
+    const auto source_object = tyr::formalism::insert(source, object_data).first;
     object_data.name = "padding";
-    (void) tyr::formalism::planning::insert(destination, object_data);
+    (void) tyr::formalism::insert(destination, object_data);
     auto function_data = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("padding"), 1);
-    (void) tyr::formalism::planning::insert(destination, function_data);
+    (void) tyr::formalism::insert(destination, function_data);
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("padding"), 1);
-    (void) tyr::formalism::planning::insert(destination, predicate_data);
+    (void) tyr::formalism::insert(destination, predicate_data);
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?padding"));
-    (void) tyr::formalism::planning::insert(destination, variable_data);
-    auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<tyr::LiftedTag>>> {};
+    (void) tyr::formalism::insert(destination, variable_data);
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>> {};
     binding_data.relation = source_action.index();
     binding_data.values.push_back(source_object.index().value);
-    const auto binding = tyr::formalism::planning::insert(source, binding_data).first;
+    const auto binding = tyr::formalism::insert(source, binding_data).first;
 
-    auto builder = tyr::formalism::planning::Builder {};
+    auto builder = tyr::formalism::Builder {};
     auto context = tyr::formalism::WriteContext { builder, destination };
     const auto [copied_binding, inserted] = tyr::formalism::copy(binding, context);
     ASSERT_TRUE(inserted);
@@ -151,15 +151,15 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
 namespace ground_tests
 {
 
-using GroundActionIndex = urd::index<tyr::formalism::planning::Action<::tyr::GroundTag>>;
-using GroundActionData = urd::data<tyr::formalism::planning::Action<::tyr::GroundTag>>;
-using GroundActionView = urd::index_view<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundActionIndex = urd::index<tyr::formalism::Action<::tyr::GroundTag>>;
+using GroundActionData = urd::data<tyr::formalism::Action<::tyr::GroundTag>>;
+using GroundActionView = urd::index_view<tyr::formalism::Action<::tyr::GroundTag>, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<GroundActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundActionIndex>);
 static_assert(std::totally_ordered<GroundActionData>);
 static_assert(std::totally_ordered<GroundActionView>);
-static_assert(std::same_as<GroundActionView, tyr::formalism::planning::ActionView<::tyr::GroundTag>>);
+static_assert(std::same_as<GroundActionView, tyr::formalism::ActionView<::tyr::GroundTag>>);
 static_assert(requires(GroundActionData& data) {
     data.index;
     data.row;

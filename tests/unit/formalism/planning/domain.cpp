@@ -8,15 +8,15 @@
 namespace tyr::tests::planning_domain
 {
 
-using DomainIndex = urd::index<tyr::formalism::planning::Domain>;
-using DomainData = urd::data<tyr::formalism::planning::Domain>;
-using DomainView = urd::index_view<tyr::formalism::planning::Domain, tyr::formalism::planning::Repository>;
+using DomainIndex = urd::index<tyr::formalism::Domain>;
+using DomainData = urd::data<tyr::formalism::Domain>;
+using DomainView = urd::index_view<tyr::formalism::Domain, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<DomainIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<DomainIndex>);
 static_assert(std::totally_ordered<DomainData>);
 static_assert(std::totally_ordered<DomainView>);
-static_assert(std::same_as<DomainView, tyr::formalism::planning::DomainView>);
+static_assert(std::same_as<DomainView, tyr::formalism::DomainView>);
 static_assert(requires(DomainData& data) {
     data.index;
     data.name;

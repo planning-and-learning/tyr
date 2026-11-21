@@ -28,9 +28,9 @@ namespace tyr::datalog
  * ConstRuleWorkspace<LiftedTag>
  */
 
-ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_,
-                                                  formalism::datalog::Builder& builder,
-                                                  formalism::datalog::Repository& repository,
+ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(formalism::RuleView<LiftedTag> rule_,
+                                                  formalism::Builder& builder,
+                                                  formalism::Repository& repository,
                                                   kckp::Graph compatibility_graph) :
     rule(rule_),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), builder, repository).first),

@@ -71,11 +71,11 @@ struct AxiomDefinition<GroundTag>
         auto axiom_strata = compute_ground_axiom_stratification(task->get_task());
         match_tree_prototypes.reserve(axiom_strata.data.size());
         for (const auto& stratum : axiom_strata.data)
-            match_tree_prototypes.emplace_back(match_tree::MatchTree<formalism::planning::Axiom<GroundTag>>::create(stratum, task->get_repository()));
+            match_tree_prototypes.emplace_back(match_tree::MatchTree<formalism::Axiom<GroundTag>>::create(stratum, task->get_repository()));
     }
 
     TaskPtr<GroundTag> task;
-    urd::Store<urd::sequence<match_tree::MatchTreePtr<formalism::planning::Axiom<GroundTag>>>> match_tree_prototypes;
+    urd::Store<urd::sequence<match_tree::MatchTreePtr<formalism::Axiom<GroundTag>>>> match_tree_prototypes;
 };
 
 template<>
@@ -92,8 +92,8 @@ struct AxiomWorkspace<GroundTag>
     }
 
     ygg::ExecutionContextPtr execution_context;
-    urd::Store<urd::sequence<match_tree::MatchTreePtr<formalism::planning::Axiom<GroundTag>>>> match_tree_workers;
-    formalism::planning::AxiomViewList<GroundTag> applicable_axioms;
+    urd::Store<urd::sequence<match_tree::MatchTreePtr<formalism::Axiom<GroundTag>>>> match_tree_workers;
+    formalism::AxiomViewList<GroundTag> applicable_axioms;
 };
 }
 

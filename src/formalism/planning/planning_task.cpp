@@ -25,7 +25,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 template<TaskKind T>
 struct PlanningTask<T>::VariableDomains

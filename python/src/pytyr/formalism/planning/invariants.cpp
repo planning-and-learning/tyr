@@ -33,7 +33,7 @@
 #include <urd/store.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 namespace

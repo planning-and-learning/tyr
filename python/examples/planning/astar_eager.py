@@ -18,7 +18,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
 
-from pytyr.formalism.planning import ConjunctiveConditionGround, Parser
+from pytyr.formalism import ConjunctiveConditionGround, Parser
 from pytyr.planning import SearchStatus, Statistics
 from pytyr.planning.algorithms.astar_eager.lifted import (
     DefaultEventHandler,

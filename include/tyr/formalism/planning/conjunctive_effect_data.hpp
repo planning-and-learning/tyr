@@ -34,9 +34,9 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
+struct data<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
     urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
@@ -73,18 +73,18 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
+struct data<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> index;
-    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
-    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
+    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> index;
+    urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
+    urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
     urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
 
-    data(urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
-         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
+    data(urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
+         urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
          urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
          urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect_) :
         index(),
@@ -118,7 +118,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
 
 }
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 /// The member holding the P-facts of a ground conjunctive effect: add (positive) or delete (negative).
 template<PolarityKind P>

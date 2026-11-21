@@ -25,7 +25,7 @@
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_parser(nb::module_& m)

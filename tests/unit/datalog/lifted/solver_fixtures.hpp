@@ -85,7 +85,7 @@
 
 namespace tyr::tests
 {
-static_assert(tyr::formalism::planning::SymbolRepository::thread_safe && tyr::formalism::planning::RelationRepository::thread_safe);
+static_assert(tyr::formalism::SymbolRepository::thread_safe && tyr::formalism::RelationRepository::thread_safe);
 
 namespace
 {
@@ -249,19 +249,19 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 
 struct LiftedPredicateProgram
 {
-    tyr::formalism::datalog::RepositoryPtr repository;
-    tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal;
-    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals;
-    tyr::formalism::datalog::RuleRowView first_binding;
-    tyr::formalism::datalog::RuleRowView second_binding;
+    tyr::formalism::RepositoryPtr repository;
+    tyr::formalism::PredicateRowView<tyr::formalism::FluentTag> goal;
+    tyr::formalism::RuleBodyView<GroundTag> goals;
+    tyr::formalism::RuleRowView first_binding;
+    tyr::formalism::RuleRowView second_binding;
     tyr::datalog::Program<LiftedTag> program;
 
-    LiftedPredicateProgram(tyr::formalism::datalog::RepositoryPtr repository_,
-                           tyr::formalism::datalog::ProgramView<LiftedTag> program_view,
-                           tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal_,
-                           tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals_,
-                           tyr::formalism::datalog::RuleRowView first_binding_,
-                           tyr::formalism::datalog::RuleRowView second_binding_) :
+    LiftedPredicateProgram(tyr::formalism::RepositoryPtr repository_,
+                           tyr::formalism::ProgramView<LiftedTag> program_view,
+                           tyr::formalism::PredicateRowView<tyr::formalism::FluentTag> goal_,
+                           tyr::formalism::RuleBodyView<GroundTag> goals_,
+                           tyr::formalism::RuleRowView first_binding_,
+                           tyr::formalism::RuleRowView second_binding_) :
         repository(std::move(repository_)),
         goal(goal_),
         goals(goals_),
@@ -275,7 +275,7 @@ struct LiftedPredicateProgram
 /// goal <- source(?x) with cost 2, and with include_numeric_constraint also (value ?x) >= 0 where (value a) = 5 and (value b) = 7.
 LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constraint = false)
 {
-    auto repository = std::make_shared<tyr::formalism::datalog::Repository>();
+    auto repository = std::make_shared<tyr::formalism::Repository>();
     const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
     const auto source_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("source"), 1));
     const auto goal_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
@@ -309,7 +309,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         body_data.numeric_constraints.emplace_back(comparison.index());
     }
     const auto body = intern(std::move(body_data));
-    auto rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag>>();
+    auto rule_data = urd::data<tyr::formalism::Rule<LiftedTag>>();
     rule_data.variables.push_back(variable.index());
     rule_data.body = body.index();
     rule_data.fluent_heads.push_back(goal_atom.index());
@@ -318,7 +318,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
 
     const auto bind_rule = [&](auto object)
     {
-        auto data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag>>>();
+        auto data = urd::data<ygg::Row<tyr::formalism::Rule<LiftedTag>>>();
         data.relation = rule.index();
         data.values.push_back(object.index().value);
         return intern(std::move(data));
@@ -340,11 +340,11 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     const auto goal = intern(std::move(goal_binding_data));
     const auto ground_goal = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(goal.index()));
     const auto goal_literal = intern(urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::FluentTag>>(ground_goal.index(), true));
-    auto goals_data = urd::data<tyr::formalism::datalog::RuleBody<GroundTag>>();
+    auto goals_data = urd::data<tyr::formalism::RuleBody<GroundTag>>();
     goals_data.fluent_literals.push_back(goal_literal.index());
     const auto goals = intern(std::move(goals_data));
 
-    auto program_data = urd::data<tyr::formalism::datalog::Program<LiftedTag>>();
+    auto program_data = urd::data<tyr::formalism::Program<LiftedTag>>();
     program_data.objects = { first_object.index(), second_object.index() };
     program_data.fluent_predicates = { source_predicate.index(), goal_predicate.index() };
     if (include_numeric_constraint)

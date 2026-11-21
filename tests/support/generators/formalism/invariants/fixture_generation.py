@@ -33,7 +33,7 @@ from typing import Any
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 
-from pytyr.formalism.planning import Parser, synthesize_invariants
+from pytyr.formalism import Parser, synthesize_invariants
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE.parents[4] / "tests/support/data/formalism/invariants"

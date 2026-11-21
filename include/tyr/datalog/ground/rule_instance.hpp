@@ -28,9 +28,9 @@ template<>
 class RuleInstance<GroundTag>
 {
 public:
-    explicit RuleInstance(formalism::datalog::RuleView<GroundTag> rule) : m_rule(rule) {}
+    explicit RuleInstance(formalism::RuleView<GroundTag> rule) : m_rule(rule) {}
 
-    [[nodiscard]] formalism::datalog::RuleView<GroundTag> get_rule() const noexcept { return m_rule; }
+    [[nodiscard]] formalism::RuleView<GroundTag> get_rule() const noexcept { return m_rule; }
 
     [[nodiscard]] auto get_body() const noexcept { return m_rule.get_body(); }
 
@@ -39,10 +39,10 @@ public:
     { return m_rule.template get_heads<F>(); }
 
     template<formalism::FactKind F>
-    [[nodiscard]] auto resolve(formalism::datalog::AtomView<GroundTag, F> atom) const noexcept
+    [[nodiscard]] auto resolve(formalism::AtomView<GroundTag, F> atom) const noexcept
     { return atom.get_row(); }
 
-    [[nodiscard]] auto resolve(formalism::datalog::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
+    [[nodiscard]] auto resolve(formalism::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 
     /// A ground rule is its own instance: its index keys witnesses and rule costs.
     [[nodiscard]] RuleKey<GroundTag> witness_key() const noexcept { return m_rule.index(); }
@@ -50,7 +50,7 @@ public:
     [[nodiscard]] RuleKey<GroundTag> cost_key() const noexcept { return witness_key(); }
 
 private:
-    formalism::datalog::RuleView<GroundTag> m_rule;
+    formalism::RuleView<GroundTag> m_rule;
 };
 
 }

@@ -181,7 +181,7 @@ void set_common_options(Options& options, const Arguments& arguments, const Sear
     options.shuffle_labeled_succ_nodes = arguments.shuffle_labeled_succ_nodes;
 }
 
-inline void print_summary(const formalism::planning::Repository& repository, const planning::Statistics& statistics)
+inline void print_summary(const formalism::Repository& repository, const planning::Statistics& statistics)
 {
     std::cout << "[Total] Number of objects: " << repository.size<formalism::Object>() << '\n';
     std::cout << "[Total] Number of fluent atoms: " << repository.size<formalism::Atom<GroundTag, formalism::FluentTag>>() << '\n';
@@ -310,7 +310,7 @@ int run(int argc, char** argv, argparse::ArgumentParser& program, PrintInputs pr
             print_inputs();
 
             auto parser_options = loki::semantic::ParserOptions();
-            auto parser = formalism::planning::Parser(arguments.domain_filepath, parser_options);
+            auto parser = formalism::Parser(arguments.domain_filepath, parser_options);
             auto domain = parser.get_domain();
             auto lifted_task = planning::Task<LiftedTag>::create(parser.parse_task(arguments.problem_filepath));
 

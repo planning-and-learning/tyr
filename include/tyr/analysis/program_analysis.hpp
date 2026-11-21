@@ -17,7 +17,7 @@
 namespace tyr::analysis
 {
 
-using RuleCompatibilityGraphMap = urd::Store<urd::map<urd::index<formalism::datalog::Rule<LiftedTag>>, kckp::Graph>>;
+using RuleCompatibilityGraphMap = urd::Store<urd::map<urd::index<formalism::Rule<LiftedTag>>, kckp::Graph>>;
 
 using ProgramCompatibilityGraphs = RuleCompatibilityGraphMap;
 

@@ -32,7 +32,7 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy_, TP tp_, CP cost_policy_) :
     const_workspace(&program.get_const_program_workspace()),
     program_repository(&program.get_program_repository()),
-    workspace_repository(std::make_shared<formalism::datalog::Repository>(program.get_program().get_objects().size(), program_repository)),
+    workspace_repository(std::make_shared<formalism::Repository>(program.get_program().get_objects().size(), program_repository)),
     facts(program.get_program(), *workspace_repository),
     annotation_policy(std::move(annotation_policy_)),
     annotations(program.get_program()),

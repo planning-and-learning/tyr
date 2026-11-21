@@ -86,11 +86,4 @@
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 
-namespace tyr::formalism::datalog
-{
-
-using ygg::formalism::checkout;
-
-}
-
 #endif

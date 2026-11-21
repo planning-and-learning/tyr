@@ -29,7 +29,7 @@
 #include <urd/elements/view.hpp>
 #include <urd/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 namespace
@@ -48,4 +48,4 @@ void bind_fdr_fact(nb::module_& m, RepositoryBinding& /*repository*/)
     bind_fdr_fact_view<urd::owning_view<FDRFact<FluentTag>, Repository>>(m);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

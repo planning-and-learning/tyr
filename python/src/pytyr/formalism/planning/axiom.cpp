@@ -29,7 +29,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_axiom(nb::module_& m, RepositoryBinding& repository)
@@ -48,4 +48,4 @@ void bind_axiom(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_builder<Axiom<GroundTag>, Repository>(m);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

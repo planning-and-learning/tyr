@@ -150,7 +150,7 @@ public:
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
-        urd::Store<urd::sequence<formalism::planning::ActionRowView>> applicable_actions;
+        urd::Store<urd::sequence<formalism::ActionRowView>> applicable_actions;
         StateDelta successor_delta;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;

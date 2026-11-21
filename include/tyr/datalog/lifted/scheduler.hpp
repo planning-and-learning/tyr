@@ -49,8 +49,8 @@ class TypedRuleSchedulerStratum
 public:
     TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
                               const analysis::TypedListenerStratum& listeners,
-                              const formalism::datalog::Repository& context,
-                              formalism::datalog::ProgramView<LiftedTag> program);
+                              const formalism::Repository& context,
+                              formalism::ProgramView<LiftedTag> program);
 
     void activate_all();
 
@@ -64,24 +64,23 @@ public:
 
     void on_finish_iteration();
 
-    [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return *m_context; }
+    [[nodiscard]] const formalism::Repository& get_context() const noexcept { return *m_context; }
 
-    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>& get_rules() const noexcept { return *m_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::Rule<LiftedTag>>>& get_rules() const noexcept { return *m_rules; }
 
     /// Active rules in index order (the dense set iterates in it): the rule processing order assigns
     /// program-repository rows (first-derivation order) that delta bitsets are indexed by, so it must
     /// be identical on every platform.
-    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::Rule<LiftedTag>>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
-    [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::datalog::Rule<LiftedTag>> rule) const noexcept
-    { return m_full_enumeration_rules.contains(rule); }
+    [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::Rule<LiftedTag>> rule) const noexcept { return m_full_enumeration_rules.contains(rule); }
 
 private:
     void rebuild_sorted_active_rules();
 
     const analysis::TypedRuleStratum* m_rules;
     const analysis::TypedListenerStratum* m_listeners;
-    const formalism::datalog::Repository* m_context;
+    const formalism::Repository* m_context;
 
     /// The predicates of kind F with a fact committed in the iteration.
     template<typename F>
@@ -89,9 +88,9 @@ private:
 
     MutableFamily<ActivePredicates> m_active_predicates;
     urd::Store<urd::set<urd::index<formalism::Function<formalism::FluentTag>>>, urd::dense> m_active_functions;
-    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense> m_active_rules;
-    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense> m_full_enumeration_rules;
-    urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>> m_sorted_active_rules;
+    urd::Store<urd::set<urd::index<formalism::Rule<LiftedTag>>>, urd::dense> m_active_rules;
+    urd::Store<urd::set<urd::index<formalism::Rule<LiftedTag>>>, urd::dense> m_full_enumeration_rules;
+    urd::flat_vector<urd::index<formalism::Rule<LiftedTag>>> m_sorted_active_rules;
 };
 
 template<>
@@ -100,8 +99,8 @@ class Scheduler<LiftedTag>
 public:
     Scheduler(const analysis::RuleStratum& rules,
               const analysis::ListenerStratum& listeners,
-              const formalism::datalog::Repository& context,
-              formalism::datalog::ProgramView<LiftedTag> program);
+              const formalism::Repository& context,
+              formalism::ProgramView<LiftedTag> program);
 
     auto& rules() noexcept { return predicate_rules; }
 
@@ -156,8 +155,8 @@ private:
 
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                                   const analysis::ListenerStrata& listeners,
-                                                                  const formalism::datalog::Repository& context,
-                                                                  formalism::datalog::ProgramView<LiftedTag> program);
+                                                                  const formalism::Repository& context,
+                                                                  formalism::ProgramView<LiftedTag> program);
 
 }
 

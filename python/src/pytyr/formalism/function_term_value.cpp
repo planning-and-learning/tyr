@@ -65,9 +65,9 @@ void bind_function_term_value(nb::module_& m)
 
 }  // namespace tyr::formalism
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_function_term_value(nb::module_& m, RepositoryBinding& repository) { bind_function_term_value_views(m, repository); }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

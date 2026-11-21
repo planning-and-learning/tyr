@@ -33,9 +33,9 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
+struct data<::tyr::formalism::Axiom<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> body;
     urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
@@ -67,16 +67,16 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
+struct data<::tyr::formalism::Axiom<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
-    ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> row;
+    urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
+    ygg::RowIndex<::tyr::formalism::Axiom<::tyr::LiftedTag>> row;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> body;
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
 
-    data(ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> row_,
+    data(ygg::RowIndex<::tyr::formalism::Axiom<::tyr::LiftedTag>> row_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> body_,
          urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),

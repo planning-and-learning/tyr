@@ -22,16 +22,15 @@
 namespace tyr::datalog
 {
 
-template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
-template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
-template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
 
-template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
-template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> element,
-                                                    const ApplicabilityContext& context);
+template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
 
 }
 

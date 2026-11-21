@@ -22,13 +22,13 @@ namespace lifted_tests
 
 using ConjunctiveConditionIndex = urd::index<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>;
 using ConjunctiveConditionData = urd::data<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>;
-using ConjunctiveConditionView = urd::index_view<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ConjunctiveConditionView = urd::index_view<tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<ConjunctiveConditionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConjunctiveConditionIndex>);
 static_assert(std::totally_ordered<ConjunctiveConditionData>);
 static_assert(std::totally_ordered<ConjunctiveConditionView>);
-static_assert(std::same_as<ConjunctiveConditionView, tyr::formalism::planning::ConjunctiveConditionView<::tyr::LiftedTag>>);
+static_assert(std::same_as<ConjunctiveConditionView, tyr::formalism::ConjunctiveConditionView<::tyr::LiftedTag>>);
 static_assert(requires(ConjunctiveConditionData& data) {
     data.index;
     data.variables;
@@ -40,11 +40,11 @@ static_assert(requires(ConjunctiveConditionData& data) {
 });
 static_assert(requires(const ConjunctiveConditionView& view) {
     requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::StaticTag>(true))>,
-                          tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>;
+                          tyr::formalism::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>;
     requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::FluentTag>(true))>,
-                          tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>;
+                          tyr::formalism::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>;
     requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::DerivedTag>(true))>,
-                          tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>;
+                          tyr::formalism::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>;
     view.index();
     view.get_variables();
     view.template get_literals<tyr::formalism::StaticTag>();
@@ -62,13 +62,13 @@ namespace ground_tests
 
 using GroundConjunctiveConditionIndex = urd::index<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>;
 using GroundConjunctiveConditionData = urd::data<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>;
-using GroundConjunctiveConditionView = urd::index_view<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundConjunctiveConditionView = urd::index_view<tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<GroundConjunctiveConditionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConjunctiveConditionIndex>);
 static_assert(std::totally_ordered<GroundConjunctiveConditionData>);
 static_assert(std::totally_ordered<GroundConjunctiveConditionView>);
-static_assert(std::same_as<GroundConjunctiveConditionView, tyr::formalism::planning::ConjunctiveConditionView<::tyr::GroundTag>>);
+static_assert(std::same_as<GroundConjunctiveConditionView, tyr::formalism::ConjunctiveConditionView<::tyr::GroundTag>>);
 static_assert(requires(GroundConjunctiveConditionData& data) {
     data.index;
     data.positive_facts;
@@ -80,11 +80,11 @@ static_assert(requires(GroundConjunctiveConditionData& data) {
 });
 static_assert(requires(const GroundConjunctiveConditionView& view) {
     requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::StaticTag>(true))>,
-                          tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>;
+                          tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>;
     requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::FluentTag>(true))>,
-                          tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>;
+                          tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>;
     requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::DerivedTag>(true))>,
-                          tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>;
+                          tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>;
     view.index();
     view.template get_literals<tyr::formalism::StaticTag>();
     view.template get_literals<tyr::formalism::DerivedTag>();
@@ -101,8 +101,8 @@ namespace
 template<tyr::TaskKind Kind>
 void expect_condition_atom_projection()
 {
-    auto repository = tyr::formalism::planning::Repository();
-    const auto intern = [&](auto data) { return tyr::formalism::planning::insert(repository, data).first; };
+    auto repository = tyr::formalism::Repository();
+    const auto intern = [&](auto data) { return tyr::formalism::insert(repository, data).first; };
     const auto atoms = [&]<tyr::formalism::FactKind F>()
     {
         const auto atom = [&](const char* name)
@@ -135,14 +135,14 @@ void expect_condition_atom_projection()
     data.derived_literals = literals.template operator()<tyr::formalism::DerivedTag>(derived_atoms);
     if constexpr (std::same_as<Kind, tyr::GroundTag>)
     {
-        auto variable_data = urd::data<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>> {};
+        auto variable_data = urd::data<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>> {};
         variable_data.atoms.push_back(fluent_atoms.first.index());
         variable_data.atoms.push_back(fluent_atoms.second.index());
         const auto variable = intern(std::move(variable_data));
-        data.positive_facts.emplace_back(variable.index(), tyr::formalism::planning::FDRValue(1));
-        data.positive_facts.emplace_back(variable.index(), tyr::formalism::planning::FDRValue::none());
-        data.negative_facts.emplace_back(variable.index(), tyr::formalism::planning::FDRValue(2));
-        data.negative_facts.emplace_back(variable.index(), tyr::formalism::planning::FDRValue::none());
+        data.positive_facts.emplace_back(variable.index(), tyr::formalism::FDRValue(1));
+        data.positive_facts.emplace_back(variable.index(), tyr::formalism::FDRValue::none());
+        data.negative_facts.emplace_back(variable.index(), tyr::formalism::FDRValue(2));
+        data.negative_facts.emplace_back(variable.index(), tyr::formalism::FDRValue::none());
     }
     else
         data.fluent_literals = literals.template operator()<tyr::formalism::FluentTag>(fluent_atoms);
@@ -161,9 +161,9 @@ void expect_condition_atom_projection()
         EXPECT_TRUE(std::ranges::equal(filtered_negative, std::array { pair.second }));
         auto opposite = condition.template get_atoms<F>(true, pair.second.get_predicate());
         EXPECT_TRUE(opposite.begin() == opposite.end());
-        auto foreign_repository = tyr::formalism::planning::Repository();
+        auto foreign_repository = tyr::formalism::Repository();
         auto foreign_data = urd::data<tyr::formalism::Predicate<F>>(std::string("positive"), 0);
-        const auto foreign = tyr::formalism::planning::insert(foreign_repository, foreign_data).first;
+        const auto foreign = tyr::formalism::insert(foreign_repository, foreign_data).first;
         ASSERT_EQ(foreign.index(), pair.first.get_predicate().index());
         ASSERT_NE(foreign, pair.first.get_predicate());
         auto absent = condition.template get_atoms<F>(true, foreign);

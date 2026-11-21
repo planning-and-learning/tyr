@@ -67,7 +67,7 @@ struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
 {
     urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>>, C> values;
 
-    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
+    void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
         assert(static_cast<ygg::uint_t>(fact.variable.value) < values.size());
         values[static_cast<ygg::uint_t>(fact.variable.value)] = fact.value.value;

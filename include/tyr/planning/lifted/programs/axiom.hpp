@@ -53,7 +53,7 @@ namespace tyr::planning
 class AxiomEvaluatorProgram
 {
 public:
-    explicit AxiomEvaluatorProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
+    explicit AxiomEvaluatorProgram(const formalism::PlanningTask<LiftedTag>& task);
 
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     [[nodiscard]] const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;

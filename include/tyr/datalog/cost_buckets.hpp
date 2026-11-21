@@ -46,7 +46,7 @@ class CostBuckets
 public:
     /// The heads of kind F at one cost.
     template<typename F>
-    using PredicateBucket = urd::Store<urd::set<formalism::datalog::PredicateRowIndex<F>>>;
+    using PredicateBucket = urd::Store<urd::set<formalism::PredicateRowIndex<F>>>;
 
     struct Bucket
     {
@@ -70,11 +70,11 @@ public:
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
 
     template<formalism::FactKind F>
-    bool insert(Cost cost, formalism::datalog::PredicateRowIndex<F> key)
+    bool insert(Cost cost, formalism::PredicateRowIndex<F> key)
     { return m_buckets[cost].predicate.template get<F>().insert(key).second; }
 
     template<formalism::FactKind F>
-    bool erase(Cost cost, formalism::datalog::PredicateRowIndex<F> key)
+    bool erase(Cost cost, formalism::PredicateRowIndex<F> key)
     {
         const auto it = m_buckets.find(cost);
         if (it == m_buckets.end())
@@ -87,7 +87,7 @@ public:
     }
 
     template<typename Update, formalism::FactKind F>
-    void update(const Update& update, formalism::datalog::PredicateRowIndex<F> key)
+    void update(const Update& update, formalism::PredicateRowIndex<F> key)
     {
         if (update.old_cost.has_value())
             erase(*update.old_cost, key);

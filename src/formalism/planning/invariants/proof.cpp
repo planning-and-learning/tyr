@@ -34,7 +34,7 @@
 #include <utility>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 namespace
@@ -393,4 +393,4 @@ ProofResult prove_invariant(const urd::builder<Invariant, Repository>& inv, cons
     return { ProofStatus::Proven, std::nullopt };
 }
 
-}  // namespace tyr::formalism::planning::invariant
+}  // namespace tyr::formalism::invariant

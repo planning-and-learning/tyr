@@ -22,11 +22,11 @@
 
 namespace nb = nanobind;
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
-extern void bind_module_definitions(nb::module_& m);
+void bind_planning_module_definitions(nb::module_& m);
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism
 
 #endif

@@ -35,7 +35,7 @@ template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::VariableSelectorNode<Tag>, C>
 {
     urd::index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
-    urd::built_t<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>, ::tyr::formalism::planning::Repository> variable;
+    urd::built_t<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>, ::tyr::formalism::Repository> variable;
     urd::built_t<urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>>, C> domain_children;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> dontcare_child;
 

@@ -25,9 +25,9 @@
 namespace tyr::tests
 {
 
-inline formalism::planning::Parser make_test_parser(const std::filesystem::path& domain_file,
-                                                    const loki::semantic::ParserOptions& parser_options = loki::semantic::ParserOptions())
-{ return formalism::planning::Parser(domain_file, parser_options); }
+inline formalism::Parser make_test_parser(const std::filesystem::path& domain_file,
+                                          const loki::semantic::ParserOptions& parser_options = loki::semantic::ParserOptions())
+{ return formalism::Parser(domain_file, parser_options); }
 
 }
 

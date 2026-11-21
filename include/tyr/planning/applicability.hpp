@@ -81,127 +81,125 @@ template<TaskKind Kind>
 ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<Kind>& context);
+bool evaluate(formalism::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::FunctionExpressionView<GroundTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind, formalism::FactKind T>
-ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, T> element, const StateContext<Kind>& context);
+ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, T> element, const StateContext<Kind>& context);
 
 /**
  * is_applicable_if_fires
  */
 
 template<TaskKind Kind>
-bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<GroundTag> element,
+bool is_applicable_if_fires(formalism::ConditionalEffectView<GroundTag> element,
                             const StateContext<Kind>& context,
-                            formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                            formalism::EffectFamilyList& ref_fluent_effect_families);
 
 template<TaskKind Kind>
-bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<GroundTag> elements,
+bool is_applicable_if_fires(formalism::ConditionalEffectListView<GroundTag> elements,
                             const StateContext<Kind>& context,
-                            formalism::planning::EffectFamilyList& out_fluent_effect_families);
+                            formalism::EffectFamilyList& out_fluent_effect_families);
 
 /**
  * is_applicable
  */
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind, formalism::FactKind T>
-bool is_applicable(formalism::planning::LiteralListView<GroundTag, T> elements, const StateContext<Kind>& context);
+bool is_applicable(formalism::LiteralListView<GroundTag, T> elements, const StateContext<Kind>& context);
 
 template<formalism::PolarityKind P, TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::FDRFactView<formalism::FluentTag> element, const StateContext<Kind>& context);
 
 template<formalism::PolarityKind P, TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> elements, const StateContext<Kind>& context);
+bool is_applicable(formalism::FDRFactListView<formalism::FluentTag> elements, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::BooleanOperatorView<GroundTag> element, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::BooleanOperatorListView<GroundTag> elements, const StateContext<Kind>& context);
+bool is_applicable(formalism::BooleanOperatorListView<GroundTag> elements, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::FluentTag> element,
+bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::FluentTag> element,
                    const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
+bool is_applicable(formalism::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
                    const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context);
 
 // GroundConjunctiveCondition
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context);
 
 // GroundConjunctiveEffect
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::ConjunctiveEffectView<GroundTag> element,
+bool is_applicable(formalism::ConjunctiveEffectView<GroundTag> element,
                    const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
 // GroundAction
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::ActionView<GroundTag> element,
-                   const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& out_fluent_effect_families);
+bool is_applicable(formalism::ActionView<GroundTag> element, const StateContext<Kind>& context, formalism::EffectFamilyList& out_fluent_effect_families);
 
 // GroundAxiom
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::AxiomView<GroundTag> element, const StateContext<Kind>& context);
+bool is_applicable(formalism::AxiomView<GroundTag> element, const StateContext<Kind>& context);
 
 /**
  * is_statically_applicable
  */
 
-bool is_statically_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state);
+bool is_statically_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state);
 
-bool is_statically_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state);
+bool is_statically_applicable(formalism::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state);
 
 // GroundConjunctiveCondition
 
-bool is_statically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state);
+bool is_statically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state);
 
 // GroundAction
 
-bool is_statically_applicable(formalism::planning::ActionView<GroundTag> element, const StaticState& static_state);
+bool is_statically_applicable(formalism::ActionView<GroundTag> element, const StaticState& static_state);
 
 // GroundAxiom
 
-bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element, const StaticState& static_state);
+bool is_statically_applicable(formalism::AxiomView<GroundTag> element, const StaticState& static_state);
 
 /**
  * is_dynamically_applicable
@@ -210,7 +208,7 @@ bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element,
 // GroundConjunctiveCondition
 
 template<TaskKind Kind>
-bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context);
+bool is_dynamically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context);
 
 /**
  * is_consistent
@@ -218,20 +216,20 @@ bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<Gro
 
 // GroundConjunctiveCondition
 
-bool is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
-                   urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& fluent_assign,
+bool is_consistent(formalism::ConjunctiveConditionView<GroundTag> element,
+                   urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& fluent_assign,
                    urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign);
 
 // GroundAction
 
-bool is_consistent(formalism::planning::ActionView<GroundTag> element,
-                   urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
+bool is_consistent(formalism::ActionView<GroundTag> element,
+                   urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& out_fluent_assign,
                    urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign);
 
 // GroundAxiom
 
-bool is_consistent(formalism::planning::AxiomView<GroundTag> element,
-                   urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
+bool is_consistent(formalism::AxiomView<GroundTag> element,
+                   urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& out_fluent_assign,
                    urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign);
 
 /**
@@ -243,19 +241,19 @@ ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>&)
 { return element; }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
 { return formalism::apply(element.get_operation(), evaluate(element.get_arg(), context)); }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
 { return formalism::apply(element.get_operation(), evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context)); }
 
 template<TaskKind Kind>
-bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<Kind>& context)
+bool evaluate(formalism::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<Kind>& context)
 { return formalism::apply(element.get_operation(), evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context)); }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
 {
     const auto child_fexprs = element.get_args();
 
@@ -267,25 +265,25 @@ ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalis
 }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
 { return context.task().get_static_state().get(element); }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<Kind>& context)
 { return context.numeric_storage().get(element.index()); }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::AuxiliaryTag>, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::AuxiliaryTag>, const StateContext<Kind>& context)
 { return context.auxiliary_value(); }
 
 template<TaskKind Kind>
-ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::FunctionExpressionView<GroundTag> element, const StateContext<Kind>& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element);
 }
 
 template<TaskKind Kind, formalism::FactKind T>
-ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, T> element, const StateContext<Kind>& context)
+ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, T> element, const StateContext<Kind>& context)
 { return formalism::apply(element.get_operation(), evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context)); }
 
 /**
@@ -293,9 +291,9 @@ ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, T> eleme
  */
 
 template<TaskKind Kind>
-bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<GroundTag> element,
+bool is_applicable_if_fires(formalism::ConditionalEffectView<GroundTag> element,
                             const StateContext<Kind>& context,
-                            formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+                            formalism::EffectFamilyList& ref_fluent_effect_families)
 {
     const auto effect = element.get_effect();
     if (effect.get_numeric_effects().empty() && !effect.get_auxiliary_numeric_effect().has_value())
@@ -309,9 +307,9 @@ bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<GroundTag
 }
 
 template<TaskKind Kind>
-bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<GroundTag> elements,
+bool is_applicable_if_fires(formalism::ConditionalEffectListView<GroundTag> elements,
                             const StateContext<Kind>& context,
-                            formalism::planning::EffectFamilyList& out_fluent_effect_families)
+                            formalism::EffectFamilyList& out_fluent_effect_families)
 {
     out_fluent_effect_families.clear();
 
@@ -325,21 +323,21 @@ bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<Groun
  */
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
 { return context.task().get_static_state().test(element.get_atom()) == element.get_polarity(); }
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<Kind>& context)
 { return context.atom_storage().test(element.get_atom().index()) == element.get_polarity(); }
 
 template<TaskKind Kind, formalism::FactKind T>
-bool is_applicable(formalism::planning::LiteralListView<GroundTag, T> elements, const StateContext<Kind>& context)
+bool is_applicable(formalism::LiteralListView<GroundTag, T> elements, const StateContext<Kind>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
 template<formalism::PolarityKind P, TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::FDRFactView<formalism::FluentTag> element, const StateContext<Kind>& context)
 {
     assert(element.has_value());
 
@@ -354,25 +352,25 @@ bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> elemen
 }
 
 template<formalism::PolarityKind P, TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> elements, const StateContext<Kind>& context)
+bool is_applicable(formalism::FDRFactListView<formalism::FluentTag> elements, const StateContext<Kind>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable<P>(arg, context); });
 }
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::BooleanOperatorView<GroundTag> element, const StateContext<Kind>& context)
 { return evaluate(std::move(element), context); }
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::BooleanOperatorListView<GroundTag> elements, const StateContext<Kind>& context)
+bool is_applicable(formalism::BooleanOperatorListView<GroundTag> elements, const StateContext<Kind>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::FluentTag> element,
+bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::FluentTag> element,
                    const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
 {
     const auto fterm_index = element.get_fterm().index();
     if (ref_fluent_effect_families.size() <= fterm_index.value)
@@ -380,7 +378,7 @@ bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::
 
     // Check non-conflicting effects
     const auto family = formalism::effect_family(element.get_operation());
-    if (!formalism::planning::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.value]))
+    if (!formalism::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.value]))
         return false;  /// incompatible effects
 
     ref_fluent_effect_families[fterm_index.value] = family;
@@ -397,15 +395,15 @@ bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::
 }
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
+bool is_applicable(formalism::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
                    const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context, ref_fluent_effect_families); });
 }
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context)
 {
     // Check fexpr is well-defined in context
     return !std::isnan(evaluate(element.get_fexpr(), context));
@@ -414,7 +412,7 @@ bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::
 // GroundConjunctiveCondition
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context)
 {
     return is_applicable(element.template get_literals<formalism::StaticTag>(), context)                            //
            && is_applicable<formalism::PositiveTag>(element.template get_facts<formalism::PositiveTag>(), context)  //
@@ -426,9 +424,9 @@ bool is_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> elem
 // GroundConjunctiveEffect
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::ConjunctiveEffectView<GroundTag> element,
+bool is_applicable(formalism::ConjunctiveEffectView<GroundTag> element,
                    const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
 {
     return is_applicable(element.get_numeric_effects(), context, ref_fluent_effect_families)
            && (!element.get_auxiliary_numeric_effect().has_value() || is_applicable(element.get_auxiliary_numeric_effect().value(), context));
@@ -437,42 +435,40 @@ bool is_applicable(formalism::planning::ConjunctiveEffectView<GroundTag> element
 // GroundAction
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::ActionView<GroundTag> element,
-                   const StateContext<Kind>& context,
-                   formalism::planning::EffectFamilyList& out_fluent_effect_families)
+bool is_applicable(formalism::ActionView<GroundTag> element, const StateContext<Kind>& context, formalism::EffectFamilyList& out_fluent_effect_families)
 { return is_applicable(element.get_condition(), context) && is_applicable_if_fires(element.get_effects(), context, out_fluent_effect_families); }
 
 // GroundAxiom
 
 template<TaskKind Kind>
-bool is_applicable(formalism::planning::AxiomView<GroundTag> element, const StateContext<Kind>& context)
+bool is_applicable(formalism::AxiomView<GroundTag> element, const StateContext<Kind>& context)
 { return is_applicable(element.get_body(), context); }
 
 /**
  * is_statically_applicable
  */
 
-inline bool is_statically_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state)
+inline bool is_statically_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state)
 { return static_state.test(element.get_atom()) == element.get_polarity(); }
 
-inline bool is_statically_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state)
+inline bool is_statically_applicable(formalism::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_statically_applicable(arg, static_state); });
 }
 
 // GroundConjunctiveCondition
 
-inline bool is_statically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state)
+inline bool is_statically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state)
 { return is_statically_applicable(element.template get_literals<formalism::StaticTag>(), static_state); }
 
 // GroundAction
 
-inline bool is_statically_applicable(formalism::planning::ActionView<GroundTag> element, const StaticState& static_state)
+inline bool is_statically_applicable(formalism::ActionView<GroundTag> element, const StaticState& static_state)
 { return is_statically_applicable(element.get_condition(), static_state); }
 
 // GroundAxiom
 
-inline bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> element, const StaticState& static_state)
+inline bool is_statically_applicable(formalism::AxiomView<GroundTag> element, const StaticState& static_state)
 { return is_statically_applicable(element.get_body(), static_state); }
 
 /**
@@ -482,7 +478,7 @@ inline bool is_statically_applicable(formalism::planning::AxiomView<GroundTag> e
 // GroundConjunctiveCondition
 
 template<TaskKind Kind>
-bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context)
+bool is_dynamically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context)
 {
     return is_applicable<formalism::PositiveTag>(element.template get_facts<formalism::PositiveTag>(), context)     //
            && is_applicable<formalism::NegativeTag>(element.template get_facts<formalism::NegativeTag>(), context)  //
@@ -496,10 +492,9 @@ bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<Gro
 
 // GroundConjunctiveCondition
 
-inline bool
-is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
-              urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& fluent_assign,
-              urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
+inline bool is_consistent(formalism::ConjunctiveConditionView<GroundTag> element,
+                          urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& fluent_assign,
+                          urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
 {
     for (const auto fact : element.template get_facts<formalism::PositiveTag>())
     {
@@ -550,10 +545,9 @@ is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
 
 // GroundAction
 
-inline bool
-is_consistent(formalism::planning::ActionView<GroundTag> element,
-              urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
-              urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
+inline bool is_consistent(formalism::ActionView<GroundTag> element,
+                          urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& out_fluent_assign,
+                          urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();
@@ -562,10 +556,9 @@ is_consistent(formalism::planning::ActionView<GroundTag> element,
 
 // GroundAxiom
 
-inline bool
-is_consistent(formalism::planning::AxiomView<GroundTag> element,
-              urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
-              urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
+inline bool is_consistent(formalism::AxiomView<GroundTag> element,
+                          urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& out_fluent_assign,
+                          urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();
@@ -581,148 +574,132 @@ namespace tyr::planning
 extern template ygg::float_t evaluate(ygg::float_t element, const StateContext<LiftedTag>& context);
 extern template ygg::float_t evaluate(ygg::float_t element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+extern template ygg::float_t evaluate(formalism::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+extern template ygg::float_t evaluate(formalism::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+extern template ygg::float_t evaluate(formalism::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+extern template ygg::float_t evaluate(formalism::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<GroundTag>& context);
 
-extern template bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element,
-                              const StateContext<LiftedTag>& context);
-extern template bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element,
-                              const StateContext<GroundTag>& context);
+extern template bool evaluate(formalism::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<LiftedTag>& context);
+extern template bool evaluate(formalism::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+extern template ygg::float_t evaluate(formalism::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+extern template ygg::float_t evaluate(formalism::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::AuxiliaryTag> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::AuxiliaryTag> element,
-                                      const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionTermView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionExpressionView<GroundTag> element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::FunctionExpressionView<GroundTag> element, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::BooleanOperatorView<GroundTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::BooleanOperatorView<GroundTag> element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, formalism::FluentTag> element, const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element,
-                                      const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, formalism::FluentTag> element, const StateContext<GroundTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element,
-                                      const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, formalism::FluentTag> element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, formalism::FluentTag> element, const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<GroundTag>& context);
 
 /**
  * is_applicable_if_fires
  */
 
-extern template bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<GroundTag> element,
+extern template bool is_applicable_if_fires(formalism::ConditionalEffectView<GroundTag> element,
                                             const StateContext<LiftedTag>& context,
-                                            formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<GroundTag> element,
+                                            formalism::EffectFamilyList& ref_fluent_effect_families);
+extern template bool is_applicable_if_fires(formalism::ConditionalEffectView<GroundTag> element,
                                             const StateContext<GroundTag>& context,
-                                            formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                                            formalism::EffectFamilyList& ref_fluent_effect_families);
 
-extern template bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<GroundTag> elements,
+extern template bool is_applicable_if_fires(formalism::ConditionalEffectListView<GroundTag> elements,
                                             const StateContext<LiftedTag>& context,
-                                            formalism::planning::EffectFamilyList& out_fluent_effect_families);
-extern template bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<GroundTag> elements,
+                                            formalism::EffectFamilyList& out_fluent_effect_families);
+extern template bool is_applicable_if_fires(formalism::ConditionalEffectListView<GroundTag> elements,
                                             const StateContext<GroundTag>& context,
-                                            formalism::planning::EffectFamilyList& out_fluent_effect_families);
+                                            formalism::EffectFamilyList& out_fluent_effect_families);
 
 /**
  * is_applicable
  */
 
-extern template bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::LiteralListView<GroundTag, formalism::DerivedTag> elements, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::LiteralListView<GroundTag, formalism::StaticTag> elements, const StateContext<GroundTag>& context);
-extern template bool is_applicable(formalism::planning::LiteralListView<GroundTag, formalism::DerivedTag> elements, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::LiteralListView<GroundTag, formalism::StaticTag> elements, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::LiteralListView<GroundTag, formalism::DerivedTag> elements, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::LiteralListView<GroundTag, formalism::StaticTag> elements, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::LiteralListView<GroundTag, formalism::DerivedTag> elements, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable<formalism::PositiveTag>(formalism::planning::FDRFactView<formalism::FluentTag> element,
-                                                           const StateContext<LiftedTag>& context);
-extern template bool is_applicable<formalism::NegativeTag>(formalism::planning::FDRFactView<formalism::FluentTag> element,
-                                                           const StateContext<LiftedTag>& context);
-extern template bool is_applicable<formalism::PositiveTag>(formalism::planning::FDRFactView<formalism::FluentTag> element,
-                                                           const StateContext<GroundTag>& context);
-extern template bool is_applicable<formalism::NegativeTag>(formalism::planning::FDRFactView<formalism::FluentTag> element,
-                                                           const StateContext<GroundTag>& context);
+extern template bool is_applicable<formalism::PositiveTag>(formalism::FDRFactView<formalism::FluentTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable<formalism::NegativeTag>(formalism::FDRFactView<formalism::FluentTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable<formalism::PositiveTag>(formalism::FDRFactView<formalism::FluentTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable<formalism::NegativeTag>(formalism::FDRFactView<formalism::FluentTag> element, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable<formalism::PositiveTag>(formalism::planning::FDRFactListView<formalism::FluentTag> elements,
-                                                           const StateContext<LiftedTag>& context);
-extern template bool is_applicable<formalism::NegativeTag>(formalism::planning::FDRFactListView<formalism::FluentTag> elements,
-                                                           const StateContext<LiftedTag>& context);
-extern template bool is_applicable<formalism::PositiveTag>(formalism::planning::FDRFactListView<formalism::FluentTag> elements,
-                                                           const StateContext<GroundTag>& context);
-extern template bool is_applicable<formalism::NegativeTag>(formalism::planning::FDRFactListView<formalism::FluentTag> elements,
-                                                           const StateContext<GroundTag>& context);
+extern template bool is_applicable<formalism::PositiveTag>(formalism::FDRFactListView<formalism::FluentTag> elements, const StateContext<LiftedTag>& context);
+extern template bool is_applicable<formalism::NegativeTag>(formalism::FDRFactListView<formalism::FluentTag> elements, const StateContext<LiftedTag>& context);
+extern template bool is_applicable<formalism::PositiveTag>(formalism::FDRFactListView<formalism::FluentTag> elements, const StateContext<GroundTag>& context);
+extern template bool is_applicable<formalism::NegativeTag>(formalism::FDRFactListView<formalism::FluentTag> elements, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable(formalism::planning::BooleanOperatorListView<GroundTag> elements, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::BooleanOperatorListView<GroundTag> elements, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::BooleanOperatorListView<GroundTag> elements, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::BooleanOperatorListView<GroundTag> elements, const StateContext<GroundTag>& context);
 
-extern template bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::FluentTag> element,
+extern template bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::FluentTag> element,
                                    const StateContext<LiftedTag>& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::FluentTag> element,
+                                   formalism::EffectFamilyList& ref_fluent_effect_families);
+extern template bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::FluentTag> element,
                                    const StateContext<GroundTag>& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
-extern template bool is_applicable(formalism::planning::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
+extern template bool is_applicable(formalism::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
                                    const StateContext<LiftedTag>& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(formalism::planning::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
+                                   formalism::EffectFamilyList& ref_fluent_effect_families);
+extern template bool is_applicable(formalism::NumericEffectOperatorListView<GroundTag, formalism::FluentTag> elements,
                                    const StateContext<GroundTag>& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
-extern template bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<GroundTag>& context);
 
 // GroundConjunctiveCondition
 
-extern template bool is_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<GroundTag>& context);
 
 // GroundConjunctiveEffect
 
-extern template bool is_applicable(formalism::planning::ConjunctiveEffectView<GroundTag> element,
+extern template bool is_applicable(formalism::ConjunctiveEffectView<GroundTag> element,
                                    const StateContext<LiftedTag>& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-extern template bool is_applicable(formalism::planning::ConjunctiveEffectView<GroundTag> element,
+                                   formalism::EffectFamilyList& ref_fluent_effect_families);
+extern template bool is_applicable(formalism::ConjunctiveEffectView<GroundTag> element,
                                    const StateContext<GroundTag>& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families);
+                                   formalism::EffectFamilyList& ref_fluent_effect_families);
 
 // GroundAction
 
-extern template bool is_applicable(formalism::planning::ActionView<GroundTag> element,
-                                   const StateContext<LiftedTag>& context,
-                                   formalism::planning::EffectFamilyList& out_fluent_effect_families);
-extern template bool is_applicable(formalism::planning::ActionView<GroundTag> element,
-                                   const StateContext<GroundTag>& context,
-                                   formalism::planning::EffectFamilyList& out_fluent_effect_families);
+extern template bool
+is_applicable(formalism::ActionView<GroundTag> element, const StateContext<LiftedTag>& context, formalism::EffectFamilyList& out_fluent_effect_families);
+extern template bool
+is_applicable(formalism::ActionView<GroundTag> element, const StateContext<GroundTag>& context, formalism::EffectFamilyList& out_fluent_effect_families);
 
 // GroundAxiom
 
-extern template bool is_applicable(formalism::planning::AxiomView<GroundTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_applicable(formalism::planning::AxiomView<GroundTag> element, const StateContext<GroundTag>& context);
+extern template bool is_applicable(formalism::AxiomView<GroundTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_applicable(formalism::AxiomView<GroundTag> element, const StateContext<GroundTag>& context);
 
 /**
  * is_dynamically_applicable
@@ -730,8 +707,8 @@ extern template bool is_applicable(formalism::planning::AxiomView<GroundTag> ele
 
 // GroundConjunctiveCondition
 
-extern template bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<LiftedTag>& context);
-extern template bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<GroundTag> element, const StateContext<GroundTag>& context);
+extern template bool is_dynamically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<LiftedTag>& context);
+extern template bool is_dynamically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<GroundTag>& context);
 }
 
 #endif

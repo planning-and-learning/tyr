@@ -69,13 +69,13 @@ using PredicateDomainMap = SimpleScopedDomainMap<formalism::Predicate<T>>;
 template<formalism::FactKind T>
 using FunctionDomainMap = SimpleScopedDomainMap<formalism::Function<T>>;
 
-using RuleDomainMap = ScopedDomainMap<formalism::datalog::Rule<LiftedTag>>;
+using RuleDomainMap = ScopedDomainMap<formalism::Rule<LiftedTag>>;
 
-using AxiomDomainMap = ScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
+using AxiomDomainMap = ScopedDomainMap<formalism::Axiom<LiftedTag>>;
 
 using ConjunctiveConditionDomain = SimpleScopedDomain<formalism::ConjunctiveCondition<LiftedTag>>;
 
-using ConjunctiveEffectDomain = SimpleScopedDomain<formalism::planning::ConjunctiveEffect<LiftedTag>>;
+using ConjunctiveEffectDomain = SimpleScopedDomain<formalism::ConjunctiveEffect<LiftedTag>>;
 
 /// Defined in variable_domains.hpp, so that the sources including this header complete none of their maps.
 struct ConditionalEffectDomainData;
@@ -83,13 +83,13 @@ struct ActionDomainData;
 struct ProgramVariableDomains;
 struct TaskVariableDomains;
 
-using ConditionalEffectDomain = Scoped<formalism::planning::ConditionalEffect<LiftedTag>, ConditionalEffectDomainData>;
+using ConditionalEffectDomain = Scoped<formalism::ConditionalEffect<LiftedTag>, ConditionalEffectDomainData>;
 
-using ConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::planning::ConditionalEffect<LiftedTag>>, ConditionalEffectDomain>>;
+using ConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::ConditionalEffect<LiftedTag>>, ConditionalEffectDomain>>;
 
-using ActionDomain = Scoped<formalism::planning::Action<LiftedTag>, ActionDomainData>;
+using ActionDomain = Scoped<formalism::Action<LiftedTag>, ActionDomainData>;
 
-using ActionDomainMap = urd::Store<urd::map<urd::index<formalism::planning::Action<LiftedTag>>, ActionDomain>>;
+using ActionDomainMap = urd::Store<urd::map<urd::index<formalism::Action<LiftedTag>>, ActionDomain>>;
 
 /**
  * View based external representation of variable domains.
@@ -151,13 +151,13 @@ template<formalism::FactKind T, typename C>
 using FunctionDomainViewMap = SimpleScopedDomainViewMap<formalism::Function<T>, C>;
 
 template<typename C>
-using AxiomDomainViewMap = ScopedDomainViewMap<formalism::planning::Axiom<LiftedTag>, C>;
+using AxiomDomainViewMap = ScopedDomainViewMap<formalism::Axiom<LiftedTag>, C>;
 
 template<typename C>
 using ConjunctiveConditionDomainView = SimpleScopedDomainView<formalism::ConjunctiveCondition<LiftedTag>, C>;
 
 template<typename C>
-using ConjunctiveEffectDomainView = SimpleScopedDomainView<formalism::planning::ConjunctiveEffect<LiftedTag>, C>;
+using ConjunctiveEffectDomainView = SimpleScopedDomainView<formalism::ConjunctiveEffect<LiftedTag>, C>;
 
 template<typename C>
 struct ConditionalEffectDomainViewData
@@ -175,11 +175,10 @@ struct ConditionalEffectDomainViewData
 };
 
 template<typename C>
-using ConditionalEffectDomainView = ScopedView<formalism::planning::ConditionalEffect<LiftedTag>, ConditionalEffectDomainViewData<C>, C>;
+using ConditionalEffectDomainView = ScopedView<formalism::ConditionalEffect<LiftedTag>, ConditionalEffectDomainViewData<C>, C>;
 
 template<typename C>
-using ConditionalEffectDomainViewMap =
-    urd::Store<urd::map<urd::index_view<formalism::planning::ConditionalEffect<LiftedTag>, C>, ConditionalEffectDomainView<C>>>;
+using ConditionalEffectDomainViewMap = urd::Store<urd::map<urd::index_view<formalism::ConditionalEffect<LiftedTag>, C>, ConditionalEffectDomainView<C>>>;
 
 template<typename C>
 struct ActionDomainViewData
@@ -197,10 +196,10 @@ struct ActionDomainViewData
 };
 
 template<typename C>
-using ActionDomainView = ScopedView<formalism::planning::Action<LiftedTag>, ActionDomainViewData<C>, C>;
+using ActionDomainView = ScopedView<formalism::Action<LiftedTag>, ActionDomainViewData<C>, C>;
 
 template<typename C>
-using ActionDomainViewMap = urd::Store<urd::map<urd::index_view<formalism::planning::Action<LiftedTag>, C>, ActionDomainView<C>>>;
+using ActionDomainViewMap = urd::Store<urd::map<urd::index_view<formalism::Action<LiftedTag>, C>, ActionDomainView<C>>>;
 
 /**
  * Stratification

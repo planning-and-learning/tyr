@@ -18,22 +18,22 @@
 #ifndef TYR_PYTHON_FORMALISM_DATALOG_BINDINGS_HPP_
 #define TYR_PYTHON_FORMALISM_DATALOG_BINDINGS_HPP_
 
-#include "module.hpp"
+#include "pytyr/formalism/module.hpp"
 
 #include <tyr/formalism/datalog/declarations.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 using RepositoryBinding = nb::class_<Repository>;
 
-/// Rules, rule bodies and programs; their insert on the repository bound by pytyr.formalism.planning, which is bound first.
-void bind_formalism(nb::module_& m);
+/// Rules, rule bodies and programs; their insert on the repository bound by bind_planning_formalism, which is bound first.
+void bind_datalog_formalism(nb::module_& m);
 
 void bind_rule_body(nb::module_& m, RepositoryBinding& repository);
 void bind_rule(nb::module_& m, RepositoryBinding& repository);
 void bind_program(nb::module_& m, RepositoryBinding& repository);
 
-}  // namespace tyr::formalism::datalog
+}  // namespace tyr::formalism
 
 #endif

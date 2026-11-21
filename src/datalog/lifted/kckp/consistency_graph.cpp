@@ -227,44 +227,44 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(const FunctionTerms
 }
 
 template<typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
                                                       const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
                                                       const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
                                                       const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
-ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::FunctionExpressionView<LiftedTag> element,
                                                       const GraphStructure& structure,
                                                       const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
-bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
+bool consistent_numeric_constraint(formalism::BooleanOperatorView<LiftedTag> element,
                                    const GraphStructure& structure,
                                    const ConstraintTerms& constraint_info,
                                    const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 { return apply(element.get_operation(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
@@ -275,7 +275,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
@@ -294,21 +294,21 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value,
 { return ygg::ClosedInterval<ygg::float_t>(value, value); }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag> element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::FunctionTermView<LiftedTag, formalism::StaticTag> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 { return consistent_interval(constraint_info.static_terms, element.index(), structure, assignment_sets.template get<formalism::StaticTag>().function); }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::FunctionTermView<LiftedTag, formalism::FluentTag> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 { return consistent_interval(constraint_info.fluent_terms, element.index(), structure, assignment_sets.template get<formalism::FluentTag>().function); }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::FunctionExpressionView<LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
@@ -317,7 +317,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 }
 
 template<typename GraphStructure>
-inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
+inline bool consistent_numeric_constraint(formalism::BooleanOperatorView<LiftedTag> element,
                                           const GraphStructure& structure,
                                           const ConstraintTerms& constraint_info,
                                           const AssignmentSets& assignment_sets)
@@ -330,7 +330,7 @@ inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorVie
 /// Whether a vertex's or an edge's assignments satisfy every numeric constraint (nullary ones are tested separately).
 template<typename GraphStructure>
 inline bool consistent_numeric_constraints(const GraphStructure& structure,
-                                           formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
+                                           formalism::BooleanOperatorListView<LiftedTag> numeric_constraints,
                                            const urd::Store<urd::sequence<ConstraintTerms>>& constraint_terms,
                                            const AssignmentSets& assignment_sets)
 {
@@ -357,7 +357,7 @@ static std::vector<details::Term> terms_of(const Terms& terms)
             {
                 if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                     result.push_back({ position, arg.value, false });
-                else  // formalism::datalog::ObjectView
+                else  // formalism::ObjectView
                     result.push_back({ position, static_cast<ygg::uint_t>(arg.index().value), true });
             },
             terms[position]);
@@ -370,7 +370,7 @@ static details::Rows<T> rows_of(const std::vector<std::vector<T>>& rows)
 
 /// A condition's literals of fact kind T and where a vertex or an edge reads them.
 template<formalism::FactKind T>
-static details::Literals<T> literals_of(formalism::datalog::LiteralListView<LiftedTag, T> literals, size_t arity)
+static details::Literals<T> literals_of(formalism::LiteralListView<LiftedTag, T> literals, size_t arity)
 {
     auto result = details::Literals<T> {};
     result.arity = arity;
@@ -408,7 +408,7 @@ static details::Literals<T> literals_of(formalism::datalog::LiteralListView<Lift
 }
 
 template<formalism::FactKind T>
-static details::FunctionTerms<T> function_terms_of(const urd::Store<urd::sequence<formalism::datalog::FunctionTermView<LiftedTag, T>>>& fterms)
+static details::FunctionTerms<T> function_terms_of(const urd::Store<urd::sequence<formalism::FunctionTermView<LiftedTag, T>>>& fterms)
 {
     auto result = details::FunctionTerms<T> {};
     auto terms = std::vector<std::vector<details::Term>>();
@@ -422,16 +422,16 @@ static details::FunctionTerms<T> function_terms_of(const urd::Store<urd::sequenc
     return result;
 }
 
-static auto constraint_terms_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
+static auto constraint_terms_of(formalism::RuleBodyView<LiftedTag> element)
 {
     auto result = urd::Store<urd::sequence<details::ConstraintTerms>> {};
     for (const auto constraint : element.get_numeric_constraints())
-        result.push_back({ function_terms_of(formalism::datalog::collect_fterms<LiftedTag, formalism::StaticTag>(constraint)),
-                           function_terms_of(formalism::datalog::collect_fterms<LiftedTag, formalism::FluentTag>(constraint)) });
+        result.push_back({ function_terms_of(formalism::collect_fterms<LiftedTag, formalism::StaticTag>(constraint)),
+                           function_terms_of(formalism::collect_fterms<LiftedTag, formalism::FluentTag>(constraint)) });
     return result;
 }
 
-static details::MutableLiterals literals_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
+static details::MutableLiterals literals_of(formalism::RuleBodyView<LiftedTag> element)
 {
     auto result = details::MutableLiterals {};
     boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
@@ -439,7 +439,7 @@ static details::MutableLiterals literals_of(formalism::datalog::ConjunctiveCondi
     return result;
 }
 
-static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalog::VariableDependencyGraph& dependency_graph)
+static auto classify_adjacency(const kckp::Graph& graph, const formalism::VariableDependencyGraph& dependency_graph)
 {
     const auto num_partitions = graph.num_parts();
     assert(num_partitions == dependency_graph.k());
@@ -468,9 +468,9 @@ static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalo
     return result;
 }
 
-StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition,
-                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition,
-                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
+StaticConsistencyGraph::StaticConsistencyGraph(formalism::RuleBodyView<LiftedTag> unary_overapproximation_condition,
+                                               formalism::RuleBodyView<LiftedTag> binary_overapproximation_condition,
+                                               formalism::RuleBodyView<LiftedTag> hyperedge_condition,
                                                kckp::Graph compatibility_graph) :
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
@@ -631,8 +631,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     }
 }
 
-const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
-{ return m_binary_overapproximation_vdg; }
+const formalism::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept { return m_binary_overapproximation_vdg; }
 
 const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m_compatibility_graph; }
 
@@ -640,13 +639,12 @@ const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_
 
 const details::MutableLiterals& StaticConsistencyGraph::get_hyperedge_literals() const noexcept { return m_hyperedge_literals; }
 
-std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_overapproximation_conjunctive_condition(size_t k,
-                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                               formalism::datalog::Builder& builder,
-                                               formalism::datalog::Repository& context)
+std::pair<formalism::RuleBodyView<LiftedTag>, bool> create_overapproximation_conjunctive_condition(size_t k,
+                                                                                                   formalism::RuleBodyView<LiftedTag> condition,
+                                                                                                   formalism::Builder& builder,
+                                                                                                   formalism::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
         urd::append(conj_cond->variables, variable);
@@ -674,13 +672,12 @@ create_overapproximation_conjunctive_condition(size_t k,
     return context.insert(*conj_cond, builder);
 }
 
-std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_overapproximation_conflicting_conjunctive_condition(size_t k,
-                                                           formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                                           formalism::datalog::Builder& builder,
-                                                           formalism::datalog::Repository& context)
+std::pair<formalism::RuleBodyView<LiftedTag>, bool> create_overapproximation_conflicting_conjunctive_condition(size_t k,
+                                                                                                               formalism::RuleBodyView<LiftedTag> condition,
+                                                                                                               formalism::Builder& builder,
+                                                                                                               formalism::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : condition.get_variables())
         urd::append(conj_cond->variables, variable);
@@ -710,12 +707,10 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
     return context.insert(*conj_cond, builder);
 }
 
-std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
-                                       formalism::datalog::Builder& builder,
-                                       formalism::datalog::Repository& context)
+std::pair<formalism::RuleBodyView<LiftedTag>, bool>
+create_hyperedge_conjunctive_condition(formalism::RuleBodyView<LiftedTag> conflicting_condition, formalism::Builder& builder, formalism::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
     for (const auto variable : conflicting_condition.get_variables())
         urd::append(conj_cond->variables, variable);
@@ -731,12 +726,10 @@ create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionV
     return context.insert(*conj_cond, builder);
 }
 
-std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>
-create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                            formalism::datalog::Builder& builder,
-                                            formalism::datalog::Repository& context)
+std::pair<formalism::RuleBodyView<GroundTag>, bool>
+create_ground_nullary_conjunctive_condition(formalism::RuleBodyView<LiftedTag> condition, formalism::Builder& builder, formalism::Repository& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(builder);
+    auto conj_cond = formalism::checkout<formalism::RuleBody<GroundTag>>(builder);
 
     auto binding_empty = urd::flat_vector<urd::index<formalism::Object>> {};
     auto grounder_context = formalism::WriteContext { builder, context, binding_empty };

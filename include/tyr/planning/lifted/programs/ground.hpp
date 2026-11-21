@@ -70,9 +70,9 @@ class GroundTaskProgram
 {
 public:
     using AppPredicateToAxiomMapping =
-        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, urd::Store<urd::sequence<formalism::planning::AxiomView<LiftedTag>>>>>;
+        urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, urd::Store<urd::sequence<formalism::AxiomView<LiftedTag>>>>>;
 
-    explicit GroundTaskProgram(const formalism::planning::PlanningTask<LiftedTag>& task);
+    explicit GroundTaskProgram(const formalism::PlanningTask<LiftedTag>& task);
 
     [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
     [[nodiscard]] const AppPredicateToAxiomMapping& get_predicate_to_axiom_mapping() const noexcept;

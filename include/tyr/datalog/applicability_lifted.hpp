@@ -54,39 +54,39 @@ namespace tyr::datalog
  */
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<LiftedTag, T> element, const ApplicabilityContext& context);
+ygg::ClosedInterval<ygg::float_t> evaluate(formalism::FunctionTermView<LiftedTag, T> element, const ApplicabilityContext& context);
 
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context);
+ygg::ClosedInterval<ygg::float_t> evaluate(formalism::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context);
 
-bool evaluate(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context);
+bool evaluate(formalism::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context);
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context);
+ygg::ClosedInterval<ygg::float_t> evaluate(formalism::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context);
 
 /**
  * is_applicable
  */
 
 template<formalism::FactKind T>
-bool is_applicable(formalism::datalog::LiteralView<LiftedTag, T> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::LiteralView<LiftedTag, T> element, const ApplicabilityContext& context);
 
 template<formalism::FactKind T>
-bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context);
+bool is_applicable(formalism::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context);
+bool is_applicable(formalism::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::RuleBodyView<LiftedTag> element, const ApplicabilityContext& context);
 
-bool is_applicable(formalism::datalog::RuleView<LiftedTag> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::RuleView<LiftedTag> element, const ApplicabilityContext& context);
 
 /**
  * evaluate
  */
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<LiftedTag, T> element, const ApplicabilityContext& context)
+ygg::ClosedInterval<ygg::float_t> evaluate(formalism::FunctionTermView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
     const auto binding = try_ground_binding(element, context.grounder());
     if (!binding)
@@ -95,18 +95,18 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<
     return value(context.fact_sets().template get<T>(), (*binding).index());
 }
 
-inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
+inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
     return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
 }
 
-inline bool evaluate(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
+inline bool evaluate(formalism::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
 {
     return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
 }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context)
+ygg::ClosedInterval<ygg::float_t> evaluate(formalism::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
     return formalism::evaluate_numeric_effect(element, [&](const auto term) { return evaluate(term, context); });
 }
@@ -116,7 +116,7 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView
  */
 
 template<formalism::FactKind T>
-bool is_applicable(formalism::datalog::LiteralView<LiftedTag, T> element, const ApplicabilityContext& context)
+bool is_applicable(formalism::LiteralView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
     const auto binding = try_ground_binding(element.get_atom(), context.grounder());
     if (!binding)
@@ -126,20 +126,19 @@ bool is_applicable(formalism::datalog::LiteralView<LiftedTag, T> element, const 
 }
 
 template<formalism::FactKind T>
-bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context)
+bool is_applicable(formalism::LiteralListView<LiftedTag, T> elements, const ApplicabilityContext& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-inline bool is_applicable(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(element, context); }
+inline bool is_applicable(formalism::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context) { return evaluate(element, context); }
 
-inline bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::RuleBodyView<LiftedTag> element, const ApplicabilityContext& context)
 {
     return is_applicable(element.template get_literals<formalism::StaticTag>(), context)      //
            && is_applicable(element.template get_literals<formalism::FluentTag>(), context)   //
@@ -147,8 +146,7 @@ inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag
            && is_applicable(element.get_numeric_constraints(), context);
 }
 
-inline bool is_applicable(formalism::datalog::RuleView<LiftedTag> element, const ApplicabilityContext& context)
-{ return is_applicable(element.get_body(), context); }
+inline bool is_applicable(formalism::RuleView<LiftedTag> element, const ApplicabilityContext& context) { return is_applicable(element.get_body(), context); }
 
 }
 
@@ -156,15 +154,15 @@ inline bool is_applicable(formalism::datalog::RuleView<LiftedTag> element, const
 
 namespace tyr::datalog
 {
-extern template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
-extern template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
-extern template bool is_applicable(formalism::datalog::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context);
 
-extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
-extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
-extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
+extern template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
-extern template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> element,
+extern template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::NumericEffectView<LiftedTag, formalism::FluentTag> element,
                                                            const ApplicabilityContext& context);
 }
 

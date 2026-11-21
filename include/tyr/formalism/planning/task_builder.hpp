@@ -43,11 +43,11 @@ namespace urd
 
 /// The builder of Task: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Task<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::planning::Task<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Task<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_string, C> name;
-    urd::built_t<urd::index<::tyr::formalism::planning::Domain>, C> domain;
+    urd::built_t<urd::index<::tyr::formalism::Domain>, C> domain;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_atoms;
@@ -57,8 +57,8 @@ struct builder<::tyr::formalism::planning::Task<::tyr::LiftedTag>, C>
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
         auxiliary_fterm_value;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
-    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>>, C> metric;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::Metric>>, C> metric;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> axioms;
 
     static constexpr auto fields() noexcept
     {
@@ -95,11 +95,11 @@ struct builder<::tyr::formalism::planning::Task<::tyr::LiftedTag>, C>
 
 /// The builder of Task: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Task<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::planning::Task<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::Task<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_string, C> name;
-    urd::built_t<urd::index<::tyr::formalism::planning::Domain>, C> domain;
+    urd::built_t<urd::index<::tyr::formalism::Domain>, C> domain;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>, C> static_atoms;
@@ -110,12 +110,12 @@ struct builder<::tyr::formalism::planning::Task<::tyr::GroundTag>, C>
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
         auxiliary_fterm_value;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
-    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>>, C> metric;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>>, C> fluent_variables;
-    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> fluent_facts;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>>>, C> ground_actions;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>>, C> ground_axioms;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::Metric>>, C> metric;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> axioms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>>, C> fluent_variables;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> fluent_facts;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::GroundTag>>>, C> ground_actions;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>>>, C> ground_axioms;
 
     static constexpr auto fields() noexcept
     {

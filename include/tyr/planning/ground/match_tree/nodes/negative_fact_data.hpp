@@ -34,13 +34,13 @@ template<typename Tag>
 struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> index;
-    urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact;
+    urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
 
-    data(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact_,
+    data(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),

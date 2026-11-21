@@ -31,9 +31,9 @@ namespace urd
 {
 
 template<::tyr::formalism::FactKind T>
-struct data<::tyr::formalism::planning::FDRVariable<T>>
+struct data<::tyr::formalism::FDRVariable<T>>
 {
-    urd::index<::tyr::formalism::planning::FDRVariable<T>> index;
+    urd::index<::tyr::formalism::FDRVariable<T>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>> atoms;
 
     data() = default;

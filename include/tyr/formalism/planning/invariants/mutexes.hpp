@@ -26,7 +26,7 @@
 #include <urd/store.hpp>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 /// Ground atoms of which at most one is true in every reachable state. `invariant` is the invariant the group

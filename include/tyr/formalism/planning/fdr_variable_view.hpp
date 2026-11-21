@@ -25,7 +25,7 @@
 namespace urd
 {
 template<::tyr::formalism::FactKind T, typename V>
-struct view_mixin<::tyr::formalism::planning::FDRVariable<T>, V>
+struct view_mixin<::tyr::formalism::FDRVariable<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }

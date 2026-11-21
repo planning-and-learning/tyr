@@ -55,7 +55,7 @@
 
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 /**
@@ -132,7 +132,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 template<FactKind T>
 std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<ygg::Row<Function<T>>>(context.builder());
+    auto binding = checkout<ygg::Row<Function<T>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(function, context));
     for (const auto term : terms)
@@ -158,7 +158,7 @@ template<FactKind T>
 std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
+    auto fterm = checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
     // Fill data
     urd::store(fterm->row, ground(element.get_terms(), element.get_function(), context).first);
@@ -184,7 +184,7 @@ inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
                                                                                     WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto unary = planning::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
+    auto unary = checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
     unary->operation = element.get_operation();
@@ -198,7 +198,7 @@ template<OperatorKind O>
 std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto binary = planning::checkout<BinaryOperator<GroundTag, O>>(context.builder());
+    auto binary = checkout<BinaryOperator<GroundTag, O>>(context.builder());
 
     // Fill data
     binary->operation = element.get_operation();
@@ -213,7 +213,7 @@ inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
                                                                                     WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto multi = planning::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
+    auto multi = checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
     multi->operation = element.get_operation();
@@ -227,7 +227,7 @@ inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
 template<FactKind T>
 std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<ygg::Row<Predicate<T>>>(context.builder());
+    auto binding = checkout<ygg::Row<Predicate<T>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(predicate, context));
     for (const auto term : terms)
@@ -253,7 +253,7 @@ template<FactKind T>
 std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
+    auto atom = checkout<Atom<GroundTag, T>>(context.builder());
 
     // Fill data
     urd::store(atom->row, ground(element.get_terms(), element.get_predicate(), context).first);
@@ -272,7 +272,7 @@ template<FactKind T>
 std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto ground_literal = planning::checkout<Literal<GroundTag, T>>(context.builder());
+    auto ground_literal = checkout<Literal<GroundTag, T>>(context.builder());
 
     // Fill data
     ground_literal->polarity = element.get_polarity();
@@ -295,7 +295,7 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool>
 ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_cond = planning::checkout<ConjunctiveCondition<GroundTag>>(context.builder());
+    auto conj_cond = checkout<ConjunctiveCondition<GroundTag>>(context.builder());
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())
@@ -320,7 +320,7 @@ template<FactKind T>
 std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto numeric_effect = planning::checkout<NumericEffect<GroundTag, T>>(context.builder());
+    auto numeric_effect = checkout<NumericEffect<GroundTag, T>>(context.builder());
 
     // Fill data
     numeric_effect->operation = element.get_operation();
@@ -335,7 +335,7 @@ inline std::pair<ConjunctiveEffectView<GroundTag>, bool>
 ground(ConjunctiveEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto conj_eff = planning::checkout<ConjunctiveEffect<GroundTag>>(context.builder());
+    auto conj_eff = checkout<ConjunctiveEffect<GroundTag>>(context.builder());
 
     for (const auto literal : element.get_literals())
     {
@@ -358,7 +358,7 @@ inline std::pair<ConditionalEffectView<GroundTag>, bool>
 ground(ConditionalEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
 {
     // Fetch and clear
-    auto cond_effect = planning::checkout<ConditionalEffect<GroundTag>>(context.builder());
+    auto cond_effect = checkout<ConditionalEffect<GroundTag>>(context.builder());
 
     // Fill data
     urd::store(cond_effect->condition, ground(element.get_condition(), context, fdr).first);
@@ -370,7 +370,7 @@ ground(ConditionalEffectView<LiftedTag> element, WriteContext<Builder, Repositor
 
 inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<ygg::Row<Action<LiftedTag>>>(context.builder());
+    auto binding = checkout<ygg::Row<Action<LiftedTag>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(action, context));
     for (ygg::uint_t i = 0; i < action.get_arity(); ++i)
@@ -386,7 +386,7 @@ ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context
 {
     const auto binding = ground(element, context).first.index();
 
-    auto action = planning::checkout<Action<GroundTag>>(context.builder());
+    auto action = checkout<Action<GroundTag>>(context.builder());
 
     action->row = binding;
     urd::store(action->condition, ground(element.get_condition(), context, fdr).first);
@@ -399,7 +399,7 @@ ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context
 
 inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<ygg::Row<Axiom<LiftedTag>>>(context.builder());
+    auto binding = checkout<ygg::Row<Axiom<LiftedTag>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(axiom, context));
     for (ygg::uint_t i = 0; i < axiom.get_body().get_arity(); ++i)
@@ -418,7 +418,7 @@ ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context,
     if (auto it = axiom_cache.find(binding); it != axiom_cache.end())
         return { urd::resolve(it->second, context.destination()), false };
 
-    auto axiom = planning::checkout<Axiom<GroundTag>>(context.builder());
+    auto axiom = checkout<Axiom<GroundTag>>(context.builder());
 
     axiom->row = binding;
     urd::store(axiom->body, ground(element.get_body(), context, fdr).first);
@@ -438,7 +438,7 @@ ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context,
 template<FactKind T>
 std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<ygg::Row<Function<T>>>(context.builder());
+    auto binding = checkout<ygg::Row<Function<T>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(element.get_function(), context));
     for (const auto term : element.get_terms())
@@ -460,7 +460,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
     if (!binding_or_nullopt.has_value())
         return std::nullopt;
 
-    auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
+    auto fterm = checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
     fterm->row = binding_or_nullopt->index();
 
@@ -470,7 +470,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 template<FactKind T>
 std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<ygg::Row<Predicate<T>>>(context.builder());
+    auto binding = checkout<ygg::Row<Predicate<T>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(element.get_predicate(), context));
     for (const auto term : element.get_terms())
@@ -492,7 +492,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
     if (!binding_or_nullopt.has_value())
         return std::nullopt;
 
-    auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
+    auto atom = checkout<Atom<GroundTag, T>>(context.builder());
 
     atom->row = binding_or_nullopt->index();
 
@@ -503,7 +503,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
 #ifndef TYR_HEADER_INSTANTIATION
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 extern template std::pair<FunctionRowView<StaticTag>, bool>
 ground(TermListView terms, FunctionView<StaticTag> function, WriteContext<Builder, Repository>& context);

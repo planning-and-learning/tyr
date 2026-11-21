@@ -175,25 +175,25 @@ public:
 class StaticConsistencyGraph
 {
 public:
-    StaticConsistencyGraph(formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition,
-                           formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition,
-                           formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
+    StaticConsistencyGraph(formalism::RuleBodyView<LiftedTag> unary_overapproximation_condition,
+                           formalism::RuleBodyView<LiftedTag> binary_overapproximation_condition,
+                           formalism::RuleBodyView<LiftedTag> hyperedge_condition,
                            kckp::Graph compatibility_graph);
 
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets, kckp::DeltaGraph& delta_graph, kckp::FullGraph& full_graph) const;
 
-    [[nodiscard]] const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
+    [[nodiscard]] const formalism::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     [[nodiscard]] const kckp::Graph& get_graph() const noexcept;
     [[nodiscard]] const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
     /// The hyperedge condition's literals of each mutable kind, in its literal order.
     [[nodiscard]] const details::MutableLiterals& get_hyperedge_literals() const noexcept;
 
 private:
-    formalism::datalog::ConjunctiveConditionView<LiftedTag> m_unary_overapproximation_condition;
-    formalism::datalog::ConjunctiveConditionView<LiftedTag> m_binary_overapproximation_condition;
+    formalism::RuleBodyView<LiftedTag> m_unary_overapproximation_condition;
+    formalism::RuleBodyView<LiftedTag> m_binary_overapproximation_condition;
 
-    formalism::datalog::VariableDependencyGraph m_unary_overapproximation_vdg;
-    formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
+    formalism::VariableDependencyGraph m_unary_overapproximation_vdg;
+    formalism::VariableDependencyGraph m_binary_overapproximation_vdg;
 
     kckp::Graph m_compatibility_graph;
     kckp::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
@@ -206,29 +206,24 @@ private:
     urd::Store<urd::sequence<details::ConstraintTerms>> m_binary_overapproximation_constraints;
 };
 
-extern std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>
-create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                            formalism::datalog::Builder& builder,
-                                            formalism::datalog::Repository& context);
+extern std::pair<formalism::RuleBodyView<GroundTag>, bool>
+create_ground_nullary_conjunctive_condition(formalism::RuleBodyView<LiftedTag> condition, formalism::Builder& builder, formalism::Repository& context);
 
-extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_overapproximation_conjunctive_condition(size_t k,
-                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                               formalism::datalog::Builder& builder,
-                                               formalism::datalog::Repository& context);
+extern std::pair<formalism::RuleBodyView<LiftedTag>, bool> create_overapproximation_conjunctive_condition(size_t k,
+                                                                                                          formalism::RuleBodyView<LiftedTag> condition,
+                                                                                                          formalism::Builder& builder,
+                                                                                                          formalism::Repository& context);
 
-extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
+extern std::pair<formalism::RuleBodyView<LiftedTag>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
-                                                           formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                                           formalism::datalog::Builder& builder,
-                                                           formalism::datalog::Repository& context);
+                                                           formalism::RuleBodyView<LiftedTag> condition,
+                                                           formalism::Builder& builder,
+                                                           formalism::Repository& context);
 
 /// The positive fluent and derived literals of the conflicting condition: a new atom of one anchors the cliques it makes
 /// applicable.
-extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
-                                       formalism::datalog::Builder& builder,
-                                       formalism::datalog::Repository& context);
+extern std::pair<formalism::RuleBodyView<LiftedTag>, bool>
+create_hyperedge_conjunctive_condition(formalism::RuleBodyView<LiftedTag> conflicting_condition, formalism::Builder& builder, formalism::Repository& context);
 
 }
 

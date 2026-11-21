@@ -28,13 +28,12 @@
 
 /// The instantiations (PREFIX extern: declarations).
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): it expands to explicit instantiations, declarations, which no function gives
-#define TYR_MATCH_TREE_INTERNS(PREFIX)                                                                                                              \
-    YGG_FORMALISM_INTERNS(                                                                                                                          \
-        PREFIX,                                                                                                                                     \
-        10,                                                                                                                                         \
-        false,                                                                                                                                      \
-        boost::mp11::mp_unique<boost::mp11::mp_append<tyr::planning::match_tree::RepositoryTypes<tyr::formalism::planning::Action<tyr::GroundTag>>, \
-                                                      tyr::planning::match_tree::RepositoryTypes<tyr::formalism::planning::Axiom<tyr::GroundTag>>>>)
+#define TYR_MATCH_TREE_INTERNS(PREFIX)                                                                                                                      \
+    YGG_FORMALISM_INTERNS(PREFIX,                                                                                                                           \
+                          10,                                                                                                                               \
+                          false,                                                                                                                            \
+                          boost::mp11::mp_unique<boost::mp11::mp_append<tyr::planning::match_tree::RepositoryTypes<tyr::formalism::Action<tyr::GroundTag>>, \
+                                                                        tyr::planning::match_tree::RepositoryTypes<tyr::formalism::Axiom<tyr::GroundTag>>>>)
 
 TYR_MATCH_TREE_INTERNS(extern)
 

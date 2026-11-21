@@ -8,15 +8,15 @@
 
 using Function = tyr::formalism::Function<tyr::formalism::StaticTag>;
 using FunctionData = urd::data<Function>;
-using FunctionView = urd::index_view<Function, tyr::formalism::planning::Repository>;
+using FunctionView = urd::index_view<Function, tyr::formalism::Repository>;
 
 template<typename Entity, typename Repository>
 struct FunctionPublicView;
 
 template<tyr::formalism::FactKind T>
-struct FunctionPublicView<tyr::formalism::Function<T>, tyr::formalism::planning::Repository>
+struct FunctionPublicView<tyr::formalism::Function<T>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::planning::FunctionView<T>;
+    using type = tyr::formalism::FunctionView<T>;
 };
 
 template<typename Entity, typename Repository>
@@ -36,7 +36,7 @@ template<typename Repository, typename... Entities>
 consteval bool function_contracts(boost::mp11::mp_list<Entities...>)
 { return (FunctionContract<Entities, Repository> && ...); }
 
-static_assert(function_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::FunctionTypes {}));
+static_assert(function_contracts<tyr::formalism::Repository>(tyr::formalism::FunctionTypes {}));
 
 TEST(TyrFormalismFunction, ExposesOwnedContract)
 {

@@ -84,7 +84,7 @@ namespace
  * Temporary internal representation during computation.
  */
 
-using TmpRuleDomainMap = TmpSimpleScopedDomainMap<formalism::datalog::Rule<LiftedTag>>;
+using TmpRuleDomainMap = TmpSimpleScopedDomainMap<formalism::Rule<LiftedTag>>;
 
 /**
  * Conversion helpers to public representation.
@@ -98,7 +98,7 @@ RuleDomainMap to_rule_domain_map(const TmpRuleDomainMap& domains)
     for (const auto& [rule, variable_domains] : domains)
     {
         result.emplace(rule,
-                       SimpleScopedDomain<formalism::datalog::Rule<LiftedTag>> {
+                       SimpleScopedDomain<formalism::Rule<LiftedTag>> {
                            rule,
                            to_variable_domain_list(variable_domains),
                        });
@@ -110,7 +110,7 @@ RuleDomainMap to_rule_domain_map(const TmpRuleDomainMap& domains)
 }  // namespace
 }  // namespace datalog_domains
 
-ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> program)
+ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
 {
     using namespace domain_steps;  // the shared steps and this formalism's own, in this function only
     using namespace datalog_domains;
@@ -260,6 +260,6 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
     return ProgramAnalysis { std::move(domains), std::move(compatibility_graphs) };
 }
 
-ProgramVariableDomains compute_variable_domains(formalism::datalog::ProgramView<LiftedTag> program) { return std::move(analyze_program(program).domains); }
+ProgramVariableDomains compute_variable_domains(formalism::ProgramView<LiftedTag> program) { return std::move(analyze_program(program).domains); }
 
 }  // namespace tyr::analysis

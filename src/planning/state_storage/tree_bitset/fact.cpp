@@ -33,7 +33,7 @@ using Flips = urd::Store<urd::sequence<tree_bitset::Flip>>;
 template<typename Set>
 auto insert_facts(Set& bitsets,
                   const StateLayout<GroundTag>& layout,
-                  const urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>& unpacked,
+                  const urd::builder<FactStorage<GroundTag>, formalism::Repository>& unpacked,
                   Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
@@ -46,7 +46,7 @@ auto insert_facts(Set& bitsets,
 }
 
 template<typename Set>
-auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>& unpacked, Blocks&)
+auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const urd::builder<FactStorage<LiftedTag>, formalism::Repository>& unpacked, Blocks&)
 { return bitsets.insert(unpacked.indices).first; }
 
 /// XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
@@ -68,7 +68,7 @@ template<typename Set>
 void unpack_facts(Set& bitsets,
                   const StateLayout<GroundTag>& layout,
                   typename Set::handle_type packed,
-                  urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>& unpacked,
+                  urd::builder<FactStorage<GroundTag>, formalism::Repository>& unpacked,
                   Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
@@ -86,7 +86,7 @@ template<typename Set>
 void unpack_facts(Set& bitsets,
                   const StateLayout<LiftedTag>&,
                   typename Set::handle_type packed,
-                  urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>& unpacked,
+                  urd::builder<FactStorage<LiftedTag>, formalism::Repository>& unpacked,
                   Blocks&)
 { bitsets.copy(packed, unpacked.indices); }
 }

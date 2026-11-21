@@ -114,8 +114,6 @@ brokkr_install_python_files(
         pytyr/__init__.pyi
         pytyr/serialization/__init__.py
         pytyr/formalism/__init__.py
-        pytyr/formalism/datalog/__init__.py
-        pytyr/formalism/planning/__init__.py
         pytyr/datalog/lifted/database/__init__.py
         pytyr/datalog/__init__.py
         pytyr/datalog/ground/__init__.py

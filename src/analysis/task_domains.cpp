@@ -100,10 +100,10 @@ namespace
  * Temporary internal representation during computation.
  */
 
-using TmpAxiomDomainMap = TmpSimpleScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
+using TmpAxiomDomainMap = TmpSimpleScopedDomainMap<formalism::Axiom<LiftedTag>>;
 
 using TmpConjunctiveConditionDomain = TmpSimpleScopedDomain<formalism::ConjunctiveCondition<LiftedTag>>;
-using TmpConjunctiveEffectDomain = TmpSimpleScopedDomain<formalism::planning::ConjunctiveEffect<LiftedTag>>;
+using TmpConjunctiveEffectDomain = TmpSimpleScopedDomain<formalism::ConjunctiveEffect<LiftedTag>>;
 
 struct TmpConditionalEffectDomain
 {
@@ -111,7 +111,7 @@ struct TmpConditionalEffectDomain
     TmpConjunctiveEffectDomain effect_domain;
 };
 
-using TmpConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::planning::ConditionalEffect<LiftedTag>>, TmpConditionalEffectDomain>>;
+using TmpConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::ConditionalEffect<LiftedTag>>, TmpConditionalEffectDomain>>;
 
 struct TmpActionDomain
 {
@@ -119,7 +119,7 @@ struct TmpActionDomain
     TmpConditionalEffectDomainMap effect_domains;
 };
 
-using TmpActionDomainMap = urd::Store<urd::map<urd::index<formalism::planning::Action<LiftedTag>>, TmpActionDomain>>;
+using TmpActionDomainMap = urd::Store<urd::map<urd::index<formalism::Action<LiftedTag>>, TmpActionDomain>>;
 
 /**
  * Conversion helpers to public representation.
@@ -133,7 +133,7 @@ AxiomDomainMap to_axiom_domain_map(const TmpAxiomDomainMap& domains)
     for (const auto& [axiom, variable_domains] : domains)
     {
         result.emplace(axiom,
-                       SimpleScopedDomain<formalism::planning::Axiom<LiftedTag>> {
+                       SimpleScopedDomain<formalism::Axiom<LiftedTag>> {
                            axiom,
                            to_variable_domain_list(variable_domains),
                        });
@@ -190,7 +190,7 @@ ActionDomainMap to_action_domain_map(TmpActionDomainMap& domains)
 }  // namespace
 }  // namespace planning_domains
 
-TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<LiftedTag> task)
+TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task)
 {
     using namespace domain_steps;  // the shared steps and this formalism's own, in this function only
     using namespace planning_domains;

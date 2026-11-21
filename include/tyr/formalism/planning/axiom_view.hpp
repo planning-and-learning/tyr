@@ -32,7 +32,7 @@
 namespace urd
 {
 template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::planning::Axiom<T>, V>
+struct view_mixin<::tyr::formalism::Axiom<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }

@@ -52,8 +52,8 @@ namespace tyr::planning
 /// A Datalog program and the repository layer that holds it (over its task's repository).
 struct LayeredProgram
 {
-    formalism::datalog::ProgramView<LiftedTag> program;
-    formalism::datalog::RepositoryPtr repository;
+    formalism::ProgramView<LiftedTag> program;
+    formalism::RepositoryPtr repository;
 };
 
 /// Applies a program transformation, `pass(program, destination, rules) -> program`, in a layer over the source's: the
@@ -69,7 +69,7 @@ LayeredProgram transform(const LayeredProgram& source, std::size_t num_objects, 
 
 inline auto decompose_static_literals_pass()
 {
-    return [](formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& destination, datalog::RuleMapping& rules)
+    return [](formalism::ProgramView<LiftedTag> program, formalism::Repository& destination, datalog::RuleMapping& rules)
     {
         auto result = datalog::StaticLiteralDecomposition {};
         const auto output = datalog::decompose_static_literals(program, destination, result);

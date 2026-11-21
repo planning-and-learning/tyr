@@ -52,7 +52,7 @@ public:
     Heuristic() = default;
     virtual ~Heuristic() = default;
 
-    virtual void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) = 0;
+    virtual void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) = 0;
 
     virtual ygg::float_t evaluate(const StateView<Kind>& state) = 0;
 
@@ -60,7 +60,7 @@ public:
 
     /// The relaxed plan of the last evaluation, or nullptr if this heuristic does not compute one. An empty plan (e.g. in a goal state or a dead end) is
     /// not nullptr. Searches decide which actions to prefer from it.
-    [[nodiscard]] virtual const urd::Store<urd::set<formalism::planning::ActionRowView>>* get_relaxed_plan() const { return nullptr; }
+    [[nodiscard]] virtual const urd::Store<urd::set<formalism::ActionRowView>>* get_relaxed_plan() const { return nullptr; }
 
     virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
 

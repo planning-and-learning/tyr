@@ -33,9 +33,9 @@
 namespace urd
 {
 template<>
-struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
+struct data<::tyr::formalism::Rule<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Rule<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_heads;
@@ -81,17 +81,17 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
+struct data<::tyr::formalism::Rule<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::datalog::Rule<::tyr::GroundTag>> index;
-    urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> body;
+    urd::index<::tyr::formalism::Rule<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
 
-    data(urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> body_,
+    data(urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>> body_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads_,
          ygg::float_t cost_ = 0) :
@@ -125,7 +125,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
 };
 }
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 /// The member holding the F-heads of a rule: the atoms of the task's fluent predicates it derives, and of the derived
 /// predicates (the task's, or the program's own).

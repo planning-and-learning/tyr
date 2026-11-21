@@ -54,7 +54,7 @@ namespace
 template<typename Relation>
 void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::dense>& relations,
                           const urd::Store<urd::map<urd::index<Relation>, analysis::RuleIndexSet>>& listeners,
-                          urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense>& active_rules)
+                          urd::Store<urd::set<urd::index<formalism::Rule<LiftedTag>>>, urd::dense>& active_rules)
 {
     for (const auto relation : relations)
         if (const auto it = listeners.find(relation); it != listeners.end())
@@ -64,8 +64,8 @@ void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::
 
 TypedRuleSchedulerStratum::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
                                                      const analysis::TypedListenerStratum& listeners,
-                                                     const formalism::datalog::Repository& context,
-                                                     formalism::datalog::ProgramView<LiftedTag> program) :
+                                                     const formalism::Repository& context,
+                                                     formalism::ProgramView<LiftedTag> program) :
     m_rules(&rules),
     m_listeners(&listeners),
     m_context(&context),
@@ -108,8 +108,8 @@ void TypedRuleSchedulerStratum::on_finish_iteration()
 
 Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum& rules,
                                 const analysis::ListenerStratum& listeners,
-                                const formalism::datalog::Repository& context,
-                                formalism::datalog::ProgramView<LiftedTag> program) :
+                                const formalism::Repository& context,
+                                formalism::ProgramView<LiftedTag> program) :
     predicate_rules(rules, listeners, context, program)
 {
 }
@@ -122,8 +122,8 @@ void Scheduler<LiftedTag>::on_finish_iteration() { predicate_rules.on_finish_ite
 
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                                   const analysis::ListenerStrata& listeners,
-                                                                  const formalism::datalog::Repository& context,
-                                                                  formalism::datalog::ProgramView<LiftedTag> program)
+                                                                  const formalism::Repository& context,
+                                                                  formalism::ProgramView<LiftedTag> program)
 {
     assert(rules.data.size() == listeners.data.size());
 

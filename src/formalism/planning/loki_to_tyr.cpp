@@ -65,7 +65,7 @@
 #include <vector>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 namespace
 {
@@ -282,7 +282,7 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
 {
     auto build_function = [&]<typename Tag>(Tag) -> FunctionViewVariant
     {
-        auto function = planning::checkout<Function<Tag>>(builder);
+        auto function = checkout<Function<Tag>>(builder);
         function->name = element.get_name();
         function->arity = element.get_parameters().size();
         return context.insert(*function, builder).first;
@@ -298,7 +298,7 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
 
 urd::index<Object> LokiToTyrTranslator::translate_common(loki::formalism::ObjectView element, Builder& builder, Repository& context)
 {
-    auto object = planning::checkout<Object>(builder);
+    auto object = checkout<Object>(builder);
     object->name = element.get_name();
     return context.insert(*object, builder).first.index();
 }
@@ -310,7 +310,7 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
 {
     auto build_predicate = [&]<typename Tag>(Tag) -> PredicateViewVariant
     {
-        auto predicate = planning::checkout<Predicate<Tag>>(builder);
+        auto predicate = checkout<Predicate<Tag>>(builder);
         predicate->name = element.get_name();
         predicate->arity = element.get_parameters().size();
         return context.insert(*predicate, builder).first;
@@ -326,7 +326,7 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
 
 urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::VariableView element, Builder& builder, Repository& context)
 {
-    auto variable = planning::checkout<Variable>(builder);
+    auto variable = checkout<Variable>(builder);
     variable->name = element.get_name();
     return context.insert(*variable, builder).first.index();
 }
@@ -340,7 +340,7 @@ auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Buil
     if (std::ranges::size(terms) != element.get_arity())
         throw std::invalid_argument("Row value count does not match relation arity.");
 
-    auto binding = planning::checkout<ygg::Row<T>>(builder);
+    auto binding = checkout<ygg::Row<T>>(builder);
     urd::store(binding->relation, element);
     binding->values.reserve(std::ranges::size(terms));
     for (const auto term : terms)
@@ -368,9 +368,9 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
     return std::visit(
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> AtomViewVariant
         {
-            auto parameters = planning::checkout<Parameters>(builder);
+            auto parameters = checkout<Parameters>(builder);
             urd::build_member(parameters->variables, m_param_map.variables, context);
-            auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
+            auto atom = checkout<Atom<LiftedTag, Tag>>(builder);
             urd::store(atom->parameters, context.insert(*parameters, builder).first);
             urd::store(atom->predicate, predicate);
             this->translate_lifted(element.get_terms(), builder, context, atom->terms);
@@ -386,7 +386,7 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
     return std::visit(
         [&]<FactKind Tag>(AtomView<LiftedTag, Tag> atom) -> LiteralViewVariant
         {
-            auto literal = planning::checkout<Literal<LiftedTag, Tag>>(builder);
+            auto literal = checkout<Literal<LiftedTag, Tag>>(builder);
             urd::store(literal->atom, atom);
             literal->polarity = element.get_polarity();
             return context.insert(*literal, builder).first;
@@ -407,7 +407,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 {
     auto build_binary_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<LiftedTag>
     {
-        auto binary = planning::checkout<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
+        auto binary = checkout<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         binary->operation = operation;
         urd::build_member(binary->lhs, translate_lifted(element.get_left(), builder, context), context);
         urd::build_member(binary->rhs, translate_lifted(element.get_right(), builder, context), context);
@@ -436,7 +436,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 {
     auto build_multi_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<LiftedTag>
     {
-        auto multi = planning::checkout<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
+        auto multi = checkout<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         multi->operation = operation;
         translate_lifted(element.get_args(), builder, context, multi->args);
         return FunctionExpression<LiftedTag>(context.insert(*multi, builder).first.index());
@@ -458,7 +458,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
                                       Builder& builder,
                                       Repository& context)
 {
-    auto minus = planning::checkout<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
+    auto minus = checkout<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
     minus->operation = ArithmeticOperatorKind::Sub;
     urd::build_member(minus->arg, translate_lifted(element.get_expression(), builder, context), context);
     return FunctionExpression<LiftedTag>(context.insert(*minus, builder).first.index());
@@ -492,9 +492,9 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
     return std::visit(
         [&]<FactKind Tag>(FunctionView<Tag> function) -> FunctionTermViewVariant
         {
-            auto parameters = planning::checkout<Parameters>(builder);
+            auto parameters = checkout<Parameters>(builder);
             urd::build_member(parameters->variables, m_param_map.variables, context);
-            auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
+            auto fterm = checkout<FunctionTerm<LiftedTag, Tag>>(builder);
             urd::store(fterm->parameters, context.insert(*parameters, builder).first);
             urd::store(fterm->function, function);
             this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
@@ -510,7 +510,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 {
     auto build_binary_op = [&](BooleanOperatorKind operation) -> urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>
     {
-        auto binary = planning::checkout<BinaryOperator<LiftedTag, BooleanOperatorKind>>(builder);
+        auto binary = checkout<BinaryOperator<LiftedTag, BooleanOperatorKind>>(builder);
         binary->operation = operation;
         urd::build_member(binary->lhs, translate_lifted(element.get_left(), builder, context), context);
         urd::build_member(binary->rhs, translate_lifted(element.get_right(), builder, context), context);
@@ -541,7 +541,7 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
                                                                                   Builder& builder,
                                                                                   Repository& context)
 {
-    auto conj_condition = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
+    auto conj_condition = checkout<ConjunctiveCondition<LiftedTag>>(builder);
 
     urd::build_member(conj_condition->variables, parameters, context);
 
@@ -620,7 +620,7 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
 
     auto build = [&]<FactKind F>(FunctionTermView<LiftedTag, F> fterm, NumericEffectOperatorKind operation) -> NumericEffectViewVariant
     {
-        auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, F>>(builder);
+        auto numeric_effect = checkout<NumericEffect<LiftedTag, F>>(builder);
 
         numeric_effect->operation = operation;
         urd::store(numeric_effect->fterm, fterm);
@@ -713,7 +713,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     else
                     {
                         // Create empty conjunctive condition for unconditional effects
-                        auto conj_cond = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
+                        auto conj_cond = checkout<ConjunctiveCondition<LiftedTag>>(builder);
                         return context.insert(*conj_cond, builder).first.index();
                     }
                 },
@@ -793,7 +793,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
         const auto& [cond_effect_universal_parameters, cond_effect_fluent_literals, cond_effect_fluent_numeric_effects, cond_effect_auxiliary_numeric_effects] =
             value;
 
-        auto conj_effect = planning::checkout<ConjunctiveEffect<LiftedTag>>(builder);
+        auto conj_effect = checkout<ConjunctiveEffect<LiftedTag>>(builder);
         for (const auto& literal : cond_effect_fluent_literals)
             urd::build_member(conj_effect->literals.emplace_back(), literal, context);
         for (const auto& numeric_effect : cond_effect_fluent_numeric_effects)
@@ -801,7 +801,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
         urd::build_member(conj_effect->auxiliary_numeric_effect, cond_effect_auxiliary_numeric_effects, context);
         const auto conj_effect_index = context.insert(*conj_effect, builder).first.index();
 
-        auto cond_effect = planning::checkout<ConditionalEffect<LiftedTag>>(builder);
+        auto cond_effect = checkout<ConditionalEffect<LiftedTag>>(builder);
         for (const auto& variable : cond_effect_universal_parameters)
             urd::build_member(cond_effect->variables.emplace_back(), variable, context);
         urd::build_member(cond_effect->condition, cond_conjunctive_condition, context);
@@ -814,7 +814,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
 
 urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context)
 {
-    auto action = planning::checkout<Action<LiftedTag>>(builder);
+    auto action = checkout<Action<LiftedTag>>(builder);
     action->original_arity = element.get_original_arity();
     action->name = std::string(element.get_name());
     action->original_name = std::string(element.get_original_name());
@@ -835,7 +835,7 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
         else
         {
             // Create empty one
-            auto conj_cond = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
+            auto conj_cond = checkout<ConjunctiveCondition<LiftedTag>>(builder);
             conjunctive_condition = context.insert(*conj_cond, builder).first.index();
         }
         urd::build_member(action->condition, conjunctive_condition, context);
@@ -856,7 +856,7 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
 
 urd::index<Axiom<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context)
 {
-    auto axiom = planning::checkout<Axiom<LiftedTag>>(builder);
+    auto axiom = checkout<Axiom<LiftedTag>>(builder);
 
     auto variables = urd::flat_vector<urd::index<Variable>>();  // the scope map reads them
     translate_common(element.get_parameters(), builder, context, variables);
@@ -896,7 +896,7 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
     return std::visit(
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> GroundAtomViewVariant
         {
-            auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
+            auto atom = checkout<Atom<GroundTag, Tag>>(builder);
             atom->row =
                 to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.index();
@@ -922,7 +922,7 @@ GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism
     return std::visit(
         [&]<FactKind Tag>(AtomView<GroundTag, Tag> atom) -> GroundLiteralViewVariant
         {
-            auto literal = planning::checkout<Literal<GroundTag, Tag>>(builder);
+            auto literal = checkout<Literal<GroundTag, Tag>>(builder);
             urd::store(literal->atom, atom);
             literal->polarity = element.get_polarity();
             return context.insert(*literal, builder).first;
@@ -954,7 +954,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 {
     auto build_binary_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<GroundTag>
     {
-        auto binary = planning::checkout<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
+        auto binary = checkout<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         binary->operation = operation;
         urd::build_member(binary->lhs, translate_grounded(element.get_left(), builder, context), context);
         urd::build_member(binary->rhs, translate_grounded(element.get_right(), builder, context), context);
@@ -983,7 +983,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 {
     auto build_multi_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<GroundTag>
     {
-        auto multi = planning::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(builder);
+        auto multi = checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         multi->operation = operation;
         translate_grounded(element.get_args(), builder, context, multi->args);
         return FunctionExpression<GroundTag>(context.insert(*multi, builder).first.index());
@@ -1005,7 +1005,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
                                         Builder& builder,
                                         Repository& context)
 {
-    auto minus = planning::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
+    auto minus = checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
     minus->operation = ArithmeticOperatorKind::Sub;
     urd::build_member(minus->arg, translate_grounded(element.get_expression(), builder, context), context);
     return FunctionExpression<GroundTag>(context.insert(*minus, builder).first.index());
@@ -1037,7 +1037,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
     return std::visit(
         [&]<FactKind Tag>(FunctionView<Tag> function) -> GroundFunctionTermViewVariant
         {
-            auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
+            auto fterm = checkout<FunctionTerm<GroundTag, Tag>>(builder);
             fterm->row =
                 to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.index();
@@ -1054,7 +1054,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
     return std::visit(
         [&]<FactKind Tag>(FunctionTermView<GroundTag, Tag> fterm) -> GroundFunctionTermValueViewVariant
         {
-            auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, Tag>>(builder);
+            auto fterm_value = checkout<FunctionTermValue<GroundTag, Tag>>(builder);
             urd::store(fterm_value->fterm, fterm);
             fterm_value->value = std::visit(
                 []<typename T>(const T& expression) -> ygg::float_t
@@ -1077,7 +1077,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 {
     auto build_binary_op = [&](BooleanOperatorKind operation) -> urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>
     {
-        auto binary = planning::checkout<BinaryOperator<GroundTag, BooleanOperatorKind>>(builder);
+        auto binary = checkout<BinaryOperator<GroundTag, BooleanOperatorKind>>(builder);
         binary->operation = operation;
         urd::build_member(binary->lhs, translate_grounded(element.get_left(), builder, context), context);
         urd::build_member(binary->rhs, translate_grounded(element.get_right(), builder, context), context);
@@ -1106,7 +1106,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 urd::index<ConjunctiveCondition<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, Builder& builder, Repository& context, FDRContext& fdr_context)
 {
-    auto conj_condition = planning::checkout<ConjunctiveCondition<GroundTag>>(builder);
+    auto conj_condition = checkout<ConjunctiveCondition<GroundTag>>(builder);
 
     const auto insert_literal = [&](GroundLiteralOrFactViewVariant literal_or_fact_view_variant)
     {
@@ -1182,7 +1182,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 
 urd::index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context)
 {
-    auto metric = planning::checkout<Metric>(builder);
+    auto metric = checkout<Metric>(builder);
 
     urd::build_member(metric->fexpr, translate_grounded(element.get_expression(), builder, context), context);
     metric->optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
@@ -1200,7 +1200,7 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     /* Perform static type analysis */
     prepare(element);
 
-    auto domain = planning::checkout<planning::Domain>(builder);
+    auto domain = checkout<Domain>(builder);
 
     /* Name */
     domain->name = element.get_name();
@@ -1243,7 +1243,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     /* Perform static type analysis */
     prepare(element);
 
-    auto task = planning::checkout<planning::Task<LiftedTag>>(builder);
+    auto task = checkout<Task<LiftedTag>>(builder);
 
     auto task_context = std::make_shared<Repository>(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
 
@@ -1309,7 +1309,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     else
     {
         // Create empty conjunctive condition
-        auto conj_cond = planning::checkout<ConjunctiveCondition<GroundTag>>(builder);
+        auto conj_cond = checkout<ConjunctiveCondition<GroundTag>>(builder);
         urd::store(task->goal, task_context->insert(*conj_cond, builder).first);
     }
 

@@ -28,7 +28,7 @@
 #include <optional>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 /// Whether one application of the action can add two atoms of one instance of the candidate.

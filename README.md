@@ -44,12 +44,12 @@ The Python interface for implementing search algorithms is:
 # Recommended namespace aliases
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
-import pytyr.formalism.planning as tfp
+import pytyr.formalism as tf
 import pytyr.planning.lifted as tpl  # pytyr.planning.ground also exists
 
 # Parse and translate a task over a domain.
 parser_options = ParserOptions()
-parser = tfp.Parser("domain.pddl", parser_options)
+parser = tf.Parser("domain.pddl", parser_options)
 # Instantiate a lifted task.
 task = tpl.Task(parser.parse_task("problem.pddl", parser_options))
 
@@ -77,11 +77,11 @@ The C++ interface for implementing search algorithms is:
 #include <tyr/tyr.hpp>
 
 // Recommended namespace aliases.
-namespace tfp = tyr::formalism::planning;
+namespace tf = tyr::formalism;
 namespace tp = tyr::planning;
 
 // Parse and translate a task over a domain.
-auto parser = tfp::Parser("domain.pddl");
+auto parser = tf::Parser("domain.pddl");
 // Instantiate a lifted task.
 auto task = tp::Task<tyr::LiftedTag>::create(parser.parse_task("problem.pddl"));
 

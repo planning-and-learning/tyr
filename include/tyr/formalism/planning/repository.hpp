@@ -116,7 +116,7 @@
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 using ygg::formalism::checkout;

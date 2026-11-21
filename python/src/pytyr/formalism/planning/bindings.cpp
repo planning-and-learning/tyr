@@ -24,10 +24,10 @@
 #include <optional>
 #include <tyr/formalism/planning/repository.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
-void bind_formalism(nb::module_& m)
+void bind_planning_formalism(nb::module_& m)
 {
     auto repository = RepositoryBinding(m, "Repository");
     // A layer over `parent_repository` (kept alive by it), its bindings storing object indices below `num_objects`.
@@ -70,4 +70,4 @@ void bind_formalism(nb::module_& m)
     bind_function(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

@@ -29,7 +29,7 @@
 #include <optional>
 #include <string>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 class Parser
 {

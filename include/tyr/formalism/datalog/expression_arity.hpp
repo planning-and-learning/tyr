@@ -49,7 +49,7 @@
 #include <utility>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 /**

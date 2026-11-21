@@ -19,33 +19,33 @@ template<typename Relation, typename Repository>
 struct RowPublicView;
 
 template<>
-struct RowPublicView<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, tyr::formalism::planning::Repository>
+struct RowPublicView<tyr::formalism::Rule<::tyr::LiftedTag>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::datalog::RuleRowView;
+    using type = tyr::formalism::RuleRowView;
 };
 
 template<tyr::formalism::FactKind T>
-struct RowPublicView<tyr::formalism::Predicate<T>, tyr::formalism::planning::Repository>
+struct RowPublicView<tyr::formalism::Predicate<T>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::planning::PredicateRowView<T>;
+    using type = tyr::formalism::PredicateRowView<T>;
 };
 
 template<tyr::formalism::FactKind T>
-struct RowPublicView<tyr::formalism::Function<T>, tyr::formalism::planning::Repository>
+struct RowPublicView<tyr::formalism::Function<T>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::planning::FunctionRowView<T>;
+    using type = tyr::formalism::FunctionRowView<T>;
 };
 
 template<>
-struct RowPublicView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::formalism::planning::Repository>
+struct RowPublicView<tyr::formalism::Action<::tyr::LiftedTag>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::planning::ActionRowView;
+    using type = tyr::formalism::ActionRowView;
 };
 
 template<>
-struct RowPublicView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr::formalism::planning::Repository>
+struct RowPublicView<tyr::formalism::Axiom<::tyr::LiftedTag>, tyr::formalism::Repository>
 {
-    using type = tyr::formalism::planning::AxiomRowView;
+    using type = tyr::formalism::AxiomRowView;
 };
 
 template<typename Relation, typename Repository>
@@ -69,7 +69,7 @@ template<typename Repository, typename... Relations>
 consteval bool row_contracts(boost::mp11::mp_list<Relations...>)
 { return (RowContract<Relations, Repository> && ...); }
 
-static_assert(row_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::RelationRepositoryTypes {}));
+static_assert(row_contracts<tyr::formalism::Repository>(tyr::formalism::RelationRepositoryTypes {}));
 
 using Binding = ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>);
@@ -139,24 +139,24 @@ void check_binding_copy()
 
 TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects)
 {
-    check_binding_copy<tyr::formalism::planning::Repository,
-                       tyr::formalism::planning::Builder,
-                       tyr::formalism::WriteContext<tyr::formalism::planning::Builder, tyr::formalism::planning::Repository>>();
+    check_binding_copy<tyr::formalism::Repository,
+                       tyr::formalism::Builder,
+                       tyr::formalism::WriteContext<tyr::formalism::Builder, tyr::formalism::Repository>>();
 }
 
 TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {
-    auto repository = tyr::formalism::planning::Repository();
-    auto builder = tyr::formalism::planning::Builder {};
+    auto repository = tyr::formalism::Repository();
+    auto builder = tyr::formalism::Builder {};
     auto a_data = urd::data<tyr::formalism::Object>(std::string("a"));
     auto b_data = urd::data<tyr::formalism::Object>(std::string("b"));
-    const auto a = tyr::formalism::planning::insert(repository, a_data).first;
-    const auto b = tyr::formalism::planning::insert(repository, b_data).first;
+    const auto a = tyr::formalism::insert(repository, a_data).first;
+    const auto b = tyr::formalism::insert(repository, b_data).first;
     using Predicate = tyr::formalism::Predicate<tyr::formalism::StaticTag>;
     auto predicate_data = urd::data<Predicate>(std::string("p"), 2);
-    const auto predicate = tyr::formalism::planning::insert(repository, predicate_data).first;
+    const auto predicate = tyr::formalism::insert(repository, predicate_data).first;
 
-    auto data = tyr::formalism::planning::checkout<ygg::Row<Predicate>>(builder);
+    auto data = tyr::formalism::checkout<ygg::Row<Predicate>>(builder);
     urd::store(data->relation, predicate);
     data->values.push_back(b.index().value);
     data->values.push_back(a.index().value);

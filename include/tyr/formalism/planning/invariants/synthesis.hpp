@@ -21,7 +21,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 /// The invariants of the domain (Helmert 2009, Section 5), interned into `repository`: the domain's repository, or a
 /// descendant of it. Repositories that other repositories branched from must not change, so the first call for a

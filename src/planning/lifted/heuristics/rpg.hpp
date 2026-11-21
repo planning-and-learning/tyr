@@ -51,26 +51,25 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<LiftedTag>
 {
-    using Action = formalism::planning::ActionRowView;
+    using Action = formalism::ActionRowView;
 
     template<typename Workspace>
-    static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::datalog::PredicateRowView<formalism::FluentTag> head)
+    static std::optional<formalism::AtomView<GroundTag, formalism::FluentTag>>
+    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::PredicateRowView<formalism::FluentTag> head)
     {
         // Programs add no fluent predicates: the head's predicate is the task's.
         return copy_ground_atom(head, workspace.planning_builder, *definition.task->get_repository()).first;
     }
 
     template<typename Workspace>
-    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, formalism::planning::ConjunctiveConditionView<GroundTag>) noexcept
+    static void set_goal(RPGDefinition<LiftedTag>&, Workspace&, formalism::ConjunctiveConditionView<GroundTag>) noexcept
     {
         // Lifted ground bindings live in the evaluation repository, which reset_evaluation()
         // clears. The goal is therefore materialized in begin_state_evaluation() after the reset.
     }
 
     template<typename Workspace>
-    static void
-    begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
+    static void begin_state_evaluation(RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::ConjunctiveConditionView<GroundTag> source_goal)
     {
         workspace.reset_evaluation();
         // Lifted ground bindings live in the evaluation repository and must be restored after it is cleared.
@@ -109,7 +108,7 @@ struct RPGPolicy<LiftedTag>
                 workspace.binding.push_back(object);
         }
         for (const auto action : it->second)
-            callback(formalism::planning::ground(action, grounder_context).first);
+            callback(formalism::ground(action, grounder_context).first);
     }
 
     /// Writes the objects that the witness of a split rule binds to its variables' positions among the source rule's variables,

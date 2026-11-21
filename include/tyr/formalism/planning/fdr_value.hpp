@@ -23,7 +23,7 @@
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/unsigned_integer.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 /// A variable's value: a nonnegative integer of its own type. Value 0, none(), is the variable's none value.
 struct FDRValue : ygg::UnsignedInteger<FDRValue>

@@ -60,7 +60,7 @@ void bind_numeric_effect(nb::module_& m)
 
 }  // namespace tyr::formalism
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_numeric_effect(nb::module_& m, RepositoryBinding& repository)
@@ -71,4 +71,4 @@ void bind_numeric_effect(nb::module_& m, RepositoryBinding& repository)
     bind_numeric_effect_view<GroundTag, AuxiliaryTag>(m, repository);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

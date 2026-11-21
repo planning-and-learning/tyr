@@ -25,7 +25,7 @@
 
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 /// The candidates that extend `inv` by an atom a delete effect of the threat's action can balance its add with, each held

@@ -122,7 +122,7 @@ namespace domain_steps
  */
 
 template<formalism::FactKind T>
-TmpPredicateDomainMap<T> initialize_predicate_domain_sets(formalism::planning::PredicateListView<T> predicates)
+TmpPredicateDomainMap<T> initialize_predicate_domain_sets(formalism::PredicateListView<T> predicates)
 {
     auto predicate_domain_sets = TmpPredicateDomainMap<T> {};
     predicate_domain_sets.reserve(predicates.size());
@@ -134,7 +134,7 @@ TmpPredicateDomainMap<T> initialize_predicate_domain_sets(formalism::planning::P
 }
 
 template<formalism::FactKind T>
-void insert_into_predicate_domain_sets(formalism::planning::AtomListView<GroundTag, T> atoms, TmpPredicateDomainMap<T>& predicate_domain_sets)
+void insert_into_predicate_domain_sets(formalism::AtomListView<GroundTag, T> atoms, TmpPredicateDomainMap<T>& predicate_domain_sets)
 {
     for (const auto atom : atoms)
     {
@@ -148,7 +148,7 @@ void insert_into_predicate_domain_sets(formalism::planning::AtomListView<GroundT
 }
 
 template<formalism::FactKind T>
-TmpFunctionDomainMap<T> initialize_function_domain_sets(formalism::planning::FunctionListView<T> functions)
+TmpFunctionDomainMap<T> initialize_function_domain_sets(formalism::FunctionListView<T> functions)
 {
     auto function_domain_sets = TmpFunctionDomainMap<T> {};
     function_domain_sets.reserve(functions.size());
@@ -160,7 +160,7 @@ TmpFunctionDomainMap<T> initialize_function_domain_sets(formalism::planning::Fun
 }
 
 template<formalism::FactKind T>
-void insert_into_function_domain_sets(formalism::planning::FunctionTermValueListView<GroundTag, T> fterm_values, TmpFunctionDomainMap<T>& function_domain_sets)
+void insert_into_function_domain_sets(formalism::FunctionTermValueListView<GroundTag, T> fterm_values, TmpFunctionDomainMap<T>& function_domain_sets)
 {
     for (const auto term_value : fterm_values)
     {
@@ -175,7 +175,7 @@ void insert_into_function_domain_sets(formalism::planning::FunctionTermValueList
 }
 
 template<typename Fn>
-void for_each_term_with_position(Fn fn, formalism::planning::TermListView terms)
+void for_each_term_with_position(Fn fn, formalism::TermListView terms)
 {
     size_t pos = 0;
     for (const auto term : terms)
@@ -201,20 +201,20 @@ struct InsertConstantPolicy
     [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
-    [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::FunctionView<formalism::FluentTag>) const { return true; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
-    void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
+    void on_object(size_t pos, formalism::ObjectView object, Symbol symbol)
     {
         auto& domain = get_domains(symbol).at(symbol.index())[pos];
         domain.objects.insert(object.index());
@@ -240,23 +240,23 @@ struct RestrictPolicy
     { return false; }
 
     template<formalism::FactKind T>
-    [[nodiscard]] bool should_skip(formalism::planning::LiteralView<LiftedTag, T> literal) const
+    [[nodiscard]] bool should_skip(formalism::LiteralView<LiftedTag, T> literal) const
     { return !literal.get_polarity(); }
 
-    [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::FunctionView<formalism::FluentTag>) const { return true; }
 
-    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
-    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
-    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
 
-    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
-    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
-    void on_object(size_t, formalism::planning::ObjectView, Symbol)
+    void on_object(size_t, formalism::ObjectView, Symbol)
     {
     }
 
@@ -282,20 +282,20 @@ struct LiftPolicy
     [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
-    [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::FunctionView<formalism::StaticTag>) const { return true; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
-    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
-    void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
+    void on_object(size_t pos, formalism::ObjectView object, Symbol symbol)
     {
         auto& domain = get_domains(symbol).at(symbol.index())[pos];
         domain.objects.insert(object.index());
@@ -317,7 +317,7 @@ struct LiftPolicy
  */
 
 template<typename Policy>
-void apply_policy(formalism::planning::FunctionExpressionView<LiftedTag> element, Policy& policy);
+void apply_policy(formalism::FunctionExpressionView<LiftedTag> element, Policy& policy);
 
 template<typename Policy>
 void apply_policy(ygg::float_t, Policy&)
@@ -325,25 +325,25 @@ void apply_policy(ygg::float_t, Policy&)
 }
 
 template<typename Policy>
-void apply_policy(formalism::planning::UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
+void apply_policy(formalism::UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
 { apply_policy(element.get_arg(), policy); }
 
 template<formalism::OperatorKind O, typename Policy>
-void apply_policy(formalism::planning::BinaryOperatorView<LiftedTag, O> element, Policy& policy)
+void apply_policy(formalism::BinaryOperatorView<LiftedTag, O> element, Policy& policy)
 {
     apply_policy(element.get_lhs(), policy);
     apply_policy(element.get_rhs(), policy);
 }
 
 template<typename Policy>
-void apply_policy(formalism::planning::MultiOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
+void apply_policy(formalism::MultiOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
 {
     for (const auto arg : element.get_args())
         apply_policy(arg, policy);
 }
 
 template<formalism::FactKind T, typename Policy>
-void apply_policy(formalism::planning::AtomView<LiftedTag, T> element, Policy& policy)
+void apply_policy(formalism::AtomView<LiftedTag, T> element, Policy& policy)
 {
     const auto predicate = element.get_predicate();
 
@@ -353,7 +353,7 @@ void apply_policy(formalism::planning::AtomView<LiftedTag, T> element, Policy& p
     for_each_term_with_position(
         [&]<typename Alternative>(size_t pos, const Alternative& arg)
         {
-            if constexpr (std::is_same_v<Alternative, formalism::planning::ObjectView>)
+            if constexpr (std::is_same_v<Alternative, formalism::ObjectView>)
             {
                 policy.on_object(pos, arg, predicate);
             }
@@ -370,7 +370,7 @@ void apply_policy(formalism::planning::AtomView<LiftedTag, T> element, Policy& p
 }
 
 template<formalism::FactKind T, typename Policy>
-void apply_policy(formalism::planning::LiteralView<LiftedTag, T> element, Policy& policy)
+void apply_policy(formalism::LiteralView<LiftedTag, T> element, Policy& policy)
 {
     if (policy.should_skip(element))
         return;
@@ -379,7 +379,7 @@ void apply_policy(formalism::planning::LiteralView<LiftedTag, T> element, Policy
 }
 
 template<formalism::FactKind T, typename Policy>
-void apply_policy(formalism::planning::FunctionTermView<LiftedTag, T> element, Policy& policy)
+void apply_policy(formalism::FunctionTermView<LiftedTag, T> element, Policy& policy)
 {
     const auto function = element.get_function();
 
@@ -389,7 +389,7 @@ void apply_policy(formalism::planning::FunctionTermView<LiftedTag, T> element, P
     for_each_term_with_position(
         [&]<typename Alternative>(size_t pos, const Alternative& arg)
         {
-            if constexpr (std::is_same_v<Alternative, formalism::planning::ObjectView>)
+            if constexpr (std::is_same_v<Alternative, formalism::ObjectView>)
             {
                 policy.on_object(pos, arg, function);
             }
@@ -406,14 +406,14 @@ void apply_policy(formalism::planning::FunctionTermView<LiftedTag, T> element, P
 }
 
 template<formalism::FactKind T, typename Policy>
-void apply_policy(formalism::planning::NumericEffectView<LiftedTag, T> element, Policy& policy)
+void apply_policy(formalism::NumericEffectView<LiftedTag, T> element, Policy& policy)
 {
     apply_policy(element.get_fterm(), policy);
     apply_policy(element.get_fexpr(), policy);
 }
 
 template<typename Policy>
-void apply_policy(formalism::planning::FunctionExpressionView<LiftedTag> element, Policy& policy)
+void apply_policy(formalism::FunctionExpressionView<LiftedTag> element, Policy& policy)
 {
     visit([&](auto&& arg) { apply_policy(arg, policy); }, element);
 }

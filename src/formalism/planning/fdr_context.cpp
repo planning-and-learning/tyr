@@ -38,7 +38,7 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_facts(), m_registration_mutex(), m_builder(), m_variables() {}
 
@@ -51,7 +51,7 @@ FDRContext::FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, Fl
 {
     for (const auto& group : mutexes)
     {
-        auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
+        auto variable = checkout<FDRVariable<FluentTag>>(m_builder);
         for (const auto& atom : group)
             urd::append(variable->atoms, atom);
         const auto variable_view = m_context->insert(*variable, m_builder).first;
@@ -73,7 +73,7 @@ FDRContext::FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, Repo
 {
     for (const auto& atom : all_atoms)
     {
-        auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
+        auto variable = checkout<FDRVariable<FluentTag>>(m_builder);
         urd::append(variable->atoms, atom);
         const auto variable_view = m_context->insert(*variable, m_builder).first;
         m_variables.push_back(variable_view);
@@ -104,7 +104,7 @@ FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
         return *fact;
 
     // Construct a new binary FDR variable
-    auto variable_data = planning::checkout<FDRVariable<FluentTag>>(m_builder);
+    auto variable_data = checkout<FDRVariable<FluentTag>>(m_builder);
     urd::append(variable_data->atoms, atom);
     const auto variable = m_context->insert(*variable_data, m_builder).first;
 

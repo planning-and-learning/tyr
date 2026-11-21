@@ -143,7 +143,7 @@ template<tyr::TaskKind T>
 tyr::planning::TaskPtr<T> create_task(const BenchmarkCase& benchmark_case, PreparedCase& prepared, [[maybe_unused]] ygg::ExecutionContext& execution_context)
 {
     const auto parse_start = Clock::now();
-    auto lifted_task = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted_task = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
     prepared.parse_seconds = std::chrono::duration<double>(Clock::now() - parse_start).count();
     if constexpr (std::same_as<T, tyr::GroundTag>)
     {

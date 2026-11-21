@@ -27,8 +27,8 @@ namespace tyr::planning
 
 // NumericEffectView
 
-template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
-template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
+template ygg::float_t evaluate(formalism::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
+template ygg::float_t evaluate(formalism::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
 /**
  * is_applicable
@@ -36,9 +36,9 @@ template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag,
 
 // LiteralListView
 
-template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
-template bool is_applicable(formalism::planning::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::StaticTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
+template bool is_applicable(formalism::LiteralListView<LiftedTag, formalism::DerivedTag> elements, const ApplicabilityContext& context);
 
 }
 

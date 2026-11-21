@@ -71,15 +71,15 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.
     urd::index<::tyr::planning::State<Kind>> index;
-    urd::built_t<urd::data<::tyr::planning::FactStorage<Kind>>, ::tyr::formalism::planning::Repository> fact_storage;
-    urd::built_t<urd::data<::tyr::planning::AtomStorage<Kind>>, ::tyr::formalism::planning::Repository> atom_storage;
-    urd::built_t<urd::data<::tyr::planning::NumericStorage<Kind>>, ::tyr::formalism::planning::Repository> numeric_storage;
+    urd::built_t<urd::data<::tyr::planning::FactStorage<Kind>>, ::tyr::formalism::Repository> fact_storage;
+    urd::built_t<urd::data<::tyr::planning::AtomStorage<Kind>>, ::tyr::formalism::Repository> atom_storage;
+    urd::built_t<urd::data<::tyr::planning::NumericStorage<Kind>>, ::tyr::formalism::Repository> numeric_storage;
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { index = state; }
 
-    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { fact_storage.set(fact); }
+    void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact) { fact_storage.set(fact); }
 
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
     { numeric_storage.set(fterm, value); }
@@ -88,13 +88,13 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
 
     /// A fact's view (borrowed or computed): its fact set.
     template<typename V>
-        requires std::same_as<typename V::value_type, ::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>
+        requires std::same_as<typename V::value_type, ::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>
     void set(const V& fact)
-    { set(urd::make<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value())); }
+    { set(urd::make<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value())); }
 
-    void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
+    void set(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
 
-    void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.index()); }
+    void set(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.index()); }
 
     void clear()
     {
@@ -162,17 +162,17 @@ struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Ki
         constexpr auto mutators = urd::Functions<
             urd::function<"set", static_cast<void (builder::*)(urd::index<::tyr::planning::State<Kind>>)>(&builder::set), urd::arg<"state">>,
             urd::function<"set",
-                          static_cast<void (builder::*)(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>)>(&builder::set),
+                          static_cast<void (builder::*)(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>)>(&builder::set),
                           urd::arg<"fact">>,
             urd::function<"set", static_cast<void (builder::*)(urd::index<FluentTerm>, ygg::float_t)>(&builder::set), urd::arg<"fterm">, urd::arg<"value">>,
             urd::function<"set", static_cast<void (builder::*)(urd::index<DerivedAtom>)>(&builder::set), urd::arg<"atom">>,
             urd::function<"set",
-                          static_cast<void (builder::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>,
-                                                        ygg::float_t)>(&builder::set),
+                          static_cast<void (builder::*)(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>, ygg::float_t)>(
+                              &builder::set),
                           urd::arg<"fterm">,
                           urd::arg<"value">>,
             urd::function<"set",
-                          static_cast<void (builder::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>)>(&builder::set),
+                          static_cast<void (builder::*)(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>)>(&builder::set),
                           urd::arg<"atom">>,
             urd::function<"clear", &builder::clear>,
             urd::function<"clear_unextended_part", &builder::clear_unextended_part>,

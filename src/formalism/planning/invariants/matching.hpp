@@ -26,7 +26,7 @@
 #include <cstddef>
 #include <optional>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 using InvariantSubstitution = unification::SubstitutionFunction<Term>;
@@ -47,6 +47,6 @@ std::optional<InvariantSubstitution> match_invariant_against_ground_atom(std::si
                                                                          const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
                                                                          const urd::data<Atom<LiftedTag, FluentTag>>& ground_atom);
 
-}  // namespace tyr::formalism::planning::invariant
+}  // namespace tyr::formalism::invariant
 
 #endif

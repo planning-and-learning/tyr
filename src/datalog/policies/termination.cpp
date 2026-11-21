@@ -32,7 +32,7 @@ static_assert(TerminationPolicyConcept<TerminationPolicy<SumAggregation>>);
 static_assert(TerminationPolicyConcept<TerminationPolicy<MaxAggregation>>);
 
 template<typename AggregationFunction>
-void TerminationPolicy<AggregationFunction>::set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_)
+void TerminationPolicy<AggregationFunction>::set_goals(formalism::RuleBodyView<GroundTag> goals_)
 {
     boost::mp11::mp_for_each<MutableTags>(
         [&]<typename F>(F)

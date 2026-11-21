@@ -37,7 +37,7 @@ import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism.planning import LiftedPlanningTask, Parser
+from pytyr.formalism import LiftedPlanningTask, Parser
 from pytyr.planning import (
     CostMode,
     SearchBudget,

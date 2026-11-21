@@ -41,7 +41,7 @@ class StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
-    using Unpacked = urd::builder<FactStorage<Kind>, formalism::planning::Repository>;
+    using Unpacked = urd::builder<FactStorage<Kind>, formalism::Repository>;
     using Handle = typename Context::BitsetSet::handle_type;
 
     explicit StateComponentRepository(Context& ctx);

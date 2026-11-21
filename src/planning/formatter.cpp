@@ -187,7 +187,7 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::Plan<Kind>>::format(
     auto out = ctx.out();
     for (const auto& labeled_node : value.get_labeled_succ_nodes())
     {
-        out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::planning::PlanFormatting()));
+        out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::PlanFormatting()));
     }
     return out;
 }
@@ -199,7 +199,7 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::PackedPlan<Kind>>::f
     auto out = ctx.out();
     for (const auto& labeled_node : value.get_labeled_succ_nodes())
     {
-        out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::planning::PlanFormatting()));
+        out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::PlanFormatting()));
     }
     return out;
 }

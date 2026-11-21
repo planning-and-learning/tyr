@@ -94,11 +94,11 @@ private:
     urd::Store<urd::sequence<ygg::uint_t>> m_remapped_objects;
 
 public:
-    PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
+    PredicateAssignmentSet(formalism::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
     void reset() noexcept;
 
-    void insert(formalism::datalog::PredicateRowView<T> binding);
+    void insert(formalism::PredicateRowView<T> binding);
 
     bool operator[](const VertexAssignment& assignment) const noexcept;
     bool operator[](const EdgeAssignment& assignment) const noexcept;
@@ -119,13 +119,13 @@ private:
 public:
     PredicateAssignmentSets() = default;
 
-    PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates, const analysis::PredicateDomainMap<T>& predicate_domains, size_t num_objects);
+    PredicateAssignmentSets(formalism::PredicateListView<T> predicates, const analysis::PredicateDomainMap<T>& predicate_domains, size_t num_objects);
 
     void reset() noexcept;
 
-    void insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
-    void insert(formalism::datalog::PredicateRowView<T> binding);
-    void insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings);
+    void insert(formalism::AtomView<GroundTag, T> ground_atom);
+    void insert(formalism::PredicateRowView<T> binding);
+    void insert(formalism::PredicateRowForwardRangeView<T> bindings);
 
     [[nodiscard]] const PredicateAssignmentSet<T>& get_set(urd::index<formalism::Predicate<T>> index) const noexcept;
 
@@ -145,13 +145,13 @@ private:
     urd::Store<urd::sequence<ygg::uint_t>> m_remapped_objects;
 
 public:
-    FunctionAssignmentSet(formalism::datalog::FunctionView<T> function, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
+    FunctionAssignmentSet(formalism::FunctionView<T> function, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
     void reset() noexcept;
 
-    bool insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value);
-    bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
+    bool insert(formalism::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
+    bool insert(formalism::FunctionRowView<T> binding, ygg::float_t value);
+    bool insert(formalism::FunctionTermValueView<GroundTag, T> fterm_value);
 
     ygg::ClosedInterval<ygg::float_t> operator[](const EmptyAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](const VertexAssignment& assignment) const noexcept;
@@ -175,15 +175,15 @@ public:
     /// No function: those of a kind without function facts (has_function_facts).
     FunctionAssignmentSets() = default;
 
-    FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions, const analysis::FunctionDomainMap<T>& function_domains, size_t num_objects);
+    FunctionAssignmentSets(formalism::FunctionListView<T> functions, const analysis::FunctionDomainMap<T>& function_domains, size_t num_objects);
 
     void reset() noexcept;
 
-    bool insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
-    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval);
-    void insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values);
-    void insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
+    bool insert(formalism::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
+    bool insert(formalism::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
+    bool insert(formalism::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval);
+    void insert(formalism::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values);
+    void insert(formalism::FunctionTermValueListView<GroundTag, T> fterm_values);
 
     [[nodiscard]] const FunctionAssignmentSet<T>& get_set(urd::index<formalism::Function<T>> index) const noexcept;
     urd::Store<urd::sequence<FunctionAssignmentSet<T>>>& get_sets() noexcept;
@@ -204,17 +204,15 @@ struct TaggedAssignmentSets
     TaggedAssignmentSets() = default;
 
     /// The sets of the program's predicates (and functions) of kind T over their domains, holding `fact_sets`.
-    TaggedAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
-                         const analysis::ProgramVariableDomains& domains,
-                         const TaggedFactSets<T>& fact_sets);
+    TaggedAssignmentSets(formalism::ProgramView<LiftedTag> program, const analysis::ProgramVariableDomains& domains, const TaggedFactSets<T>& fact_sets);
 
-    TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
-                         formalism::datalog::FunctionListView<T> functions,
+    TaggedAssignmentSets(formalism::PredicateListView<T> predicates,
+                         formalism::FunctionListView<T> functions,
                          const analysis::PredicateDomainMap<T>& predicate_domains,
                          const analysis::FunctionDomainMap<T>& function_domains,
                          size_t num_objects);
-    TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
-                         formalism::datalog::FunctionListView<T> functions,
+    TaggedAssignmentSets(formalism::PredicateListView<T> predicates,
+                         formalism::FunctionListView<T> functions,
                          const analysis::PredicateDomainMap<T>& predicate_domains,
                          const analysis::FunctionDomainMap<T>& function_domains,
                          size_t num_objects,
@@ -235,13 +233,11 @@ public:
     MutableAssignmentSets() = default;
 
     /// The sets of the program's predicates (and functions) of each mutable kind, holding `fact_sets`.
-    MutableAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
-                          const analysis::ProgramVariableDomains& domains,
-                          const MutableFactSets& fact_sets);
+    MutableAssignmentSets(formalism::ProgramView<LiftedTag> program, const analysis::ProgramVariableDomains& domains, const MutableFactSets& fact_sets);
 
     /// Inserts the fact of kind F.
     template<formalism::FactKind F>
-    void insert(formalism::datalog::PredicateRowView<F> binding)
+    void insert(formalism::PredicateRowView<F> binding)
     { this->template get<F>().predicate.insert(binding); }
 
     void reset() noexcept;

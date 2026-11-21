@@ -80,7 +80,7 @@ public:
     EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
                     const ConditionalEffectToPredicateMapping& effect_to_predicate,
                     const datalog::TaggedFactSets<formalism::DerivedTag>& facts,
-                    const formalism::datalog::Repository& repository);
+                    const formalism::Repository& repository);
 
     /// Forgets the grouping after the facts changed; the storage is kept.
     void clear() noexcept;
@@ -88,8 +88,8 @@ public:
     /// Calls `apply` with each completed binding of the action's effect in `binding`, which holds the action binding before and after;
     /// an effect without predicate fires once with its action.
     template<typename Apply>
-    void for_each_effect_binding(formalism::planning::ActionView<LiftedTag> action,
-                                 formalism::planning::ConditionalEffectView<LiftedTag> effect,
+    void for_each_effect_binding(formalism::ActionView<LiftedTag> action,
+                                 formalism::ConditionalEffectView<LiftedTag> effect,
                                  urd::flat_vector<urd::index<formalism::Object>>& binding,
                                  Apply apply)
     {
@@ -111,7 +111,7 @@ public:
     }
 
 private:
-    using AtomIndex = formalism::datalog::PredicateRowIndex<formalism::DerivedTag>;
+    using AtomIndex = formalism::PredicateRowIndex<formalism::DerivedTag>;
 
     /// The atoms of one effect predicate, grouped by the applicability row of their action binding, refilled in the
     /// storage held: clear keeps each row's.
@@ -125,26 +125,25 @@ private:
 
     /// The atoms of the effect's predicate whose action binding is `binding`, as the entries of its row (an
     /// equal_range), or none if the effect has no predicate.
-    std::optional<std::pair<Atoms::const_iterator, Atoms::const_iterator>> get_atoms(formalism::planning::ActionView<LiftedTag> action,
-                                                                                     formalism::planning::ConditionalEffectView<LiftedTag> effect,
+    std::optional<std::pair<Atoms::const_iterator, Atoms::const_iterator>> get_atoms(formalism::ActionView<LiftedTag> action,
+                                                                                     formalism::ConditionalEffectView<LiftedTag> effect,
                                                                                      std::span<const urd::index<formalism::Object>> binding);
 
     void rebuild(Groups& groups,
-                 formalism::datalog::PredicateView<formalism::DerivedTag> effect_predicate,
-                 formalism::datalog::PredicateView<formalism::DerivedTag> applicability_predicate,
+                 formalism::PredicateView<formalism::DerivedTag> effect_predicate,
+                 formalism::PredicateView<formalism::DerivedTag> applicability_predicate,
                  size_t action_arity);
 
     /// The row of the applicability atom of `binding`, if it holds.
-    std::optional<ygg::uint_t> find_row(formalism::datalog::PredicateView<formalism::DerivedTag> applicability_predicate,
+    std::optional<ygg::uint_t> find_row(formalism::PredicateView<formalism::DerivedTag> applicability_predicate,
                                         std::span<const urd::index<formalism::Object>> binding);
 
     const ConditionalEffectToPredicateMapping* m_effect_to_predicate;
     const datalog::TaggedFactSets<formalism::DerivedTag>* m_facts;
-    const formalism::datalog::Repository* m_repository;
+    const formalism::Repository* m_repository;
     /// The applicability predicate of each action, by the action's index: the actions are those of one domain.
-    urd::Store<urd::map<formalism::planning::ActionIndex<LiftedTag>, formalism::datalog::PredicateView<formalism::DerivedTag>>, urd::dense>
-        m_applicability_predicates;
-    urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, Groups>> m_groups;
+    urd::Store<urd::map<formalism::ActionIndex<LiftedTag>, formalism::PredicateView<formalism::DerivedTag>>, urd::dense> m_applicability_predicates;
+    urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, Groups>> m_groups;
     urd::flat_vector<urd::index<formalism::Object>> m_prefix;
     urd::data<ygg::Row<formalism::Predicate<formalism::DerivedTag>>> m_lookup;
 };

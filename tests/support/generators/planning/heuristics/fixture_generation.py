@@ -23,7 +23,7 @@ import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism.planning import LiftedPlanningTask, Parser
+from pytyr.formalism import LiftedPlanningTask, Parser
 from pytyr.planning import CostMode, ground as ground_planning, lifted as lifted_planning
 
 ROOT = Path(__file__).resolve().parents[5]

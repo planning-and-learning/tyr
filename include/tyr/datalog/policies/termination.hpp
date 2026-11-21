@@ -35,7 +35,7 @@ class NoTerminationPolicy
 public:
     NoTerminationPolicy() = default;
 
-    void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag>) {}
+    void set_goals(formalism::RuleBodyView<GroundTag>) {}
 
     [[nodiscard]] bool check(const FactSets&) const noexcept { return false; }
 
@@ -56,7 +56,7 @@ class TerminationPolicy
 public:
     TerminationPolicy() = default;
 
-    void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_);
+    void set_goals(formalism::RuleBodyView<GroundTag> goals_);
 
     [[nodiscard]] bool check(const FactSets& fact_sets) const;
     [[nodiscard]] bool should_terminate(const FactSets& fact_sets) const;
@@ -73,7 +73,7 @@ public:
     void clear() noexcept;
 
 private:
-    std::optional<formalism::datalog::ConjunctiveConditionView<GroundTag>> goals;
+    std::optional<formalism::RuleBodyView<GroundTag>> goals;
     AggregationFunction agg;
     bool early_termination { true };
 };

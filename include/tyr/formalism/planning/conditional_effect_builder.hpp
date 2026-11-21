@@ -35,12 +35,12 @@ namespace urd
 
 /// The builder of ConditionalEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect;
 
     static constexpr auto fields() noexcept
     {
@@ -53,11 +53,11 @@ struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, 
 
 /// The builder of ConditionalEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> index;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
-    urd::built_t<urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>, C> effect;
+    urd::built_t<urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>, C> effect;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &builder::condition>, urd::field<"effect", &builder::effect>> {}; }
 

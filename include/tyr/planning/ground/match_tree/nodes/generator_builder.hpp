@@ -34,7 +34,7 @@ template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>
 {
     urd::index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
-    urd::built_t<urd::flat_vector<urd::index<Tag>>, ::tyr::formalism::planning::Repository> elements;
+    urd::built_t<urd::flat_vector<urd::index<Tag>>, ::tyr::formalism::Repository> elements;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &builder::elements>> {}; }
 

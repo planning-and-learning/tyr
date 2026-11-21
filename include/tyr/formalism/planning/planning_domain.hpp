@@ -25,7 +25,7 @@
 #include <filesystem>
 #include <optional>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 class PlanningDomain

@@ -34,21 +34,21 @@ void initialize_rule_workspaces(const ConstKCKPWorkspace& const_workspace, RuleW
         workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag>>(*workspace) : nullptr);
 }
 
-void initialize_const_rule_workspaces(formalism::datalog::ProgramView<LiftedTag> program,
-                                      formalism::datalog::Repository& program_repository,
+void initialize_const_rule_workspaces(formalism::ProgramView<LiftedTag> program,
+                                      formalism::Repository& program_repository,
                                       analysis::RuleCompatibilityGraphMap& graphs,
                                       ConstRuleWorkspaces& workspaces)
 {
     const auto rules = program.get_rules();
-    workspaces.resize(formalism::datalog::rule_index_bound(rules));
-    auto builder = formalism::datalog::Builder {};
+    workspaces.resize(formalism::rule_index_bound(rules));
+    auto builder = formalism::Builder {};
     for (const auto rule : rules)
         workspaces[static_cast<ygg::uint_t>(rule.index().value)].emplace(rule, builder, program_repository, std::move(graphs.at(rule.index())));
 }
 }
 
-ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag> program,
-                                       formalism::datalog::Repository& program_repository,
+ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::ProgramView<LiftedTag> program,
+                                       formalism::Repository& program_repository,
                                        analysis::ProgramAnalysis& analysis,
                                        const TaggedFactSets<formalism::StaticTag>& static_fact_sets) :
     assignment_sets(program.get_predicates<formalism::StaticTag>(),
@@ -61,7 +61,7 @@ ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag
 { initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules); }
 
 KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
-                             formalism::datalog::ProgramView<LiftedTag> program,
+                             formalism::ProgramView<LiftedTag> program,
                              const analysis::ProgramVariableDomains& domains,
                              const MutableFactSets& fact_sets) :
     assignment_sets(program, domains, fact_sets),

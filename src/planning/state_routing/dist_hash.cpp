@@ -52,7 +52,7 @@ void DistHash<Kind, LMCutDistHashTag>::initialize(const StateView<Kind>& start_s
     for (const auto atom : atoms)
     {
         const auto fact = task->get_fdr_context()->get_fact(atom);
-        m_features.push_back(Feature { atom.index(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()) });
+        m_features.push_back(Feature { atom.index(), urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()) });
     }
 
     m_initialized = true;

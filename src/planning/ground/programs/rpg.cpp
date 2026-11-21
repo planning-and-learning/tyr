@@ -67,64 +67,62 @@ namespace
 {
 struct GroundProgramBuildContext
 {
-    formalism::datalog::Builder builder;
-    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> write_context;
-    urd::handle<urd::builder<formalism::datalog::Program<GroundTag>, formalism::datalog::Repository>> program;
+    formalism::Builder builder;
+    formalism::WriteContext<formalism::Builder, formalism::Repository> write_context;
+    urd::handle<urd::builder<formalism::Program<GroundTag>, formalism::Repository>> program;
 
-    explicit GroundProgramBuildContext(formalism::datalog::Repository& repository) :
+    explicit GroundProgramBuildContext(formalism::Repository& repository) :
         builder(),
         write_context(builder, repository),
-        program(formalism::datalog::checkout<formalism::datalog::Program<GroundTag>>(builder))
+        program(formalism::checkout<formalism::Program<GroundTag>>(builder))
     {
     }
 };
 
-void fill_delete_free_condition(formalism::planning::ConjunctiveConditionView<GroundTag> condition,
+void fill_delete_free_condition(formalism::ConjunctiveConditionView<GroundTag> condition,
                                 GroundProgramBuildContext& context,
-                                urd::builder<formalism::datalog::RuleBody<GroundTag>, formalism::datalog::Repository>& result)
+                                urd::builder<formalism::RuleBody<GroundTag>, formalism::Repository>& result)
 {
     for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
         if (const auto literal = create_fact_literal(fact, true, context.write_context))
             urd::append(result.fluent_literals, *literal);
 }
 
-formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condition(formalism::planning::ConjunctiveConditionView<GroundTag> condition,
-                                                                                     GroundProgramBuildContext& context)
+formalism::RuleBodyView<GroundTag> create_delete_free_condition(formalism::ConjunctiveConditionView<GroundTag> condition, GroundProgramBuildContext& context)
 {
-    auto result = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder);
+    auto result = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(condition, context, *result);
 
     return context.write_context.destination().insert(*result, context.builder).first;
 }
 
 /// The body of a conditional effect's rule: the action's precondition and the effect's condition, delete-free.
-formalism::datalog::ConjunctiveConditionView<GroundTag>
-create_delete_free_effect_condition(formalism::planning::ConjunctiveConditionView<GroundTag> action_condition,
-                                    formalism::planning::ConjunctiveConditionView<GroundTag> effect_condition,
-                                    GroundProgramBuildContext& context)
+formalism::RuleBodyView<GroundTag> create_delete_free_effect_condition(formalism::ConjunctiveConditionView<GroundTag> action_condition,
+                                                                       formalism::ConjunctiveConditionView<GroundTag> effect_condition,
+                                                                       GroundProgramBuildContext& context)
 {
-    auto result = formalism::datalog::checkout<formalism::datalog::RuleBody<GroundTag>>(context.builder);
+    auto result = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder);
     fill_delete_free_condition(action_condition, context, *result);
     fill_delete_free_condition(effect_condition, context, *result);
     return context.write_context.destination().insert(*result, context.builder).first;
 }
 
 /// Identical rules are one rule: the second is not inserted.
-std::pair<formalism::datalog::RuleView<GroundTag>, bool>
-create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> body,
+std::pair<formalism::RuleView<GroundTag>, bool>
+create_ground_atom_rule(formalism::RuleBodyView<GroundTag> body,
                         const urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>>& heads,
                         GroundProgramBuildContext& context,
                         ygg::float_t cost = 0)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag>>(context.builder);
+    auto rule = formalism::checkout<formalism::Rule<GroundTag>>(context.builder);
     urd::store(rule->body, body);
     urd::build_member(rule->fluent_heads, heads, context.write_context.destination());
     rule->cost = cost;
     return context.write_context.destination().insert(*rule, context.builder);
 }
 
-void translate_action_to_delete_free_rules(formalism::planning::ActionView<GroundTag> action,
-                                           urd::builder<formalism::datalog::Program<GroundTag>, formalism::datalog::Repository>& program,
+void translate_action_to_delete_free_rules(formalism::ActionView<GroundTag> action,
+                                           urd::builder<formalism::Program<GroundTag>, formalism::Repository>& program,
                                            GroundProgramBuildContext& context,
                                            RPGProgram<GroundTag>::RuleToActionMapping& rule_to_action)
 {
@@ -148,15 +146,14 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
     }
 }
 
-formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::planning::TaskView<GroundTag> task,
-                                                                     RPGProgram<GroundTag>::RuleToActionMapping& mapping,
-                                                                     formalism::datalog::Repository& repository)
+formalism::ProgramView<GroundTag>
+create_rpg_ground_program(formalism::TaskView<GroundTag> task, RPGProgram<GroundTag>::RuleToActionMapping& mapping, formalism::Repository& repository)
 {
     auto context = GroundProgramBuildContext(repository);
 
     translate_task_symbols(task, *context.program);
     // The atoms of the fluent facts too, each once.
-    auto fluent_atoms = urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>> {};
+    auto fluent_atoms = urd::Store<urd::set<formalism::AtomView<GroundTag, formalism::FluentTag>>> {};
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
         fluent_atoms.insert(atom);
     for (const auto fact : task.get_fluent_facts())
@@ -174,7 +171,7 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
 /// The actions of the rules the static rule filter keeps: the filter's layer holds the source's rules as they are.
 void filter_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping& source_mapping,
                            RPGProgram<GroundTag>::RuleToActionMapping& result_mapping,
-                           const formalism::datalog::Repository& source_repository,
+                           const formalism::Repository& source_repository,
                            const datalog::FactSets& fact_sets)
 {
     for (const auto& [source_index, actions] : source_mapping)
@@ -182,9 +179,8 @@ void filter_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping& sou
             result_mapping[source_index].insert(result_mapping[source_index].end(), actions.begin(), actions.end());
 }
 
-datalog::Program<GroundTag> create_rpg_datalog_program(const formalism::planning::PlanningTask<GroundTag>& planning_task,
-                                                       CostMode cost_mode,
-                                                       RPGProgram<GroundTag>::RuleToActionMapping& mapping)
+datalog::Program<GroundTag>
+create_rpg_datalog_program(const formalism::PlanningTask<GroundTag>& planning_task, CostMode cost_mode, RPGProgram<GroundTag>::RuleToActionMapping& mapping)
 {
     require_unit_cost(cost_mode);
 
@@ -211,7 +207,7 @@ datalog::Program<GroundTag> create_rpg_datalog_program(const formalism::planning
 }  // namespace
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(const formalism::planning::PlanningTask<GroundTag>& task, CostMode cost_mode, bool) :
+RPGProgram<GroundTag>::RPGProgram(const formalism::PlanningTask<GroundTag>& task, CostMode cost_mode, bool) :
     m_rule_to_action(),
     m_datalog_program(create_rpg_datalog_program(task, cost_mode, m_rule_to_action))
 {

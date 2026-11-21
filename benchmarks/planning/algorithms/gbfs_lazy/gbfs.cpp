@@ -66,7 +66,7 @@ using tyr::benchmarks::BenchmarkCase;
 
 tyr::planning::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
 {
-    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 #if defined(TYR_BENCHMARK_GROUND)
     auto ground = lifted->instantiate_ground_task(execution_context).task;
     if (!ground)

@@ -35,9 +35,9 @@ namespace urd
 
 /// The builder of ConjunctiveEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, C>
+struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> numeric_effects;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>, C>
@@ -56,11 +56,11 @@ struct builder<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, 
 
 /// The builder of ConjunctiveEffect: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>, C>
+struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> index;
-    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> add_facts;
-    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>, C> del_facts;
+    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> index;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> add_facts;
+    urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> del_facts;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> numeric_effects;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>, C>
         auxiliary_numeric_effect;  // :action-cost

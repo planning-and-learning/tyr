@@ -37,7 +37,7 @@ public:
 
     using Heuristic<Kind>::evaluate;
 
-    void set_goal([[maybe_unused]] formalism::planning::ConjunctiveConditionView<GroundTag> goal) override {}
+    void set_goal([[maybe_unused]] formalism::ConjunctiveConditionView<GroundTag> goal) override {}
 
     ygg::float_t evaluate([[maybe_unused]] const StateView<Kind>& state) override { return ygg::float_t { 0 }; }
 

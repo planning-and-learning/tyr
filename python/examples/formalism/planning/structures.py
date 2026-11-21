@@ -20,7 +20,7 @@ from pathlib import Path
 
 from pypddl.formalism import ParserOptions
 
-from pytyr.formalism.planning import Domain, Parser, TaskLifted
+from pytyr.formalism import Domain, Parser, TaskLifted
 
 
 def print_domain(formalism_domain: Domain) -> None:

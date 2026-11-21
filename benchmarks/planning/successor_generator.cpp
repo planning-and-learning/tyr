@@ -47,7 +47,7 @@ using tyr::benchmarks::BenchmarkCase;
 
 tyr::planning::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
 {
-    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
 #if defined(TYR_BENCHMARK_GROUND)
     auto ground = lifted->instantiate_ground_task(execution_context).task;
     if (!ground)
@@ -93,7 +93,7 @@ try
     auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
     auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>>();
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>>();
 
     for ([[maybe_unused]] auto _ : state)
     {

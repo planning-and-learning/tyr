@@ -8,15 +8,15 @@
 namespace tyr::tests::planning_metric
 {
 
-using MetricIndex = urd::index<tyr::formalism::planning::Metric>;
-using MetricData = urd::data<tyr::formalism::planning::Metric>;
-using MetricView = urd::index_view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>;
+using MetricIndex = urd::index<tyr::formalism::Metric>;
+using MetricData = urd::data<tyr::formalism::Metric>;
+using MetricView = urd::index_view<tyr::formalism::Metric, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<MetricIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<MetricIndex>);
 static_assert(std::totally_ordered<MetricData>);
 static_assert(std::totally_ordered<MetricView>);
-static_assert(std::same_as<MetricView, tyr::formalism::planning::MetricView>);
+static_assert(std::same_as<MetricView, tyr::formalism::MetricView>);
 static_assert(requires(MetricData& data) {
     data.index;
     data.optimization_direction;

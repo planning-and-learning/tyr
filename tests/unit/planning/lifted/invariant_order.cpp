@@ -47,8 +47,8 @@ namespace tyr::tests
 {
 namespace
 {
-using formalism::planning::InvariantView;
-using formalism::planning::InvariantViewList;
+using formalism::InvariantView;
+using formalism::InvariantViewList;
 
 std::filesystem::path ferry_domain() { return std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/domain.pddl"; }
 
@@ -97,18 +97,17 @@ struct ParsedTask
     InvariantViewList invariants;
 };
 
-ParsedTask parse(const std::filesystem::path& domain_file,
-                 const std::function<formalism::planning::PlanningTask<LiftedTag>(formalism::planning::Parser&)>& parse_task)
+ParsedTask parse(const std::filesystem::path& domain_file, const std::function<formalism::PlanningTask<LiftedTag>(formalism::Parser&)>& parse_task)
 {
     auto parser = make_test_parser(domain_file);
     const auto domain = parser.get_domain();
-    auto invariants = formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
+    auto invariants = formalism::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
     return ParsedTask { planning::Task<LiftedTag>::create(parse_task(parser)), std::move(invariants) };
 }
 
 ParsedTask parse_ferry()
 {
-    return parse(ferry_domain(), [](formalism::planning::Parser& parser) { return parser.parse_task(ferry_task()); });
+    return parse(ferry_domain(), [](formalism::Parser& parser) { return parser.parse_task(ferry_task()); });
 }
 
 /// The ferry invariants: car position, ferry contents and ferry location.
@@ -193,7 +192,7 @@ TEST(TyrPlanningInvariantOrderTest, DisabledInvariantSynthesisIgnoresTheOrder)
 TEST(TyrPlanningInvariantOrderTest, ViolatedInstanceStaysSingle)
 {
     auto ferry = parse(ferry_domain(),
-                       [](formalism::planning::Parser& parser)
+                       [](formalism::Parser& parser)
                        {
                            return parser.parse_task(R"(
 (define (problem ferry-two-positions)
@@ -237,8 +236,7 @@ TEST(TyrPlanningInvariantOrderTest, RejectsInvariantsOfAnotherDomain)
 {
     auto ferry = parse_ferry();
     const auto blocks_directory = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/blocks_4";
-    const auto blocks =
-        parse(blocks_directory / "domain.pddl", [&](formalism::planning::Parser& parser) { return parser.parse_task(blocks_directory / "test-1.pddl"); });
+    const auto blocks = parse(blocks_directory / "domain.pddl", [&](formalism::Parser& parser) { return parser.parse_task(blocks_directory / "test-1.pddl"); });
 
     EXPECT_THROW(ground(*ferry.lifted, InvariantViewList { blocks.invariants.front() }), std::invalid_argument);
 }

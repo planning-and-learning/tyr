@@ -33,9 +33,9 @@ namespace urd
 {
 
 template<::tyr::TaskKind T>
-struct data<::tyr::formalism::datalog::Program<T>>
+struct data<::tyr::formalism::Program<T>>
 {
-    urd::index<::tyr::formalism::datalog::Program<T>> index;
+    urd::index<::tyr::formalism::Program<T>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
@@ -47,8 +47,8 @@ struct data<::tyr::formalism::datalog::Program<T>>
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_atoms;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
-    urd::flat_optional<urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>> goal;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules;
+    urd::flat_optional<urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>>> goal;
+    urd::flat_vector<urd::index<::tyr::formalism::Rule<T>>> rules;
 
     data() = default;
 
@@ -63,8 +63,8 @@ struct data<::tyr::formalism::datalog::Program<T>>
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_atoms_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
-         urd::flat_optional<urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>> goal_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules_) :
+         urd::flat_optional<urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>>> goal_,
+         urd::flat_vector<urd::index<::tyr::formalism::Rule<T>>> rules_) :
         index(),
         static_predicates(std::move(static_predicates_)),
         fluent_predicates(std::move(fluent_predicates_)),
@@ -143,32 +143,32 @@ struct data<::tyr::formalism::datalog::Program<T>>
 
 }
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 /// The member holding the F-predicates of a program.
 template<FactKind F, TaskKind T>
-inline constexpr auto predicates_of = tagged_member_pointer<StaticFluentDerivedTags,
-                                                            F,
-                                                            &urd::data<Program<T>>::static_predicates,
-                                                            &urd::data<Program<T>>::fluent_predicates,
-                                                            &urd::data<Program<T>>::derived_predicates>;
+inline constexpr auto program_predicates_of = tagged_member_pointer<StaticFluentDerivedTags,
+                                                                    F,
+                                                                    &urd::data<Program<T>>::static_predicates,
+                                                                    &urd::data<Program<T>>::fluent_predicates,
+                                                                    &urd::data<Program<T>>::derived_predicates>;
 
 /// The member holding the F-functions of a program.
 template<FactKind F, TaskKind T>
-inline constexpr auto functions_of =
+inline constexpr auto program_functions_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_functions, &urd::data<Program<T>>::fluent_functions>;
 
 /// The member holding the F-atoms of a program.
 template<FactKind F, TaskKind T>
-inline constexpr auto atoms_of = tagged_member_pointer<StaticFluentDerivedTags,
-                                                       F,
-                                                       &urd::data<Program<T>>::static_atoms,
-                                                       &urd::data<Program<T>>::fluent_atoms,
-                                                       &urd::data<Program<T>>::derived_atoms>;
+inline constexpr auto program_atoms_of = tagged_member_pointer<StaticFluentDerivedTags,
+                                                               F,
+                                                               &urd::data<Program<T>>::static_atoms,
+                                                               &urd::data<Program<T>>::fluent_atoms,
+                                                               &urd::data<Program<T>>::derived_atoms>;
 
 /// The member holding the F-function term values of a program.
 template<FactKind F, TaskKind T>
-inline constexpr auto fterm_values_of =
+inline constexpr auto program_fterm_values_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_fterm_values, &urd::data<Program<T>>::fluent_fterm_values>;
 }
 

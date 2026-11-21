@@ -35,15 +35,15 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
+struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::Action<::tyr::LiftedTag>> index;
     urd::flat_string name;
     urd::flat_string original_name;
     ygg::uint_t original_arity = 0;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects;
+    urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>> effects;
 
     data() = default;
 
@@ -52,7 +52,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
          ygg::uint_t original_arity_,
          urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects_) :
+         urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>> effects_) :
         index(),
         name(std::move(name_)),
         original_name(std::move(original_name_)),
@@ -87,18 +87,18 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
+struct data<::tyr::formalism::Action<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>> index;
-    ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>> row;
+    urd::index<::tyr::formalism::Action<::tyr::GroundTag>> index;
+    ygg::RowIndex<::tyr::formalism::Action<::tyr::LiftedTag>> row;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects;
+    urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>> effects;
 
     data() = default;
 
-    data(ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>> row_,
+    data(ygg::RowIndex<::tyr::formalism::Action<::tyr::LiftedTag>> row_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects_) :
+         urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>> effects_) :
         index(),
         row(row_),
         condition(condition_),
@@ -123,7 +123,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
 
 }
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 template<TaskKind T>
 using ActionData = urd::data<Action<T>>;

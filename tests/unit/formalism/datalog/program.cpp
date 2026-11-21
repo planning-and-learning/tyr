@@ -16,16 +16,16 @@ namespace tyr::tests::datalog_program
 namespace lifted_tests
 {
 
-using Entity = tyr::formalism::datalog::Program<::tyr::LiftedTag>;
+using Entity = tyr::formalism::Program<::tyr::LiftedTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::ProgramView<tyr::LiftedTag>>);
+static_assert(std::same_as<View, tyr::formalism::ProgramView<tyr::LiftedTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_predicates;
@@ -61,16 +61,16 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-using Entity = tyr::formalism::datalog::Program<::tyr::GroundTag>;
+using Entity = tyr::formalism::Program<::tyr::GroundTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::ProgramView<::tyr::GroundTag>>);
+static_assert(std::same_as<View, tyr::formalism::ProgramView<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.static_predicates;
@@ -104,10 +104,10 @@ static_assert(requires(Data& data, const View& view) {
 TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
 {
     // The filter writes into a layer over the source program's repository: the kept rules are the source's.
-    auto source = tyr::formalism::datalog::Repository();
-    auto destination = std::optional<tyr::formalism::datalog::Repository> {};  // over the source once it is built
+    auto source = tyr::formalism::Repository();
+    auto destination = std::optional<tyr::formalism::Repository> {};  // over the source once it is built
 
-    auto filtered = std::optional<tyr::formalism::datalog::ProgramView<::tyr::GroundTag>> {};
+    auto filtered = std::optional<tyr::formalism::ProgramView<::tyr::GroundTag>> {};
     auto retained_predicate_source_index = static_cast<ygg::uint_t>(0);
     {
         const auto intern = [&](auto data) { return ygg::formalism::insert(source, data).first; };
@@ -115,39 +115,38 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         { return intern(urd::data<tyr::formalism::Predicate<T>> { std::string(name), 0 }); };
         const auto function = [&]<tyr::formalism::FactKind T>(const char* name)
         { return intern(urd::data<tyr::formalism::Function<T>> { std::string(name), 0 }); };
-        const auto ground_atom = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::PredicateView<T> predicate_)
+        const auto ground_atom = [&]<tyr::formalism::FactKind T>(tyr::formalism::PredicateView<T> predicate_)
         {
             auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<T>>> {};
             binding.relation = predicate_.index();
             const auto binding_view = intern(std::move(binding));
             return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.index() });
         };
-        const auto ground_fterm = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::FunctionView<T> function_)
+        const auto ground_fterm = [&]<tyr::formalism::FactKind T>(tyr::formalism::FunctionView<T> function_)
         {
             auto binding = urd::data<ygg::Row<tyr::formalism::Function<T>>> {};
             binding.relation = function_.index();
             const auto binding_view = intern(std::move(binding));
             return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.index() });
         };
-        const auto static_literal = [&](tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag> atom, bool polarity)
+        const auto static_literal = [&](tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag> atom, bool polarity)
         { return intern(urd::data<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>> { atom.index(), polarity }); };
-        const auto fluent_literal = [&](tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> atom, bool polarity)
+        const auto fluent_literal = [&](tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> atom, bool polarity)
         { return intern(urd::data<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::FluentTag>> { atom.index(), polarity }); };
-        const auto condition =
-            [&](std::initializer_list<tyr::formalism::datalog::LiteralView<::tyr::GroundTag, tyr::formalism::StaticTag>> static_literals,
-                std::initializer_list<tyr::formalism::datalog::LiteralView<::tyr::GroundTag, tyr::formalism::FluentTag>> fluent_literals = {})
+        const auto condition = [&](std::initializer_list<tyr::formalism::LiteralView<::tyr::GroundTag, tyr::formalism::StaticTag>> static_literals,
+                                   std::initializer_list<tyr::formalism::LiteralView<::tyr::GroundTag, tyr::formalism::FluentTag>> fluent_literals = {})
         {
-            auto data = urd::data<tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> {};
+            auto data = urd::data<tyr::formalism::RuleBody<::tyr::GroundTag>> {};
             for (const auto value : static_literals)
                 data.static_literals.push_back(value.index());
             for (const auto value : fluent_literals)
                 data.fluent_literals.push_back(value.index());
             return intern(std::move(data));
         };
-        const auto predicate_rule = [&](tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> body,
-                                        tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> head)
+        const auto predicate_rule =
+            [&](tyr::formalism::RuleBodyView<::tyr::GroundTag> body, tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> head)
         {
-            auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag>> {};
+            auto rule_data = urd::data<tyr::formalism::Rule<::tyr::GroundTag>> {};
             rule_data.body = body.index();
             rule_data.fluent_heads.push_back(head.index());
             return intern(std::move(rule_data));
@@ -171,7 +170,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         const auto fluent_value =
             intern(urd::data<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>> { retained_term.index(), 3.0 });
 
-        auto program_data = urd::data<tyr::formalism::datalog::Program<::tyr::GroundTag>> {};
+        auto program_data = urd::data<tyr::formalism::Program<::tyr::GroundTag>> {};
         program_data.static_predicates = { present.get_predicate().index(), absent.get_predicate().index() };
         program_data.fluent_predicates = { retained_atom.get_predicate().index(), removed_atom.get_predicate().index() };
         program_data.static_functions = { static_term.get_function().index() };
@@ -199,7 +198,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     ASSERT_TRUE(filtered->get_goal().has_value());
     EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
     // No rule was added: the layers hold the source's two.
-    EXPECT_EQ((destination->size<tyr::formalism::datalog::Rule<::tyr::GroundTag>>()), 2);
+    EXPECT_EQ((destination->size<tyr::formalism::Rule<::tyr::GroundTag>>()), 2);
 }
 
 }

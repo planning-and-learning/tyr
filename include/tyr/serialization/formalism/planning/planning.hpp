@@ -43,47 +43,47 @@ inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, 
 { result = value.value; }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ObjectView>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::VariableView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::VariableView>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
 }
 
 template<class Archive, ::tyr::formalism::FactKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PredicateView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::PredicateView<T>>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
     ar.field("arity", [](const auto& value) -> decltype(auto) { return (value.get_arity()); });
 }
 
 template<class Archive, ::tyr::formalism::FactKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::FunctionView<T>>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
     ar.field("arity", [](const auto& value) -> decltype(auto) { return (value.get_arity()); });
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::TermView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::TermView>)
 {
     // A term is the variant: an object or a parameter, written as the alternative it holds.
     ar.variant([](const auto& value) -> decltype(auto) { return (value); });
 }
 
 template<class Archive, typename T>
-void describe_fields(Archive& ar, std::type_identity<ygg::RowView<T, ::tyr::formalism::planning::Repository>>)
+void describe_fields(Archive& ar, std::type_identity<ygg::RowView<T, ::tyr::formalism::Repository>>)
 {
     ar.field("relation", [](const auto& value) -> decltype(auto) { return (value.get_relation()); });
     ar.field("objects", [](const auto& value) { return value.get_objects(); });
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<::tyr::LiftedTag>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ActionView<::tyr::LiftedTag>>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
     ar.field("original_name", [](const auto& value) -> decltype(auto) { return (value.get_original_name()); });
@@ -94,7 +94,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<::tyr::GroundTag>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ActionView<::tyr::GroundTag>>)
 {
     ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
     ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
@@ -102,20 +102,20 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<::tyr::LiftedTag, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::AtomView<::tyr::LiftedTag, F>>)
 {
     ar.field("predicate", [](const auto& value) -> decltype(auto) { return (value.get_predicate()); });
     ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
 }
 
 template<class Archive, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<::tyr::GroundTag, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::AtomView<::tyr::GroundTag, F>>)
 {
     ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::AxiomView<::tyr::LiftedTag>>)
 {
     ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
     ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
@@ -123,7 +123,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::GroundTag>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::AxiomView<::tyr::GroundTag>>)
 {
     ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
     ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
@@ -131,7 +131,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::BinaryOperatorView<T, O>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::BinaryOperatorView<T, O>>)
 {
     ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("lhs", [](const auto& value) -> decltype(auto) { return (value.get_lhs()); });
@@ -139,7 +139,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConditionalEffectView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ConditionalEffectView<T>>)
 {
     if constexpr (std::same_as<T, ::tyr::LiftedTag>)
     {
@@ -150,7 +150,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConjunctiveConditionView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ConjunctiveConditionView<T>>)
 {
     if constexpr (std::same_as<T, ::tyr::LiftedTag>)
     {
@@ -173,7 +173,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConjunctiveEffectView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ConjunctiveEffectView<T>>)
 {
     if constexpr (std::same_as<T, ::tyr::LiftedTag>)
     {
@@ -189,7 +189,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::DomainView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::DomainView>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
     ar.field("static_predicates", [](const auto& value) -> decltype(auto) { return (value.template get_predicates<::tyr::formalism::StaticTag>()); });
@@ -204,40 +204,40 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::formalism::FactKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRFactView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::FDRFactView<T>>)
 {
     ar.field("fdr_variable", [](const auto& value) -> decltype(auto) { return (value.get_variable()); });
     ar.field("value", [](const auto& value) -> decltype(auto) { return value.get_value().value; });
 }
 
 template<class Archive, ::tyr::formalism::FactKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRVariableView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::FDRVariableView<T>>)
 {
     ar.field("atoms", [](const auto& value) -> decltype(auto) { return (value.get_atoms()); });
 }
 
 template<class Archive, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::FunctionTermValueView<::tyr::GroundTag, F>>)
 {
     ar.field("function_term", [](const auto& value) -> decltype(auto) { return (value.get_fterm()); });
     ar.field("value", [](const auto& value) -> decltype(auto) { return (value.get_value()); });
 }
 
 template<class Archive, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::FunctionTermView<::tyr::LiftedTag, F>>)
 {
     ar.field("function", [](const auto& value) -> decltype(auto) { return (value.get_function()); });
     ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
 }
 
 template<class Archive, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::FunctionTermView<::tyr::GroundTag, F>>)
 {
     ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::InvariantView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::InvariantView>)
 {
     ar.field("num_rigid_variables", [](const auto& value) -> decltype(auto) { return (value.get_num_rigid_variables()); });
     ar.field("num_counted_variables", [](const auto& value) -> decltype(auto) { return (value.get_num_counted_variables()); });
@@ -245,28 +245,28 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::LiteralView<T, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::LiteralView<T, F>>)
 {
     ar.field("atom", [](const auto& value) -> decltype(auto) { return (value.get_atom()); });
     ar.field("polarity", [](const auto& value) -> decltype(auto) { return (value.get_polarity()); });
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MetricView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::MetricView>)
 {
     ar.field("optimization_direction", [](const auto& value) -> decltype(auto) { return (value.get_optimization_direction()); });
     ar.field("function_expression", [](const auto& value) -> decltype(auto) { return (value.get_fexpr()); });
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
 {
     ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("args", [](const auto& value) -> decltype(auto) { return (value.get_args()); });
 }
 
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::NumericEffectView<T, F>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::NumericEffectView<T, F>>)
 {
     ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("function_term", [](const auto& value) -> decltype(auto) { return (value.get_fterm()); });
@@ -274,14 +274,14 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningDomain>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::PlanningDomain>)
 {
     ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
     ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningTask<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::PlanningTask<T>>)
 {
     ar.field("task", [](const auto& value) -> decltype(auto) { return (value.get_task()); });
     ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
@@ -289,7 +289,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::TaskView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::TaskView<T>>)
 {
     ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
     ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
@@ -317,7 +317,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
 {
     ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("arg", [](const auto& value) -> decltype(auto) { return (value.get_arg()); });
@@ -325,7 +325,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 
 /// The Datalog records the repository holds (the programs made from a task).
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::RuleView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::RuleView<T>>)
 {
     if constexpr (std::same_as<T, ::tyr::LiftedTag>)
     {
@@ -338,7 +338,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::
 }
 
 template<class Archive>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::RuleBodyView>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::RuleBodyView<::tyr::GroundTag>>)
 {
     ar.field("static_literals", [](const auto& value) -> decltype(auto) { return (value.get_static_literals()); });
     ar.field("fluent_literals", [](const auto& value) -> decltype(auto) { return (value.get_fluent_literals()); });
@@ -347,7 +347,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::
 }
 
 template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::datalog::ProgramView<T>>)
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::ProgramView<T>>)
 {
     ar.field("static_predicates", [](const auto& value) -> decltype(auto) { return (value.get_static_predicates()); });
     ar.field("fluent_predicates", [](const auto& value) -> decltype(auto) { return (value.get_fluent_predicates()); });

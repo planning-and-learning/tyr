@@ -33,10 +33,10 @@ namespace urd
 
 /// The builder of FDRFact: its record's members, each in its built form (urd::built_t).
 template<::tyr::formalism::FactKind T, typename C>
-struct builder<::tyr::formalism::planning::FDRFact<T>, C>
+struct builder<::tyr::formalism::FDRFact<T>, C>
 {
-    urd::built_t<urd::index<::tyr::formalism::planning::FDRVariable<T>>, C> variable;
-    urd::built_t<::tyr::formalism::planning::FDRValue, C> value;
+    urd::built_t<urd::index<::tyr::formalism::FDRVariable<T>>, C> variable;
+    urd::built_t<::tyr::formalism::FDRValue, C> value;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &builder::variable>, urd::field<"value", &builder::value>> {}; }
 

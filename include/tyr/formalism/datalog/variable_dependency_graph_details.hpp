@@ -29,7 +29,7 @@
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::formalism::datalog::details
+namespace tyr::formalism::details
 {
 
 /// The literal dependency set of dep (unary or binary) for fact kind F and polarity P.

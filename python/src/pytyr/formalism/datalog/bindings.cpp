@@ -21,10 +21,10 @@
 
 #include <tyr/formalism/planning/repository.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
-void bind_formalism(nb::module_& m)
+void bind_datalog_formalism(nb::module_& m)
 {
     auto repository = nb::borrow<RepositoryBinding>(nb::type<Repository>());
     bind_rule_body(m, repository);
@@ -32,4 +32,4 @@ void bind_formalism(nb::module_& m)
     bind_program(m, repository);
 }
 
-}  // namespace tyr::formalism::datalog
+}  // namespace tyr::formalism

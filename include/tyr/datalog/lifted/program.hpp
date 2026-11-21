@@ -32,7 +32,7 @@ template<>
 class Program<LiftedTag>
 {
 public:
-    Program(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::RepositoryPtr program_repository);
+    Program(formalism::ProgramView<LiftedTag> program, formalism::RepositoryPtr program_repository);
 
     [[nodiscard]] auto get_program() const noexcept { return m_program; }
 
@@ -49,8 +49,8 @@ public:
 private:
     friend struct ConstProgramWorkspace<LiftedTag>;
 
-    formalism::datalog::ProgramView<LiftedTag> m_program;
-    formalism::datalog::RepositoryPtr m_program_repository;
+    formalism::ProgramView<LiftedTag> m_program;
+    formalism::RepositoryPtr m_program_repository;
     analysis::ProgramAnalysis m_analysis;
     analysis::RuleStrata m_strata;
     analysis::ListenerStrata m_listeners;

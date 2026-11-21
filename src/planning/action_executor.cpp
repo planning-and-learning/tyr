@@ -73,11 +73,11 @@ namespace
 {
 
 template<TaskKind Kind>
-void process_effects(formalism::planning::ActionView<GroundTag> action,
+void process_effects(formalism::ActionView<GroundTag> action,
                      urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                      StateContext<Kind>& state_context,
-                     urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
-                     urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
+                     urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
+                     urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
                      urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
 {
     for (const auto cond_effect : action.get_effects())
@@ -87,10 +87,10 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
             const auto effect = cond_effect.get_effect();
 
             for (const auto fact : effect.template get_facts<formalism::NegativeTag>())
-                tmp_del_effects.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+                tmp_del_effects.push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
 
             for (const auto fact : effect.template get_facts<formalism::PositiveTag>())
-                tmp_add_effects.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+                tmp_add_effects.push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
 
             for (const auto numeric_effect : effect.get_numeric_effects())
             {
@@ -107,14 +107,14 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
 }
 
 /// Applies the effect of a firing conditional effect whose variables the grounder context's binding already extends.
-void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> cond_effect,
+void apply_lifted_effect(formalism::ConditionalEffectView<LiftedTag> cond_effect,
                          urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                          StateContext<LiftedTag>& state_context,
                          const ApplicabilityContext& applicability_context,
-                         formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder_context,
-                         formalism::planning::FDRContext& fdr_context,
-                         urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
-                         urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
+                         formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder_context,
+                         formalism::FDRContext& fdr_context,
+                         urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
+                         urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
                          urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
 {
     const auto effect = cond_effect.get_effect();
@@ -123,7 +123,7 @@ void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> c
     {
         const auto fact = fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first);
         (literal.get_polarity() ? tmp_add_effects : tmp_del_effects)
-            .push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+            .push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
     }
 
     for (const auto numeric_effect : effect.get_numeric_effects())
@@ -147,8 +147,8 @@ void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> c
 template<TaskKind Kind>
 void compute_touched_delta(const StateContext<Kind>& parent,
                            const StateContext<Kind>& successor,
-                           const urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& del_effects,
-                           const urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& add_effects,
+                           const urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& del_effects,
+                           const urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& add_effects,
                            const urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
                            StateDelta& delta)
 {
@@ -174,8 +174,8 @@ void compute_touched_delta(const StateContext<Kind>& parent,
 template<TaskKind Kind, typename ProcessEffects>
 ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_context,
                                             urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
-                                            urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& del_effects,
-                                            urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& add_effects,
+                                            urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& del_effects,
+                                            urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& add_effects,
                                             urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
                                             StateDelta& delta,
                                             ProcessEffects process_effects)
@@ -194,7 +194,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
     const auto successor_facts = FactStorageView<Kind>(&successor_state_builder.fact_storage, state_context.task().get_repository().get());
     for (const auto fact : del_effects)
         if (successor_facts.get(fact.variable) == fact.value)
-            successor_state_builder.set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> { fact.variable, formalism::planning::FDRValue::none() });
+            successor_state_builder.set(urd::data<formalism::FDRFact<formalism::FluentTag>> { fact.variable, formalism::FDRValue::none() });
 
     for (const auto fact : add_effects)
         successor_state_builder.set(fact);
@@ -214,22 +214,22 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 // Ground action API
 
 template<TaskKind Kind>
-bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
+bool ActionExecutor::is_applicable(formalism::ActionView<GroundTag> action, const StateContext<Kind>& state)
 { return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state); }
 
-template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
-template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
+template bool ActionExecutor::is_applicable(formalism::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
+template bool ActionExecutor::is_applicable(formalism::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
-bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
+bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action, const StateContext<Kind>& state)
 { return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families); }
 
-template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
-template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
-                                                       formalism::planning::ActionView<GroundTag> action,
+                                                       formalism::ActionView<GroundTag> action,
                                                        urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                                                        StateDelta& delta)
 {
@@ -244,20 +244,20 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>&
 }
 
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                                                formalism::planning::ActionView<GroundTag> action,
+                                                                formalism::ActionView<GroundTag> action,
                                                                 urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                                                                 StateDelta& delta);
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<GroundTag>& state_context,
-                                                                formalism::planning::ActionView<GroundTag> action,
+                                                                formalism::ActionView<GroundTag> action,
                                                                 urd::builder<State<GroundTag>, StateRepository<GroundTag>>& successor_state_builder,
                                                                 StateDelta& delta);
 
 // Action binding API
 
-bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
+bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<LiftedTag> action,
                                             const StateContext<LiftedTag>& state_context,
-                                            formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
-                                            const formalism::planning::FDRContext& fdr,
+                                            formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                                            const formalism::FDRContext& fdr,
                                             ForEachEffectBinding for_each_effect_binding)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
@@ -274,9 +274,9 @@ bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<Lift
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                                       formalism::planning::ActionView<LiftedTag> action,
-                                                       formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
-                                                       formalism::planning::FDRContext& fdr,
+                                                       formalism::ActionView<LiftedTag> action,
+                                                       formalism::WriteContext<formalism::Builder, formalism::Repository>& grounder,
+                                                       formalism::FDRContext& fdr,
                                                        ForEachEffectBinding for_each_effect_binding,
                                                        urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                                                        StateDelta& delta)

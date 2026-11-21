@@ -58,7 +58,7 @@
 namespace tyr::planning
 {
 
-std::size_t num_task_derived_predicates(formalism::planning::TaskView<LiftedTag> task)
+std::size_t num_task_derived_predicates(formalism::TaskView<LiftedTag> task)
 { return task.get_domain().get_predicates<formalism::DerivedTag>().size() + task.get_derived_predicates().size(); }
 
 }

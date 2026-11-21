@@ -36,13 +36,13 @@ template<typename Tag>
 struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
-    urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable;
+    urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> variable;
     urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>> domain_children;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
 
-    data(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable_,
+    data(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> variable_,
          urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>> domain_children_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),

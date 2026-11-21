@@ -34,7 +34,7 @@
 #include <variant>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 /// What synthesis builds candidates with: the repository their predicates and objects are read through, and the pool

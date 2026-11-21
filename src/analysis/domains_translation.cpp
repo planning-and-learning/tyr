@@ -142,7 +142,7 @@ ActionDomainViewMap<C> to_action_domain_view_map(const ActionDomainMap& domains,
 
 }  // namespace
 
-TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::planning::Repository& repository)
+TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::Repository& repository)
 {
     using C = TaskVariableDomainsView::C;
 
@@ -153,7 +153,7 @@ TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains&
         to_simple_scoped_domain_view_map<formalism::Function<formalism::StaticTag>, C>(domains.static_function_domains, repository),
         to_simple_scoped_domain_view_map<formalism::Function<formalism::FluentTag>, C>(domains.fluent_function_domains, repository),
         to_action_domain_view_map<C>(domains.action_domains, repository),
-        to_scoped_domain_view_map<formalism::planning::Axiom<LiftedTag>, C>(domains.axiom_domains, repository),
+        to_scoped_domain_view_map<formalism::Axiom<LiftedTag>, C>(domains.axiom_domains, repository),
     };
 }
 

@@ -40,47 +40,46 @@ namespace tyr::planning
 /// the task's own records.
 struct StateInputs
 {
-    urd::Store<urd::set<formalism::planning::PredicateView<formalism::FluentTag>>> fluent_predicates;
-    urd::Store<urd::set<formalism::planning::PredicateView<formalism::DerivedTag>>> derived_predicates;
-    urd::Store<urd::set<formalism::planning::FunctionView<formalism::FluentTag>>> fluent_functions;
+    urd::Store<urd::set<formalism::PredicateView<formalism::FluentTag>>> fluent_predicates;
+    urd::Store<urd::set<formalism::PredicateView<formalism::DerivedTag>>> derived_predicates;
+    urd::Store<urd::set<formalism::FunctionView<formalism::FluentTag>>> fluent_functions;
 
-    [[nodiscard]] bool reads(formalism::planning::PredicateView<formalism::FluentTag> predicate) const { return fluent_predicates.contains(predicate); }
+    [[nodiscard]] bool reads(formalism::PredicateView<formalism::FluentTag> predicate) const { return fluent_predicates.contains(predicate); }
 
-    [[nodiscard]] bool reads(formalism::planning::PredicateView<formalism::DerivedTag> predicate) const { return derived_predicates.contains(predicate); }
+    [[nodiscard]] bool reads(formalism::PredicateView<formalism::DerivedTag> predicate) const { return derived_predicates.contains(predicate); }
 
-    [[nodiscard]] bool reads(formalism::planning::FunctionView<formalism::FluentTag> function) const { return fluent_functions.contains(function); }
+    [[nodiscard]] bool reads(formalism::FunctionView<formalism::FluentTag> function) const { return fluent_functions.contains(function); }
 };
 
 /// What a whole program reads of a state: all of it.
 struct AllStateInputs
 {
-    [[nodiscard]] static bool reads(formalism::planning::PredicateView<formalism::FluentTag>) noexcept { return true; }
+    [[nodiscard]] static bool reads(formalism::PredicateView<formalism::FluentTag>) noexcept { return true; }
 
-    [[nodiscard]] static bool reads(formalism::planning::PredicateView<formalism::DerivedTag>) noexcept { return true; }
+    [[nodiscard]] static bool reads(formalism::PredicateView<formalism::DerivedTag>) noexcept { return true; }
 
-    [[nodiscard]] static bool reads(formalism::planning::FunctionView<formalism::FluentTag>) noexcept { return true; }
+    [[nodiscard]] static bool reads(formalism::FunctionView<formalism::FluentTag>) noexcept { return true; }
 };
 
 /// What a program reads of a state: StateInputs or AllStateInputs.
 template<typename R>
 concept StateInputsConcept = requires(const R& inputs,
-                                      formalism::planning::PredicateView<formalism::FluentTag> fluent_predicate,
-                                      formalism::planning::PredicateView<formalism::DerivedTag> derived_predicate,
-                                      formalism::planning::FunctionView<formalism::FluentTag> function) {
+                                      formalism::PredicateView<formalism::FluentTag> fluent_predicate,
+                                      formalism::PredicateView<formalism::DerivedTag> derived_predicate,
+                                      formalism::FunctionView<formalism::FluentTag> function) {
     { inputs.reads(fluent_predicate) } -> std::same_as<bool>;
     { inputs.reads(derived_predicate) } -> std::same_as<bool>;
     { inputs.reads(function) } -> std::same_as<bool>;
 };
 
 /// The action whose applicability atoms each (derived) predicate holds (action and ground task programs).
-using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::DerivedTag>, formalism::planning::ActionView<LiftedTag>>>;
+using AppPredicateToActionMapping = urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, formalism::ActionView<LiftedTag>>>;
 
 /// The predicate of each conditional effect with variables or a condition, whose atoms are the bindings of its action
 /// followed by the objects of the effect's variables for which the effect fires.
 /// Keyed by the action too, since actions can share an interned conditional effect.
-using ConditionalEffectToPredicateMapping =
-    urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
-                        formalism::datalog::PredicateView<formalism::DerivedTag>>>;
+using ConditionalEffectToPredicateMapping = urd::Store<
+    urd::map<std::pair<formalism::ActionView<LiftedTag>, formalism::ConditionalEffectView<LiftedTag>>, formalism::PredicateView<formalism::DerivedTag>>>;
 
 }
 

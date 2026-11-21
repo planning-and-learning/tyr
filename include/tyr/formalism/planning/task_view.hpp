@@ -38,7 +38,7 @@
 namespace urd
 {
 template<::tyr::TaskKind Kind, typename V>
-struct view_mixin<::tyr::formalism::planning::Task<Kind>, V>
+struct view_mixin<::tyr::formalism::Task<Kind>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -91,12 +91,12 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
-    { return self().template member<::tyr::formalism::planning::atoms_of<T, Kind>>(); }
+    { return self().template member<::tyr::formalism::task_atoms_of<T, Kind>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
     auto get_fterm_values() const noexcept
-    { return self().template member<::tyr::formalism::planning::fterm_values_of<T, Kind>>(); }
+    { return self().template member<::tyr::formalism::task_fterm_values_of<T, Kind>>(); }
 
     [[nodiscard]] size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
 

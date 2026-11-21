@@ -90,14 +90,14 @@ private:
     ygg::float_t m_metric;
 };
 
-template<TaskKind Kind, StateViewConcept<Kind> State, ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
+template<TaskKind Kind, StateViewConcept<Kind> State, ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
 struct LabeledNode
 {
     Binding label;
     Node<Kind, State> node;
 
     [[nodiscard]] auto pack() const noexcept(noexcept(node.pack()))
-        requires std::same_as<Binding, formalism::planning::ActionRowView> && requires(const Node<Kind, State>& value) { value.pack(); }
+        requires std::same_as<Binding, formalism::ActionRowView> && requires(const Node<Kind, State>& value) { value.pack(); }
     { return PackedLabeledNode<Kind> { label, node.pack() }; }
 
     static constexpr std::string_view name = "LabeledNode";
@@ -108,7 +108,7 @@ struct LabeledNode
 template<TaskKind Kind>
 struct PackedLabeledNode
 {
-    formalism::planning::ActionRowView label;
+    formalism::ActionRowView label;
     PackedNode<Kind> node;
 
     [[nodiscard]] LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }

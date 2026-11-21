@@ -35,7 +35,7 @@ namespace tyr::datalog
 
 struct RuleSplitting
 {
-    using Rule = urd::index<formalism::datalog::Rule<LiftedTag>>;
+    using Rule = urd::index<formalism::Rule<LiftedTag>>;
 
     /// A rule that replaces part of a split source rule: the position of each of its variables among the source rule's variables.
     struct Origin
@@ -56,8 +56,7 @@ struct RuleSplitting
 /// in no head and only in some preconditions: the preconditions that use such a variable are replaced by an atom over their variables that the rest of the rule
 /// needs, which a projection rule of cost 0 derives. Rules with numeric constraints are kept as they are. The minimal sum and max costs of every atom are
 /// preserved.
-formalism::datalog::ProgramView<LiftedTag>
-split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, RuleSplitting& splitting);
+formalism::ProgramView<LiftedTag> split_rules(formalism::ProgramView<LiftedTag> program, formalism::Repository& repository, RuleSplitting& splitting);
 
 }
 

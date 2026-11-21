@@ -69,9 +69,9 @@ template<TaskKind Kind>
 class RPGProgram
 {
 public:
-    using Task = formalism::planning::PlanningTask<Kind>;
-    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
-    using Rule = urd::index<formalism::datalog::Rule<Kind>>;
+    using Task = formalism::PlanningTask<Kind>;
+    using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::ActionView<GroundTag>, formalism::ActionView<LiftedTag>>;
+    using Rule = urd::index<formalism::Rule<Kind>>;
     /// Rules are hash-consed, so actions with identical relaxed rules share one rule.
     using Actions = urd::Store<urd::sequence<Action>>;
     using RuleToActionMapping = urd::Store<urd::map<Rule, Actions>>;
@@ -90,7 +90,7 @@ public:
 
     /// Not noexcept: the view accessors it goes through are checked and may throw.
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access): value() is the check: it throws for a program without a goal
-    [[nodiscard]] formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const { return m_datalog_program.get_program().get_goal().value(); }
+    [[nodiscard]] formalism::RuleBodyView<GroundTag> get_goal() const { return m_datalog_program.get_program().get_goal().value(); }
 
 private:
     RuleToActionMapping m_rule_to_action;
@@ -99,10 +99,10 @@ private:
 };
 
 template<>
-RPGProgram<GroundTag>::RPGProgram(const formalism::planning::PlanningTask<GroundTag>& task, CostMode cost_mode, bool split_rules);
+RPGProgram<GroundTag>::RPGProgram(const formalism::PlanningTask<GroundTag>& task, CostMode cost_mode, bool split_rules);
 
 template<>
-RPGProgram<LiftedTag>::RPGProgram(const formalism::planning::PlanningTask<LiftedTag>& task, CostMode cost_mode, bool split_rules);
+RPGProgram<LiftedTag>::RPGProgram(const formalism::PlanningTask<LiftedTag>& task, CostMode cost_mode, bool split_rules);
 }
 
 #endif

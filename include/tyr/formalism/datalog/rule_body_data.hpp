@@ -33,9 +33,9 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>
+struct data<::tyr::formalism::RuleBody<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals;
@@ -78,7 +78,7 @@ struct data<::tyr::formalism::datalog::RuleBody<::tyr::GroundTag>>
 
 }
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 /// The member holding the F-literals of a rule body.
 template<FactKind F>

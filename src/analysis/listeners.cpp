@@ -38,7 +38,7 @@ namespace tyr::analysis
 {
 namespace
 {
-void add_stratum_listeners(const TypedRuleStratum& stratum, const formalism::datalog::Repository& context, TypedListenerStratum& listeners)
+void add_stratum_listeners(const TypedRuleStratum& stratum, const formalism::Repository& context, TypedListenerStratum& listeners)
 {
     for (const auto rule : stratum)
     {
@@ -52,13 +52,13 @@ void add_stratum_listeners(const TypedRuleStratum& stratum, const formalism::dat
             if (literal.get_polarity())
                 listeners.derived_predicates[literal.get_atom().get_predicate().index()].insert(rule);
 
-        for (const auto term : formalism::datalog::collect_fluent_reads(rule_view))
+        for (const auto term : formalism::collect_fluent_reads(rule_view))
             listeners.functions[term.get_function().index()].insert(rule);
     }
 }
 }
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::datalog::Repository& context)
+ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::Repository& context)
 {
     auto listeners = ListenerStrata();
 

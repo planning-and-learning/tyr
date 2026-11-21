@@ -41,7 +41,7 @@
 #include <variant>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 namespace
 {

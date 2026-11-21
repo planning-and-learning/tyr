@@ -75,7 +75,7 @@ TEST(TyrPlanningLiftedStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto make_task = [&]
     {
-        const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(R"(
+        const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(R"(
 (define (domain borrowed-state)
   (:requirements :adl :numeric-fluents :derived-predicates)
   (:predicates (on) (live))
@@ -84,7 +84,7 @@ TEST(TyrPlanningLiftedStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
   (:action disable :parameters () :precondition (on)
     :effect (and (not (on)) (increase (value) 1))))
 )",
-                                                                                                         "borrowed-state-domain.pddl")
+                                                                                               "borrowed-state-domain.pddl")
                                                                             .parse_task(R"(
 (define (problem borrowed-state-problem)
   (:domain borrowed-state)

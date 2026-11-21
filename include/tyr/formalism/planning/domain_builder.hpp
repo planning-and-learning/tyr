@@ -37,9 +37,9 @@ namespace urd
 
 /// The builder of Domain: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Domain, C>
+struct builder<::tyr::formalism::Domain, C>
 {
-    urd::index<::tyr::formalism::planning::Domain> index;
+    urd::index<::tyr::formalism::Domain> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;
@@ -48,8 +48,8 @@ struct builder<::tyr::formalism::planning::Domain, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>>, C> fluent_functions;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>>, C> auxiliary_function;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> constants;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>, C> actions;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> axioms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::LiftedTag>>>, C> actions;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> axioms;
 
     static constexpr auto fields() noexcept
     {

@@ -25,8 +25,7 @@ namespace tyr::datalog
 
 /// The program without the rules its static facts can never apply, written into `repository`, a layer over the
 /// program's: the kept rules are the program's, as they are.
-formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(formalism::datalog::ProgramView<GroundTag> program,
-                                                                                formalism::datalog::Repository& repository);
+formalism::ProgramView<GroundTag> remove_statically_inapplicable_rules(formalism::ProgramView<GroundTag> program, formalism::Repository& repository);
 
 }
 

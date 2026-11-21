@@ -36,22 +36,22 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<GroundTag>
 {
-    using Action = formalism::planning::ActionView<GroundTag>;
+    using Action = formalism::ActionView<GroundTag>;
 
     template<typename Workspace>
-    static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, formalism::datalog::PredicateRowView<formalism::FluentTag> head)
+    static std::optional<formalism::AtomView<GroundTag, formalism::FluentTag>>
+    translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, formalism::PredicateRowView<formalism::FluentTag> head)
     {
         // The head is a row of the task's: its atom, where the task has one.
         return find_ground_atom(head, *definition.task->get_repository());
     }
 
     template<typename Workspace>
-    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
+    static void set_goal(RPGDefinition<GroundTag>& definition, Workspace& workspace, formalism::ConjunctiveConditionView<GroundTag> source_goal)
     { materialize_goal(definition, workspace, source_goal); }
 
     template<typename Workspace>
-    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
+    static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::ConjunctiveConditionView<GroundTag>)
     { workspace.clear_costs(); }
 
     static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation<GroundTag>& witness)

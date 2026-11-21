@@ -27,7 +27,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_invariant(nb::module_& m, RepositoryBinding& repository)
@@ -39,4 +39,4 @@ void bind_invariant(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_builder<Invariant, Repository>(m);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

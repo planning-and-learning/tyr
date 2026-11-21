@@ -86,7 +86,7 @@ public:
     [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     { return self().context().get_task()->get_static_state().get(index); }
 
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue value(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
+    [[nodiscard]] ::tyr::formalism::FDRValue value(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
     { return get_fact_storage().get(index); }
 
     [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
@@ -95,24 +95,23 @@ public:
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
     { return get_atom_storage().test(index); }
 
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.index()); }
+    [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.index()); }
 
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
+    [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
     {
         const auto fact = std::as_const(*self().context().get_task()->get_fdr_context()).get_fact(view);
         return fact && value(fact->get_variable().index()) == fact->get_value();
     }
 
-    [[nodiscard]] ygg::float_t value(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
+    [[nodiscard]] ygg::float_t value(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
     { return value(view.index()); }
 
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue value(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
+    [[nodiscard]] ::tyr::formalism::FDRValue value(::tyr::formalism::FDRVariableView<::tyr::formalism::FluentTag> view) const { return value(view.index()); }
+
+    [[nodiscard]] ygg::float_t value(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
     { return value(view.index()); }
 
-    [[nodiscard]] ygg::float_t value(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-    { return value(view.index()); }
-
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
+    [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
     /// Its fluent facts, as its fact storage holds them.
     [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return get_fact_storage().facts(); }
@@ -151,7 +150,7 @@ public:
     }
 
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms(::tyr::formalism::planning::PredicateView<F> predicate) const
+    [[nodiscard]] auto get_atoms(::tyr::formalism::PredicateView<F> predicate) const
     {
         return get_atoms<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
     }
@@ -161,7 +160,7 @@ public:
     {
         return get_fluent_fact_index_values()
                | std::views::transform([repository = get_formalism_repository().get()](auto fact)
-                                       { return ::tyr::formalism::planning::computed_fact_view(std::move(fact), *repository); });
+                                       { return ::tyr::formalism::computed_fact_view(std::move(fact), *repository); });
     }
 
     template<::tyr::formalism::FactKind F>
@@ -192,15 +191,13 @@ public:
                               &view_mixin::test),
                           urd::arg<"index">>,
             urd::function<"test",
-                          static_cast<bool (view_mixin::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag>) const>(
-                              &view_mixin::test),
+                          static_cast<bool (view_mixin::*)(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag>) const>(&view_mixin::test),
                           urd::arg<"view">>,
             urd::function<"test",
-                          static_cast<bool (view_mixin::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>) const>(
-                              &view_mixin::test),
+                          static_cast<bool (view_mixin::*)(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>) const>(&view_mixin::test),
                           urd::arg<"view">>,
             urd::function<"test",
-                          static_cast<bool (view_mixin::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>) const>(
+                          static_cast<bool (view_mixin::*)(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>) const>(
                               &view_mixin::test),
                           urd::arg<"view">>,
             urd::function<"get",
@@ -208,24 +205,24 @@ public:
                                           const>(&view_mixin::value),
                           urd::arg<"index">>,
             urd::function<"get",
-                          static_cast<::tyr::formalism::planning::FDRValue (view_mixin::*)(
-                              urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>) const>(&view_mixin::value),
+                          static_cast<::tyr::formalism::FDRValue (view_mixin::*)(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>) const>(
+                              &view_mixin::value),
                           urd::arg<"index">>,
             urd::function<"get",
                           static_cast<ygg::float_t (view_mixin::*)(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>)
                                           const>(&view_mixin::value),
                           urd::arg<"index">>,
             urd::function<"get",
-                          static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag>)
-                                          const>(&view_mixin::value),
+                          static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag>) const>(
+                              &view_mixin::value),
                           urd::arg<"view">>,
             urd::function<"get",
-                          static_cast<::tyr::formalism::planning::FDRValue (view_mixin::*)(
-                              ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag>) const>(&view_mixin::value),
+                          static_cast<::tyr::formalism::FDRValue (view_mixin::*)(::tyr::formalism::FDRVariableView<::tyr::formalism::FluentTag>) const>(
+                              &view_mixin::value),
                           urd::arg<"view">>,
             urd::function<"get",
-                          static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>)
-                                          const>(&view_mixin::value),
+                          static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>) const>(
+                              &view_mixin::value),
                           urd::arg<"view">>,
             urd::function<"get_fluent_fact_index_values", &view_mixin::get_fluent_fact_index_values>,
             urd::function<"fluent_facts", &view_mixin::get_fluent_facts>,
@@ -246,20 +243,20 @@ public:
                               &view_mixin::template get_fterm_values<::tyr::formalism::FluentTag>)>,
             urd::function<"get_atoms",
                           static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>(
-                              std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>>())) (view_mixin::*)(
-                              ::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>) const>(
+                              std::declval<::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>>())) (view_mixin::*)(
+                              ::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>) const>(
                               &view_mixin::template get_atoms<::tyr::formalism::StaticTag>),
                           urd::arg<"predicate">>,
             urd::function<"get_atoms",
                           static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>(
-                              std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>>())) (view_mixin::*)(
-                              ::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>) const>(
+                              std::declval<::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>>())) (view_mixin::*)(
+                              ::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>) const>(
                               &view_mixin::template get_atoms<::tyr::formalism::FluentTag>),
                           urd::arg<"predicate">>,
             urd::function<"get_atoms",
                           static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>(
-                              std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>>())) (view_mixin::*)(
-                              ::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>) const>(
+                              std::declval<::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>>())) (view_mixin::*)(
+                              ::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>) const>(
                               &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>),
                           urd::arg<"predicate">>> {};
         // pack(), where it has it (a registered state).

@@ -22,7 +22,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr import datalog
-from pytyr.formalism.planning import (
+from pytyr.formalism import (
     LiftedPlanningTask,
     Parser,
     PredicateDerived,

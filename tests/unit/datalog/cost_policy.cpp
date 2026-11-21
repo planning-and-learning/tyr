@@ -50,11 +50,11 @@ namespace
 {
 struct RuleBindingFixture
 {
-    tyr::formalism::datalog::RuleView<LiftedTag> rule;
-    tyr::formalism::datalog::RuleRowView binding;
+    tyr::formalism::RuleView<LiftedTag> rule;
+    tyr::formalism::RuleRowView binding;
 };
 
-RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository& repository)
+RuleBindingFixture make_nullary_rule_binding(tyr::formalism::Repository& repository)
 {
     auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>();
     predicate_builder.name = "p";
@@ -71,13 +71,13 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
     const auto [condition, condition_success] = ygg::formalism::insert(repository, condition_builder);
     EXPECT_TRUE(condition_success);
 
-    auto rule_builder = urd::data<tyr::formalism::datalog::Rule<LiftedTag>>();
+    auto rule_builder = urd::data<tyr::formalism::Rule<LiftedTag>>();
     rule_builder.body = condition.index();
     rule_builder.fluent_heads.push_back(atom.index());
     const auto [rule, rule_success] = ygg::formalism::insert(repository, rule_builder);
     EXPECT_TRUE(rule_success);
 
-    auto binding_builder = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag>>>();
+    auto binding_builder = urd::data<ygg::Row<tyr::formalism::Rule<LiftedTag>>>();
     binding_builder.relation = rule.index();
     const auto [binding, binding_success] = ygg::formalism::insert(repository, binding_builder);
     EXPECT_TRUE(binding_success);
@@ -88,7 +88,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
 
 TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
 {
-    auto repository = tyr::formalism::datalog::Repository();
+    auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
     auto predicate_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     predicate_data.relation = fixture.rule.get_fluent_heads().front().get_predicate().index();
@@ -133,7 +133,7 @@ TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
 
 TEST(TyrDatalogCostPolicyTest, RuleCostPolicyDefaultsToZero)
 {
-    auto repository = tyr::formalism::datalog::Repository();
+    auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
     const auto policy = tyr::datalog::RuleCostPolicy();
@@ -143,7 +143,7 @@ TEST(TyrDatalogCostPolicyTest, RuleCostPolicyDefaultsToZero)
 
 TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedDefaultsToZero)
 {
-    auto repository = tyr::formalism::datalog::Repository();
+    auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
     const auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
@@ -153,7 +153,7 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedDefaultsToZero)
 
 TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
 {
-    auto repository = tyr::formalism::datalog::Repository();
+    auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
     auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();

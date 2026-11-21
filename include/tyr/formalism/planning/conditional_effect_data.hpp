@@ -33,18 +33,18 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
+struct data<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition;
-    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect;
+    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> effect;
 
     data() = default;
 
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
-         urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
+         urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
         index(),
         variables(std::move(variables_)),
         condition(condition_),
@@ -67,16 +67,16 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
 };
 
 template<>
-struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
+struct data<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> index;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition;
-    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect;
+    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> effect;
 
     data() = default;
 
     data(urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition_,
-         urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
+         urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
         index(),
         condition(condition_),
         effect(effect_)

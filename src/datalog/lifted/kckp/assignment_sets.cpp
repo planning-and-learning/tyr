@@ -221,7 +221,7 @@ size_t PerfectAssignmentHash::size() const noexcept { return m_num_assignments; 
  */
 
 template<formalism::FactKind T>
-PredicateAssignmentSet<T>::PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate,
+PredicateAssignmentSet<T>::PredicateAssignmentSet(formalism::PredicateView<T> predicate,
                                                   const analysis::VariableDomainList& parameter_domains,
                                                   size_t num_objects) :
     m_predicate_index(predicate.index()),
@@ -235,7 +235,7 @@ void PredicateAssignmentSet<T>::reset() noexcept
 { m_ranks.clear(); }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateRowView<T> binding)
+void PredicateAssignmentSet<T>::insert(formalism::PredicateRowView<T> binding)
 {
     assert(binding.index().relation == m_predicate_index);
     for_each_assignment_rank(m_hash, binding.template get<urd::index<formalism::Object>>(), m_remapped_objects, [&](size_t rank) { m_ranks.insert(rank); });
@@ -284,7 +284,7 @@ template class PredicateAssignmentSet<formalism::DerivedTag>;
  */
 
 template<formalism::FactKind T>
-PredicateAssignmentSets<T>::PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
+PredicateAssignmentSets<T>::PredicateAssignmentSets(formalism::PredicateListView<T> predicates,
                                                     const analysis::PredicateDomainMap<T>& predicate_domains,
                                                     size_t num_objects) :
     m_sets()
@@ -309,15 +309,15 @@ void PredicateAssignmentSets<T>::reset() noexcept
 }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(formalism::datalog::AtomView<GroundTag, T> ground_atom)
+void PredicateAssignmentSets<T>::insert(formalism::AtomView<GroundTag, T> ground_atom)
 { insert(ground_atom.get_row()); }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowView<T> binding)
+void PredicateAssignmentSets<T>::insert(formalism::PredicateRowView<T> binding)
 { m_sets[static_cast<ygg::uint_t>(binding.index().relation.value)].insert(binding); }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings)
+void PredicateAssignmentSets<T>::insert(formalism::PredicateRowForwardRangeView<T> bindings)
 {
     for (const auto binding : bindings)
         insert(binding);
@@ -346,7 +346,7 @@ template class PredicateAssignmentSets<formalism::DerivedTag>;
  */
 
 template<formalism::FactKind T>
-FunctionAssignmentSet<T>::FunctionAssignmentSet(formalism::datalog::FunctionView<T> function,
+FunctionAssignmentSet<T>::FunctionAssignmentSet(formalism::FunctionView<T> function,
                                                 const analysis::VariableDomainList& parameter_domains,
                                                 size_t num_objects) :
     m_function_index(function.index()),
@@ -361,7 +361,7 @@ void FunctionAssignmentSet<T>::reset() noexcept
 { std::fill(m_set.begin(), m_set.end(), ygg::ClosedInterval<ygg::float_t>()); }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool FunctionAssignmentSet<T>::insert(formalism::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     assert(binding.index().relation == m_function_index);
     auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
@@ -374,11 +374,11 @@ bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> bin
 }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value)
+bool FunctionAssignmentSet<T>::insert(formalism::FunctionRowView<T> binding, ygg::float_t value)
 { return insert(binding, ygg::ClosedInterval<ygg::float_t>(value, value)); }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value)
+bool FunctionAssignmentSet<T>::insert(formalism::FunctionTermValueView<GroundTag, T> fterm_value)
 { return insert(fterm_value.get_fterm().get_row(), fterm_value.get_value()); }
 
 template<formalism::FactKind T>
@@ -427,7 +427,7 @@ template class FunctionAssignmentSet<formalism::FluentTag>;
  */
 
 template<formalism::FactKind T>
-FunctionAssignmentSets<T>::FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions,
+FunctionAssignmentSets<T>::FunctionAssignmentSets(formalism::FunctionListView<T> functions,
                                                   const analysis::FunctionDomainMap<T>& function_domains,
                                                   size_t num_objects) :
     m_sets()
@@ -450,20 +450,19 @@ void FunctionAssignmentSets<T>::reset() noexcept
 }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool FunctionAssignmentSets<T>::insert(formalism::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 { return m_sets[binding.get_relation().index().value].insert(binding, std::move(interval)); }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value)
+bool FunctionAssignmentSets<T>::insert(formalism::FunctionTermView<GroundTag, T> function_term, ygg::float_t value)
 { return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), value); }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool FunctionAssignmentSets<T>::insert(formalism::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval)
 { return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), std::move(interval)); }
 
 template<formalism::FactKind T>
-void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms,
-                                       const urd::Store<urd::sequence<ygg::float_t>>& values)
+void FunctionAssignmentSets<T>::insert(formalism::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values)
 {
     assert(function_terms.size() == values.size());
 
@@ -472,7 +471,7 @@ void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermListView<
 }
 
 template<formalism::FactKind T>
-void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values)
+void FunctionAssignmentSets<T>::insert(formalism::FunctionTermValueListView<GroundTag, T> fterm_values)
 {
     for (const auto fterm_value : fterm_values)
         insert(fterm_value.get_fterm(), fterm_value.get_value());
@@ -504,8 +503,8 @@ template class FunctionAssignmentSets<formalism::FluentTag>;
  */
 
 template<formalism::FactKind T>
-TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
-                                              formalism::datalog::FunctionListView<T> functions,
+TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::PredicateListView<T> predicates,
+                                              formalism::FunctionListView<T> functions,
                                               const analysis::PredicateDomainMap<T>& predicate_domains,
                                               const analysis::FunctionDomainMap<T>& function_domains,
                                               size_t num_objects) :
@@ -515,8 +514,8 @@ TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListV
 }
 
 template<formalism::FactKind T>
-TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
-                                              formalism::datalog::FunctionListView<T> functions,
+TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::PredicateListView<T> predicates,
+                                              formalism::FunctionListView<T> functions,
                                               const analysis::PredicateDomainMap<T>& predicate_domains,
                                               const analysis::FunctionDomainMap<T>& function_domains,
                                               size_t num_objects,
@@ -525,7 +524,7 @@ TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListV
 { insert(fact_sets); }
 
 template<formalism::FactKind T>
-TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
+TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::ProgramView<LiftedTag> program,
                                               const analysis::ProgramVariableDomains& domains,
                                               const TaggedFactSets<T>& fact_sets) :
     predicate(program.template get_predicates<T>(), analysis::get_predicate_domains<T>(domains), program.get_objects().size()),
@@ -560,7 +559,7 @@ void TaggedAssignmentSets<T>::reset() noexcept
 template struct TaggedAssignmentSets<formalism::StaticTag>;
 template struct TaggedAssignmentSets<formalism::FluentTag>;
 // Derived facts have no function: only the members that do not build function sets.
-template TaggedAssignmentSets<formalism::DerivedTag>::TaggedAssignmentSets(formalism::datalog::ProgramView<LiftedTag>,
+template TaggedAssignmentSets<formalism::DerivedTag>::TaggedAssignmentSets(formalism::ProgramView<LiftedTag>,
                                                                            const analysis::ProgramVariableDomains&,
                                                                            const TaggedFactSets<formalism::DerivedTag>&);
 template void TaggedAssignmentSets<formalism::DerivedTag>::insert(const TaggedFactSets<formalism::DerivedTag>&);
@@ -570,7 +569,7 @@ template void TaggedAssignmentSets<formalism::DerivedTag>::reset() noexcept;
  * MutableAssignmentSets
  */
 
-MutableAssignmentSets::MutableAssignmentSets(formalism::datalog::ProgramView<LiftedTag> program,
+MutableAssignmentSets::MutableAssignmentSets(formalism::ProgramView<LiftedTag> program,
                                              const analysis::ProgramVariableDomains& domains,
                                              const MutableFactSets& fact_sets)
 {

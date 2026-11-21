@@ -64,7 +64,7 @@ urd::Store<urd::sequence<int>> parse_parameters(const boost::json::object& atom_
 }
 
 /// An atom of the predicate (interned, of the parameters' arity) over these parameters, as a record.
-auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate_name, const urd::Store<urd::sequence<int>>& parameters)
+auto atom(tyr::formalism::Repository& repo, std::string_view predicate_name, const urd::Store<urd::sequence<int>>& parameters)
 {
     auto predicate_builder =
         urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>> { std::string(predicate_name), static_cast<ygg::uint_t>(parameters.size()) };
@@ -80,27 +80,24 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
 /// The invariant of these atoms interned, each atom a copy (urd::clone), its parameters named as synthesis names them:
 /// ?v0, ?v1, ... for its rigid, then its counted variables.
 template<typename... Atoms>
-auto intern_invariant(tyr::formalism::planning::Repository& repository,
-                      std::size_t num_rigid_variables,
-                      std::size_t num_counted_variables,
-                      const Atoms&... atoms)
+auto intern_invariant(tyr::formalism::Repository& repository, std::size_t num_rigid_variables, std::size_t num_counted_variables, const Atoms&... atoms)
 {
-    auto data = urd::data<tyr::formalism::planning::Invariant>(num_rigid_variables, num_counted_variables, {});
+    auto data = urd::data<tyr::formalism::Invariant>(num_rigid_variables, num_counted_variables, {});
     auto parameters = urd::data<tyr::formalism::Parameters> {};
     for (std::size_t position = 0; position < num_rigid_variables + num_counted_variables; ++position)
     {
         auto variable = urd::data<tyr::formalism::Variable>(urd::flat_string(fmt::format("?v{}", position)));
-        parameters.variables.push_back(tyr::formalism::planning::insert(repository, variable).first.index());
+        parameters.variables.push_back(tyr::formalism::insert(repository, variable).first.index());
     }
-    const auto parameters_index = tyr::formalism::planning::insert(repository, parameters).first.index();
+    const auto parameters_index = tyr::formalism::insert(repository, parameters).first.index();
     const auto add = [&](const auto& atom)
     {
         auto atom_data = urd::clone(atom);
         atom_data.parameters = parameters_index;
-        data.atoms.push_back(tyr::formalism::planning::insert(repository, atom_data).first.index());
+        data.atoms.push_back(tyr::formalism::insert(repository, atom_data).first.index());
     };
     (add(atoms), ...);
-    return tyr::formalism::planning::insert(repository, data).first;
+    return tyr::formalism::insert(repository, data).first;
 }
 
 /// The atoms in text form, sorted. Both sides live in different repositories, so atoms are compared by text rather than
@@ -144,7 +141,7 @@ urd::Store<urd::sequence<std::string>> parse_invariant_texts(const boost::json::
 }
 
 /// An interned invariant as text, its atoms formatted as the fixtures' are.
-std::string invariant_text(tyr::formalism::planning::InvariantView invariant)
+std::string invariant_text(tyr::formalism::InvariantView invariant)
 {
     auto atoms = urd::Store<urd::sequence<std::string>> {};
     for (const auto atom : invariant.get_atoms())
@@ -168,7 +165,7 @@ std::set<std::string> invariant_texts(const Invariants& invariants)
 
 /// The expected invariants of the classical and IPC cases are tyr's own, each proven by Fast Downward's balance check
 /// (fixture_generation.py).
-void expect_invariant_sets_equal(const tyr::formalism::planning::InvariantViewList& actual, const urd::Store<urd::sequence<std::string>>& expected)
+void expect_invariant_sets_equal(const tyr::formalism::InvariantViewList& actual, const urd::Store<urd::sequence<std::string>>& expected)
 {
     const auto actual_texts = invariant_texts(actual);
     const auto expected_texts = std::set<std::string>(expected.begin(), expected.end());
@@ -194,9 +191,9 @@ void check_suite(const std::filesystem::path& fixture)
         auto parser =
             make_test_parser(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "domain_file", "case")));
         const auto domain = parser.get_domain();
-        const auto actual = tyr::formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
+        const auto actual = tyr::formalism::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository());
         // Synthesizing again finds the interned invariants.
-        EXPECT_EQ(tyr::formalism::planning::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository()), actual);
+        EXPECT_EQ(tyr::formalism::invariant::synthesize_invariants(domain.get_domain(), *domain.get_repository()), actual);
 
         expect_invariant_sets_equal(actual, parse_invariant_texts(case_object, "invariants"));
     }
@@ -205,7 +202,7 @@ void check_suite(const std::filesystem::path& fixture)
 /// The greedy orders over the synthesized invariants equal the recorded ones (generate_orders.py), invariant by invariant.
 void check_orders(const std::filesystem::path& fixture)
 {
-    namespace invariant = tyr::formalism::planning::invariant;
+    namespace invariant = tyr::formalism::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
     const auto criteria = urd::Store<urd::sequence<std::pair<const char*, invariant::InvariantOrderOptions>>> {
         { "min_stolen_predicates",
@@ -231,7 +228,7 @@ void check_orders(const std::filesystem::path& fixture)
         {
             SCOPED_TRACE(key);
             // The order depends on the set of invariants, not on their order.
-            EXPECT_EQ(invariant::compute_invariant_order_greedy(tyr::formalism::planning::InvariantViewList(invariants.rbegin(), invariants.rend()), criterion),
+            EXPECT_EQ(invariant::compute_invariant_order_greedy(tyr::formalism::InvariantViewList(invariants.rbegin(), invariants.rend()), criterion),
                       invariant::compute_invariant_order_greedy(invariants, criterion));
             auto actual = urd::Store<urd::sequence<std::string>> {};
             for (const auto inv : invariant::compute_invariant_order_greedy(invariants, criterion))
@@ -252,7 +249,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrders) { check_orders("tests/suppor
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderTakesFewestStolenPredicatesFirst)
 {
-    namespace planning = tyr::formalism::planning;
+    namespace planning = tyr::formalism;
     namespace invariant = planning::invariant;
     auto repository = planning::Repository();
     const auto s1 = atom(repository, "s1", { 0, 1 });
@@ -271,7 +268,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderTakesFewestStolenPredicatesFirs
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderPrefersMoreResidualAtomsOnStolenTies)
 {
-    namespace planning = tyr::formalism::planning;
+    namespace planning = tyr::formalism;
     namespace invariant = planning::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
     auto repository = planning::Repository();
@@ -289,7 +286,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderPrefersMoreResidualAtomsOnStole
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderPutsResidualsWithoutMutexInformationLast)
 {
-    namespace planning = tyr::formalism::planning;
+    namespace planning = tyr::formalism;
     namespace invariant = planning::invariant;
     auto repository = planning::Repository();
     const auto shared = atom(repository, "shared", { 0, 1 });
@@ -304,7 +301,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderPutsResidualsWithoutMutexInform
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderCriteriaCompose)
 {
-    namespace planning = tyr::formalism::planning;
+    namespace planning = tyr::formalism;
     namespace invariant = planning::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
     auto repository = planning::Repository();

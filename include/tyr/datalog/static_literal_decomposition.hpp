@@ -32,7 +32,7 @@ namespace tyr::datalog
 
 struct StaticLiteralDecomposition
 {
-    using Rule = urd::index<formalism::datalog::Rule<LiftedTag>>;
+    using Rule = urd::index<formalism::Rule<LiftedTag>>;
 
     /// Rewritten rules keep the variables of their source rules.
     RuleMapping rules;
@@ -43,8 +43,8 @@ struct StaticLiteralDecomposition
 /// literal per pair of its variables, and each positive static literal over one or two variables whose atom has constants or repeated variables by a literal
 /// over just its variables. The rules keep their meaning, and the consistency graph, which encodes pairs of argument positions, then checks these literals
 /// completely instead of leaving them to an exact check per binding.
-formalism::datalog::ProgramView<LiftedTag>
-decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, StaticLiteralDecomposition& result);
+formalism::ProgramView<LiftedTag>
+decompose_static_literals(formalism::ProgramView<LiftedTag> program, formalism::Repository& repository, StaticLiteralDecomposition& result);
 
 }
 

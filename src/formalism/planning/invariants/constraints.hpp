@@ -31,7 +31,7 @@
 #include <variant>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 struct InvariantParameter : urd::compared_by_identity<InvariantParameter>

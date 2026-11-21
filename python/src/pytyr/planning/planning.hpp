@@ -128,7 +128,7 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
     using T = LabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<formalism::planning::ActionRowView, Node<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
+                   .def(nb::init<formalism::ActionRowView, Node<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
                    .def("pack", &T::pack, nb::keep_alive<0, 1>());
@@ -142,7 +142,7 @@ void bind_packed_labeled_node(nb::module_& m, const std::string& name)
     using T = PackedLabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<formalism::planning::ActionRowView, PackedNode<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
+                   .def(nb::init<formalism::ActionRowView, PackedNode<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
                    .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
@@ -216,7 +216,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
         .def("create_state",
              static_cast<StateView<Kind> (T::*)(
                  AxiomEvaluator<Kind>&,
-                 const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>&,
+                 const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>&,
                  const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&)>(
                  &T::create_state),
              nb::rv_policy::move,
@@ -224,13 +224,13 @@ void bind_state_repository(nb::module_& m, const std::string& name)
              "fluent_facts"_a,
              "fterm_values"_a)
         .def("create_state",
-             &T::template create_state<formalism::planning::FDRFactView<formalism::FluentTag>>,
+             &T::template create_state<formalism::FDRFactView<formalism::FluentTag>>,
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
              "fterm_values"_a)
         .def("create_state",
-             &T::template create_state<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>,
+             &T::template create_state<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>,
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
@@ -279,8 +279,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
            nb::call_guard<nb::gil_scoped_release>())
         .def(
             "get_applicable_action_bindings",
-            [](T& self, const Node<Kind>& node, formalism::planning::ActionView<LiftedTag> action)
-            { return self.get_applicable_action_bindings(node, action); },
+            [](T& self, const Node<Kind>& node, formalism::ActionView<LiftedTag> action) { return self.get_applicable_action_bindings(node, action); },
             nb::rv_policy::move,
             "node"_a,
             "action"_a,
@@ -290,11 +289,8 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 
     cls.def(
            "get_successor_node",
-           [](T& self,
-              const Node<Kind>& node,
-              formalism::planning::ActionRowView binding,
-              StateRepository<Kind>& state_repository,
-              AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_node(node, binding, state_repository, axiom_evaluator); },
+           [](T& self, const Node<Kind>& node, formalism::ActionRowView binding, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return self.get_successor_node(node, binding, state_repository, axiom_evaluator); },
            "node"_a,
            "binding"_a,
            "state_repository"_a,
@@ -304,7 +300,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "get_successor_node",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<GroundTag> action,
+               formalism::ActionView<GroundTag> action,
                StateRepository<Kind>& state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_node(node, action, state_repository, axiom_evaluator); },
             "node"_a,
@@ -326,7 +322,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "get_successor_nodes",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<LiftedTag> action,
+               formalism::ActionView<LiftedTag> action,
                StateRepository<Kind>& state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
@@ -349,7 +345,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "get_labeled_successor_nodes",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<LiftedTag> action,
+               formalism::ActionView<LiftedTag> action,
                StateRepository<Kind>& state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
@@ -361,11 +357,8 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 
     cls.def(
            "get_packed_successor_node",
-           [](T& self,
-              const Node<Kind>& node,
-              formalism::planning::ActionRowView binding,
-              StateRepository<Kind>& state_repository,
-              AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_node(node, binding, state_repository, axiom_evaluator); },
+           [](T& self, const Node<Kind>& node, formalism::ActionRowView binding, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return self.get_packed_successor_node(node, binding, state_repository, axiom_evaluator); },
            "node"_a,
            "binding"_a,
            "state_repository"_a,
@@ -374,7 +367,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "get_packed_successor_node",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<GroundTag> action,
+               formalism::ActionView<GroundTag> action,
                StateRepository<Kind>& state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_node(node, action, state_repository, axiom_evaluator); },
             "node"_a,
@@ -395,7 +388,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "get_packed_successor_nodes",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<LiftedTag> action,
+               formalism::ActionView<LiftedTag> action,
                StateRepository<Kind>& state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
@@ -418,7 +411,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "get_packed_labeled_successor_nodes",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<LiftedTag> action,
+               formalism::ActionView<LiftedTag> action,
                StateRepository<Kind>& state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_labeled_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
@@ -449,7 +442,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "for_each_successor_node",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<LiftedTag> action,
+               formalism::ActionView<LiftedTag> action,
                nb::typed<nb::handle, StateRepository<Kind>> state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator,
                const nb::typed<nb::callable, bool(Node<Kind>)>& callback)
@@ -486,7 +479,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "for_each_labeled_successor_node",
             [](T& self,
                const Node<Kind>& node,
-               formalism::planning::ActionView<LiftedTag> action,
+               formalism::ActionView<LiftedTag> action,
                nb::typed<nb::handle, StateRepository<Kind>> state_repository,
                AxiomEvaluator<Kind>& axiom_evaluator,
                const nb::typed<nb::callable, bool(LabeledNode<Kind>)>& callback)
@@ -570,7 +563,7 @@ void bind_conjunctive_goal_strategy(nb::module_& m, const std::string& name)
 
     nb::class_<T, GoalStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<const Task<Kind>&>(), "task"_a)
-        .def(nb::init<formalism::planning::ConjunctiveConditionView<GroundTag>>(), "goal"_a)
+        .def(nb::init<formalism::ConjunctiveConditionView<GroundTag>>(), "goal"_a)
         .def("set_goal", &T::set_goal, "goal"_a);
 }
 
@@ -623,20 +616,20 @@ public:
     using Base = Heuristic<Kind>;
     using Base::evaluate;
 
-    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
+    void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
     ygg::float_t evaluate(const StateView<Kind>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
     /// A Python override returns None or a set; the set is kept here so the returned pointer stays valid until the next call.
-    const urd::Store<urd::set<formalism::planning::ActionRowView>>* get_relaxed_plan() const override
+    const urd::Store<urd::set<formalism::ActionRowView>>* get_relaxed_plan() const override
     {
         constexpr uint64_t nb_hash = nanobind::detail::str_hash("get_relaxed_plan");
         nanobind::detail::ticket nb_ticket(nb_trampoline, "get_relaxed_plan", nb_hash, false);
         if (!nb_ticket.key.is_valid())
             return Base::get_relaxed_plan();
-        m_relaxed_plan = nb::cast<std::optional<urd::Store<urd::set<formalism::planning::ActionRowView>>>>(nb_trampoline.base().attr(nb_ticket.key)());
+        m_relaxed_plan = nb::cast<std::optional<urd::Store<urd::set<formalism::ActionRowView>>>>(nb_trampoline.base().attr(nb_ticket.key)());
         return m_relaxed_plan ? &*m_relaxed_plan : nullptr;
     }
 
@@ -644,7 +637,7 @@ private:
     // The inherited constructors keep the access of the base constructors.
     NB_TRAMPOLINE(Base);
 
-    mutable std::optional<urd::Store<urd::set<formalism::planning::ActionRowView>>> m_relaxed_plan;
+    mutable std::optional<urd::Store<urd::set<formalism::ActionRowView>>> m_relaxed_plan;
 };
 
 template<TaskKind Kind>
@@ -662,7 +655,7 @@ void bind_heuristic(nb::module_& m, const std::string& name)
             "state"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_relaxed_plan",
-             [](const T& self) -> std::optional<urd::Store<urd::set<formalism::planning::ActionRowView>>>
+             [](const T& self) -> std::optional<urd::Store<urd::set<formalism::ActionRowView>>>
              {
                  const auto* plan = self.get_relaxed_plan();
                  return plan ? std::optional(*plan) : std::nullopt;
@@ -711,9 +704,9 @@ void bind_kind_definitions(nb::module_& m)
     urd::python::bind_data<FactStorage<Kind>>(m);
     urd::python::bind_data<AtomStorage<Kind>>(m);
     urd::python::bind_data<NumericStorage<Kind>>(m);
-    urd::python::bind_builder<FactStorage<Kind>, formalism::planning::Repository>(m);
-    urd::python::bind_builder<AtomStorage<Kind>, formalism::planning::Repository>(m);
-    urd::python::bind_builder<NumericStorage<Kind>, formalism::planning::Repository>(m);
+    urd::python::bind_builder<FactStorage<Kind>, formalism::Repository>(m);
+    urd::python::bind_builder<AtomStorage<Kind>, formalism::Repository>(m);
+    urd::python::bind_builder<NumericStorage<Kind>, formalism::Repository>(m);
     urd::python::bind_view<FactStorageView<Kind>>(m);
     urd::python::bind_view<AtomStorageView<Kind>>(m);
     urd::python::bind_view<NumericStorageView<Kind>>(m);

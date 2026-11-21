@@ -37,7 +37,7 @@ namespace
 /// The heads of a ground rule, of each mutable fact kind, as the keys of their rows, which key the predicate annotations.
 struct GroundRuleHeads
 {
-    formalism::datalog::RuleView<GroundTag> rule;
+    formalism::RuleView<GroundTag> rule;
 
     template<formalism::FactKind F>
     [[nodiscard]] auto get() const noexcept
@@ -70,7 +70,7 @@ public:
     Scheduler<GroundTag>& scheduler() noexcept { return m_ctx->out().scheduler(); }
 
 private:
-    void fire(formalism::datalog::RuleView<GroundTag> rule, CostBuckets& pending_heads, PendingPredicateAchieverFamily<GroundTag>& pending_achievers)
+    void fire(formalism::RuleView<GroundTag> rule, CostBuckets& pending_heads, PendingPredicateAchieverFamily<GroundTag>& pending_achievers)
     {
         auto& out = m_ctx->out();
         auto& scratch = scheduler().scratch();

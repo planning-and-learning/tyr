@@ -341,25 +341,25 @@ StateView<Kind> StateRepository<Kind>::unpack(const urd::data<State<Kind>>& pack
 }
 
 template<TaskKind Kind>
-urd::builder<FactStorage<Kind>, formalism::planning::Repository> StateRepository<Kind>::unpack(const PackedStorage<FactStorage<Kind>>& packed) const
+urd::builder<FactStorage<Kind>, formalism::Repository> StateRepository<Kind>::unpack(const PackedStorage<FactStorage<Kind>>& packed) const
 {
-    auto unpacked = urd::builder<FactStorage<Kind>, formalism::planning::Repository> {};
+    auto unpacked = urd::builder<FactStorage<Kind>, formalism::Repository> {};
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.fact_repository.unpack(packed.handle, unpacked); });
     return unpacked;
 }
 
 template<TaskKind Kind>
-urd::builder<AtomStorage<Kind>, formalism::planning::Repository> StateRepository<Kind>::unpack(const PackedStorage<AtomStorage<Kind>>& packed) const
+urd::builder<AtomStorage<Kind>, formalism::Repository> StateRepository<Kind>::unpack(const PackedStorage<AtomStorage<Kind>>& packed) const
 {
-    auto unpacked = urd::builder<AtomStorage<Kind>, formalism::planning::Repository> {};
+    auto unpacked = urd::builder<AtomStorage<Kind>, formalism::Repository> {};
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.atom_repository.unpack(packed.handle, unpacked); });
     return unpacked;
 }
 
 template<TaskKind Kind>
-urd::builder<NumericStorage<Kind>, formalism::planning::Repository> StateRepository<Kind>::unpack(const PackedStorage<NumericStorage<Kind>>& packed) const
+urd::builder<NumericStorage<Kind>, formalism::Repository> StateRepository<Kind>::unpack(const PackedStorage<NumericStorage<Kind>>& packed) const
 {
-    auto unpacked = urd::builder<NumericStorage<Kind>, formalism::planning::Repository> {};
+    auto unpacked = urd::builder<NumericStorage<Kind>, formalism::Repository> {};
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.numeric_repository.unpack(packed.handle, unpacked); });
     return unpacked;
 }
@@ -379,7 +379,7 @@ void StateRepository<Kind>::unpack_storages(const urd::data<State<Kind>>& packed
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::create_state(
     AxiomEvaluator<Kind>& axiom_evaluator,
-    const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>& fluent_facts,
+    const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>& fluent_facts,
     const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values)
 {
     auto state_builder = get_state_builder();
@@ -394,11 +394,11 @@ StateView<Kind> StateRepository<Kind>::create_state(
 
 template<TaskKind Kind>
 template<typename FactView>
-    requires std::same_as<typename FactView::value_type, formalism::planning::FDRFact<formalism::FluentTag>>
-StateView<Kind> StateRepository<Kind>::create_state(
-    AxiomEvaluator<Kind>& axiom_evaluator,
-    const urd::Store<urd::sequence<FactView>>& fluent_facts,
-    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values)
+    requires std::same_as<typename FactView::value_type, formalism::FDRFact<formalism::FluentTag>>
+StateView<Kind>
+StateRepository<Kind>::create_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                                    const urd::Store<urd::sequence<FactView>>& fluent_facts,
+                                    const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values)
 {
     auto state_builder = get_state_builder();
 
@@ -508,20 +508,20 @@ template class StateRepository<LiftedTag>;
 
 template StateView<GroundTag>
 StateRepository<GroundTag>::create_state(AxiomEvaluator<GroundTag>&,
-                                         const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>&,
-                                         const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
-template StateView<GroundTag> StateRepository<GroundTag>::create_state(
-    AxiomEvaluator<GroundTag>&,
-    const urd::Store<urd::sequence<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
-    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+                                         const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>&,
+                                         const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+template StateView<GroundTag>
+StateRepository<GroundTag>::create_state(AxiomEvaluator<GroundTag>&,
+                                         const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>&,
+                                         const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateView<LiftedTag>
 StateRepository<LiftedTag>::create_state(AxiomEvaluator<LiftedTag>&,
-                                         const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>&,
-                                         const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
-template StateView<LiftedTag> StateRepository<LiftedTag>::create_state(
-    AxiomEvaluator<LiftedTag>&,
-    const urd::Store<urd::sequence<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
-    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+                                         const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>&,
+                                         const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+template StateView<LiftedTag>
+StateRepository<LiftedTag>::create_state(AxiomEvaluator<LiftedTag>&,
+                                         const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>&,
+                                         const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 
 template StateView<GroundTag>
 materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target, AxiomEvaluator<GroundTag>& axiom_evaluator);

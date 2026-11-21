@@ -34,7 +34,7 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 
 namespace

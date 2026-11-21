@@ -73,7 +73,6 @@
 // variable its parameters name at that index.
 
 namespace tf = tyr::formalism;
-namespace td = tyr::formalism::datalog;
 using tyr::GroundTag;
 using tyr::LiftedTag;
 
@@ -289,12 +288,12 @@ Out write_rule_body(Out out, const Body& value)
 // above (the shared records' own formatters print PDDL, src/formalism/planning/formatter.cpp).
 
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<td::RuleBody<GroundTag>, td::Repository>>::format(const urd::index_view<td::RuleBody<GroundTag>, td::Repository>& value,
+fmt::formatter<urd::index_view<tf::RuleBody<GroundTag>, tf::Repository>>::format(const urd::index_view<tf::RuleBody<GroundTag>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
 { return write_rule_body(context.out(), value); }
 
 template<tyr::TaskKind T>
-fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Repository>>::format(const urd::index_view<td::Rule<T>, td::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Rule<T>, tf::Repository>>::format(const urd::index_view<tf::Rule<T>, tf::Repository>& value,
                                                                                                    fmt::format_context& context) const
 {
     const auto body = value.get_body();
@@ -316,7 +315,7 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<td::Rule<T>, td::Re
 // its rules, and its goal as a query.
 template<tyr::TaskKind T>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<td::Program<T>, td::Repository>>::format(const urd::index_view<td::Program<T>, td::Repository>& value,
+fmt::formatter<urd::index_view<tf::Program<T>, tf::Repository>>::format(const urd::index_view<tf::Program<T>, tf::Repository>& value,
                                                                         fmt::format_context& context) const
 {
     auto out = context.out();
@@ -367,7 +366,7 @@ fmt::formatter<urd::index_view<td::Program<T>, td::Repository>>::format(const ur
 
 /// One DOT graph per kind of binary dependency, named after it: the condition's parameters, adjacent where they occur
 /// together in a literal (or constraint) of that kind.
-fmt::format_context::iterator fmt::formatter<td::VariableDependencyGraph>::format(const td::VariableDependencyGraph& value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tf::VariableDependencyGraph>::format(const tf::VariableDependencyGraph& value, fmt::format_context& context) const
 {
     const auto& binary = value.binary();
     const auto parameter = [](const auto& /*graph*/, tf::ParameterIndex v) { return v; };
@@ -383,7 +382,7 @@ fmt::format_context::iterator fmt::formatter<td::VariableDependencyGraph>::forma
 }
 
 // Each family's formatter, once for each kind.
-template struct fmt::formatter<urd::index_view<td::Rule<LiftedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::Rule<GroundTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::Program<LiftedTag>, td::Repository>>;
-template struct fmt::formatter<urd::index_view<td::Program<GroundTag>, td::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Rule<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Rule<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Program<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Program<GroundTag>, tf::Repository>>;

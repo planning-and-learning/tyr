@@ -8,7 +8,7 @@ from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism.planning import (
+from pytyr.formalism import (
     AtomGroundFluent,
     FDRFactFluentBorrowed,
     FDRVariableFluent,

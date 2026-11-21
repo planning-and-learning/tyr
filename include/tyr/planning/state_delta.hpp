@@ -38,9 +38,9 @@ struct StateDelta
 {
     struct FluentChange
     {
-        urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> variable;
-        formalism::planning::FDRValue from;
-        formalism::planning::FDRValue to;
+        urd::index<formalism::FDRVariable<formalism::FluentTag>> variable;
+        formalism::FDRValue from;
+        formalism::FDRValue to;
 
         friend bool operator==(const FluentChange&, const FluentChange&) = default;
     };

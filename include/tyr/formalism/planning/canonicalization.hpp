@@ -52,13 +52,11 @@
 
 /// The canonical form of every planning record (prepare_for_insert canonicalizes each record it inserts): records whose
 /// members have an order to fix sort them; every other record has a no-op overload, being canonical as built.
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 // yggdrasil's overloads for lists of indices: found by ordinary lookup, as the standard's two-step `using std::swap`
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
-// tyr::formalism's overloads, e.g. for rows: ygg::Row<F> of a family of this namespace does not bring them by ADL.
-using ::tyr::formalism::canonicalize;
 
 inline void canonicalize(urd::data<ConditionalEffect<LiftedTag>>&) {}
 

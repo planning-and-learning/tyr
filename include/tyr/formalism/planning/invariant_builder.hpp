@@ -33,9 +33,9 @@ namespace urd
 
 /// The builder of Invariant: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Invariant, C>
+struct builder<::tyr::formalism::Invariant, C>
 {
-    urd::index<::tyr::formalism::planning::Invariant> index;
+    urd::index<::tyr::formalism::Invariant> index;
     urd::built_t<ygg::uint_t, C> num_rigid_variables = 0;
     urd::built_t<ygg::uint_t, C> num_counted_variables = 0;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> atoms;

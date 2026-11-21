@@ -31,7 +31,7 @@
 #include <urd/store.hpp>
 #include <vector>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 namespace
 {
@@ -257,4 +257,4 @@ std::vector<urd::builder<Invariant, Repository>> make_initial_candidates(Predica
     return result;
 }
 
-}  // namespace tyr::formalism::planning::invariant
+}  // namespace tyr::formalism::invariant

@@ -32,44 +32,39 @@
 
 namespace tyr::planning
 {
-extern urd::flat_string create_applicability_name(formalism::planning::ActionView<LiftedTag> action);
+extern urd::flat_string create_applicability_name(formalism::ActionView<LiftedTag> action);
 
-extern urd::flat_string create_triggered_name(formalism::planning::ActionView<LiftedTag> action,
-                                              formalism::planning::ConditionalEffectView<LiftedTag> cond_eff);
+extern urd::flat_string create_triggered_name(formalism::ActionView<LiftedTag> action, formalism::ConditionalEffectView<LiftedTag> cond_eff);
 
-extern urd::flat_string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
+extern urd::flat_string create_applicability_name(formalism::AxiomView<LiftedTag> axiom);
 
 /// The derived predicate that holds where the action (the axiom) is applicable, and its atom over the action's (the
 /// axiom's) parameters, interned into the context's repository.
-std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
-create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
-                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
-std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
-create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
-                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
-std::pair<formalism::datalog::PredicateView<formalism::DerivedTag>, bool>
-create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
-                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
-std::pair<formalism::datalog::AtomView<LiftedTag, formalism::DerivedTag>, bool>
-create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
-                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+std::pair<formalism::PredicateView<formalism::DerivedTag>, bool>
+create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+std::pair<formalism::AtomView<LiftedTag, formalism::DerivedTag>, bool>
+create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+std::pair<formalism::PredicateView<formalism::DerivedTag>, bool>
+create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
+std::pair<formalism::AtomView<LiftedTag, formalism::DerivedTag>, bool>
+create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
 
 /// A layer over `parent`, which stays frozen from here on: the layer's deleter holds the parent, so each layer keeps
 /// its chain alive (domain, task, program, transform layers, per-worker workspace).
-formalism::datalog::RepositoryPtr layer_over(std::shared_ptr<const formalism::datalog::Repository> parent, std::size_t num_objects);
+formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository> parent, std::size_t num_objects);
 
 /// Lists the task's predicates (its derived ones too), functions, objects, static and fluent atoms and function term
 /// values in `program`, as the task's records: a program is a layer over the task's repository. The lists are dense: each
 /// record sits at the position of its index (a program never drops a predicate; unused ones have empty facts).
 template<TaskKind Kind>
-void translate_task_symbols(formalism::planning::TaskView<Kind> task, urd::builder<formalism::datalog::Program<Kind>, formalism::datalog::Repository>& program);
+void translate_task_symbols(formalism::TaskView<Kind> task, urd::builder<formalism::Program<Kind>, formalism::Repository>& program);
 
 /// The literal of an FDR fact's atom with the polarity, interned into the context's repository; none for a fact without
 /// an atom (a variable's none value).
-std::optional<formalism::datalog::LiteralView<GroundTag, formalism::FluentTag>>
-create_fact_literal(formalism::planning::FDRFactView<formalism::FluentTag> fact,
+std::optional<formalism::LiteralView<GroundTag, formalism::FluentTag>>
+create_fact_literal(formalism::FDRFactView<formalism::FluentTag> fact,
                     bool polarity,
-                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+                    formalism::WriteContext<formalism::Builder, formalism::Repository>& context);
 
 /// The RPG heuristics charge each action rule a unit cost.
 inline void require_unit_cost(CostMode cost_mode)

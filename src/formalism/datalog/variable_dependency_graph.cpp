@@ -32,7 +32,7 @@
 #include <utility>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 template<FactKind F, PolarityKind P>
 static void
@@ -79,7 +79,7 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
             binary_dep.add_edge(parameters[i], parameters[j]);  // undirected: both ways
 }
 
-VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition) :
+VariableDependencyGraph::VariableDependencyGraph(RuleBodyView<LiftedTag> condition) :
     m_k(condition.get_arity()),
     m_unary_dependencies(m_k),
     m_binary_dependencies(m_k)

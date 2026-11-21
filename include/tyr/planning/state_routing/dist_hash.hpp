@@ -91,7 +91,7 @@ private:
     struct Feature
     {
         urd::index<formalism::Atom<GroundTag, formalism::FluentTag>> atom;
-        urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact;
+        urd::data<formalism::FDRFact<formalism::FluentTag>> fact;
     };
 
     DistHash<Kind, RandomDistHashTag> m_fallback;

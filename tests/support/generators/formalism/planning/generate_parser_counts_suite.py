@@ -18,7 +18,7 @@ from typing import Any
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 
-from pytyr.formalism.planning import Parser
+from pytyr.formalism import Parser
 
 ROOT = Path(__file__).resolve().parents[5]
 OUTPUT = ROOT / "tests/support/data/formalism/planning/parser_counts_suite.json"

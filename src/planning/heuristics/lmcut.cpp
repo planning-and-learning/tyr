@@ -82,11 +82,11 @@ struct LMCutImplementation :
                                       datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
-    using ActionBinding = formalism::planning::ActionRowView;
+    using ActionBinding = formalism::ActionRowView;
     /// A fact of kind F: a fluent atom, or a derived one (the atom of a split rule's projection, were LM-cut's rules split).
     /// Every structure over the facts is kept per kind, of plain keys.
     template<typename F>
-    using Fact = formalism::datalog::PredicateRowView<F>;
+    using Fact = formalism::PredicateRowView<F>;
     template<typename F>
     using FactSet = urd::Store<urd::set<Fact<F>>>;
     template<typename F>
@@ -109,7 +109,7 @@ struct LMCutImplementation :
     template<typename F>
     using Dependents = urd::Store<urd::sequence<std::pair<Fact<F>, std::size_t>>>;
     using Witness = datalog::WitnessAnnotation<Kind>;
-    using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
+    using CutFrontierAtoms = formalism::AtomViewList<GroundTag, formalism::FluentTag>;
 
     /// The arc of an achiever: its residual cost and its source, a fact of one kind, none for a rule without preconditions.
     struct Arc
@@ -511,7 +511,7 @@ template<TaskKind Kind>
 struct LMCutHeuristic<Kind>::Impl
 {
     using Implementation = lmcut_details::LMCutImplementation<Kind>;
-    using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
+    using CutFrontierAtoms = formalism::AtomViewList<GroundTag, formalism::FluentTag>;
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         m_implementation(make_implementation(std::move(task), std::move(execution_context), cost_mode))
@@ -520,7 +520,7 @@ struct LMCutHeuristic<Kind>::Impl
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) : m_implementation(source.m_implementation, std::move(execution_context)) {}
 
-    void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
+    void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
     ygg::float_t evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
     { return m_implementation.evaluate(state, cut_frontier_atoms); }
@@ -559,7 +559,7 @@ LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::Ex
 { return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
-void LMCutHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+void LMCutHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
@@ -567,9 +567,9 @@ ygg::float_t LMCutHeuristic<Kind>::evaluate(const StateView<Kind>& state)
 { return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
-formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const StateView<Kind>& state)
+formalism::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const StateView<Kind>& state)
 {
-    auto atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
+    auto atoms = formalism::AtomViewList<GroundTag, formalism::FluentTag> {};
     static_cast<void>(m_impl->evaluate(state, &atoms));
     std::sort(atoms.begin(), atoms.end());
     atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());

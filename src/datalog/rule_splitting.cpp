@@ -78,9 +78,9 @@ public:
     using Heads = urd::Store<urd::sequence<urd::index<formalism::Atom<LiftedTag, F>>>>;
     using RuleHeads = MutableFamily<Heads>;
 
-    Splitter(urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>& program,
+    Splitter(urd::builder<formalism::Program<LiftedTag>, formalism::Repository>& program,
              RuleSplitting& splitting,
-             formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
+             formalism::WriteContext<formalism::Builder, formalism::Repository>& context,
              const TaggedFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_splitting(&splitting),
@@ -91,7 +91,7 @@ public:
 
     /// The main rule of the rule with the given parts in the destination repository, or nullopt if nothing can be projected.
     /// The projection rules are added to the program.
-    std::optional<RuleSplitting::Rule> split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, const RuleHeads& heads, ygg::float_t cost)
+    std::optional<RuleSplitting::Rule> split(formalism::RuleBodyView<LiftedTag> condition, const RuleHeads& heads, ygg::float_t cost)
     {
         if (!condition.get_numeric_constraints().empty())
             return std::nullopt;
@@ -100,7 +100,7 @@ public:
         auto variables = urd::flat_vector<urd::index<formalism::Variable>> {};
         for (const auto variable : condition.get_variables())
             variables.push_back(variable.index());
-        auto parameters = formalism::datalog::checkout<formalism::Parameters>(m_context->builder());
+        auto parameters = formalism::checkout<formalism::Parameters>(m_context->builder());
         for (const auto variable : variables)
             urd::append(parameters->variables, m_context->destination().view(variable));
         m_parameters = m_context->destination().insert(*parameters, m_context->builder()).first.index();
@@ -117,7 +117,7 @@ public:
             [&]<typename F>(F)
             {
                 for (const auto head : heads.template get<F>())
-                    formalism::datalog::collect_parameters(urd::resolve(head, m_context->destination()), head_parameters);
+                    formalism::collect_parameters(urd::resolve(head, m_context->destination()), head_parameters);
             });
 
         auto projections = urd::Store<urd::sequence<std::pair<Body, DerivedLiteral>>> {};
@@ -174,17 +174,17 @@ private:
 
     template<formalism::FactKind F>
     [[nodiscard]] Parameters parameters_of(urd::index<formalism::Literal<LiftedTag, F>> literal) const
-    { return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination())); }
+    { return formalism::collect_parameters(urd::resolve(literal, m_context->destination())); }
 
     [[nodiscard]] Parameters parameters_of(const Body& body) const
     {
         auto result = Parameters {};
         for (const auto literal : body.static_literals)
-            formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
+            formalism::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         for (const auto literal : body.fluent_literals)
-            formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
+            formalism::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         for (const auto literal : body.derived_literals)
-            formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
+            formalism::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         return result;
     }
 
@@ -263,7 +263,7 @@ private:
         if (const auto it = m_domain_literals.find(key); it != m_domain_literals.end())
             return it->second;
 
-        auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context->builder());
+        auto predicate = formalism::checkout<formalism::Predicate<formalism::StaticTag>>(m_context->builder());
         predicate->name = "__tyr_domain_" + std::to_string(m_domain_literals.size());
         predicate->arity = 1;
         const auto new_predicate = m_context->destination().insert(*predicate, m_context->builder()).first.index();
@@ -272,7 +272,7 @@ private:
         auto pattern = urd::Store<urd::sequence<formalism::Term>> {};
         for (const auto term : atom.get_terms())
             urd::append(pattern, term);
-        const auto atom_parameters = formalism::datalog::collect_parameters(atom);
+        const auto atom_parameters = formalism::collect_parameters(atom);
         const auto sigma = Substitution(urd::Store<urd::sequence<formalism::ParameterIndex>>(atom_parameters.begin(), atom_parameters.end()));
 
         auto objects = urd::Store<urd::set<urd::index<formalism::Object>>> {};
@@ -288,10 +288,10 @@ private:
                 const auto object = formalism::unification::get_object(*value);
                 if (objects.insert(object).second)
                 {
-                    auto domain_binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
+                    auto domain_binding = formalism::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
                     urd::store(domain_binding->relation, m_context->destination().view(new_predicate));
                     domain_binding->values.push_back(object.value);
-                    auto ground_atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
+                    auto ground_atom = formalism::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
                     urd::store(ground_atom->row, m_context->destination().insert(*domain_binding, m_context->builder()).first);
                     urd::append(m_program->static_atoms, m_context->destination().insert(*ground_atom, m_context->builder()).first);
                 }
@@ -306,7 +306,7 @@ private:
     /// A literal over a new derived predicate, the projection's, of the kept variables.
     DerivedLiteral create_projection_atom(const urd::Store<urd::sequence<formalism::ParameterIndex>>& kept)
     {
-        auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::DerivedTag>>(m_context->builder());
+        auto predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(m_context->builder());
         predicate->name = "__tyr_projection_" + std::to_string(m_num_projections++);
         predicate->arity = kept.size();
         const auto new_predicate = m_context->destination().insert(*predicate, m_context->builder()).first.index();
@@ -318,13 +318,13 @@ private:
     urd::index<formalism::Literal<LiftedTag, F>> create_literal(urd::index<formalism::Predicate<F>> predicate,
                                                                 const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
     {
-        auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
+        auto atom = formalism::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
         const auto& destination = m_context->destination();
         urd::store(atom->parameters, destination.view(m_parameters));
         urd::store(atom->predicate, destination.view(predicate));
         for (const auto parameter : parameters)
             urd::build_member(atom->terms.emplace_back(), formalism::Term(parameter), destination);
-        auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, F>>(m_context->builder());
+        auto literal = formalism::checkout<formalism::Literal<LiftedTag, F>>(m_context->builder());
         urd::store(literal->atom, m_context->destination().insert(*atom, m_context->builder()).first);
         literal->polarity = true;
         return m_context->destination().insert(*literal, m_context->builder()).first.index();
@@ -332,11 +332,11 @@ private:
 
     /// The atom with each parameter renumbered to its position among the emitted rule's variables, its `parameters`.
     template<formalism::FactKind F>
-    urd::index<formalism::Atom<LiftedTag, F>> renumber(formalism::datalog::AtomView<LiftedTag, F> atom,
+    urd::index<formalism::Atom<LiftedTag, F>> renumber(formalism::AtomView<LiftedTag, F> atom,
                                                        const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local,
                                                        urd::index<formalism::Parameters> parameters)
     {
-        auto data = formalism::datalog::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
+        auto data = formalism::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
         const auto& destination = m_context->destination();
         urd::store(data->parameters, destination.view(parameters));
         urd::store(data->predicate, atom.get_predicate());
@@ -356,14 +356,14 @@ private:
                                                           urd::index<formalism::Parameters> parameters)
     {
         const auto view = urd::resolve(literal, m_context->destination());
-        auto data = formalism::datalog::checkout<formalism::Literal<LiftedTag, F>>(m_context->builder());
+        auto data = formalism::checkout<formalism::Literal<LiftedTag, F>>(m_context->builder());
         urd::store(data->atom, m_context->destination().view(renumber(view.get_atom(), local, parameters)));
         data->polarity = view.get_polarity();
         return m_context->destination().insert(*data, m_context->builder()).first.index();
     }
 
     /// The rule over the variables that its body uses, in action rule order, and the action rule position of each of them.
-    std::pair<urd::index<formalism::datalog::Rule<LiftedTag>>, urd::Store<urd::sequence<ygg::uint_t>>>
+    std::pair<urd::index<formalism::Rule<LiftedTag>>, urd::Store<urd::sequence<ygg::uint_t>>>
     emit_rule(const urd::flat_vector<urd::index<formalism::Variable>>& variables, const Body& body, const RuleHeads& heads, ygg::float_t cost)
     {
         auto positions = urd::Store<urd::sequence<ygg::uint_t>> {};
@@ -374,10 +374,10 @@ private:
         for (size_t i = 0; i < positions.size(); ++i)
             local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(static_cast<ygg::uint_t>(i)));
 
-        auto condition = formalism::datalog::checkout<formalism::ConjunctiveCondition<LiftedTag>>(m_context->builder());
+        auto condition = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(m_context->builder());
         for (const auto position : positions)
             urd::append(condition->variables, m_context->destination().view(variables[position]));
-        auto parameters = formalism::datalog::checkout<formalism::Parameters>(m_context->builder());
+        auto parameters = formalism::checkout<formalism::Parameters>(m_context->builder());
         urd::build_member(parameters->variables, condition->variables, m_context->destination());
         const auto rule_parameters = m_context->destination().insert(*parameters, m_context->builder()).first.index();
         for (const auto literal : body.static_literals)
@@ -388,7 +388,7 @@ private:
             urd::append(condition->derived_literals, m_context->destination().view(renumber(literal, local, rule_parameters)));
         const auto new_condition = m_context->destination().insert(*condition, m_context->builder()).first;
 
-        auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(m_context->builder());
+        auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(m_context->builder());
         for (const auto variable : new_condition.get_variables())
             urd::append(rule->variables, variable);
         urd::store(rule->body, new_condition);
@@ -400,9 +400,9 @@ private:
         return { m_context->destination().insert(*rule, m_context->builder()).first.index(), std::move(positions) };
     }
 
-    urd::builder<formalism::datalog::Program<LiftedTag>, formalism::datalog::Repository>* m_program;
+    urd::builder<formalism::Program<LiftedTag>, formalism::Repository>* m_program;
     RuleSplitting* m_splitting;
-    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
+    formalism::WriteContext<formalism::Builder, formalism::Repository>* m_context;
     const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
     /// The variables of the rule being split: the parameters of the atoms built for it before they are renumbered.
@@ -412,13 +412,12 @@ private:
 
 }
 
-formalism::datalog::ProgramView<LiftedTag>
-split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, RuleSplitting& splitting)
+formalism::ProgramView<LiftedTag> split_rules(formalism::ProgramView<LiftedTag> program, formalism::Repository& repository, RuleSplitting& splitting)
 {
-    auto builder = formalism::datalog::Builder {};
+    auto builder = formalism::Builder {};
     auto context = formalism::WriteContext { builder, repository };
-    auto result = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
-    formalism::datalog::list_except_rules(program, *result);
+    auto result = formalism::checkout<formalism::Program<LiftedTag>>(builder);
+    formalism::list_except_rules(program, *result);
     // The static predicates come first in the repository, as the fact sets require.
     // The program's own static predicates and atoms: the result's, copied within this repository.
     auto static_facts = TaggedFactSets<formalism::StaticTag>(program.template get_predicates<formalism::StaticTag>(), repository);

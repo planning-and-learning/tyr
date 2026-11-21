@@ -30,7 +30,7 @@
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 void bind_rule(nb::module_& m, RepositoryBinding& repository)
@@ -55,4 +55,4 @@ void bind_rule(nb::module_& m, RepositoryBinding& repository)
     ygg::bind_insert<ygg::Row<Rule<LiftedTag>>>(repository);
 }
 
-}  // namespace tyr::formalism::datalog
+}  // namespace tyr::formalism

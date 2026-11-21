@@ -39,7 +39,7 @@
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::datalog
+namespace tyr::formalism
 {
 
 /**
@@ -70,7 +70,7 @@ struct Program
 
 }
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 /**
@@ -195,8 +195,7 @@ using ProblemTypes = boost::mp11::mp_list<Metric, Domain, Task<LiftedTag>, Task<
 using ConditionTypes = boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveCondition<GroundTag>>;
 /// The Datalog programs made from a task: rules over its records (a lifted rule's body is a shared condition), the
 /// ground rules' bodies and the programs.
-using DatalogTypes = boost::mp11::
-    mp_list<datalog::Rule<LiftedTag>, datalog::RuleBody<GroundTag>, datalog::Rule<GroundTag>, datalog::Program<LiftedTag>, datalog::Program<GroundTag>>;
+using DatalogTypes = boost::mp11::mp_list<Rule<LiftedTag>, RuleBody<GroundTag>, Rule<GroundTag>, Program<LiftedTag>, Program<GroundTag>>;
 
 using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                      PredicateTypes,
@@ -217,7 +216,7 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                      ConditionTypes,
                                                      DatalogTypes>;
 
-using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes, boost::mp11::mp_list<datalog::Rule<LiftedTag>>>;
+using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes, boost::mp11::mp_list<Rule<LiftedTag>>>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 
 using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;

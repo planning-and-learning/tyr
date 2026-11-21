@@ -39,21 +39,20 @@
 // variable its parameters name at that index.
 
 namespace tf = tyr::formalism;
-namespace tp = tyr::formalism::planning;
 using tyr::GroundTag;
 using tyr::LiftedTag;
 
-fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Object, tp::Repository>>::format(const urd::index_view<tf::Object, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Object, tf::Repository>>::format(const urd::index_view<tf::Object, tf::Repository>& value,
                                                                                                   fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", value.get_name()); }
 
-fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Variable, tp::Repository>>::format(const urd::index_view<tf::Variable, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Variable, tf::Repository>>::format(const urd::index_view<tf::Variable, tf::Repository>& value,
                                                                                                     fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", value.get_name()); }
 
 template<tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Predicate<F>, tp::Repository>>::format(const urd::index_view<tf::Predicate<F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::Predicate<F>, tf::Repository>>::format(const urd::index_view<tf::Predicate<F>, tf::Repository>& value,
                                                                           fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "({}", value.get_name());
@@ -64,7 +63,7 @@ fmt::formatter<urd::index_view<tf::Predicate<F>, tp::Repository>>::format(const 
 
 template<tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Function<F>, tp::Repository>>::format(const urd::index_view<tf::Function<F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::Function<F>, tf::Repository>>::format(const urd::index_view<tf::Function<F>, tf::Repository>& value,
                                                                          fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "({}", value.get_name());
@@ -75,7 +74,7 @@ fmt::formatter<urd::index_view<tf::Function<F>, tp::Repository>>::format(const u
 
 template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Atom<T, F>, tp::Repository>>::format(const urd::index_view<tf::Atom<T, F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::Atom<T, F>, tf::Repository>>::format(const urd::index_view<tf::Atom<T, F>, tf::Repository>& value,
                                                                         fmt::format_context& context) const
 {
     if constexpr (std::same_as<T, GroundTag>)
@@ -98,7 +97,7 @@ fmt::formatter<urd::index_view<tf::Atom<T, F>, tp::Repository>>::format(const ur
 
 template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::Literal<T, F>, tp::Repository>>::format(const urd::index_view<tf::Literal<T, F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::Literal<T, F>, tf::Repository>>::format(const urd::index_view<tf::Literal<T, F>, tf::Repository>& value,
                                                                            fmt::format_context& context) const
 {
     if (value.get_polarity())
@@ -108,7 +107,7 @@ fmt::formatter<urd::index_view<tf::Literal<T, F>, tp::Repository>>::format(const
 
 template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::FunctionTerm<T, F>, tp::Repository>>::format(const urd::index_view<tf::FunctionTerm<T, F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::FunctionTerm<T, F>, tf::Repository>>::format(const urd::index_view<tf::FunctionTerm<T, F>, tf::Repository>& value,
                                                                                 fmt::format_context& context) const
 {
     if constexpr (std::same_as<T, GroundTag>)
@@ -131,19 +130,19 @@ fmt::formatter<urd::index_view<tf::FunctionTerm<T, F>, tp::Repository>>::format(
 
 template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::FunctionTermValue<T, F>, tp::Repository>>::format(const urd::index_view<tf::FunctionTermValue<T, F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::FunctionTermValue<T, F>, tf::Repository>>::format(const urd::index_view<tf::FunctionTermValue<T, F>, tf::Repository>& value,
                                                                                      fmt::format_context& context) const
 { return fmt::format_to(context.out(), "(= {} {})", value.get_fterm(), value.get_value()); }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::UnaryOperator<T, O>, tp::Repository>>::format(const urd::index_view<tf::UnaryOperator<T, O>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::UnaryOperator<T, O>, tf::Repository>>::format(const urd::index_view<tf::UnaryOperator<T, O>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
 { return fmt::format_to(context.out(), "({} {})", value.get_operation(), value.get_arg()); }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::BinaryOperator<T, O>, tp::Repository>>::format(const urd::index_view<tf::BinaryOperator<T, O>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::BinaryOperator<T, O>, tf::Repository>>::format(const urd::index_view<tf::BinaryOperator<T, O>, tf::Repository>& value,
                                                                                   fmt::format_context& context) const
 {
     // PDDL compares with =, <, <=, > and >=: a != b is (not (= a b)).
@@ -157,7 +156,7 @@ fmt::formatter<urd::index_view<tf::BinaryOperator<T, O>, tp::Repository>>::forma
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::MultiOperator<T, O>, tp::Repository>>::format(const urd::index_view<tf::MultiOperator<T, O>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::MultiOperator<T, O>, tf::Repository>>::format(const urd::index_view<tf::MultiOperator<T, O>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "({}", value.get_operation());
@@ -168,13 +167,13 @@ fmt::formatter<urd::index_view<tf::MultiOperator<T, O>, tp::Repository>>::format
 
 template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, tp::Repository>>::format(const urd::index_view<tf::NumericEffect<T, F>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, tf::Repository>>::format(const urd::index_view<tf::NumericEffect<T, F>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
 { return fmt::format_to(context.out(), "({} {} {})", value.get_operation(), value.get_fterm(), value.get_fexpr()); }
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tf::ConjunctiveCondition<T>, tp::Repository>>::format(const urd::index_view<tf::ConjunctiveCondition<T>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::ConjunctiveCondition<T>, tf::Repository>>::format(const urd::index_view<tf::ConjunctiveCondition<T>, tf::Repository>& value,
                                                                                      fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "(and");
@@ -213,7 +212,7 @@ fmt::formatter<urd::index_view<tf::ConjunctiveCondition<T>, tp::Repository>>::fo
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tp::ConjunctiveEffect<T>, tp::Repository>>::format(const urd::index_view<tp::ConjunctiveEffect<T>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::ConjunctiveEffect<T>, tf::Repository>>::format(const urd::index_view<tf::ConjunctiveEffect<T>, tf::Repository>& value,
                                                                                   fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "(and");
@@ -241,7 +240,7 @@ fmt::formatter<urd::index_view<tp::ConjunctiveEffect<T>, tp::Repository>>::forma
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tp::ConditionalEffect<T>, tp::Repository>>::format(const urd::index_view<tp::ConditionalEffect<T>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::ConditionalEffect<T>, tf::Repository>>::format(const urd::index_view<tf::ConditionalEffect<T>, tf::Repository>& value,
                                                                                   fmt::format_context& context) const
 {
     // Without variables of its own, a conditional effect needs no forall; without a condition, no when.
@@ -276,7 +275,7 @@ fmt::formatter<urd::index_view<tp::ConditionalEffect<T>, tp::Repository>>::forma
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
-fmt::formatter<urd::index_view<tp::Action<T>, tp::Repository>>::format(const urd::index_view<tp::Action<T>, tp::Repository>& value,
+fmt::formatter<urd::index_view<tf::Action<T>, tf::Repository>>::format(const urd::index_view<tf::Action<T>, tf::Repository>& value,
                                                                        fmt::format_context& context) const
 {
     auto out = context.out();
@@ -309,7 +308,7 @@ fmt::formatter<urd::index_view<tp::Action<T>, tp::Repository>>::format(const urd
 }
 
 template<tyr::TaskKind T>
-fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Axiom<T>, tp::Repository>>::format(const urd::index_view<tp::Axiom<T>, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Axiom<T>, tf::Repository>>::format(const urd::index_view<tf::Axiom<T>, tf::Repository>& value,
                                                                                                     fmt::format_context& context) const
 {
     if constexpr (std::same_as<T, LiftedTag>)
@@ -338,7 +337,7 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Axiom<T>, tp::R
         return fmt::format_to(context.out(), "(:derived {} {})", value.get_head(), value.get_body());
 }
 
-fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Metric, tp::Repository>>::format(const urd::index_view<tp::Metric, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Metric, tf::Repository>>::format(const urd::index_view<tf::Metric, tf::Repository>& value,
                                                                                                   fmt::format_context& context) const
 { return fmt::format_to(context.out(), "(:metric {} {})", value.get_optimization_direction(), value.get_fexpr()); }
 
@@ -346,7 +345,7 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Metric, tp::Rep
 // another level deeper (as loki writes a domain). Its requirements are those a normalized domain may use, and those of
 // the predicates and functions it has. Equality, which tyr keeps as the static predicate =, is PDDL's own: required
 // (:equality), not declared.
-fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Domain, tp::Repository>>::format(const urd::index_view<tp::Domain, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Domain, tf::Repository>>::format(const urd::index_view<tf::Domain, tf::Repository>& value,
                                                                                                   fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "(define (domain {})", value.get_name());
@@ -407,7 +406,7 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Domain, tp::Rep
 // The predicates and axioms a task derives itself are written as loki's task-level sections; the atoms of equality, which
 // PDDL knows itself, are not written.
 template<tyr::TaskKind T>
-fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Task<T>, tp::Repository>>::format(const urd::index_view<tp::Task<T>, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Task<T>, tf::Repository>>::format(const urd::index_view<tf::Task<T>, tf::Repository>& value,
                                                                                                    fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "(define (problem {})", value.get_name());
@@ -450,7 +449,7 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<tp::Task<T>, tp::Re
     return fmt::format_to(out, "{})", urd::new_line());
 }
 
-fmt::format_context::iterator fmt::formatter<tp::FDRFactView<tf::FluentTag>>::format(const tp::FDRFactView<tf::FluentTag>& value,
+fmt::format_context::iterator fmt::formatter<tf::FDRFactView<tf::FluentTag>>::format(const tf::FDRFactView<tf::FluentTag>& value,
                                                                                      fmt::format_context& context) const
 {
     if (const auto atom = value.get_atom(); atom.has_value())
@@ -462,7 +461,7 @@ fmt::format_context::iterator fmt::formatter<tp::FDRFactView<tf::FluentTag>>::fo
 }
 
 fmt::format_context::iterator
-fmt::formatter<urd::owning_view<tp::FDRFact<tf::FluentTag>, tp::Repository>>::format(const urd::owning_view<tp::FDRFact<tf::FluentTag>, tp::Repository>& value,
+fmt::formatter<urd::owning_view<tf::FDRFact<tf::FluentTag>, tf::Repository>>::format(const urd::owning_view<tf::FDRFact<tf::FluentTag>, tf::Repository>& value,
                                                                                      fmt::format_context& context) const
 {
     if (const auto atom = value.get_atom(); atom.has_value())
@@ -474,11 +473,11 @@ fmt::formatter<urd::owning_view<tp::FDRFact<tf::FluentTag>, tp::Repository>>::fo
 }
 
 template<typename R>
-fmt::format_context::iterator fmt::formatter<ygg::RowView<R, tp::Repository>>::format(const ygg::RowView<R, tp::Repository>& value,
+fmt::format_context::iterator fmt::formatter<ygg::RowView<R, tf::Repository>>::format(const ygg::RowView<R, tf::Repository>& value,
                                                                                       fmt::format_context& context) const
 {
     // An axiom or a rule has no name: its binding is its values.
-    if constexpr (std::same_as<R, tp::Axiom<LiftedTag>> || std::same_as<R, tyr::formalism::datalog::Rule<LiftedTag>>)
+    if constexpr (std::same_as<R, tf::Axiom<LiftedTag>> || std::same_as<R, tyr::formalism::Rule<LiftedTag>>)
         return fmt::format_to(context.out(), "{}", ygg::values_text<R>(value));
     else
     {
@@ -488,24 +487,24 @@ fmt::format_context::iterator fmt::formatter<ygg::RowView<R, tp::Repository>>::f
     }
 }
 
-fmt::format_context::iterator fmt::formatter<tp::ActionRowBuilderView>::format(const tp::ActionRowBuilderView& value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tf::ActionRowBuilderView>::format(const tf::ActionRowBuilderView& value, fmt::format_context& context) const
 {
     // The relation in whatever form the binding holds it (interned, as a staged binding's is).
     const auto name = urd::visit_view(value.get_relation(), [](const auto& action) { return std::string(action.get_name()); });
     if (value.get_values().empty())
         return fmt::format_to(context.out(), "({})", name);
-    return fmt::format_to(context.out(), "({} {})", name, ygg::values_text<tp::Action<LiftedTag>>(value));
+    return fmt::format_to(context.out(), "({} {})", name, ygg::values_text<tf::Action<LiftedTag>>(value));
 }
 
-fmt::format_context::iterator fmt::formatter<tp::PlanningDomain>::format(const tp::PlanningDomain& value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tf::PlanningDomain>::format(const tf::PlanningDomain& value, fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", value.get_domain()); }
 
 template<tyr::TaskKind T>
-fmt::format_context::iterator fmt::formatter<tp::PlanningTask<T>>::format(const tp::PlanningTask<T>& value, fmt::format_context& context) const
+fmt::format_context::iterator fmt::formatter<tf::PlanningTask<T>>::format(const tf::PlanningTask<T>& value, fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}\n{}", value.get_task().get_domain(), value.get_task()); }
 
 fmt::format_context::iterator
-fmt::formatter<std::pair<tp::ActionRowView, tp::PlanFormatting>>::format(const std::pair<tp::ActionRowView, tp::PlanFormatting>& value,
+fmt::formatter<std::pair<tf::ActionRowView, tf::PlanFormatting>>::format(const std::pair<tf::ActionRowView, tf::PlanFormatting>& value,
                                                                          fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "({}", value.first.get_relation().get_original_name());
@@ -516,76 +515,75 @@ fmt::formatter<std::pair<tp::ActionRowView, tp::PlanFormatting>>::format(const s
 }
 
 fmt::format_context::iterator
-fmt::formatter<std::pair<tp::ActionView<GroundTag>, tp::PlanFormatting>>::format(const std::pair<tp::ActionView<GroundTag>, tp::PlanFormatting>& value,
+fmt::formatter<std::pair<tf::ActionView<GroundTag>, tf::PlanFormatting>>::format(const std::pair<tf::ActionView<GroundTag>, tf::PlanFormatting>& value,
                                                                                  fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", std::make_pair(value.first.get_row(), value.second)); }
 
 // Each family's formatter, once for each record of the family the repository stores.
-template struct fmt::formatter<urd::index_view<tf::Predicate<tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Predicate<tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Predicate<tf::DerivedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Function<tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Function<tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Function<tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::DerivedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::DerivedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::DerivedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::DerivedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::UnaryOperator<LiftedTag, tf::ArithmeticOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::UnaryOperator<GroundTag, tf::ArithmeticOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<LiftedTag, tf::ArithmeticOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<LiftedTag, tf::BooleanOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::ArithmeticOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::BooleanOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::MultiOperator<LiftedTag, tf::ArithmeticOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::MultiOperator<GroundTag, tf::ArithmeticOperatorKind>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::ConjunctiveCondition<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tf::ConjunctiveCondition<GroundTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::ConjunctiveEffect<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::ConjunctiveEffect<GroundTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::ConditionalEffect<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::ConditionalEffect<GroundTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::Action<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::Action<GroundTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::Axiom<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::Axiom<GroundTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::Task<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<urd::index_view<tp::Task<GroundTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::DerivedTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Function<tf::StaticTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Function<tf::FluentTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tf::Function<tf::AuxiliaryTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tp::Action<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tp::Axiom<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<ygg::RowView<tyr::formalism::datalog::Rule<LiftedTag>, tp::Repository>>;
-template struct fmt::formatter<tp::PlanningTask<LiftedTag>>;
-template struct fmt::formatter<tp::PlanningTask<GroundTag>>;
+template struct fmt::formatter<urd::index_view<tf::Predicate<tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Predicate<tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Predicate<tf::DerivedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Function<tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Function<tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Function<tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<LiftedTag, tf::DerivedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Atom<GroundTag, tf::DerivedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<LiftedTag, tf::DerivedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Literal<GroundTag, tf::DerivedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTerm<LiftedTag, tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTerm<GroundTag, tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::FunctionTermValue<GroundTag, tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::UnaryOperator<LiftedTag, tf::ArithmeticOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::UnaryOperator<GroundTag, tf::ArithmeticOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::BinaryOperator<LiftedTag, tf::ArithmeticOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::BinaryOperator<LiftedTag, tf::BooleanOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::ArithmeticOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::BinaryOperator<GroundTag, tf::BooleanOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::MultiOperator<LiftedTag, tf::ArithmeticOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::MultiOperator<GroundTag, tf::ArithmeticOperatorKind>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::NumericEffect<LiftedTag, tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::NumericEffect<GroundTag, tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConjunctiveCondition<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConjunctiveCondition<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConjunctiveEffect<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConjunctiveEffect<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConditionalEffect<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ConditionalEffect<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Action<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Action<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Axiom<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Axiom<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Task<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Task<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Predicate<tf::DerivedTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Function<tf::StaticTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Function<tf::FluentTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Function<tf::AuxiliaryTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Action<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tf::Axiom<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<ygg::RowView<tyr::formalism::Rule<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<tf::PlanningTask<LiftedTag>>;
+template struct fmt::formatter<tf::PlanningTask<GroundTag>>;
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::planning::FDRValue>::format(const tyr::formalism::planning::FDRValue& value,
-                                                                                         fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<tyr::formalism::FDRValue>::format(const tyr::formalism::FDRValue& value, fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.value); }
 
 fmt::format_context::iterator fmt::formatter<tyr::formalism::OptimizationDirection>::format(tyr::formalism::OptimizationDirection value,

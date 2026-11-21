@@ -47,18 +47,16 @@ namespace tyr::planning
 
 /// A program row's ground atom in `to` (the task's repository or a layer over it), interned there with its row.
 template<formalism::FactKind F>
-std::pair<formalism::planning::AtomView<GroundTag, F>, bool>
-copy_ground_atom(formalism::datalog::PredicateRowView<F> row, formalism::planning::Builder& builder, formalism::planning::Repository& to)
+std::pair<formalism::AtomView<GroundTag, F>, bool> copy_ground_atom(formalism::PredicateRowView<F> row, formalism::Builder& builder, formalism::Repository& to)
 {
-    auto atom = formalism::planning::checkout<formalism::Atom<GroundTag, F>>(builder);
+    auto atom = formalism::checkout<formalism::Atom<GroundTag, F>>(builder);
     urd::store(atom->row, urd::resolve(formalism::copy_row(row, to).first, to));
     return to.insert(*atom, builder);
 }
 
 /// The ground atom of a row of `repository`'s, where it holds one.
 template<formalism::FactKind F>
-std::optional<formalism::planning::AtomView<GroundTag, F>> find_ground_atom(formalism::datalog::PredicateRowView<F> row,
-                                                                            const formalism::planning::Repository& repository)
+std::optional<formalism::AtomView<GroundTag, F>> find_ground_atom(formalism::PredicateRowView<F> row, const formalism::Repository& repository)
 {
     auto atom = urd::data<formalism::Atom<GroundTag, F>> {};
     atom.row = row.index();
@@ -66,14 +64,14 @@ std::optional<formalism::planning::AtomView<GroundTag, F>> find_ground_atom(form
 }
 
 /// The number of the task's derived predicates: the program's own follow them (dense indices).
-std::size_t num_task_derived_predicates(formalism::planning::TaskView<LiftedTag> task);
+std::size_t num_task_derived_predicates(formalism::TaskView<LiftedTag> task);
 
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state. The state's rows are the ground
 /// program's: it is a layer over the ground task's repository.
 /// ProgramExecutionContext populates assignment indices after insertion.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void insert_unextended_state(const StateContext<GroundTag>& state,
-                             const formalism::planning::Repository& repository,
+                             const formalism::Repository& repository,
                              datalog::ProgramWorkspace<GroundTag, AP, TP, CP>& workspace)
 {
     auto& fact_sets = workspace.facts.fact_sets.template get<formalism::FluentTag>();
@@ -88,7 +86,7 @@ void insert_unextended_state(const StateContext<GroundTag>& state,
 /// ProgramExecutionContext populates lifted assignment indices after insertion.
 template<StateInputsConcept R, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void insert_unextended_state(const StateContext<LiftedTag>& state,
-                             const formalism::planning::Repository& repository,
+                             const formalism::Repository& repository,
                              const R& inputs,
                              datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
@@ -111,7 +109,7 @@ void insert_unextended_state(const StateContext<LiftedTag>& state,
 /// insert_unextended_state, and the derived atoms.
 template<StateInputsConcept R, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void insert_extended_state(const StateContext<LiftedTag>& state,
-                           const formalism::planning::Repository& repository,
+                           const formalism::Repository& repository,
                            const R& inputs,
                            datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
@@ -130,10 +128,10 @@ void insert_extended_state(const StateContext<LiftedTag>& state,
 /// derived in the state; `derived_bindings` is scratch.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state,
-                                      formalism::planning::Repository& repository,
+                                      formalism::Repository& repository,
                                       std::size_t num_task_derived_predicates,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::DerivedTag>>>& derived_bindings)
+                                      urd::Store<urd::sequence<formalism::PredicateRowView<formalism::DerivedTag>>>& derived_bindings)
 {
     const auto& fact_sets = workspace.facts.fact_sets.template get<formalism::DerivedTag>();
     derived_bindings.clear();

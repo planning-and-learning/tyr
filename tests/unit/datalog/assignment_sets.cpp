@@ -50,8 +50,8 @@ tyr::analysis::VariableDomain domain(std::initializer_list<ygg::uint_t> objects)
 }
 
 template<typename Relation>
-auto make_binding(tyr::formalism::datalog::Repository& repository,
-                  urd::index_view<Relation, tyr::formalism::datalog::Repository> relation,
+auto make_binding(tyr::formalism::Repository& repository,
+                  urd::index_view<Relation, tyr::formalism::Repository> relation,
                   std::initializer_list<ObjectIndex> objects)
 {
     auto data = urd::data<ygg::Row<Relation>> {};
@@ -78,13 +78,13 @@ ygg::ClosedInterval<ygg::float_t> interval_of(const Set& set, Binding binding)
 }
 
 template<typename T>
-auto intern(tyr::formalism::datalog::Repository& repository, urd::data<T> data)
+auto intern(tyr::formalism::Repository& repository, urd::data<T> data)
 { return ygg::formalism::insert(repository, data).first; }
 
 struct Fixture
 {
-    tyr::formalism::datalog::Repository repository = tyr::formalism::datalog::Repository();
-    urd::Store<urd::sequence<tyr::formalism::datalog::ObjectView>> objects;
+    tyr::formalism::Repository repository = tyr::formalism::Repository();
+    urd::Store<urd::sequence<tyr::formalism::ObjectView>> objects;
 
     Fixture()
     {

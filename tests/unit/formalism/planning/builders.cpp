@@ -41,7 +41,7 @@ namespace
 {
 using tyr::LiftedTag;
 using tyr::formalism::FluentTag;
-using tyr::formalism::planning::Repository;
+using tyr::formalism::Repository;
 namespace f = tyr::formalism;
 
 using AtomBuilder = urd::builder<f::Atom<LiftedTag, FluentTag>, Repository>;

@@ -30,7 +30,7 @@ namespace tyr::analysis
 
 struct TaskVariableDomainsView
 {
-    using C = formalism::planning::Repository;
+    using C = formalism::Repository;
 
     PredicateDomainViewMap<formalism::StaticTag, C> static_predicate_domains;
     PredicateDomainViewMap<formalism::FluentTag, C> fluent_predicate_domains;

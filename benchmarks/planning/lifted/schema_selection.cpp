@@ -85,8 +85,7 @@ try
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
     {
-        prepared.task =
-            tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
+        prepared.task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(benchmark_case.paths.domain).parse_task(benchmark_case.paths.task));
 #if defined(__GLIBC__)
         const auto before = allocated_bytes();
 #endif
@@ -124,7 +123,7 @@ try
     erase_if(expected_bindings, reject_binding);
     state.counters["num_selected_bindings"] = static_cast<double>(expected_bindings.size());
 
-    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>> {};
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
     auto successors = tyr::planning::LabeledNodeList<LiftedTag> {};
     const auto generate = [&]
     {

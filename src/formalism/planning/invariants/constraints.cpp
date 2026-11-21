@@ -30,7 +30,7 @@
 #include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 namespace
 {
@@ -383,4 +383,4 @@ template void ensure_literals_sat(ConstraintSystem&, const std::vector<std::pair
 template void ensure_literals_sat(ConstraintSystem&, const std::vector<std::pair<urd::data<Atom<LiftedTag, FluentTag>>, bool>>&, const Repository&);
 template void ensure_literals_sat(ConstraintSystem&, const std::vector<std::pair<urd::data<Atom<LiftedTag, DerivedTag>>, bool>>&, const Repository&);
 
-}  // namespace tyr::formalism::planning::invariant
+}  // namespace tyr::formalism::invariant

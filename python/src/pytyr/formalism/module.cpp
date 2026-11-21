@@ -18,7 +18,7 @@
 #include "module.hpp"
 
 #include "bindings.hpp"
-#include "datalog/module.hpp"
+#include "datalog/bindings.hpp"
 #include "planning/module.hpp"
 #include "pytyr/module.hpp"
 
@@ -28,12 +28,10 @@ void bind_module_definitions(nb::module_& m)
 {
     bind_formalism(m);
 
-    auto planning_module = m.def_submodule("planning");
-    planning::bind_module_definitions(planning_module);
+    bind_planning_module_definitions(m);
 
     // After planning: datalog binds its rules and programs on planning's repository class.
-    auto datalog_module = m.def_submodule("datalog");
-    datalog::bind_module_definitions(datalog_module);
+    bind_datalog_formalism(m);
 }
 
 }  // namespace tyr::formalism

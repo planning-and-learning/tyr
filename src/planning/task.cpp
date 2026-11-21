@@ -54,8 +54,8 @@
 
 namespace tyr::planning
 {
-StaticState::StaticState(formalism::planning::AtomListView<GroundTag, formalism::StaticTag> atoms,
-                         formalism::planning::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values)
+StaticState::StaticState(formalism::AtomListView<GroundTag, formalism::StaticTag> atoms,
+                         formalism::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values)
 {
     for (const auto atom : atoms)
         m_atoms.insert(atom.index());
@@ -65,40 +65,40 @@ StaticState::StaticState(formalism::planning::AtomListView<GroundTag, formalism:
 }
 
 template<TaskKind Kind>
-StaticState::StaticState(formalism::planning::TaskView<Kind> task) :
+StaticState::StaticState(formalism::TaskView<Kind> task) :
     StaticState(task.template get_atoms<formalism::StaticTag>(), task.template get_fterm_values<formalism::StaticTag>())
 {
 }
 
-template StaticState::StaticState(formalism::planning::TaskView<GroundTag> task);
-template StaticState::StaticState(formalism::planning::TaskView<LiftedTag> task);
+template StaticState::StaticState(formalism::TaskView<GroundTag> task);
+template StaticState::StaticState(formalism::TaskView<LiftedTag> task);
 
 namespace
 {
 /// A writable layer over a formalism task's frozen repository, for the objects of its task. The layers do not own
 /// their parents: the Task does, through m_task, which it declares first and so destroys last.
 template<TaskKind Kind>
-formalism::planning::RepositoryPtr layer_over(const formalism::planning::PlanningTask<Kind>& task)
-{ return std::make_shared<formalism::planning::Repository>(task.get_task().get_num_objects(), task.get_repository().get()); }
+formalism::RepositoryPtr layer_over(const formalism::PlanningTask<Kind>& task)
+{ return std::make_shared<formalism::Repository>(task.get_task().get_num_objects(), task.get_repository().get()); }
 }
 
-Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) :
+Task<LiftedTag>::Task(formalism::PlanningTask<LiftedTag> task) :
     m_task(std::move(task)),
     m_repository(layer_over(m_task)),
-    m_fdr_context(std::make_shared<formalism::planning::FDRContext>(m_task.get_fdr_context().get(), m_repository)),
+    m_fdr_context(std::make_shared<formalism::FDRContext>(m_task.get_fdr_context().get(), m_repository)),
     m_static_state(m_task.get_task())
 {
 }
 
-TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::planning::PlanningTask<LiftedTag> task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
+TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::PlanningTask<LiftedTag> task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
 
 GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::ExecutionContext& execution_context, const GroundTaskInstantiationOptions& options)
 { return tyr::planning::instantiate_ground_task(*this, execution_context, options); }
 
-Task<GroundTag>::Task(formalism::planning::PlanningTask<GroundTag> task) :
+Task<GroundTag>::Task(formalism::PlanningTask<GroundTag> task) :
     m_task(std::move(task)),
     m_repository(layer_over(m_task)),
-    m_fdr_context(std::make_shared<formalism::planning::FDRContext>(m_task.get_fdr_context().get(), m_repository)),
+    m_fdr_context(std::make_shared<formalism::FDRContext>(m_task.get_fdr_context().get(), m_repository)),
     m_static_state(m_task.get_task())
 {
 }

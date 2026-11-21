@@ -26,7 +26,7 @@
 
 /// Insertion into the planning repository: records are canonicalized before they are interned. Kept out of
 /// repository.hpp, so code that only reads does not compile the canonicalization.
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 using ygg::formalism::insert;

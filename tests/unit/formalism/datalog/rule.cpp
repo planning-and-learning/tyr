@@ -24,16 +24,16 @@ namespace tyr::tests::datalog_rule
 namespace lifted_tests
 {
 
-using Entity = tyr::formalism::datalog::Rule<::tyr::LiftedTag>;
+using Entity = tyr::formalism::Rule<::tyr::LiftedTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::LiftedTag>>);
+static_assert(std::same_as<View, tyr::formalism::RuleView<::tyr::LiftedTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
@@ -57,16 +57,16 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-using Entity = tyr::formalism::datalog::Rule<::tyr::GroundTag>;
+using Entity = tyr::formalism::Rule<::tyr::GroundTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::GroundTag>>);
+static_assert(std::same_as<View, tyr::formalism::RuleView<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.body;
@@ -88,7 +88,7 @@ static_assert(requires(Data& data, const View& view) {
 TEST(TyrFormalismDatalogLiftedRule, PrintsAsDatalog)
 {
     namespace tf = tyr::formalism;
-    auto repository = tf::datalog::Repository();
+    auto repository = tf::Repository();
     const auto insert = [&](auto data) { return ygg::formalism::insert(repository, data).first; };
 
     const auto x = insert(urd::data<tf::Variable>(urd::flat_string(std::string("?x"))));
@@ -118,7 +118,7 @@ TEST(TyrFormalismDatalogLiftedRule, PrintsAsDatalog)
     body.variables = variables;
     body.static_literals.push_back(insert(urd::data<tf::Literal<::tyr::LiftedTag, tf::StaticTag>>(edge_xy.index(), true)).index());
     body.fluent_literals.push_back(insert(urd::data<tf::Literal<::tyr::LiftedTag, tf::FluentTag>>(visited_y.index(), false)).index());
-    auto rule = urd::data<tf::datalog::Rule<::tyr::LiftedTag>> {};
+    auto rule = urd::data<tf::Rule<::tyr::LiftedTag>> {};
     rule.variables = variables;
     rule.body = insert(std::move(body)).index();
     rule.fluent_heads.push_back(reached_y.index());

@@ -87,7 +87,7 @@ template<TaskKind Kind, formalism::FactKind F>
 class PredicateHeadUpdates
 {
 private:
-    using Binding = formalism::datalog::PredicateRowIndex<F>;
+    using Binding = formalism::PredicateRowIndex<F>;
     using Witness = WitnessAnnotation<Kind>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
@@ -347,7 +347,7 @@ auto evaluate_propositional_candidate(RuleInstance<Kind>& rule_instance,
 
 /// The heads of kind F of a rule instance as the keys of its predicate annotations, a range read more than once.
 template<typename Range, typename F>
-concept PredicateRowRange = std::ranges::forward_range<Range> && std::same_as<std::ranges::range_value_t<Range>, formalism::datalog::PredicateRowIndex<F>>;
+concept PredicateRowRange = std::ranges::forward_range<Range> && std::same_as<std::ranges::range_value_t<Range>, formalism::PredicateRowIndex<F>>;
 
 template<typename R, typename F>
 concept PredicateHeadsOf = requires(const R& heads) {

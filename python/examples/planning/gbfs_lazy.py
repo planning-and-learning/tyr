@@ -24,7 +24,7 @@ from queue import PriorityQueue
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism.planning import Parser
+from pytyr.formalism import Parser
 from pytyr.planning import SearchStatus
 from pytyr.planning.lifted import (
     AxiomEvaluator,

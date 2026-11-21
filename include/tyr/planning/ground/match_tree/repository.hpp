@@ -54,8 +54,8 @@ class Repository;
 /// The pools of a match tree's builders and scratch records, interned into its Repository.
 template<typename Tag>
 using BuilderOf = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<RepositoryTypes<Tag>, Repository<Tag>>>;
-using GroundActionBuilder = BuilderOf<formalism::planning::Action<GroundTag>>;
-using GroundAxiomBuilder = BuilderOf<formalism::planning::Axiom<GroundTag>>;
+using GroundActionBuilder = BuilderOf<formalism::Action<GroundTag>>;
+using GroundAxiomBuilder = BuilderOf<formalism::Axiom<GroundTag>>;
 
 using ygg::formalism::checkout;
 using ygg::formalism::insert;
@@ -65,16 +65,16 @@ using ygg::formalism::insert;
 template<typename Tag>
 class Repository :
     public ygg::formalism::SymbolContext<Repository<Tag>, RepositoryTypes<Tag>>,
-    public ygg::formalism::Nests<Repository<Tag>, ygg::formalism::Nested<const formalism::planning::Repository>>
+    public ygg::formalism::Nests<Repository<Tag>, ygg::formalism::Nested<const formalism::Repository>>
 {
 private:
     using Base = ygg::formalism::SymbolContext<Repository<Tag>, RepositoryTypes<Tag>>;
-    using NestsBase = ygg::formalism::Nests<Repository<Tag>, ygg::formalism::Nested<const formalism::planning::Repository>>;
+    using NestsBase = ygg::formalism::Nests<Repository<Tag>, ygg::formalism::Nested<const formalism::Repository>>;
 
     ygg::uint_t m_index;
 
 public:
-    explicit Repository(ygg::uint_t index, std::shared_ptr<const formalism::planning::Repository> formalism_repository) :
+    explicit Repository(ygg::uint_t index, std::shared_ptr<const formalism::Repository> formalism_repository) :
         Base(),
         NestsBase(std::move(formalism_repository)),
         m_index(index)

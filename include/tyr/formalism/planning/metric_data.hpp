@@ -28,9 +28,9 @@ namespace urd
 {
 
 template<>
-struct data<::tyr::formalism::planning::Metric>
+struct data<::tyr::formalism::Metric>
 {
-    urd::index<::tyr::formalism::planning::Metric> index;
+    urd::index<::tyr::formalism::Metric> index;
     ::tyr::formalism::OptimizationDirection optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
     ::tyr::formalism::FunctionExpression<::tyr::GroundTag> fexpr;
 

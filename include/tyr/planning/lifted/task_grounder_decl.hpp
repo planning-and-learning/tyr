@@ -47,7 +47,7 @@ struct GroundTaskInstantiationOptions
     /// Used unless invariant synthesis is disabled. nullopt: greedy cover over all synthesized invariants. Otherwise
     /// exactly these invariants, in this order (see compute_mutex_groups_in_order). Each must be an invariant
     /// synthesize_invariants interned into the repository of the task's domain. Unlisted invariants are not used.
-    std::optional<formalism::planning::InvariantViewList> invariant_order = std::nullopt;
+    std::optional<formalism::InvariantViewList> invariant_order = std::nullopt;
 };
 
 }

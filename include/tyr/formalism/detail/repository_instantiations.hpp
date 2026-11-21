@@ -28,7 +28,7 @@
 
 /// The instantiations (PREFIX extern: declarations).
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage): it expands to explicit instantiations, declarations, which no function gives
-#define TYR_FORMALISM_INTERNS(PREFIX) YGG_FORMALISM_INTERNS(PREFIX, 63, true, tyr::formalism::planning::SymbolRepositoryTypes)
+#define TYR_FORMALISM_INTERNS(PREFIX) YGG_FORMALISM_INTERNS(PREFIX, 63, true, tyr::formalism::SymbolRepositoryTypes)
 
 TYR_FORMALISM_INTERNS(extern)
 

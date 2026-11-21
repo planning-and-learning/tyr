@@ -36,9 +36,9 @@ namespace urd
 
 /// The builder of Metric: its record's members, each in its built form (urd::built_t).
 template<typename C>
-struct builder<::tyr::formalism::planning::Metric, C>
+struct builder<::tyr::formalism::Metric, C>
 {
-    urd::index<::tyr::formalism::planning::Metric> index;
+    urd::index<::tyr::formalism::Metric> index;
     urd::built_t<::tyr::formalism::OptimizationDirection, C> optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
     urd::built_t<::tyr::formalism::FunctionExpression<::tyr::GroundTag>, C> fexpr;
 

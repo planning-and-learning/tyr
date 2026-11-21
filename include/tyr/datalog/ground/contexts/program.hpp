@@ -71,7 +71,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 
         /// Commits a fact. Whether it was new.
         template<formalism::FactKind F>
-        bool insert(formalism::datalog::PredicateRowIndex<F> fact)
+        bool insert(formalism::PredicateRowIndex<F> fact)
         { return m_ws->facts.insert(fact); }
 
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
@@ -143,7 +143,7 @@ private:
                 const auto& facts = m_out.facts().fact_sets.template get<F>();
                 for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
                     for (const auto id : facts.predicate[i])
-                        m_out.annotation_policy().initialize_annotation(formalism::datalog::PredicateRowIndex<F> { urd::index<formalism::Predicate<F>>(i), id },
+                        m_out.annotation_policy().initialize_annotation(formalism::PredicateRowIndex<F> { urd::index<formalism::Predicate<F>>(i), id },
                                                                         m_out.annotations());
             });
     }
@@ -165,7 +165,7 @@ private:
                 for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
                     for (const auto id : facts.predicate[i])
                     {
-                        const auto fact = formalism::datalog::PredicateRowIndex<F> { urd::index<formalism::Predicate<F>>(i), id };
+                        const auto fact = formalism::PredicateRowIndex<F> { urd::index<formalism::Predicate<F>>(i), id };
                         if (const auto* rules = m_in.dependencies().find(fact))
                             for (const auto rule : *rules)
                                 scheduler.satisfy(rule, m_out.annotations().fetch_cost(fact), aggregate);

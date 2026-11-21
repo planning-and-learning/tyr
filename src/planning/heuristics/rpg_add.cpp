@@ -64,7 +64,7 @@ AddRPGHeuristicPtr<Kind> AddRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::
 { return std::make_shared<AddRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
-void AddRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
+void AddRPGHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>

@@ -35,7 +35,7 @@
 namespace urd
 {
 template<::tyr::TaskKind T, typename V>
-struct view_mixin<::tyr::formalism::datalog::Rule<T>, V>
+struct view_mixin<::tyr::formalism::Rule<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -56,7 +56,7 @@ public:
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_heads() const noexcept
-    { return self().template member<::tyr::formalism::datalog::heads_of<F, T>>(); }
+    { return self().template member<::tyr::formalism::heads_of<F, T>>(); }
 
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const

@@ -28,7 +28,7 @@
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
-namespace tyr::formalism::planning
+namespace tyr::formalism
 {
 
 void bind_parameters(nb::module_& m, RepositoryBinding& repository)
@@ -38,4 +38,4 @@ void bind_parameters(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_builder<Parameters, Repository>(m);
 }
 
-}  // namespace tyr::formalism::planning
+}  // namespace tyr::formalism

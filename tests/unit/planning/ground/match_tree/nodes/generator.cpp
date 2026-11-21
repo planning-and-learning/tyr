@@ -22,11 +22,11 @@ concept ElementGeneratorContract =
            view.get_elements();
        };
 
-using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::Action<::tyr::GroundTag>, tyr::formalism::Axiom<::tyr::GroundTag>>;
 static_assert([]<typename... Tags>(boost::mp11::mp_list<Tags...>) { return (ElementGeneratorContract<Tags> && ...); }(MatchTreeTags {}));
 
-using Action = tyr::formalism::planning::Action<::tyr::GroundTag>;
-using Axiom = tyr::formalism::planning::Axiom<::tyr::GroundTag>;
+using Action = tyr::formalism::Action<::tyr::GroundTag>;
+using Axiom = tyr::formalism::Axiom<::tyr::GroundTag>;
 using Generator = tyr::planning::match_tree::ElementGeneratorNode<Action>;
 static_assert(ygg::formalism::SupportsSymbol<tyr::planning::match_tree::Repository<Action>, Generator>);
 static_assert(!ygg::formalism::SupportsSymbol<tyr::planning::match_tree::Repository<Action>, tyr::planning::match_tree::ElementGeneratorNode<Axiom>>);
@@ -44,7 +44,7 @@ static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<
 
 TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
 {
-    auto formalism_repository = std::make_shared<const tyr::formalism::planning::Repository>();
+    auto formalism_repository = std::make_shared<const tyr::formalism::Repository>();
     auto repository = tyr::planning::match_tree::Repository<Action>(0, formalism_repository);
     auto builder = tyr::planning::match_tree::GroundActionBuilder {};
     auto data = tyr::planning::match_tree::checkout<Generator>(builder);

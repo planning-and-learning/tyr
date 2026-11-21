@@ -32,8 +32,7 @@
 namespace tyr::datalog
 {
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule,
-                                                                  ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto rule_index = rule.index();
     auto& states = m_states;
@@ -55,7 +54,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
 }
 
 template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto* dependent_rules = ctx.in().dependencies().find(fact);
     if (!dependent_rules)
@@ -77,7 +76,7 @@ void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, 
 }
 
 template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+void Scheduler<GroundTag>::notify_predicate_generated(formalism::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     ++m_statistics.num_facts_derived;
     notify_predicate_generated_for(fact, ctx);

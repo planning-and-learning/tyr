@@ -29,7 +29,7 @@ namespace tyr::datalog
 {
 namespace
 {
-void validate_rules(formalism::datalog::ProgramView<GroundTag> program, const FactSets& fact_sets)
+void validate_rules(formalism::ProgramView<GroundTag> program, const FactSets& fact_sets)
 {
     for (const auto rule : program.get_rules())
     {
@@ -48,9 +48,9 @@ void validate_rules(formalism::datalog::ProgramView<GroundTag> program, const Fa
     }
 }
 
-void validate_program(formalism::datalog::ProgramView<GroundTag> program, const FactSets& fact_sets) { validate_rules(program, fact_sets); }
+void validate_program(formalism::ProgramView<GroundTag> program, const FactSets& fact_sets) { validate_rules(program, fact_sets); }
 
-void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program, GroundRuleDependencies& dependencies)
+void initialize_dependencies(formalism::ProgramView<GroundTag> program, GroundRuleDependencies& dependencies)
 {
     for (const auto rule : program.get_rules())
     {
@@ -67,7 +67,7 @@ void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program,
 }
 }
 
-ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::datalog::ProgramView<GroundTag> program_) :
+ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::ProgramView<GroundTag> program_) :
     program(program_),
     facts(program.template get_predicates<formalism::StaticTag>(),
           program.template get_functions<formalism::StaticTag>(),

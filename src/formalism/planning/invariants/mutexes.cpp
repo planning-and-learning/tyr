@@ -36,7 +36,7 @@
 #include <vector>
 #include <yggdrasil/formalism/row_view.hpp>
 
-namespace tyr::formalism::planning::invariant
+namespace tyr::formalism::invariant
 {
 namespace
 {
