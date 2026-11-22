@@ -98,9 +98,9 @@ struct AxiomWorkspace<GroundTag>
 }
 
 template<>
-void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder)
+void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder, const StateRepository<GroundTag>& repository)
 {
-    auto state_context = StateContext<GroundTag> { *m_impl->definition->task, state_builder, static_cast<ygg::float_t>(0) };
+    auto state_context = StateContext<GroundTag> { repository, state_builder, static_cast<ygg::float_t>(0) };
 
     for (const auto& match_tree : m_impl->evaluator.match_tree_workers)
     {

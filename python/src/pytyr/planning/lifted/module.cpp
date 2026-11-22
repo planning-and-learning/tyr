@@ -28,6 +28,7 @@
 #include <urd/python/sequences/sequence.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include "tyr/planning/state_repository.hpp"
 
 namespace tyr::planning
 {

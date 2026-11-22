@@ -28,7 +28,7 @@ namespace tyr::planning
 {
 
 /// What applicability reads of a state: its task, its storages (its fluent facts, derived atoms and numeric values, each
-/// a view through the task's formalism repository) and an auxiliary value. The state must outlive the context.
+/// a view through its state repository) and an auxiliary value. The state must outlive the context.
 template<TaskKind Kind>
 class StateContext
 {
@@ -41,12 +41,12 @@ public:
     {
     }
 
-    /// From a state being built (its builder), its storages, read through the task's formalism repository.
-    StateContext(const Task<Kind>& task, const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value) :
-        StateContext(task,
-                     FactStorageView<Kind>(&state.fact_storage, task.get_repository().get()),
-                     AtomStorageView<Kind>(&state.atom_storage, task.get_repository().get()),
-                     NumericStorageView<Kind>(&state.numeric_storage, task.get_repository().get()),
+    /// From a state being built (its builder), its storages, read through its state repository.
+    StateContext(const StateRepository<Kind>& repository, const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value) :
+        StateContext(*repository.get_task(),
+                     FactStorageView<Kind>(&state.fact_storage, &repository),
+                     AtomStorageView<Kind>(&state.atom_storage, &repository),
+                     NumericStorageView<Kind>(&state.numeric_storage, &repository),
                      auxiliary_value)
     {
     }

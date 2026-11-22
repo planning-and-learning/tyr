@@ -186,4 +186,10 @@ public:
     { return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>, urd::function<"fterm_values", &view_mixin::fterm_values>> {}; }
 };
 
+/// A stored storage's view (its stored_ref, StoredStorage, read unpacked) has its storage's accessors.
+template<::tyr::planning::StateStorageKind S, typename Pool, typename V>
+struct urd::view_mixin<::tyr::planning::StoredStorage<S, Pool>, V> : urd::view_mixin<S, V>
+{
+};
+
 #endif

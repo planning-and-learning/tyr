@@ -26,15 +26,12 @@
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/planning/lifted/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <cassert>

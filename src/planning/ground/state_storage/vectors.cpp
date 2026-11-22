@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/ground/state_storage/vectors.hpp"
+#include "tyr/planning/state_data.hpp"
 
 #include "../../tree_bitset.hpp"
 #include "tyr/planning/state_storage_view.hpp"
@@ -24,6 +25,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <vector>
 #include <urd/bits.hpp>
 
 namespace tyr::planning
@@ -53,15 +55,28 @@ StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::pack(std::span<const ygg::uint_t> values, urd::Store<urd::sequence<ygg::uint_t>>& blocks) const
 {
     const auto& infos = m_layout->fluent_infos;
 
-    std::ranges::fill(m_buffer, ygg::uint_t { 0 });
+    std::ranges::fill(blocks, ygg::uint_t { 0 });
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        urd::bits::int_reference(std::span(m_buffer).subspan(infos[i].begin), infos[i].offset, infos[i].length) = unpacked.values[i];
+        urd::bits::int_reference(std::span(blocks).subspan(infos[i].begin), infos[i].offset, infos[i].length) = values[i];
+}
 
+template<typename... Tags, bool ThreadSafe>
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
+{
+    pack(std::span<const ygg::uint_t>(unpacked.values), m_buffer);
     return m_array_set->insert(m_buffer).first;
+}
+
+template<typename... Tags, bool ThreadSafe>
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::find(const urd::data<FactStorage<GroundTag>>& record) const -> Key
+{
+    auto blocks = urd::Store<urd::sequence<ygg::uint_t>>(m_layout->fluent_num_blocks);
+    pack(std::span<const ygg::uint_t>(record.values.data(), record.values.size()), blocks);
+    return Key(m_array_set->find(blocks));
 }
 
 template<typename... Tags, bool ThreadSafe>
@@ -83,16 +98,27 @@ auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::read(const Handle& packed, std::vector<ygg::uint_t>& values) const
 {
     const auto& infos = m_layout->fluent_infos;
     const auto view = m_array_set->at(packed);
     const auto data = std::span(view.data(), view.size());
-    auto& values = unpacked.values;
 
     values.resize(infos.size());
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
         values[i] = urd::bits::read_int<ygg::uint_t>(data.subspan(infos[i].begin), infos[i].offset, infos[i].length);
+}
+
+template<typename... Tags, bool ThreadSafe>
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+{ read(packed, unpacked.values); }
+
+template<typename... Tags, bool ThreadSafe>
+std::vector<ygg::uint_t> StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(Key key) const
+{
+    auto values = std::vector<ygg::uint_t>();
+    read(key.value, values);
+    return values;
 }
 
 template<typename... Tags, bool ThreadSafe>
@@ -103,12 +129,25 @@ StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::
 }
 
 template<typename... Tags, bool ThreadSafe>
+void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::pack(std::span<const urd::word_t> words, urd::Store<urd::sequence<ygg::uint_t>>& blocks)
+{
+    for (std::size_t i = 0; i < blocks.size(); ++i)
+        blocks[i] = block_of(words, i);
+}
+
+template<typename... Tags, bool ThreadSafe>
 auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
 {
-    const auto words = unpacked.indices.significant_words();
-    for (std::size_t i = 0; i < m_buffer.size(); ++i)
-        m_buffer[i] = block_of(words, i);
+    pack(unpacked.indices.significant_words(), m_buffer);
     return m_array_set->insert(m_buffer).first;
+}
+
+template<typename... Tags, bool ThreadSafe>
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::find(const urd::data<AtomStorage<GroundTag>>& record) const -> Key
+{
+    auto blocks = urd::Store<urd::sequence<ygg::uint_t>>(m_buffer.size());
+    pack(std::span<const urd::word_t>(record.indices.words.data(), record.indices.words.size()), blocks);
+    return Key(m_array_set->find(blocks));
 }
 
 template<typename... Tags, bool ThreadSafe>
@@ -129,10 +168,22 @@ auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 
 template<typename... Tags, bool ThreadSafe>
 void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+{ read(packed, unpacked.indices); }
+
+template<typename... Tags, bool ThreadSafe>
+StateBits StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(Key key) const
+{
+    auto bits = StateBits();
+    read(key.value, bits);
+    return bits;
+}
+
+template<typename... Tags, bool ThreadSafe>
+void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::read(const Handle& packed, StateBits& bits) const
 {
     const auto view = m_array_set->at(packed);
     const auto blocks = std::span(view.data(), view.size());
-    unpacked.indices.assign_words((blocks.size() + 1) / 2,
+    bits.assign_words((blocks.size() + 1) / 2,
                                   [blocks](std::span<std::uint64_t> words)
                                   {
                                       for (std::size_t i = 0; i < blocks.size(); ++i)
@@ -140,13 +191,7 @@ void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
                                   });
 }
 
-template class StateComponentRepository<FactStorage<GroundTag>, TreeVector, false>;
-template class StateComponentRepository<FactStorage<GroundTag>, TreeVector, true>;
-template class StateComponentRepository<FactStorage<GroundTag>, Hashset, false>;
-template class StateComponentRepository<FactStorage<GroundTag>, Hashset, true>;
-template class StateComponentRepository<AtomStorage<GroundTag>, TreeVector, false>;
-template class StateComponentRepository<AtomStorage<GroundTag>, TreeVector, true>;
-template class StateComponentRepository<AtomStorage<GroundTag>, Hashset, false>;
-template class StateComponentRepository<AtomStorage<GroundTag>, Hashset, true>;
+template class StateComponentRepository<FactStorage<GroundTag>, StateStoragePolicyTag, true>;
+template class StateComponentRepository<AtomStorage<GroundTag>, StateStoragePolicyTag, true>;
 
 }

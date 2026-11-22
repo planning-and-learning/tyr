@@ -191,7 +191,8 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
-    const auto successor_facts = FactStorageView<Kind>(&successor_state_builder.fact_storage, state_context.task().get_repository().get());
+    const auto& repository = state_context.fact_storage().context();
+    const auto successor_facts = FactStorageView<Kind>(&successor_state_builder.fact_storage, &repository);
     for (const auto fact : del_effects)
         if (successor_facts.get(fact.variable) == fact.value)
             successor_state_builder.set(urd::data<formalism::FDRFact<formalism::FluentTag>> { fact.variable, formalism::FDRValue::none() });
@@ -200,7 +201,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
         successor_state_builder.set(fact);
 
     compute_touched_delta(state_context,
-                          StateContext<Kind> { state_context.task(), successor_state_builder, ygg::float_t { 0 } },
+                          StateContext<Kind> { repository, successor_state_builder, ygg::float_t { 0 } },
                           del_effects,
                           add_effects,
                           numeric_writes,

@@ -38,53 +38,24 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/keyed.hpp>
+#include <yggdrasil/formalism/nested.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 
 namespace tyr::planning
 {
 
-/// The pools of a state's storages as a part of its repository (ygg::formalism::KeyedRepository), read (Writable false)
-/// or written into: each storage S interned under its key PackedStorage<S> (StateRepository::pack, its
-/// StateComponentRepository), which interning a state's builder writes into its record; a storage being built viewed
-/// through its task's formalism repository, as a state's view reads it.
-template<TaskKind Kind, bool Writable>
-class StoragePart
-{
-    std::conditional_t<Writable, StateRepository<Kind>, const StateRepository<Kind>>* m_repository;
-
-public:
-    /// The keys it resolves: its storages' packed keys.
-    using KeyTypes = boost::mp11::mp_list<PackedStorage<FactStorage<Kind>>, PackedStorage<AtomStorage<Kind>>, PackedStorage<NumericStorage<Kind>>>;
-    /// The repository a storage is viewed through: the state repository.
-    template<typename T>
-    using Owner = StateRepository<Kind>;
-    /// Whether it writes records under keys K: one of its keys, where written into.
-    template<typename K>
-    static constexpr bool writes = Writable && boost::mp11::mp_contains<KeyTypes, K>::value;
-
-    explicit StoragePart(std::conditional_t<Writable, StateRepository<Kind>, const StateRepository<Kind>>& repository) noexcept : m_repository(&repository) {}
-
-    /// A storage being built, read through its task's formalism repository (never a temporary).
-    template<typename S>
-    [[nodiscard]] urd::borrowed_view<S, formalism::Repository, urd::builder<S, formalism::Repository>>
-    view(const urd::builder<S, formalism::Repository>& storage URD_LIFETIMEBOUND) const noexcept
-    { return { &storage, m_repository->get_task()->get_repository().get() }; }
-
-    /// A storage interned into its pool: the view of its key, and whether it was new (the pools do not say: false).
-    template<typename S, typename Storage>
-        requires Writable
-    std::pair<urd::index_view<S, StateRepository<Kind>, urd::key_t<S>>, bool> insert(const urd::builder<S, formalism::Repository>& storage,
-                                                                                   Storage& /*builders*/) const
-    { return { { m_repository->pack(storage), m_repository }, false }; }
-};
-
 /// Always owned by a StateRepositoryPtr (std::make_shared): the states it hands out keep it alive. A keyed repository
-/// (ygg::formalism::KeyedRepository) of its own parts: its states' records, interned whole in a pool shared by its
-/// workers, and the pools of their storages (StoragePart); its records are read, viewed, found and inserted, and a
-/// state's builder interned, by the keyed members (operator[], at, view, find, insert), its domain operations below
-/// (register_state: the axiom closure, deltas to a parent) storing through them.
+/// (ygg::formalism::KeyedRepository) of its own parts, each a store shared by its workers: its states' records, and the
+/// pools of their storages (StoragePool: a storage's key is its pool's handle); over its task's formalism repository,
+/// nested read only, through which a state's storages read the task's facts. Its records are read, viewed, found and
+/// inserted, and a state's builder interned (its storages first, into their pools), by the keyed members (operator[],
+/// at, view, find, insert); its domain operations below (register_state: the axiom closure, deltas to a parent) store
+/// through them.
 template<TaskKind Kind>
-class StateRepository : public ygg::formalism::KeyedRepository<StateRepository<Kind>>, public std::enable_shared_from_this<StateRepository<Kind>>
+class StateRepository :
+    public ygg::formalism::KeyedRepository<StateRepository<Kind>>,
+    public ygg::formalism::Nests<StateRepository<Kind>, ygg::formalism::Nested<const formalism::Repository>>,
+    public std::enable_shared_from_this<StateRepository<Kind>>
 {
 private:
     struct Impl;
@@ -108,14 +79,23 @@ public:
 
     /// The kind of record it holds: a repository nesting it resolves states here (ygg::formalism::Nests).
     using SymbolTypes = boost::mp11::mp_list<State<Kind>>;
-    /// The keys it resolves itself: its states' indices, its storages' packed keys.
-    using KeyTypes = boost::mp11::mp_append<boost::mp11::mp_list<urd::index<State<Kind>>>, typename StoragePart<Kind, false>::KeyTypes>;
-    /// Its own parts, as read (Writable false) or written into (ygg::formalism::key_parts): its states, its storages.
+    /// The keys it resolves itself: its states' and their storages' (each its pool's handle).
+    using KeyTypes = boost::mp11::
+        mp_list<urd::index<State<Kind>>, urd::key<FactStorage<Kind>>, urd::key<AtomStorage<Kind>>, urd::key<NumericStorage<Kind>>>;
+
+    /// The part of its own that holds T's records in Store, read (Writable false) or written into.
+    template<bool Writable, typename Store, typename T>
+    using Part = ygg::formalism::HeldPart<std::conditional_t<Writable, StateRepository, const StateRepository>,
+                                         std::conditional_t<Writable, Store, const Store>,
+                                         boost::mp11::mp_list<urd::key<T>>>;
+
+    /// Its own parts (ygg::formalism::key_parts): its states, and the pools of their fluent facts, derived atoms and
+    /// numeric values.
     template<bool Writable>
-    using OwnParts = std::tuple<ygg::formalism::HeldPart<std::conditional_t<Writable, StateRepository, const StateRepository>,
-                                                         std::conditional_t<Writable, PackedStates, const PackedStates>,
-                                                         boost::mp11::mp_list<urd::index<State<Kind>>>>,
-                                StoragePart<Kind, Writable>>;
+    using OwnParts = std::tuple<Part<Writable, PackedStates, State<Kind>>,
+                                Part<Writable, StoragePool<FactStorage<Kind>>, FactStorage<Kind>>,
+                                Part<Writable, StoragePool<AtomStorage<Kind>>, AtomStorage<Kind>>,
+                                Part<Writable, StoragePool<NumericStorage<Kind>>, NumericStorage<Kind>>>;
 
     /// No layer below it: its workers share its states instead.
     [[nodiscard]] const StateRepository* parent() const noexcept { return nullptr; }
@@ -126,16 +106,6 @@ public:
     /// A state record unpacked, its storages read from this repository's: a registered one's (get_registered_state, its
     /// index set) or a record held outside it, packed here but not registered (no index).
     StateView<Kind> unpack(const urd::data<State<Kind>>& packed) const;
-
-    /// A state's storage unpacked from this repository's (urd::resolution<PackedStorage<S>>).
-    urd::builder<FactStorage<Kind>, formalism::Repository> unpack(const PackedStorage<FactStorage<Kind>>& packed) const;
-    urd::builder<AtomStorage<Kind>, formalism::Repository> unpack(const PackedStorage<AtomStorage<Kind>>& packed) const;
-    urd::builder<NumericStorage<Kind>, formalism::Repository> unpack(const PackedStorage<NumericStorage<Kind>>& packed) const;
-
-    /// A state's storage packed into this repository's (StoragePart::insert: interning a state's builder).
-    PackedStorage<FactStorage<Kind>> pack(const urd::builder<FactStorage<Kind>, formalism::Repository>& storage);
-    PackedStorage<AtomStorage<Kind>> pack(const urd::builder<AtomStorage<Kind>, formalism::Repository>& storage);
-    PackedStorage<NumericStorage<Kind>> pack(const urd::builder<NumericStorage<Kind>, formalism::Repository>& storage);
 
     StateView<Kind>
     create_state(AxiomEvaluator<Kind>& axiom_evaluator,
@@ -181,17 +151,15 @@ public:
 private:
     friend class ygg::formalism::KeyedRepository<StateRepository>;
 
-    /// Its own parts as read: its states, its storages; written into, likewise.
-    [[nodiscard]] OwnParts<false> own_parts() const { return { { *this, *m_states }, StoragePart<Kind, false>(*this) }; }
-
-    [[nodiscard]] OwnParts<true> own_parts() { return { { *this, *m_states }, StoragePart<Kind, true>(*this) }; }
+    /// Its own parts as read; written into, likewise: its Impl's stores (state_repository.cpp).
+    [[nodiscard]] OwnParts<false> own_parts() const;
+    [[nodiscard]] OwnParts<true> own_parts();
 
     /// A state record's storages, read from this repository's, into a builder.
     void unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const;
 
     std::unique_ptr<Impl> m_impl;
-    /// Its states' pool, in its Impl's storage (shared by its workers).
-    PackedStates* m_states;
+
 };
 
 extern template class StateRepository<GroundTag>;

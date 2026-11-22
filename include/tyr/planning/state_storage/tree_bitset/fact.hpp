@@ -27,7 +27,11 @@
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 #include "tyr/planning/state_storage/tree_bitset/context.hpp"
 
+#include <concepts>
 #include <span>
+#include <type_traits>
+#include <utility>
+#include <vector>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -41,10 +45,40 @@ class StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
-    using Unpacked = urd::builder<FactStorage<Kind>, formalism::Repository>;
+    using Unpacked = urd::builder<FactStorage<Kind>, StateRepository<Kind>>;
     using Handle = typename Context::BitsetSet::handle_type;
+    using Key = urd::key<FactStorage<Kind>>;
 
     explicit StateComponentRepository(Context& ctx);
+
+    /// The store of a state repository's fluent fact storages (urd's InsertsRecordsOf, FindsRecordsOf,
+    /// HandsOutRecordsOf, ContainsKeysOf): a record as its bitset tree, stored once under its handle.
+    template<typename Make>
+    std::pair<Key, bool> insert(const urd::data<FactStorage<Kind>>& record, Make&& /*make*/)
+    {
+        const auto [handle, inserted] = store(record);
+        return { Key(handle), inserted };
+    }
+
+    [[nodiscard]] Key find(const urd::data<FactStorage<Kind>>& record) const;
+
+    [[nodiscard]] StoredStorage<FactStorage<Kind>, StateComponentRepository> operator[](Key key) const noexcept { return { *this, key }; }
+
+    /// Every handle of its kind names a storage of this pool: the state repository's workers share one pool, not layered.
+    [[nodiscard]] bool contains(Key /*key*/) const noexcept { return true; }
+
+    /// The built form of a storage: a ground state's values, a lifted state's bits.
+    using Built = std::conditional_t<std::same_as<Kind, GroundTag>, std::vector<ygg::uint_t>, StateBits>;
+
+    /// A stored storage's values or bits, in their built form.
+    [[nodiscard]] Built unpack(Key key) const;
+
+    /// The storages in its pool (its set is shared with the other bitset storage of the state, whose rows it counts too): its set's rows, none below it (not layered: urd::count_at's size and base).
+    [[nodiscard]] std::size_t size() const noexcept { return m_context->bitsets.size(); }
+    [[nodiscard]] std::size_t base() const noexcept { return 0; }
+
+    /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
+    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_blocks, &StateComponentRepository::m_flips, &StateComponentRepository::m_bits> {}; }
 
     Handle insert(const Unpacked& unpacked);
 
@@ -54,7 +88,13 @@ public:
     void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
+    /// A record stored: its values packed bitwise as blocks (ground), or its bits (lifted).
+    std::pair<Handle, bool> store(const urd::data<FactStorage<Kind>>& record);
+
     Context* m_context;
+
+    /// A lifted record's bits, as the dense set its pool takes (its buffer kept: the generic insert's only copy).
+    StateBits m_bits;
 
     urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
     urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;

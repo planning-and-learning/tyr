@@ -47,7 +47,7 @@ public:
     AxiomEvaluator(AxiomEvaluator&&) = delete;
     AxiomEvaluator& operator=(AxiomEvaluator&&) = delete;
 
-    void compute_extended_state(urd::builder<State<Kind>, StateRepository<Kind>>& state_builder);
+    void compute_extended_state(urd::builder<State<Kind>, StateRepository<Kind>>& state_builder, const StateRepository<Kind>& repository);
     [[nodiscard]] AxiomEvaluatorPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     [[nodiscard]] const TaskPtr<Kind>& get_task() const noexcept;
@@ -63,9 +63,9 @@ private:
 
 // Each kind defines compute_extended_state in its own source file (src/planning/{ground,lifted}/axiom_evaluator.cpp).
 template<>
-void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder);
+void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder, const StateRepository<GroundTag>& repository);
 template<>
-void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder);
+void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder, const StateRepository<LiftedTag>& repository);
 
 extern template class AxiomEvaluator<GroundTag>;
 extern template class AxiomEvaluator<LiftedTag>;

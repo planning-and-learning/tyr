@@ -7,10 +7,9 @@
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/ground/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/state_storage/vectors.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
@@ -21,9 +20,6 @@
 #include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 #include "tyr/planning/state_storage_view.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
@@ -226,31 +222,28 @@ template<TaskKind Kind>
 void expect_packed_state_identity()
 {
     using Data = urd::data<tyr::planning::State<Kind>>;
-    using FactStorage = urd::data<tyr::planning::FactStorage<Kind>>;
-    using AtomStorage = urd::data<tyr::planning::AtomStorage<Kind>>;
-    using NumericStorage = urd::data<tyr::planning::NumericStorage<Kind>>;
-    using Policy = tyr::planning::StateStoragePolicyTag;
-    using FactPacked = tyr::planning::PackedStorage<tyr::planning::FactStorage<Kind>>;
-    using FactHandle = typename tyr::planning::StateComponentRepository<tyr::planning::FactStorage<Kind>, Policy>::Handle;
-    using AtomPacked = tyr::planning::PackedStorage<tyr::planning::AtomStorage<Kind>>;
-    using AtomHandle = typename tyr::planning::StateComponentRepository<tyr::planning::AtomStorage<Kind>, Policy>::Handle;
-    using NumericPacked = tyr::planning::PackedStorage<tyr::planning::NumericStorage<Kind>>;
-    using NumericHandle = typename tyr::planning::StateComponentRepository<tyr::planning::NumericStorage<Kind>, Policy>::Handle;
-    auto facts = FactStorage {};
-    auto derived = AtomStorage {};
-    auto numeric = NumericStorage {};
+    // A state's storages are keys: their pools' handles (urd::key_value_of).
+    using FactKey = urd::key<tyr::planning::FactStorage<Kind>>;
+    using AtomKey = urd::key<tyr::planning::AtomStorage<Kind>>;
+    using NumericKey = urd::key<tyr::planning::NumericStorage<Kind>>;
+    using FactHandle = typename FactKey::value_type;
+    using AtomHandle = typename AtomKey::value_type;
+    using NumericHandle = typename NumericKey::value_type;
+    auto facts = FactKey {};
+    auto derived = AtomKey {};
+    auto numeric = NumericKey {};
     const auto base = Data(facts, derived, numeric);
     const auto hash = urd::Hash<Data> {};
-    derived = AtomStorage(AtomPacked { AtomHandle(1, 0) });
+    derived = AtomKey(AtomHandle(1, 0));
     const auto extended = Data(facts, derived, numeric);
     EXPECT_NE(base.atom_storage, extended.atom_storage);
     EXPECT_EQ(base, extended);
     EXPECT_EQ(hash(base), hash(extended));
 
-    facts = FactStorage(FactPacked { FactHandle(1, 0) });
+    facts = FactKey(FactHandle(1, 0));
     const auto changed_facts = Data(facts, derived, numeric);
     EXPECT_NE(base, changed_facts);
-    numeric = NumericStorage(NumericPacked { NumericHandle(1, 0) });
+    numeric = NumericKey(NumericHandle(1, 0));
     const auto changed_numeric = Data(base.fact_storage, derived, numeric);
     EXPECT_NE(base, changed_numeric);
 }
@@ -453,9 +446,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         if constexpr (!std::same_as<F, formalism::StaticTag>)
         {
             if constexpr (std::same_as<F, formalism::FluentTag>)
-                EXPECT_TRUE(std::ranges::equal(urd::resolve(owned->fact_storage, *task->get_repository()).fluent_atoms(), indices));
+                EXPECT_TRUE(std::ranges::equal(urd::resolve(owned->fact_storage, registered.context()).fluent_atoms(), indices));
             else
-                EXPECT_TRUE(std::ranges::equal(urd::resolve(owned->atom_storage, *task->get_repository()).atoms(), indices));
+                EXPECT_TRUE(std::ranges::equal(urd::resolve(owned->atom_storage, registered.context()).atoms(), indices));
         }
         for (const auto atom : registered.template get_atoms<F>())
         {
@@ -546,7 +539,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     }
     else
         moved->fact_storage.indices.clear();
-    EXPECT_TRUE(std::ranges::empty(urd::resolve(moved->fact_storage, *task->get_repository()).fluent_atoms()));
+    EXPECT_TRUE(std::ranges::empty(urd::resolve(moved->fact_storage, registered.context()).fluent_atoms()));
     for (const auto atom : registered.template get_atoms<formalism::FluentTag>())
     {
         auto filtered = state.get_atoms(atom.get_predicate());
@@ -575,7 +568,7 @@ void expect_generated_successor_deltas(tyr::planning::SuccessorGenerator<Kind>& 
             auto expected = tyr::planning::StateDelta {};
             tyr::planning::compute_state_delta(
                 tyr::planning::StateContext { (*parent.get_state().context().get_task()), parent.get_state(), ygg::float_t { 0 } },
-                tyr::planning::StateContext { (*parent.get_state().context().get_task()), *builder, ygg::float_t { 0 } },
+                tyr::planning::StateContext { repository, *builder, ygg::float_t { 0 } },
                 expected);
             EXPECT_EQ(delta, expected);
             return with_parent ? repository.register_state(axioms, std::move(builder), parent.get_state(), delta) :
@@ -653,7 +646,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
 
         auto builder = repository->get_state_builder();
         builder->assign_unextended_part(state);
-        const auto derived = urd::resolve(builder->atom_storage, *repository->get_task()->get_repository()).atoms();
+        const auto derived = urd::resolve(builder->atom_storage, *repository).atoms();
         EXPECT_EQ(derived.begin(), derived.end());
         const auto duplicate = repository->register_state(*axioms, std::move(builder));
         EXPECT_EQ(duplicate, state);
@@ -666,9 +659,9 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         EXPECT_TRUE(std::ranges::equal(unpacked_held.get_fluent_fact_index_values(), state.get_fluent_fact_index_values()));
         EXPECT_EQ(derived_names(unpacked_held), derived_names(state));
 
-        // Its packed storages read as its storages unpacked, through the repository (urd::resolution<PackedStorage<S>>).
-        EXPECT_EQ(urd::resolve(held.atom_storage.indices, *repository).indices, state.get_atom_storage().get_indices());
-        EXPECT_EQ(urd::resolve(held.numeric_storage.values, *repository).values, state.get_numeric_storage().get_values());
+        // Its storages' keys read as its storages, unpacked from their pools, through the repository.
+        EXPECT_EQ(repository->view(held.atom_storage).get_indices(), state.get_atom_storage().get_indices());
+        EXPECT_EQ(repository->view(held.numeric_storage).get_values(), state.get_numeric_storage().get_values());
     };
     expect_duplicate(cheap->node.get_state());
 
@@ -693,7 +686,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                 change(*builder);
                 auto delta = tyr::planning::StateDelta {};
                 tyr::planning::compute_state_delta(tyr::planning::StateContext { *parent.context().get_task(), parent, ygg::float_t { 0 } },
-                                                   tyr::planning::StateContext { *parent.context().get_task(), *builder, ygg::float_t { 0 } },
+                                                   tyr::planning::StateContext { *repository, *builder, ygg::float_t { 0 } },
                                                    delta);
                 return with_parent ? repository->register_state(*axioms, std::move(builder), parent, delta) :
                                      repository->register_state(*axioms, std::move(builder));
@@ -873,10 +866,10 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         auto expected_delta = tyr::planning::StateDelta {};
         tyr::planning::compute_state_delta(
             tyr::planning::StateContext { (*borrowed.get_state().context().get_task()), borrowed.get_state(), ygg::float_t { 0 } },
-            tyr::planning::StateContext { (*borrowed.get_state().context().get_task()), *generated, ygg::float_t { 0 } },
+            tyr::planning::StateContext { *repository, *generated, ygg::float_t { 0 } },
             expected_delta);
         EXPECT_EQ(generated_delta, expected_delta);
-        axioms->compute_extended_state(*generated);
+        axioms->compute_extended_state(*generated, *repository);
         const auto generated_view = urd::resolve(*generated, *repository);
         EXPECT_TRUE(std::ranges::equal(generated_view.get_fluent_fact_index_values(), raised.get_state().get_fluent_fact_index_values()));
         EXPECT_TRUE(std::ranges::equal(generated_view.template get_atom_indices<::tyr::formalism::DerivedTag>(),

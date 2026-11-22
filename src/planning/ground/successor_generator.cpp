@@ -759,8 +759,8 @@ BuilderNode SuccessorGenerator<GroundTag>::get_successor_node(const Source& node
     m_impl->validate(node, storage, axiom_evaluator);
     storage.clear();
     const auto auxiliary_value = m_impl->generate(node, action, storage, m_impl->evaluator.successor_delta);
-    const auto metric = evaluate_successor_metric(*m_impl->definition->task, storage, auxiliary_value);
-    axiom_evaluator.compute_extended_state(storage);
+    const auto metric = evaluate_successor_metric(node.get_state_repository(), storage, auxiliary_value);
+    axiom_evaluator.compute_extended_state(storage, node.get_state_repository());
     return BuilderNode(urd::resolve(storage, node.get_state_repository()), metric);
 }
 
@@ -866,7 +866,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
+    const auto metric = evaluate_successor_metric(state_repository, *state, auxiliary_value);
     return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state)), metric);
 }
 
@@ -879,7 +879,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
 {
     validate_task(m_impl->definition->task, state_repository);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto metric = evaluate_successor_metric(*m_impl->definition->task, *state, auxiliary_value);
+    const auto metric = evaluate_successor_metric(state_repository, *state, auxiliary_value);
     return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state), parent, delta), metric);
 }
 

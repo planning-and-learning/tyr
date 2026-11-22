@@ -123,7 +123,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto derived_only_difference = repository->get_state_builder();
     derived_only_difference->assign_unextended_part(initial.get_state());
     derived_only_difference->set(urd::index<tyr::formalism::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
-    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *derived_only_difference, ygg::float_t { 0 } }),
+    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *repository, *derived_only_difference, ygg::float_t { 0 } }),
               dist_hash.hash(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } }));
 
     auto first_numeric = repository->get_state_builder();
@@ -135,14 +135,14 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto second_value = first_value + ygg::FloatTolerance<ygg::float_t>::abs_epsilon * ygg::float_t { 0.25 };
     first_numeric->set(numeric_index, first_value);
     second_numeric->set(numeric_index, second_value);
-    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *first_numeric, ygg::float_t { 0 } }),
-              dist_hash.hash(tyr::planning::StateContext { *task, *second_numeric, ygg::float_t { 0 } }));
-    EXPECT_EQ(urd::resolve(first_numeric->numeric_storage, *task->get_repository()).get(numeric_index), first_value);
-    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *task->get_repository()).get(numeric_index),
+    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *repository, *first_numeric, ygg::float_t { 0 } }),
+              dist_hash.hash(tyr::planning::StateContext { *repository, *second_numeric, ygg::float_t { 0 } }));
+    EXPECT_EQ(urd::resolve(first_numeric->numeric_storage, *repository).get(numeric_index), first_value);
+    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *repository).get(numeric_index),
               ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
     second_numeric->set(numeric_index, ygg::float_t { 2 });
-    EXPECT_NE(dist_hash.hash(tyr::planning::StateContext { *task, *first_numeric, ygg::float_t { 0 } }),
-              dist_hash.hash(tyr::planning::StateContext { *task, *second_numeric, ygg::float_t { 0 } }));
+    EXPECT_NE(dist_hash.hash(tyr::planning::StateContext { *repository, *first_numeric, ygg::float_t { 0 } }),
+              dist_hash.hash(tyr::planning::StateContext { *repository, *second_numeric, ygg::float_t { 0 } }));
 
     if constexpr (std::same_as<Kind, LiftedTag>)
     {
@@ -154,9 +154,9 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::FDRValue { 1 }));
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue { 1 }));
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue::none()));
-        EXPECT_EQ(urd::resolve(trailing_zero_facts->fact_storage, *task->get_repository()).get(low_variable), tyr::formalism::FDRValue { 1 });
-        EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *canonical_facts, ygg::float_t { 0 } }),
-                  dist_hash.hash(tyr::planning::StateContext { *task, *trailing_zero_facts, ygg::float_t { 0 } }));
+        EXPECT_EQ(urd::resolve(trailing_zero_facts->fact_storage, *repository).get(low_variable), tyr::formalism::FDRValue { 1 });
+        EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *repository, *canonical_facts, ygg::float_t { 0 } }),
+                  dist_hash.hash(tyr::planning::StateContext { *repository, *trailing_zero_facts, ygg::float_t { 0 } }));
 
         auto owners = urd::Store<urd::set<ygg::uint_t>> {};
         for (ygg::uint_t mask = 0; mask < 256; ++mask)
@@ -169,7 +169,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
                     state->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(
                         urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(6 + bit),
                         tyr::formalism::FDRValue { 1 }));
-            owners.insert(ygg::uint_t((dist_hash.owner(tyr::planning::StateContext { *task, *state, ygg::float_t { 0 } }, 16)).value));
+            owners.insert(ygg::uint_t((dist_hash.owner(tyr::planning::StateContext { *repository, *state, ygg::float_t { 0 } }, 16)).value));
         }
         EXPECT_EQ(owners.size(), 16);
     }
@@ -182,9 +182,9 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto remote_state = repository->get_state_builder();
     auto delta = tyr::planning::StateDelta {};
     const auto remote_auxiliary_value = generator->generate_successor_state(initial, action, *remote_state, delta);
-    axiom_evaluator->compute_extended_state(*remote_state);
-    const auto remote_metric = tyr::planning::evaluate_successor_metric(*task, *remote_state, remote_auxiliary_value);
-    const auto remote_hash = dist_hash.hash(tyr::planning::StateContext { *task, *remote_state, ygg::float_t { 0 } });
+    axiom_evaluator->compute_extended_state(*remote_state, *repository);
+    const auto remote_metric = tyr::planning::evaluate_successor_metric(*repository, *remote_state, remote_auxiliary_value);
+    const auto remote_hash = dist_hash.hash(tyr::planning::StateContext { *repository, *remote_state, ygg::float_t { 0 } });
     EXPECT_EQ(repository->num_states(), source_states_before_generation);
 
     auto local_state = repository->get_state_builder();
@@ -198,7 +198,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto owner_state = worker_repository->get_state_builder();
     using std::swap;
     swap(*owner_state, *remote_state);
-    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *owner_state, ygg::float_t { 0 } }), remote_hash);
+    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *worker_repository, *owner_state, ygg::float_t { 0 } }), remote_hash);
     const auto owner_node = tyr::planning::Node<Kind>(worker_repository->register_extended_state(std::move(owner_state)), remote_metric);
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
@@ -253,13 +253,13 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto side_state = repository->get_state_builder();
     side_state->assign_unextended_part(initial);
     side_state->set(task->get_fdr_context()->get_fact(side.value()));
-    EXPECT_EQ(first_hash.hash(tyr::planning::StateContext { *task, *side_state, ygg::float_t { 0 } }),
+    EXPECT_EQ(first_hash.hash(tyr::planning::StateContext { *repository, *side_state, ygg::float_t { 0 } }),
               first_hash.hash(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }));
 
     auto landmark_state = repository->get_state_builder();
     landmark_state->assign_unextended_part(initial);
     landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it));
-    EXPECT_NE(first_hash.hash(tyr::planning::StateContext { *task, *landmark_state, ygg::float_t { 0 } }),
+    EXPECT_NE(first_hash.hash(tyr::planning::StateContext { *repository, *landmark_state, ygg::float_t { 0 } }),
               first_hash.hash(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }));
 }
 

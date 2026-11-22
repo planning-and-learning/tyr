@@ -61,20 +61,20 @@
 namespace urd
 {
 
-/// A state's builder: its record's members (state_data.hpp), each storage unpacked (its builder, read through the
-/// formalism repository). A state being created has no index until it is registered; a registered state's pooled builder
+/// A state's builder: its record's members (state_data.hpp), each storage its builder in place (urd::built_form of a
+/// storage's key), of the state's context C (its state repository, or a repository nesting it), through which they read
+/// the task's facts. A state being created has no index until it is registered; a registered state's pooled builder
 /// (StateView) holds its index. It compares by its contents (the fluent facts and numeric values), as the repository
-/// deduplicates states. Its storages are read through the formalism repository whatever its context C (its state
-/// repository, or a repository nesting it, whose builder storage pools it).
+/// deduplicates states.
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::State<Kind>, C>
 {
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.
     urd::index<::tyr::planning::State<Kind>> index;
-    urd::built_t<urd::data<::tyr::planning::FactStorage<Kind>>, ::tyr::formalism::Repository> fact_storage;
-    urd::built_t<urd::data<::tyr::planning::AtomStorage<Kind>>, ::tyr::formalism::Repository> atom_storage;
-    urd::built_t<urd::data<::tyr::planning::NumericStorage<Kind>>, ::tyr::formalism::Repository> numeric_storage;
+    urd::built_t<urd::key<::tyr::planning::FactStorage<Kind>>, C> fact_storage;
+    urd::built_t<urd::key<::tyr::planning::AtomStorage<Kind>>, C> atom_storage;
+    urd::built_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage;
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 

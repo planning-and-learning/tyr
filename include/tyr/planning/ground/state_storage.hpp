@@ -60,12 +60,11 @@ struct StateLayout<GroundTag>
 namespace urd
 {
 
-/// A ground state's fluent facts being built, unpacked: a value per FDR variable (its record holds them packed bitwise,
-/// state_data.hpp).
+/// A ground state's fluent facts being built: a value per FDR variable (state_data.hpp).
 template<typename C>
 struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
 {
-    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>>, C> values;
+    urd::built_t<urd::flat_vector<ygg::uint_t>, C> values;
 
     void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact)
     {

@@ -75,11 +75,7 @@ add_library(
 
     planning/formatter.cpp
     planning/state_storage/numeric.cpp
-    planning/state_storage/tree_bitset/atom.cpp
-    planning/state_storage/tree_bitset/fact.cpp
     planning/ground/state_storage.cpp
-    planning/ground/state_storage/vectors.cpp
-    planning/lifted/state_storage/vectors.cpp
 
     planning/heuristic.cpp
     planning/heuristics/goal_count.cpp
@@ -180,6 +176,16 @@ if(TYR_ENABLE_SEMI_NAIVE)
     target_compile_definitions(core PUBLIC TYR_ENABLE_SEMI_NAIVE)
 endif()
 
+# The pools of the state storage policy the build chooses, and only those: a state's storage keys are that policy's
+# handles (urd::key_value_of in tyr/planning/state_storage.hpp).
+if(TYR_STATE_STORAGE_POLICY STREQUAL "TreeBitset")
+    target_sources(core PRIVATE planning/state_storage/tree_bitset/atom.cpp planning/state_storage/tree_bitset/fact.cpp)
+    set(TYR_STATE_STORAGE_POLICY_HEADER "tyr/planning/state_storage/tree_bitset.hpp")
+else()
+    target_sources(core PRIVATE planning/ground/state_storage/vectors.cpp planning/lifted/state_storage/vectors.cpp)
+    set(TYR_STATE_STORAGE_POLICY_HEADER "tyr/planning/state_storage/vectors.hpp")
+endif()
+target_compile_definitions(core PUBLIC "TYR_STATE_STORAGE_POLICY_HEADER=\"${TYR_STATE_STORAGE_POLICY_HEADER}\"")
 target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_POLICY=${TYR_STATE_STORAGE_POLICY})
 
 target_include_directories(

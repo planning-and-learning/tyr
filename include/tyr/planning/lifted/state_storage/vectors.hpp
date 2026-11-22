@@ -25,6 +25,7 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <span>
+#include <utility>
 #include <type_traits>
 #include <urd/memory.hpp>
 #include <urd/repr/pools/pools.hpp>
@@ -53,15 +54,41 @@ struct StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>
     [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(uint_vectors) + urd::memory_usage(float_vectors); }
 };
 
-/// A bitset of a lifted state (`Unpacked`: fluent facts or derived atoms) as the vector of its true positions.
-template<typename Unpacked_, typename Context>
+/// A bitset of a lifted state (S: its fluent facts or derived atoms) as the vector of its true positions.
+template<typename S, typename Context>
 class BitPositionsRepository
 {
 public:
-    using Unpacked = Unpacked_;
+    using Unpacked = urd::builder<S, StateRepository<LiftedTag>>;
     using Handle = typename Context::UintVectorSet::handle_type;
+    using Key = urd::key<S>;
 
     explicit BitPositionsRepository(Context& ctx);
+
+    /// The store of a state repository's storages of S (urd's InsertsRecordsOf, FindsRecordsOf, ContainsKeysOf; the
+    /// derived pool hands its records out): a record's true positions, stored once under their handle.
+    template<typename Make>
+    std::pair<Key, bool> insert(const urd::data<S>& record, Make&& /*make*/)
+    {
+        positions(std::span<const urd::word_t>(record.indices.words.data(), record.indices.words.size()), m_buffer);
+        const auto [handle, inserted] = m_uint_vectors->insert(m_buffer);
+        return { Key(handle), inserted };
+    }
+
+    [[nodiscard]] Key find(const urd::data<S>& record) const;
+
+    /// Every handle of its kind names a storage of this pool: the state repository's workers share one pool, not layered.
+    [[nodiscard]] bool contains(Key /*key*/) const noexcept { return true; }
+
+    /// A stored storage's bits, in their built form.
+    [[nodiscard]] StateBits unpack(Key key) const;
+
+    /// The storages in its pool: its set's rows, none below it (not layered: urd::count_at's size and base).
+    [[nodiscard]] std::size_t size() const noexcept { return m_uint_vectors->size(); }
+    [[nodiscard]] std::size_t base() const noexcept { return 0; }
+
+    /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
+    static constexpr auto memory_members() noexcept { return urd::Members<&BitPositionsRepository::m_buffer, &BitPositionsRepository::m_parent, &BitPositionsRepository::m_writes> {}; }
 
     Handle insert(const Unpacked& unpacked);
 
@@ -74,6 +101,11 @@ public:
     void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
+    /// The true positions of bits given by their words, ascending.
+    static void positions(std::span<const urd::word_t> words, urd::Store<urd::sequence<ygg::uint_t>>& result);
+    /// A stored storage's bits, read into `bits`.
+    void read(const Handle& packed, StateBits& bits) const;
+
     typename Context::UintVectorSet* m_uint_vectors;
 
     urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
@@ -83,20 +115,24 @@ private:
 
 template<typename... Tags, bool ThreadSafe>
 class StateComponentRepository<FactStorage<LiftedTag>, Vectors<Tags...>, ThreadSafe> :
-    public BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
+    public BitPositionsRepository<FactStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
 public:
-    using BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>,
-                                 StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
+    using BitPositionsRepository<FactStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
+
+    [[nodiscard]] StoredStorage<FactStorage<LiftedTag>, StateComponentRepository> operator[](urd::key<FactStorage<LiftedTag>> key) const noexcept
+    { return { *this, key }; }
 };
 
 template<typename... Tags, bool ThreadSafe>
 class StateComponentRepository<AtomStorage<LiftedTag>, Vectors<Tags...>, ThreadSafe> :
-    public BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
+    public BitPositionsRepository<AtomStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
 public:
-    using BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>,
-                                 StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
+    using BitPositionsRepository<AtomStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
+
+    [[nodiscard]] StoredStorage<AtomStorage<LiftedTag>, StateComponentRepository> operator[](urd::key<AtomStorage<LiftedTag>> key) const noexcept
+    { return { *this, key }; }
 };
 
 }

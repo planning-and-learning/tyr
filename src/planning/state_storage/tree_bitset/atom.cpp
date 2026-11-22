@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_data.hpp"
 
 #include "../../tree_bitset.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
@@ -61,9 +62,15 @@ template<TaskKind Kind, bool ThreadSafe>
 void StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
 { m_context->bitsets.copy(packed, unpacked.indices); }
 
-template class StateComponentRepository<AtomStorage<GroundTag>, TreeBitset, false>;
-template class StateComponentRepository<AtomStorage<GroundTag>, TreeBitset, true>;
-template class StateComponentRepository<AtomStorage<LiftedTag>, TreeBitset, false>;
-template class StateComponentRepository<AtomStorage<LiftedTag>, TreeBitset, true>;
+template<TaskKind Kind, bool ThreadSafe>
+StateBits StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::unpack(Key key) const
+{
+    auto bits = StateBits();
+    m_context->bitsets.copy(key.value, bits);
+    return bits;
+}
+
+template class StateComponentRepository<AtomStorage<GroundTag>, StateStoragePolicyTag, true>;
+template class StateComponentRepository<AtomStorage<LiftedTag>, StateStoragePolicyTag, true>;
 
 }

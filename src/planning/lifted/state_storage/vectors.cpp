@@ -16,6 +16,12 @@
  */
 
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
+#include "tyr/planning/state_data.hpp"
+
+#include <bit>
+#include <cstddef>
+#include <limits>
+#include <span>
 
 namespace tyr::planning
 {
@@ -26,13 +32,27 @@ BitPositionsRepository<U, Context>::BitPositionsRepository(Context& ctx) : m_uin
 }
 
 template<typename U, typename Context>
+void BitPositionsRepository<U, Context>::positions(std::span<const urd::word_t> words, urd::Store<urd::sequence<ygg::uint_t>>& result)
+{
+    result.clear();
+    for (std::size_t w = 0; w < words.size(); ++w)
+        for (auto word = words[w]; word != 0; word &= word - 1)
+            result.push_back(static_cast<ygg::uint_t>(w * std::numeric_limits<urd::word_t>::digits + static_cast<std::size_t>(std::countr_zero(word))));
+}
+
+template<typename U, typename Context>
 auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked) -> Handle
 {
-    m_buffer.clear();
-    for (const auto i : unpacked.indices)
-        m_buffer.push_back(i);
-
+    positions(unpacked.indices.significant_words(), m_buffer);
     return m_uint_vectors->insert(m_buffer).first;
+}
+
+template<typename U, typename Context>
+auto BitPositionsRepository<U, Context>::find(const urd::data<U>& record) const -> Key
+{
+    auto buffer = urd::Store<urd::sequence<ygg::uint_t>>();
+    positions(std::span<const urd::word_t>(record.indices.words.data(), record.indices.words.size()), buffer);
+    return Key(m_uint_vectors->find(buffer));
 }
 
 template<typename U, typename Context>
@@ -60,21 +80,27 @@ auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const 
 
 template<typename U, typename Context>
 void BitPositionsRepository<U, Context>::unpack(const Handle& packed, Unpacked& unpacked)
-{
-    m_buffer.resize(m_uint_vectors->row_size(packed));
-    m_uint_vectors->copy(packed, m_buffer);
+{ read(packed, unpacked.indices); }
 
-    unpacked.indices.clear();
-    unpacked.indices.insert(m_buffer.begin(), m_buffer.end());
+template<typename U, typename Context>
+StateBits BitPositionsRepository<U, Context>::unpack(Key key) const
+{
+    auto bits = StateBits();
+    read(key.value, bits);
+    return bits;
 }
 
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
-template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
-template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
+template<typename U, typename Context>
+void BitPositionsRepository<U, Context>::read(const Handle& packed, StateBits& bits) const
+{
+    auto positions = urd::Store<urd::sequence<ygg::uint_t>>(m_uint_vectors->row_size(packed));
+    m_uint_vectors->copy(packed, positions);
+
+    bits.clear();
+    bits.insert(positions.begin(), positions.end());
+}
+
+template class BitPositionsRepository<FactStorage<LiftedTag>, StateStorageContext<LiftedTag, StateStoragePolicyTag, true>>;
+template class BitPositionsRepository<AtomStorage<LiftedTag>, StateStorageContext<LiftedTag, StateStoragePolicyTag, true>>;
 
 }

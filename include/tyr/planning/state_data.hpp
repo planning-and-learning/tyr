@@ -21,14 +21,10 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
-#include "tyr/planning/ground/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/lifted/state_storage.hpp"
-#include "tyr/planning/lifted/state_storage/vectors.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/config.hpp"
-#include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 
 #include <concepts>
 #include <tuple>
@@ -41,119 +37,121 @@
 namespace urd
 {
 
-/// A ground state's fluent facts, packed: a value held in its record, its handle in the storage of its policy.
+/// A ground state's fluent facts: a value per FDR variable. Its pool packs them bitwise (by its storage policy) and names
+/// them by its handle, its key (urd::key_value_of).
 template<>
 struct data<::tyr::planning::FactStorage<::tyr::GroundTag>>
 {
-    ::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>> values;
+    urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>> index;
+    urd::flat_vector<ygg::uint_t> values;
 
     data() = default;
 
-    data(::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>> values_) : values(values_) {}
+    explicit data(urd::flat_vector<ygg::uint_t> values_) : index(), values(std::move(values_)) {}
 
-    static constexpr bool copyable() noexcept
-    {
-        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
-        return true;
-    }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &data::values>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::values> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::values> {}; }
 };
 
-/// A lifted state's fluent facts, packed: a value held in its record, its handle in the storage of its policy.
+/// A lifted state's fluent facts: a bit per (binary) fluent variable, as words. Its pool packs them and names them by
+/// its handle.
 template<>
 struct data<::tyr::planning::FactStorage<::tyr::LiftedTag>>
 {
-    ::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>> indices;
+    urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>> index;
+    ::tyr::planning::StateBitWords indices;
 
     data() = default;
 
-    data(::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>> indices_) : indices(indices_) {}
+    explicit data(::tyr::planning::StateBitWords indices_) : index(), indices(std::move(indices_)) {}
 
-    static constexpr bool copyable() noexcept
-    {
-        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
-        return true;
-    }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &data::indices>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::indices> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::indices> {}; }
 };
 
-/// A state's derived atoms, packed: a value held in its record, its handle in the storage of its policy.
+/// A state's derived atoms: a bit per derived atom, as words. Its pool packs them and names them by its handle.
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::AtomStorage<Kind>>
 {
-    ::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>> indices;
+    urd::key<::tyr::planning::AtomStorage<Kind>> index;
+    ::tyr::planning::StateBitWords indices;
 
     data() = default;
 
-    data(::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>> indices_) : indices(indices_) {}
+    explicit data(::tyr::planning::StateBitWords indices_) : index(), indices(std::move(indices_)) {}
 
-    static constexpr bool copyable() noexcept
-    {
-        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
-        return true;
-    }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &data::indices>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::indices> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::indices> {}; }
 };
 
-/// A state's numeric values, packed: a value held in its record, its handle in the storage of its policy.
+/// A state's numeric values: a value per function term, NaN where it has none. Its pool packs them and names them by
+/// its handle.
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::NumericStorage<Kind>>
 {
-    ::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>> values;
+    urd::key<::tyr::planning::NumericStorage<Kind>> index;
+    urd::flat_vector<ygg::float_t> values;
 
     data() = default;
 
-    data(::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>> values_) : values(values_) {}
+    explicit data(urd::flat_vector<ygg::float_t> values_) : index(), values(std::move(values_)) {}
 
-    static constexpr bool copyable() noexcept
-    {
-        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
-        return true;
-    }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &data::values>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::values> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::values> {}; }
 };
 
-}  // namespace urd
-
-namespace urd
-{
-
-/// A state as its repository stores it: its index and its storages, packed (each its storage record: a handle in the
-/// storage of its policy). It is identified by its fluent facts and numeric values, by which the repository deduplicates
-/// states; its derived atoms follow from them. Its builder holds the storages unpacked (state_builder.hpp).
+/// A state as its repository stores it: its index and the keys of its storages (each a handle in its pool, by the storage
+/// policy). It is identified by its fluent facts and numeric values, by which the repository deduplicates
+/// states; its derived atoms follow from them. Its builder holds the storages being built (state_builder.hpp).
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::State<Kind>>
 {
     urd::index<::tyr::planning::State<Kind>> index;
-    urd::data<::tyr::planning::FactStorage<Kind>> fact_storage;
-    urd::data<::tyr::planning::AtomStorage<Kind>> atom_storage;
-    urd::data<::tyr::planning::NumericStorage<Kind>> numeric_storage;
+    urd::key<::tyr::planning::FactStorage<Kind>> fact_storage;
+    urd::key<::tyr::planning::AtomStorage<Kind>> atom_storage;
+    urd::key<::tyr::planning::NumericStorage<Kind>> numeric_storage;
 
     data() = default;
 
-    data(urd::data<::tyr::planning::FactStorage<Kind>> fact_storage_,
-         urd::data<::tyr::planning::AtomStorage<Kind>> atom_storage_,
-         urd::data<::tyr::planning::NumericStorage<Kind>> numeric_storage_) :
+    data(urd::key<::tyr::planning::FactStorage<Kind>> fact_storage_,
+         urd::key<::tyr::planning::AtomStorage<Kind>> atom_storage_,
+         urd::key<::tyr::planning::NumericStorage<Kind>> numeric_storage_) :
         index(),
         fact_storage(fact_storage_),
         atom_storage(atom_storage_),

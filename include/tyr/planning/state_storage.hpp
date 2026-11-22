@@ -38,6 +38,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
+#include <span>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -78,21 +79,49 @@ struct StateLayout
 /// their words.
 using StateBits = urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::sorted>;
 
-/// A state's storage S packed: a key, its handle in the pool of its component repository by the state storage policy.
-/// Only its pool makes it (StateComponentRepository::insert); it reads as S unpacked, through its state repository
-/// (urd::resolution<PackedStorage<S>>, StateRepository::unpack), and is built as S unpacked (urd::built_form).
-template<typename S>
-struct PackedStorage
+/// A state's bits as its storage's record holds them, flat: the words of their dense set (StateBits), which is their
+/// built form.
+struct StateBitWords
 {
-    static constexpr std::string_view name = urd::joined_name<"Packed", S::name>;
+    urd::flat_vector<urd::word_t> words;
 
-    typename StateComponentRepository<S, StateStoragePolicyTag>::Handle handle;
+    /// The words of built bits (a builder's, written into its record: urd's AssignsBuilt).
+    StateBitWords& operator=(const StateBits& bits)
+    {
+        const auto significant = bits.significant_words();
+        words.set(significant.begin(), significant.end());
+        return *this;
+    }
 
-    friend constexpr auto operator<=>(const PackedStorage&, const PackedStorage&) = default;
+    static constexpr auto identifying_members() noexcept { return urd::Members<&StateBitWords::words> {}; }
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"handle", &PackedStorage::handle>> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&StateBitWords::words> {}; }
+};
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+/// Whether S is a state's storage (its fluent facts, derived atoms or numeric values), stored in a pool of its state
+/// repository under the pool's handle.
+template<typename S>
+concept StateStorageKind = S::state_storage;
+
+/// The pool of a state's storage S: the component repository of the build's storage policy, shared by the workers of a
+/// state repository (thread-safe).
+template<typename S>
+using StoragePool = StateComponentRepository<S, StateStoragePolicyTag, true>;
+
+/// What a lookup of a stored storage hands out (urd::stored_ref_of): its pool and its key there, by value; its fields
+/// read unpacked, in their built form (urd::stored_field), as a builder holds them.
+template<typename S, typename Pool>
+class StoredStorage
+{
+    const Pool* m_pool;
+    urd::key<S> m_key;
+
+public:
+    StoredStorage(const Pool& pool, urd::key<S> key) noexcept : m_pool(&pool), m_key(key) {}
+
+    [[nodiscard]] const Pool& pool() const noexcept { return *m_pool; }
+
+    [[nodiscard]] urd::key<S> key() const noexcept { return m_key; }
 };
 
 }
@@ -100,70 +129,58 @@ struct PackedStorage
 namespace urd
 {
 
-/// A state's storage is interned under its packed key, in its state repository's pool of its kind (StoragePart).
-template<::tyr::TaskKind Kind>
-struct key_of<::tyr::planning::FactStorage<Kind>>
+/// A state's storage is named by its pool's handle (key_value_of): a key of one part; none is a handle's default.
+template<::tyr::planning::StateStorageKind S>
+struct key_value_of<S>
 {
-    using type = ::tyr::planning::PackedStorage<::tyr::planning::FactStorage<Kind>>;
+    using type = typename ::tyr::planning::StoragePool<S>::Handle;
+    static constexpr type none = type {};
 };
 
-template<::tyr::TaskKind Kind>
-struct key_of<::tyr::planning::AtomStorage<Kind>>
+/// A lookup of a stored storage hands out its reader (StoredStorage).
+template<::tyr::planning::StateStorageKind S>
+struct stored_ref_of<S>
 {
-    using type = ::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>>;
+    using type = ::tyr::planning::StoredStorage<S, ::tyr::planning::StoragePool<S>>;
 };
 
-template<::tyr::TaskKind Kind>
-struct key_of<::tyr::planning::NumericStorage<Kind>>
+/// A stored storage's values are read from its pool, unpacked into their built form; its key is its own.
+template<auto Member, ::tyr::planning::StateStorageKind S, typename Pool>
+struct stored_field<Member, ::tyr::planning::StoredStorage<S, Pool>>
 {
-    using type = ::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>>;
+    [[nodiscard]] static auto read(const ::tyr::planning::StoredStorage<S, Pool>& stored)
+    {
+        if constexpr (std::same_as<member_type_t<Member>, key<S>>)
+            return stored.key();
+        else
+            return stored.pool().unpack(stored.key());
+    }
 };
 
-/// A packed storage reads as its storage unpacked, through its state repository (StateRepository::unpack).
-template<typename S>
-struct resolution<::tyr::planning::PackedStorage<S>>
+/// A state's storage is held in its state's builder as its builder, in place (its record holds the storage's key): a
+/// state's storages are built with the state and interned with it.
+template<typename S, typename C>
+    requires stored_record<S> && ::tyr::planning::StateStorageKind<S>
+struct built_form<key<S>, C>
 {
-    template<typename C>
-    static auto of(const ::tyr::planning::PackedStorage<S>& key, const C& context)
-    { return context.unpack(key); }
-
-    template<std::same_as<::tyr::planning::PackedStorage<S>> R>
-    static ::tyr::planning::PackedStorage<S> stored(const R& readout) noexcept
-    { return readout; }
+    using type = builder<S, C>;
 };
 
-/// A packed storage is built as its storage unpacked: a ground state's fluent facts as a value per FDR variable, a lifted
-/// state's as their bits, derived atoms as their bits, numeric values as a value per function term. Its pool packs and
-/// unpacks it, so it has no from(): a builder sets it through its mutators, never from a record's.
+/// A state's bits are built as their dense set, the words a record holds written into it (in place: its buffer kept).
 template<typename C>
-struct built_form<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::GroundTag>>, C>
-{
-    using type = urd::Store<urd::sequence<ygg::uint_t>>;
-};
-
-template<typename C>
-struct built_form<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>>, C>
+struct built_form<::tyr::planning::StateBitWords, C>
 {
     using type = ::tyr::planning::StateBits;
+
+    static void assign(const ::tyr::planning::StateBitWords& bits, type& into)
+    { into.assign_words(std::span<const word_t>(bits.words.data(), bits.words.size())); }
 };
 
-template<::tyr::TaskKind Kind, typename C>
-struct built_form<::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>>, C>
-{
-    using type = ::tyr::planning::StateBits;
-};
-
-template<::tyr::TaskKind Kind, typename C>
-struct built_form<::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>>, C>
-{
-    using type = urd::Store<urd::sequence<ygg::float_t>>;
-};
-
-/// A state's derived atoms being built, unpacked: their bits (its record holds them packed, state_data.hpp).
+/// A state's derived atoms being built: their bits (its record holds their words, state_data.hpp).
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::AtomStorage<Kind>, C>
 {
-    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>>, C> indices;
+    urd::built_t<::tyr::planning::StateBitWords, C> indices;
 
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index)
     { indices.insert(static_cast<ygg::uint_t>(index.value)); }
@@ -188,12 +205,11 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
-/// A state's numeric values being built, unpacked: a value per function term, NaN where it has none (its record holds
-/// them packed, state_data.hpp).
+/// A state's numeric values being built: a value per function term, NaN where it has none (state_data.hpp).
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::NumericStorage<Kind>, C>
 {
-    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>>, C> values;
+    urd::built_t<urd::flat_vector<ygg::float_t>, C> values;
 
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value)
     {

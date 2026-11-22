@@ -51,7 +51,7 @@
 #include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/formatter.hpp>
-#include <tyr/planning/ground/state_storage/vectors.hpp>
+#include <tyr/planning/state_storage/policy.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/heuristics/blind.hpp>
@@ -63,7 +63,6 @@
 #include <tyr/planning/lifted/programs/action.hpp>
 #include <tyr/planning/lifted/programs/axiom.hpp>
 #include <tyr/planning/lifted/programs/ground.hpp>
-#include <tyr/planning/lifted/state_storage/vectors.hpp>
 #include <tyr/planning/lifted/successor_generator.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/node.hpp>
@@ -74,9 +73,6 @@
 #include <tyr/planning/state_data.hpp>
 #include <tyr/planning/state_repository.hpp>
 #include <tyr/planning/state_routing/dist_hash.hpp>
-#include <tyr/planning/state_storage/numeric.hpp>
-#include <tyr/planning/state_storage/tree_bitset/atom.hpp>
-#include <tyr/planning/state_storage/tree_bitset/fact.hpp>
 #include <tyr/planning/task.hpp>
 #include <tyr/planning/worker_state_index.hpp>
 #include <urd/python/bindings.hpp>
@@ -698,15 +694,15 @@ void bind_task_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_kind_definitions(nb::module_& m)
 {
-    urd::python::bind_index<PackedStorage<FactStorage<Kind>>>(m);
-    urd::python::bind_index<PackedStorage<AtomStorage<Kind>>>(m);
-    urd::python::bind_index<PackedStorage<NumericStorage<Kind>>>(m);
+    urd::python::bind_index<FactStorage<Kind>>(m);
+    urd::python::bind_index<AtomStorage<Kind>>(m);
+    urd::python::bind_index<NumericStorage<Kind>>(m);
     urd::python::bind_data<FactStorage<Kind>>(m);
     urd::python::bind_data<AtomStorage<Kind>>(m);
     urd::python::bind_data<NumericStorage<Kind>>(m);
-    urd::python::bind_builder<FactStorage<Kind>, formalism::Repository>(m);
-    urd::python::bind_builder<AtomStorage<Kind>, formalism::Repository>(m);
-    urd::python::bind_builder<NumericStorage<Kind>, formalism::Repository>(m);
+    urd::python::bind_builder<FactStorage<Kind>, StateRepository<Kind>>(m);
+    urd::python::bind_builder<AtomStorage<Kind>, StateRepository<Kind>>(m);
+    urd::python::bind_builder<NumericStorage<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_view<FactStorageView<Kind>>(m);
     urd::python::bind_view<AtomStorageView<Kind>>(m);
     urd::python::bind_view<NumericStorageView<Kind>>(m);

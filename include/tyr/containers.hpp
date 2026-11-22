@@ -19,15 +19,14 @@
 #define TYR_CONTAINERS_HPP_
 
 #include <cstddef>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
+#include <vector>
 
 namespace tyr
 {
 
 /// Element `pos` of `vec`, `default_value` past its end.
 template<typename T>
-T get(std::size_t pos, const urd::Store<urd::sequence<T>>& vec, const T& default_value) noexcept
+T get(std::size_t pos, const std::vector<T>& vec, const T& default_value) noexcept
 {
     if (pos >= vec.size())
         return default_value;
@@ -36,7 +35,7 @@ T get(std::size_t pos, const urd::Store<urd::sequence<T>>& vec, const T& default
 
 /// Sets element `pos` of `vec` to `value`, growing it with `default_value` if needed.
 template<class T>
-void set(std::size_t pos, const T& value, urd::Store<urd::sequence<T>>& vec, const T& default_value)
+void set(std::size_t pos, const T& value, std::vector<T>& vec, const T& default_value)
 {
     if (pos >= vec.size())
         vec.resize(pos + 1, default_value);

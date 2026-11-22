@@ -60,6 +60,7 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/static_state.hpp"
 #include "tyr/planning/task_utils.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <algorithm>
 #include <cstdint>

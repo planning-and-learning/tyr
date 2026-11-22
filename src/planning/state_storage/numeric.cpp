@@ -16,10 +16,9 @@
  */
 
 #include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_data.hpp"
 
-#include "tyr/planning/ground/state_storage/vectors.hpp"
-#include "tyr/planning/lifted/state_storage/vectors.hpp"
-#include "tyr/planning/state_storage/tree_bitset/context.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 
 #include <urd/elements/equal_to.hpp>
 
@@ -34,7 +33,7 @@ StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::StateComponentR
 namespace
 {
 template<TaskKind Kind>
-void canonicalize(urd::builder<NumericStorage<Kind>, formalism::Repository>& unpacked)
+void canonicalize(urd::builder<NumericStorage<Kind>, StateRepository<Kind>>& unpacked)
 {
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
@@ -78,17 +77,15 @@ void StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(con
     m_float_vectors->copy(packed, unpacked.values);
 }
 
-template class StateComponentRepository<NumericStorage<GroundTag>, TreeBitset, false>;
-template class StateComponentRepository<NumericStorage<GroundTag>, TreeBitset, true>;
-template class StateComponentRepository<NumericStorage<GroundTag>, TreeVector, false>;
-template class StateComponentRepository<NumericStorage<GroundTag>, TreeVector, true>;
-template class StateComponentRepository<NumericStorage<GroundTag>, Hashset, false>;
-template class StateComponentRepository<NumericStorage<GroundTag>, Hashset, true>;
-template class StateComponentRepository<NumericStorage<LiftedTag>, TreeBitset, false>;
-template class StateComponentRepository<NumericStorage<LiftedTag>, TreeBitset, true>;
-template class StateComponentRepository<NumericStorage<LiftedTag>, TreeVector, false>;
-template class StateComponentRepository<NumericStorage<LiftedTag>, TreeVector, true>;
-template class StateComponentRepository<NumericStorage<LiftedTag>, Hashset, false>;
-template class StateComponentRepository<NumericStorage<LiftedTag>, Hashset, true>;
+template<TaskKind Kind, typename Tag, bool ThreadSafe>
+std::vector<ygg::float_t> StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(Key key) const
+{
+    auto values = std::vector<ygg::float_t>(m_float_vectors->row_size(key.value));
+    m_float_vectors->copy(key.value, values);
+    return values;
+}
+
+template class StateComponentRepository<NumericStorage<GroundTag>, StateStoragePolicyTag, true>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, StateStoragePolicyTag, true>;
 
 }

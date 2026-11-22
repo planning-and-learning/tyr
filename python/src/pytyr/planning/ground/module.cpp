@@ -19,6 +19,7 @@
 
 #include "../planning.hpp"
 #include "pytyr/module.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 namespace tyr::planning
 {

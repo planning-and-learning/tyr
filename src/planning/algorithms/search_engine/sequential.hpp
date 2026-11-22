@@ -164,7 +164,7 @@ public:
                            formalism::ActionRowView action,
                            SuccessorMetadataT<SearchPolicy> metadata)
     {
-        const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
+        const auto metric = engine.evaluate_successor_metric(*worker.state_repository, *target, auxiliary_value);
         auto node = Node<Kind>(worker.state_repository->register_state(*worker.axiom_evaluator, std::move(target), source.get_state(), delta), metric);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options->cost_mode);
         if (!std::isfinite(g_value))

@@ -26,6 +26,8 @@
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
 #include <span>
+#include <utility>
+#include <vector>
 #include <type_traits>
 #include <urd/memory.hpp>
 #include <urd/repr/pools/pools.hpp>
@@ -62,10 +64,38 @@ class StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadS
 {
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
-    using Unpacked = urd::builder<FactStorage<GroundTag>, formalism::Repository>;
+    using Unpacked = urd::builder<FactStorage<GroundTag>, StateRepository<GroundTag>>;
     using Handle = typename Context::ArraySet::handle_type;
+    using Key = urd::key<FactStorage<GroundTag>>;
 
     explicit StateComponentRepository(Context& ctx);
+
+    /// The store of a state repository's fluent fact storages (urd's InsertsRecordsOf, FindsRecordsOf,
+    /// HandsOutRecordsOf, ContainsKeysOf): a record packed bitwise, stored once under its handle.
+    template<typename Make>
+    std::pair<Key, bool> insert(const urd::data<FactStorage<GroundTag>>& record, Make&& /*make*/)
+    {
+        pack(std::span<const ygg::uint_t>(record.values.data(), record.values.size()), m_buffer);
+        const auto [handle, inserted] = m_array_set->insert(m_buffer);
+        return { Key(handle), inserted };
+    }
+
+    [[nodiscard]] Key find(const urd::data<FactStorage<GroundTag>>& record) const;
+
+    [[nodiscard]] StoredStorage<FactStorage<GroundTag>, StateComponentRepository> operator[](Key key) const noexcept { return { *this, key }; }
+
+    /// Every handle of its kind names a storage of this pool: the state repository's workers share one pool, not layered.
+    [[nodiscard]] bool contains(Key /*key*/) const noexcept { return true; }
+
+    /// A stored storage's values, in their built form (StoredStorage's fields).
+    [[nodiscard]] std::vector<ygg::uint_t> unpack(Key key) const;
+
+    /// The storages in its pool: its set's rows, none below it (not layered: urd::count_at's size and base).
+    [[nodiscard]] std::size_t size() const noexcept { return m_array_set->size(); }
+    [[nodiscard]] std::size_t base() const noexcept { return 0; }
+
+    /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
+    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_buffer, &StateComponentRepository::m_flips, &StateComponentRepository::m_writes> {}; }
 
     Handle insert(const Unpacked& unpacked);
 
@@ -75,6 +105,11 @@ public:
     void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
+    /// The values, packed bitwise into `blocks` (the task's layout).
+    void pack(std::span<const ygg::uint_t> values, urd::Store<urd::sequence<ygg::uint_t>>& blocks) const;
+    /// A stored storage's values, read into `values`.
+    void read(const Handle& packed, std::vector<ygg::uint_t>& values) const;
+
     typename Context::ArraySet* m_array_set;
     const StateLayout<GroundTag>* m_layout;
 
@@ -88,10 +123,38 @@ class StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadS
 {
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
-    using Unpacked = urd::builder<AtomStorage<GroundTag>, formalism::Repository>;
+    using Unpacked = urd::builder<AtomStorage<GroundTag>, StateRepository<GroundTag>>;
     using Handle = typename Context::ArraySet::handle_type;
+    using Key = urd::key<AtomStorage<GroundTag>>;
 
     explicit StateComponentRepository(Context& ctx);
+
+    /// The store of a state repository's derived atom storages (as the fluent facts'): a record's words in blocks,
+    /// stored once under its handle.
+    template<typename Make>
+    std::pair<Key, bool> insert(const urd::data<AtomStorage<GroundTag>>& record, Make&& /*make*/)
+    {
+        pack(std::span<const urd::word_t>(record.indices.words.data(), record.indices.words.size()), m_buffer);
+        const auto [handle, inserted] = m_array_set->insert(m_buffer);
+        return { Key(handle), inserted };
+    }
+
+    [[nodiscard]] Key find(const urd::data<AtomStorage<GroundTag>>& record) const;
+
+    [[nodiscard]] StoredStorage<AtomStorage<GroundTag>, StateComponentRepository> operator[](Key key) const noexcept { return { *this, key }; }
+
+    /// Every handle of its kind names a storage of this pool: the state repository's workers share one pool, not layered.
+    [[nodiscard]] bool contains(Key /*key*/) const noexcept { return true; }
+
+    /// A stored storage's bits, in their built form.
+    [[nodiscard]] StateBits unpack(Key key) const;
+
+    /// The storages in its pool: its set's rows, none below it (not layered: urd::count_at's size and base).
+    [[nodiscard]] std::size_t size() const noexcept { return m_array_set->size(); }
+    [[nodiscard]] std::size_t base() const noexcept { return 0; }
+
+    /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
+    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_buffer, &StateComponentRepository::m_writes> {}; }
 
     Handle insert(const Unpacked& unpacked);
 
@@ -102,6 +165,11 @@ public:
     void unpack(const Handle& packed, Unpacked& unpacked);
 
 private:
+    /// The bits' words, as blocks.
+    static void pack(std::span<const urd::word_t> words, urd::Store<urd::sequence<ygg::uint_t>>& blocks);
+    /// A stored storage's bits, read into `bits`.
+    void read(const Handle& packed, StateBits& bits) const;
+
     typename Context::ArraySet* m_array_set;
 
     urd::Store<urd::sequence<ygg::uint_t>> m_buffer;

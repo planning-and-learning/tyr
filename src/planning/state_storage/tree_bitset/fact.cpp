@@ -16,12 +16,17 @@
  */
 
 #include "tyr/planning/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/state_data.hpp"
 
 #include "../../tree_bitset.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
+#include <concepts>
+#include <span>
 #include <urd/bits.hpp>
+#include <utility>
+#include <vector>
 
 namespace tyr::planning
 {
@@ -30,24 +35,16 @@ namespace
 using Blocks = urd::Store<urd::sequence<tree_bitset::Block>>;
 using Flips = urd::Store<urd::sequence<tree_bitset::Flip>>;
 
-template<typename Set>
-auto insert_facts(Set& bitsets,
-                  const StateLayout<GroundTag>& layout,
-                  const urd::builder<FactStorage<GroundTag>, formalism::Repository>& unpacked,
-                  Blocks& blocks)
+/// A ground state's values packed bitwise into blocks (the task's layout), trimmed to the last nonzero block.
+void pack_facts(const StateLayout<GroundTag>& layout, std::span<const ygg::uint_t> values, Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
     blocks.assign(layout.fluent_num_blocks, tree_bitset::Block { 0 });
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        urd::bits::write_int(std::span(blocks).subspan(infos[i].begin), static_cast<tree_bitset::Block>(unpacked.values[i]), infos[i].offset, infos[i].length);
+        urd::bits::write_int(std::span(blocks).subspan(infos[i].begin), static_cast<tree_bitset::Block>(values[i]), infos[i].offset, infos[i].length);
 
     trim_trailing_zero_blocks(blocks);
-    return bitsets.insert_blocks(blocks);
 }
-
-template<typename Set>
-auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const urd::builder<FactStorage<LiftedTag>, formalism::Repository>& unpacked, Blocks&)
-{ return bitsets.insert(unpacked.indices).first; }
 
 /// XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
 void append_flips(const StateLayout<GroundTag>& layout, const StateDelta::FluentChange& change, Flips& flips)
@@ -65,17 +62,12 @@ void append_flips(const StateLayout<LiftedTag>&, const StateDelta::FluentChange&
 }
 
 template<typename Set>
-void unpack_facts(Set& bitsets,
-                  const StateLayout<GroundTag>& layout,
-                  typename Set::handle_type packed,
-                  urd::builder<FactStorage<GroundTag>, formalism::Repository>& unpacked,
-                  Blocks& blocks)
+void unpack_facts(const Set& bitsets, const StateLayout<GroundTag>& layout, typename Set::handle_type packed, std::vector<ygg::uint_t>& values, Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
     blocks.assign(layout.fluent_num_blocks, tree_bitset::Block { 0 });
     bitsets.read_blocks(packed, std::span(blocks).first(packed.size));
 
-    auto& values = unpacked.values;
     values.resize(infos.size());
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
         values[i] =
@@ -83,12 +75,8 @@ void unpack_facts(Set& bitsets,
 }
 
 template<typename Set>
-void unpack_facts(Set& bitsets,
-                  const StateLayout<LiftedTag>&,
-                  typename Set::handle_type packed,
-                  urd::builder<FactStorage<LiftedTag>, formalism::Repository>& unpacked,
-                  Blocks&)
-{ bitsets.copy(packed, unpacked.indices); }
+void unpack_facts(const Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, StateBits& bits, Blocks&)
+{ bitsets.copy(packed, bits); }
 }
 
 template<TaskKind Kind, bool ThreadSafe>
@@ -98,7 +86,47 @@ StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::StateCompon
 
 template<TaskKind Kind, bool ThreadSafe>
 auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
-{ return insert_facts(m_context->bitsets, m_context->layout, unpacked, m_blocks); }
+{
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        pack_facts(m_context->layout, std::span<const ygg::uint_t>(unpacked.values), m_blocks);
+        return m_context->bitsets.insert_blocks(m_blocks).first;
+    }
+    else
+        return m_context->bitsets.insert(unpacked.indices).first;
+}
+
+template<TaskKind Kind, bool ThreadSafe>
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::store(const urd::data<FactStorage<Kind>>& record) -> std::pair<Handle, bool>
+{
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        pack_facts(m_context->layout, std::span<const ygg::uint_t>(record.values.data(), record.values.size()), m_blocks);
+        return m_context->bitsets.insert_blocks(m_blocks);
+    }
+    else
+    {
+        m_bits.assign_words(std::span<const urd::word_t>(record.indices.words.data(), record.indices.words.size()));
+        return m_context->bitsets.insert(m_bits);
+    }
+}
+
+template<TaskKind Kind, bool ThreadSafe>
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::find(const urd::data<FactStorage<Kind>>& record) const -> Key
+{
+    if constexpr (std::same_as<Kind, GroundTag>)
+    {
+        auto blocks = Blocks();
+        pack_facts(m_context->layout, std::span<const ygg::uint_t>(record.values.data(), record.values.size()), blocks);
+        return Key(m_context->bitsets.find_blocks(blocks));
+    }
+    else
+    {
+        auto bits = StateBits();
+        bits.assign_words(std::span<const urd::word_t>(record.indices.words.data(), record.indices.words.size()));
+        return Key(m_context->bitsets.find(bits));
+    }
+}
 
 template<TaskKind Kind, bool ThreadSafe>
 auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked&,
@@ -115,11 +143,23 @@ auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert
 
 template<TaskKind Kind, bool ThreadSafe>
 void StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
-{ unpack_facts(m_context->bitsets, m_context->layout, packed, unpacked, m_blocks); }
+{
+    if constexpr (std::same_as<Kind, GroundTag>)
+        unpack_facts(m_context->bitsets, m_context->layout, packed, unpacked.values, m_blocks);
+    else
+        unpack_facts(m_context->bitsets, m_context->layout, packed, unpacked.indices, m_blocks);
+}
 
-template class StateComponentRepository<FactStorage<GroundTag>, TreeBitset, false>;
-template class StateComponentRepository<FactStorage<GroundTag>, TreeBitset, true>;
-template class StateComponentRepository<FactStorage<LiftedTag>, TreeBitset, false>;
-template class StateComponentRepository<FactStorage<LiftedTag>, TreeBitset, true>;
+template<TaskKind Kind, bool ThreadSafe>
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(Key key) const -> Built
+{
+    auto built = Built();
+    auto blocks = Blocks();
+    unpack_facts(m_context->bitsets, m_context->layout, key.value, built, blocks);
+    return built;
+}
+
+template class StateComponentRepository<FactStorage<GroundTag>, StateStoragePolicyTag, true>;
+template class StateComponentRepository<FactStorage<LiftedTag>, StateStoragePolicyTag, true>;
 
 }

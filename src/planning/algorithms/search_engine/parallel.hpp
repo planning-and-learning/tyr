@@ -93,7 +93,7 @@ public:
                                   ygg::float_t metric,
                                   size_t num_workers)
     {
-        const auto owner = m_dist_hash.owner(StateContext<Kind> { *parent.context().get_task(), *target, ygg::float_t { 0 } }, num_workers);
+        const auto owner = m_dist_hash.owner(StateContext<Kind> { parent.context(), *target, ygg::float_t { 0 } }, num_workers);
         const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner.value));
         assert(owner_index < sender.registration_repositories.size());
         auto& repository = *sender.registration_repositories[owner_index];
@@ -540,7 +540,7 @@ public:
                            formalism::ActionRowView action,
                            Metadata metadata)
     {
-        const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
+        const auto metric = engine.evaluate_successor_metric(source.get_state().context(), *target, auxiliary_value);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, metric, engine.m_options->cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");

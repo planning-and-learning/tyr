@@ -33,12 +33,11 @@
 namespace urd
 {
 
-/// A lifted state's fluent facts being built, unpacked: a bit per (binary) fluent variable (its record holds them packed,
-/// state_data.hpp).
+/// A lifted state's fluent facts being built: a bit per (binary) fluent variable (state_data.hpp).
 template<typename C>
 struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
 {
-    urd::built_t<::tyr::planning::PackedStorage<::tyr::planning::FactStorage<::tyr::LiftedTag>>, C> indices;
+    urd::built_t<::tyr::planning::StateBitWords, C> indices;
 
     void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
