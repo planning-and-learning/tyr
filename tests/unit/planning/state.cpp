@@ -1,6 +1,5 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/parser.hpp"
@@ -472,7 +471,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         }
         auto foreign_repository = tyr::formalism::Repository();
         auto foreign_data = urd::data<formalism::Predicate<F>>(std::string("foreign"), 0);
-        const auto foreign = tyr::formalism::insert(foreign_repository, foreign_data).first;
+        const auto foreign = foreign_repository.insert(foreign_data).first;
         auto absent = state.get_atoms(foreign);
         EXPECT_TRUE(absent.begin() == absent.end());
     };
@@ -520,10 +519,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto num_variables = task->get_fdr_context()->get_variables().size();
     auto predicate_data = urd::data<formalism::Predicate<formalism::FluentTag>>(std::string("unregistered"), 0);
     auto atom_binding_data = urd::data<ygg::Row<formalism::Predicate<formalism::FluentTag>>> {};
-    atom_binding_data.relation = tyr::formalism::insert(*task->get_repository(), predicate_data).first.index();
-    auto atom_data =
-        urd::data<tyr::formalism::Atom<GroundTag, formalism::FluentTag>>(tyr::formalism::insert(*task->get_repository(), atom_binding_data).first.index());
-    const auto absent_atom = tyr::formalism::insert(*task->get_repository(), atom_data).first;
+    atom_binding_data.relation = task->get_repository()->insert(predicate_data).first.index();
+    auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, formalism::FluentTag>>(task->get_repository()->insert(atom_binding_data).first.index());
+    const auto absent_atom = task->get_repository()->insert(atom_data).first;
     EXPECT_FALSE(state.test(absent_atom));
     EXPECT_FALSE(registered.test(absent_atom));
     EXPECT_EQ(task->get_fdr_context()->get_variables().size(), num_variables);
@@ -663,7 +661,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         EXPECT_EQ(derived_names(repository->get_registered_state(duplicate.pack().index())), derived_names(state));
 
         // A copy of its record, held outside the repository (not registered), unpacks to the same state without an index.
-        const auto held = (*repository)[state.pack().index()];
+        const auto held = *(*repository)[state.pack().index()];
         const auto unpacked_held = urd::resolve(held, *repository).unpack();
         EXPECT_TRUE(std::ranges::equal(unpacked_held.get_fluent_fact_index_values(), state.get_fluent_fact_index_values()));
         EXPECT_EQ(derived_names(unpacked_held), derived_names(state));

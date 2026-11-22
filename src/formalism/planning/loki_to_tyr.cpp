@@ -21,11 +21,9 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -1195,7 +1193,7 @@ urd::index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
 PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path)
 {
     auto builder = Builder();
-    auto context = std::make_shared<Repository>(element.get_constants().size());
+    auto context = std::make_shared<Repository>();
 
     /* Perform static type analysis */
     prepare(element);
@@ -1245,7 +1243,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     auto task = checkout<Task<LiftedTag>>(builder);
 
-    auto task_context = std::make_shared<Repository>(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
+    auto task_context = std::make_shared<Repository>(domain.get_repository().get());
 
     auto fdr_context = std::make_shared<FDRContext>(task_context);
 

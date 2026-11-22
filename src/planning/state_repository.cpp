@@ -63,11 +63,12 @@
 #include <span>
 #include <type_traits>
 #include <urd/elements/less.hpp>
-#include <urd/elements/prehashed.hpp>
 #include <urd/repr/records/records.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <yggdrasil/formalism/keyed_impl.hpp>
+#include <yggdrasil/formalism/part_instantiations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
@@ -124,11 +125,10 @@ struct StateRepository<Kind>::Impl
     template<bool ThreadSafe>
     struct Storage
     {
-        /// The states' records, interned whole in a urd pool (references stay valid; thread-safe where ThreadSafe): its
-        /// handle is the state's index.
-        using PackedStates = urd::Store<urd::pool<urd::data<State<Kind>>, urd::index<State<Kind>>>,
-                                        urd::stable_refs,
-                                        std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+        /// The states' records, interned whole in a urd pool (thread-safe either way: the repository's part, one type;
+        /// ponytail: a private repository pays the pool's lock, a single-threaded pool if that ever shows in a profile):
+        /// its handle is the state's index.
+        using PackedStates = typename StateRepository<Kind>::PackedStates;
 
         explicit Storage(const Task<Kind>& task) : identity(next_state_storage_identity<Kind>()), context(task), packed_states(urd::layer { 0 }) {}
 
@@ -191,8 +191,10 @@ struct StateRepository<Kind>::Impl
         }
 
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
+        /// Its record found, or inserted, by `repository`'s keyed find and insert (its states' part, this storage's pool).
         template<typename ExtendState>
-        void register_state(urd::builder<State<Kind>, StateRepository<Kind>>& state,
+        void register_state(StateRepository<Kind>& repository,
+                            urd::builder<State<Kind>, StateRepository<Kind>>& state,
                             ExtendState&& extend_state,
                             const StateView<Kind>* parent_state = nullptr,
                             const StateDelta* delta = nullptr)
@@ -208,36 +210,26 @@ struct StateRepository<Kind>::Impl
                 assert(expected == *delta && "register_state: delta does not match the changes from the parent.");
             }
 #endif
-            auto& packed_states = storage->packed_states;
-            const auto* parent = parent_state ? &packed_states[parent_state->pack().index()] : nullptr;
-            const auto fluent = insert_fluents(state, parent, delta);
-            const auto numeric = insert_numeric(state, parent, delta);
-            const auto key = urd::data<State<Kind>>(fluent, {}, numeric);
-            const auto hash = urd::Hash<urd::data<State<Kind>>> {}(key);
-            const auto found = packed_states.find(urd::prehashed<urd::data<State<Kind>>> { key, hash });
-            auto stored_index = found.is_none() ? std::optional<urd::index<State<Kind>>>() : std::optional(found);
+            const auto* parent = parent_state ? &*repository[parent_state->pack().index()] : nullptr;
+            // Identified by its fluent facts and numeric values: its derived atoms are computed only for a new state.
+            auto record = urd::data<State<Kind>>(insert_fluents(state, parent, delta), {}, insert_numeric(state, parent, delta));
+            auto stored = repository.find(record);
 
-            if (!stored_index)
+            if (!stored)
             {
                 std::forward<ExtendState>(extend_state)();
-                const auto derived = insert_derived(state, parent, parent_state);
-                const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<urd::data<State<Kind>>> { key, hash },
-                                                                             [&](urd::index<State<Kind>> new_index)
-                                                                             {
-                                                                                 auto data = urd::data<State<Kind>>(fluent, derived, numeric);
-                                                                                 data.index = new_index;
-                                                                                 return data;
-                                                                             });
-                stored_index = inserted_index;
+                record.atom_storage = insert_derived(state, parent, parent_state);
+                const auto [inserted_view, inserted] = repository.insert(record);
                 if (inserted)
                 {
-                    state.set(inserted_index);
+                    state.set(inserted_view.index());
                     return;
                 }
+                stored = inserted_view;
             }
 
-            atom_repository.unpack(handle_of(packed_states[*stored_index].atom_storage), state.atom_storage);
-            state.set(*stored_index);
+            atom_repository.unpack(handle_of(repository[stored->index()]->atom_storage), state.atom_storage);
+            state.set(stored->index());
         }
     };
 
@@ -259,6 +251,14 @@ struct StateRepository<Kind>::Impl
         shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage))),
         storage_identity(shared_evaluator->storage->identity)
     {
+    }
+
+    /// The states' pool of its storage.
+    typename StateRepository<Kind>::PackedStates& packed_states() noexcept
+    {
+        if (evaluator)
+            return evaluator->storage->packed_states;
+        return shared_evaluator->storage->packed_states;
     }
 
     template<typename Callback>
@@ -288,12 +288,13 @@ struct StateRepository<Kind>::Impl
 /// The root of a cohort is worker 0; make_worker numbers the others.
 template<TaskKind Kind>
 StateRepository<Kind>::StateRepository(TaskPtr<Kind> task, bool concurrent) :
-    m_impl(std::make_unique<Impl>(0, std::move(task), concurrent, std::make_shared<std::atomic<ygg::uint_t>>(1)))
+    m_impl(std::make_unique<Impl>(0, std::move(task), concurrent, std::make_shared<std::atomic<ygg::uint_t>>(1))),
+    m_states(&m_impl->packed_states())
 {
 }
 
 template<TaskKind Kind>
-StateRepository<Kind>::StateRepository(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
+StateRepository<Kind>::StateRepository(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)), m_states(&m_impl->packed_states())
 {
 }
 
@@ -328,7 +329,7 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kin
 {
     auto state_builder = get_state_builder();
     state_builder->set(state_index);
-    unpack_storages((*this)[state_index], *state_builder);
+    unpack_storages(*(*this)[state_index], *state_builder);
     return StateView<Kind>(std::move(state_builder), this);
 }
 
@@ -362,6 +363,26 @@ urd::builder<NumericStorage<Kind>, formalism::Repository> StateRepository<Kind>:
     auto unpacked = urd::builder<NumericStorage<Kind>, formalism::Repository> {};
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.numeric_repository.unpack(packed.handle, unpacked); });
     return unpacked;
+}
+
+template<TaskKind Kind>
+PackedStorage<FactStorage<Kind>> StateRepository<Kind>::pack(const urd::builder<FactStorage<Kind>, formalism::Repository>& storage)
+{
+    return m_impl->visit_evaluator([&](auto& evaluator) { return PackedStorage<FactStorage<Kind>> { evaluator.fact_repository.insert(storage) }; });
+}
+
+template<TaskKind Kind>
+PackedStorage<AtomStorage<Kind>> StateRepository<Kind>::pack(const urd::builder<AtomStorage<Kind>, formalism::Repository>& storage)
+{
+    return m_impl->visit_evaluator([&](auto& evaluator) { return PackedStorage<AtomStorage<Kind>> { evaluator.atom_repository.insert(storage) }; });
+}
+
+template<TaskKind Kind>
+PackedStorage<NumericStorage<Kind>> StateRepository<Kind>::pack(const urd::builder<NumericStorage<Kind>, formalism::Repository>& storage)
+{
+    // Its pool canonicalizes the values it packs in place: a copy, the builder interned stays as it is.
+    auto canonical = storage;
+    return m_impl->visit_evaluator([&](auto& evaluator) { return PackedStorage<NumericStorage<Kind>> { evaluator.numeric_repository.insert(canonical) }; });
 }
 
 template<TaskKind Kind>
@@ -411,12 +432,6 @@ StateRepository<Kind>::create_state(AxiomEvaluator<Kind>& axiom_evaluator,
 }
 
 template<TaskKind Kind>
-const urd::data<State<Kind>>& StateRepository<Kind>::operator[](urd::index<State<Kind>> state_index) const
-{
-    return m_impl->visit_evaluator([&](const auto& evaluator) -> const urd::data<State<Kind>>& { return evaluator.storage->packed_states[state_index]; });
-}
-
-template<TaskKind Kind>
 std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> StateRepository<Kind>::get_state_builder() const
 {
     // Each owner keeps the repository alive; the slot goes back to the pool with the last one.
@@ -431,7 +446,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
 {
     if (axiom_evaluator.get_task() != m_impl->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
-    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*this, *state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
     return StateView<Kind>(std::move(state), this);
 }
 
@@ -449,14 +464,14 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
     const auto* parent_state = shares_storage ? &parent : nullptr;
     const auto* parent_delta = shares_storage ? &delta : nullptr;
     m_impl->visit_evaluator([&](auto& evaluator)
-                            { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }, parent_state, parent_delta); });
+                            { evaluator.register_state(*this, *state, [&] { axiom_evaluator.compute_extended_state(*state); }, parent_state, parent_delta); });
     return StateView<Kind>(std::move(state), this);
 }
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_extended_state(std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state)
 {
-    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [] {}); });
+    m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*this, *state, [] {}); });
     return StateView<Kind>(std::move(state), this);
 }
 
@@ -528,4 +543,11 @@ materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>
 template StateView<LiftedTag>
 materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target, AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
+/// The keyed members of the repositories' states' part (its storages' part is StoragePart, in its header).
+using GroundStateRepository = StateRepository<GroundTag>;
+using LiftedStateRepository = StateRepository<LiftedTag>;
+
 }
+
+YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 0, 1)
+YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 0, 1)

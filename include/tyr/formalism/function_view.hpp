@@ -37,12 +37,9 @@ public:
 
     auto get_arity() const noexcept { return self().template member<&urd::record_of<V>::arity>(); }
 
-    /// Its rows' column types: one object per argument (a key of row pools, as the repository declares its pool).
-    auto get_column_types() const
-    {
-        return std::views::iota(std::size_t { 0 }, std::size_t(get_arity()))
-               | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
-    }
+    /// Its rows' column types (a key of row pools): one object column per argument, computed.
+    ygg::UniformColumnTypes get_column_types() const
+    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(static_cast<std::size_t>(get_arity())); }
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {}; }
 };

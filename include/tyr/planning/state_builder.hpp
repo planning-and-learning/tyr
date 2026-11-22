@@ -64,9 +64,10 @@ namespace urd
 /// A state's builder: its record's members (state_data.hpp), each storage unpacked (its builder, read through the
 /// formalism repository). A state being created has no index until it is registered; a registered state's pooled builder
 /// (StateView) holds its index. It compares by its contents (the fluent facts and numeric values), as the repository
-/// deduplicates states.
-template<::tyr::TaskKind Kind>
-struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Kind>>
+/// deduplicates states. Its storages are read through the formalism repository whatever its context C (its state
+/// repository, or a repository nesting it, whose builder storage pools it).
+template<::tyr::TaskKind Kind, typename C>
+struct builder<::tyr::planning::State<Kind>, C>
 {
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.

@@ -84,9 +84,9 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
            },
            "predicate"_a,
            nb::keep_alive<0, 1>())
-        .def("contains", [](const Sets& self, formalism::PredicateRowIndex<T> fact) { return contains(self, fact); }, "fact"_a);
+        .def("contains", [](const Sets& self, formalism::PredicateRowKey<T> fact) { return contains(self, fact); }, "fact"_a);
     if constexpr (has_function_facts<T>)
-        cls.def("value", [](const Sets& self, formalism::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
+        cls.def("value", [](const Sets& self, formalism::FunctionRowKey<T> fact) { return value(self, fact); }, "fact"_a);
 }
 
 inline void bind_fact_sets(nb::module_& m)
@@ -120,7 +120,7 @@ void bind_task_annotations(nb::module_& m)
     using namespace nb::literals;
     using WitnessAnnotationT = WitnessAnnotation<Kind>;
     using PredicateAnnotationStore = PredicateAnnotations<Kind>;
-    using PredicateKey = formalism::PredicateRowIndex<formalism::FluentTag>;
+    using PredicateKey = formalism::PredicateRowKey<formalism::FluentTag>;
 
     auto witness_annotation_cls = nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
                                       .def(nb::init<RuleKey<Kind>, Cost>(), "rule_key"_a, "cost"_a)
@@ -187,15 +187,14 @@ void bind_task_policies(nb::module_& m)
         .def(
             "find_achievers",
             [](const MaxMinCostAnnotationWithAchievers& self,
-               formalism::PredicateRowIndex<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+               formalism::PredicateRowKey<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
             },
             "binding"_a);
 
-    // get_cost takes what a rule instance's credit is read from: a ground rule's index, a lifted instance's row view
-    // (its action cost reads the row's objects).
+    // The credit of a rule instance (get_cost) is read during evaluation only, from the worker's rule instance.
     nb::class_<CostPolicy>(m, "RuleCostOverridePolicy")
         .def(nb::init<>())
         .def("clear", &CostPolicy::clear)
@@ -203,8 +202,7 @@ void bind_task_policies(nb::module_& m)
             "set_cost",
             [](CostPolicy& self, RuleKey<Kind> rule, Cost cost) { self.set_cost(rule, cost); },
             "rule"_a,
-            "cost"_a)
-        .def("get_cost", [](const CostPolicy& self, typename CostPolicy::RuleInstanceKey rule) { return self.get_cost(rule); }, "rule"_a);
+            "cost"_a);
 }
 
 template<TaskKind Kind, typename Workspace>

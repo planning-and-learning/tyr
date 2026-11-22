@@ -1,7 +1,6 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -80,21 +79,21 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     auto repository = tyr::formalism::Repository();
 
     auto function_data = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("fuel"), 1);
-    const auto [function, function_created] = ygg::formalism::insert(repository, function_data);
+    const auto [function, function_created] = repository.insert(function_data);
     ASSERT_TRUE(function_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>> {};
     binding_data.relation = function.index();
     binding_data.values.push_back(object.index().value);
-    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
+    const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_function_term_data = urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    const auto [ground_function_term, ground_function_term_created] = ygg::formalism::insert(repository, ground_function_term_data);
+    const auto [ground_function_term, ground_function_term_created] = repository.insert(ground_function_term_data);
     ASSERT_TRUE(ground_function_term_created);
 
     EXPECT_EQ(ground_function_term.get_function().index(), function.index());
@@ -113,24 +112,24 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     auto destination = tyr::formalism::Repository();
     using Function = tyr::formalism::Function<tyr::formalism::FluentTag>;
     auto function_data = urd::data<Function>(std::string("fuel"), 1);
-    const auto function = tyr::formalism::insert(source, function_data).first;
+    const auto function = source.insert(function_data).first;
     auto other_data = urd::data<Function>(std::string("distance"), 1);
-    (void) tyr::formalism::insert(destination, other_data);
-    const auto target_function = tyr::formalism::insert(destination, function_data).first;
+    (void) destination.insert(other_data);
+    const auto target_function = destination.insert(function_data).first;
     ASSERT_NE(function.index(), target_function.index());
 
     auto variable_data = urd::data<tyr::formalism::Variable>(urd::flat_string(std::string("?x")));
     auto parameters_data = urd::data<tyr::formalism::Parameters> {};
-    parameters_data.variables.push_back(tyr::formalism::insert(source, variable_data).first.index());
+    parameters_data.variables.push_back(source.insert(variable_data).first.index());
     auto term_data = urd::data<tyr::formalism::FunctionTerm<tyr::LiftedTag, tyr::formalism::FluentTag>> {};
-    term_data.parameters = tyr::formalism::insert(source, parameters_data).first.index();
+    term_data.parameters = source.insert(parameters_data).first.index();
     term_data.function = function.index();
     term_data.terms.push_back(tyr::formalism::Term(tyr::formalism::ParameterIndex(0)));
-    const auto term = tyr::formalism::insert(source, term_data).first;
+    const auto term = source.insert(term_data).first;
     auto builder = tyr::formalism::Builder {};
     const auto copied = destination.view(urd::copy(term, destination, builder));
     EXPECT_EQ(copied.get_function(), target_function);
-    EXPECT_EQ(urd::stored<tyr::formalism::Term>(copied.get_terms()[0]), urd::stored<tyr::formalism::Term>(term.get_terms()[0]));
+    EXPECT_EQ(urd::as_member<tyr::formalism::Term>(copied.get_terms()[0]), urd::as_member<tyr::formalism::Term>(term.get_terms()[0]));
     EXPECT_EQ(urd::copy(term, destination, builder), copied.index());  // interned once
 }
 

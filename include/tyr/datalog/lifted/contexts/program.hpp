@@ -67,7 +67,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
         /// Commits a fact: into the facts, then into the engine's index over them. Whether it was new.
         template<formalism::FactKind F>
-        bool insert(formalism::PredicateRowIndex<F> fact)
+        bool insert(formalism::PredicateRowKey<F> fact)
         {
             if (!m_ws->facts.insert(fact))
                 return false;

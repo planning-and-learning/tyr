@@ -53,7 +53,7 @@ template<typename C>
 struct builder<::tyr::formalism::Axiom<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
-    urd::built_t<ygg::RowIndex<::tyr::formalism::Axiom<::tyr::LiftedTag>>, C> row;
+    urd::built_t<urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> body;
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> head;
 

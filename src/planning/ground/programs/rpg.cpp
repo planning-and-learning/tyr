@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
@@ -24,11 +25,9 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -184,8 +183,7 @@ create_rpg_datalog_program(const formalism::PlanningTask<GroundTag>& planning_ta
     require_unit_cost(cost_mode);
 
     const auto task = planning_task.get_task();
-    const auto num_objects = task.get_num_objects();
-    auto source_repository = layer_over(planning_task.get_repository(), num_objects);
+    auto source_repository = layer_over(planning_task.get_repository());
     auto source_mapping = RPGProgram<GroundTag>::RuleToActionMapping {};
     const auto source_program = create_rpg_ground_program(task, source_mapping, *source_repository);
     const auto source_static_fact_sets = datalog::TaggedFactSets<formalism::StaticTag>(source_program.get_predicates<formalism::StaticTag>(),
@@ -197,7 +195,7 @@ create_rpg_datalog_program(const formalism::PlanningTask<GroundTag>& planning_ta
     datalog::insert_program_facts(source_mutable_fact_sets, source_program);
     const auto source_fact_sets = datalog::FactSets { source_static_fact_sets, source_mutable_fact_sets };
 
-    auto repository = layer_over(source_repository, num_objects);
+    auto repository = layer_over(source_repository);
     const auto program = datalog::remove_statically_inapplicable_rules(source_program, *repository);
     filter_rule_to_action(source_mapping, mapping, *source_repository, source_fact_sets);
     return datalog::Program<GroundTag>(program, std::move(repository));

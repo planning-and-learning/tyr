@@ -47,7 +47,7 @@ namespace tyr::formalism
 
 using RuleRowView = ygg::RowView<Rule<LiftedTag>, Repository>;
 
-using RuleRowIndex = ygg::RowIndex<Rule<LiftedTag>>;
+using RuleRowKey = urd::key<Rule<LiftedTag>, ygg::Row<Rule<LiftedTag>>>;
 
 /// The body of a rule of kind T: a lifted rule's shared conjunctive condition, a ground rule's RuleBody.
 template<TaskKind T>

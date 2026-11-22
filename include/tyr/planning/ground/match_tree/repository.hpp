@@ -21,7 +21,6 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_builder.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
@@ -58,7 +57,6 @@ using GroundActionBuilder = BuilderOf<formalism::Action<GroundTag>>;
 using GroundAxiomBuilder = BuilderOf<formalism::Axiom<GroundTag>>;
 
 using ygg::formalism::checkout;
-using ygg::formalism::insert;
 
 /// A match tree's nodes, over the planning repository holding the formalism elements they refer to (its atoms,
 /// constraints, facts and variables: nested, read only).
@@ -93,17 +91,9 @@ public:
     using Base::find;
     using Base::insert;
     using Base::view;
-    using NestsBase::find;
     using NestsBase::get;
-    using NestsBase::insert;
-    using NestsBase::repository_for;
-    using NestsBase::view;
 };
 
-template<typename Tag, typename T>
-    requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
-void prepare_for_insert(Repository<Tag>&, urd::data<T>& data)
-{ canonicalize(data); }
 
 }
 

@@ -87,7 +87,7 @@ template<TaskKind Kind, formalism::FactKind F>
 class PredicateHeadUpdates
 {
 private:
-    using Binding = formalism::PredicateRowIndex<F>;
+    using Binding = formalism::PredicateRowKey<F>;
     using Witness = WitnessAnnotation<Kind>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
@@ -104,17 +104,17 @@ public:
     void clear() noexcept
     {
         for (const auto binding : m_bindings)
-            m_seen_rows[static_cast<ygg::uint_t>(binding.relation.value)].clear();
+            m_seen_rows[static_cast<ygg::uint_t>(binding.template get<formalism::Predicate<F>>().value)].clear();
         m_bindings.clear();
         m_achievers.clear();
     }
 
     void insert(Binding binding)
     {
-        const auto relation = static_cast<size_t>(static_cast<ygg::uint_t>(binding.relation.value));
+        const auto relation = static_cast<size_t>(static_cast<ygg::uint_t>(binding.template get<formalism::Predicate<F>>().value));
         if (relation >= m_seen_rows.size())
             m_seen_rows.resize(relation + 1);
-        if (m_seen_rows[relation].insert(binding.row).second)
+        if (m_seen_rows[relation].insert(binding.template get<ygg::Row<formalism::Predicate<F>>>()).second)
             m_bindings.push_back(binding);
     }
 
@@ -229,7 +229,7 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind>& instance)
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return static_cast<Cost>(0);
     else
-        return policy.get_cost(instance.cost_key());
+        return policy.get_cost(instance);
 }
 
 /// The cost of the instance's body atoms, where they all have one and its numeric constraints hold on the facts.
@@ -347,7 +347,7 @@ auto evaluate_propositional_candidate(RuleInstance<Kind>& rule_instance,
 
 /// The heads of kind F of a rule instance as the keys of its predicate annotations, a range read more than once.
 template<typename Range, typename F>
-concept PredicateRowRange = std::ranges::forward_range<Range> && std::same_as<std::ranges::range_value_t<Range>, formalism::PredicateRowIndex<F>>;
+concept PredicateRowRange = std::ranges::forward_range<Range> && std::same_as<std::ranges::range_value_t<Range>, formalism::PredicateRowKey<F>>;
 
 template<typename R, typename F>
 concept PredicateHeadsOf = requires(const R& heads) {

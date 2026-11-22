@@ -64,7 +64,7 @@ template<typename C>
 struct builder<::tyr::formalism::Action<::tyr::GroundTag>, C>
 {
     urd::index<::tyr::formalism::Action<::tyr::GroundTag>> index;
-    urd::built_t<ygg::RowIndex<::tyr::formalism::Action<::tyr::LiftedTag>>, C> row;
+    urd::built_t<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>>, C> effects;
 

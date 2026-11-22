@@ -25,17 +25,15 @@ def test_ground_facts_expose_their_bindings() -> None:
     assert term.get_row() == function_binding
 
 
-def test_repository_accepts_object_counts() -> None:
-    assert formalism.Repository(num_objects=None) is not None
-
-    parent = formalism.Repository(num_objects=2)
+def test_repository_layers_over_a_parent() -> None:
+    parent = formalism.Repository()
     parent.insert(formalism.ObjectData("first"))[0]
     second = parent.insert(formalism.ObjectData("second"))[0]
     predicate = parent.insert(formalism.PredicateStaticData("predicate", 1))[0]
     binding = parent.insert(formalism.RowPredicateStaticData(predicate.index(), [second.index().value]))[0]
     assert list(binding.get_values()) == [second.index().value]
 
-    child = formalism.Repository(parent, num_objects=3)
+    child = formalism.Repository(parent)
     third = child.insert(formalism.ObjectData("third"))[0]
     binding = child.insert(formalism.RowPredicateStaticData(predicate.index(), [third.index().value]))[0]
     assert list(binding.get_values()) == [third.index().value]

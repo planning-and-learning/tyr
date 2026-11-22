@@ -1,7 +1,6 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -65,24 +64,24 @@ TEST(TyrFormalismPlanningAtom, ExposesRepositoryView)
     auto repository = tyr::formalism::Repository();
 
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
-    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
+    const auto [predicate, predicate_created] = repository.insert(predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto variable_data = urd::data<tyr::formalism::Variable>(urd::flat_string(std::string("?x")));
-    const auto variable = ygg::formalism::insert(repository, variable_data).first;
+    const auto variable = repository.insert(variable_data).first;
     auto parameters_data = urd::data<tyr::formalism::Parameters> {};
     parameters_data.variables.push_back(variable.index());
-    const auto parameters = ygg::formalism::insert(repository, parameters_data).first;
+    const auto parameters = repository.insert(parameters_data).first;
 
     auto terms = tyr::formalism::TermList {};
     terms.emplace_back(object.index());
     terms.emplace_back(tyr::formalism::ParameterIndex(0));
     auto atom_data = urd::data<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>(parameters.index(), predicate.index(), std::move(terms));
-    const auto [atom, atom_created] = ygg::formalism::insert(repository, atom_data);
+    const auto [atom, atom_created] = repository.insert(atom_data);
     ASSERT_TRUE(atom_created);
 
     EXPECT_EQ(atom.get_predicate().get_name(), "at");
@@ -148,22 +147,22 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     auto repository = tyr::formalism::Repository();
 
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
-    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
+    const auto [predicate, predicate_created] = repository.insert(predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
     binding_data.values.push_back(object.index().value);
     binding_data.values.push_back(object.index().value);
-    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
+    const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
+    const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(ground_atom.get_predicate().index(), predicate.index());

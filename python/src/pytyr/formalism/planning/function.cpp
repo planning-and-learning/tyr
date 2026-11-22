@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/repository.hpp"
 #include "bindings.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -23,7 +24,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/formalism/interning.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::formalism

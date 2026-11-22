@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/repository.hpp"
 #include "bindings.hpp"
 #include "tyr/declarations.hpp"
 
@@ -25,7 +26,6 @@
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/datalog/declarations.hpp>
 #include <tyr/formalism/datalog/formatter.hpp>
-#include <tyr/formalism/interning.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/python/bindings.hpp>
 

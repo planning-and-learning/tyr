@@ -60,6 +60,9 @@ public:
         return *m_witness_key;
     }
 
+    /// The worker's builder: its scratch records (a cost lookup's, say).
+    formalism::Builder& builder() const noexcept { return m_grounder->builder(); }
+
 private:
     formalism::RuleView<LiftedTag> m_rule;
     formalism::GroundingContext<formalism::Builder, formalism::Repository>* m_grounder;

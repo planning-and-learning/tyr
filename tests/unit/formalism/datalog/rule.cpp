@@ -5,7 +5,6 @@
 #include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/parameters_data.hpp"
@@ -89,7 +88,7 @@ TEST(TyrFormalismDatalogLiftedRule, PrintsAsDatalog)
 {
     namespace tf = tyr::formalism;
     auto repository = tf::Repository();
-    const auto insert = [&](auto data) { return ygg::formalism::insert(repository, data).first; };
+    const auto insert = [&](auto data) { return repository.insert(data).first; };
 
     const auto x = insert(urd::data<tf::Variable>(urd::flat_string(std::string("?x"))));
     const auto y = insert(urd::data<tf::Variable>(urd::flat_string(std::string("?y"))));

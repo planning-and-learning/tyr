@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 
 #include "../../programs/common.hpp"
@@ -27,12 +28,10 @@
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/expression_properties.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -151,12 +150,11 @@ auto create_action_datalog_program(const formalism::PlanningTask<LiftedTag>& pla
                                    ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
     const auto task = planning_task.get_task();
-    const auto num_objects = task.get_num_objects();
-    auto source_repository = layer_over(planning_task.get_repository(), num_objects);
+    auto source_repository = layer_over(planning_task.get_repository());
     const auto source_program = create_action_program(task, mapping, effect_to_predicate, *source_repository);
 
     auto rules = datalog::RuleMapping {};
-    const auto result = transform(LayeredProgram { source_program, std::move(source_repository) }, num_objects, rules, decompose_static_literals_pass());
+    const auto result = transform(LayeredProgram { source_program, std::move(source_repository) }, rules, decompose_static_literals_pass());
     const auto program = result.program;
     auto repository = result.repository;
     auto builder = formalism::Builder {};

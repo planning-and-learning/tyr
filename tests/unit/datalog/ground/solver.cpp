@@ -20,8 +20,6 @@
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <fmt/core.h>
@@ -74,66 +72,66 @@ struct GroundQueueFixture
     tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> fluent_atom(const std::string& name)
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(name, 0);
-        const auto [predicate, predicate_inserted] = ygg::formalism::insert(repository, predicate_builder);
+        const auto [predicate, predicate_inserted] = repository.insert(predicate_builder);
         if (predicate_inserted)
             fluent_predicates.push_back(predicate.index());
 
         auto binding_builder = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         binding_builder.relation = predicate.index();
-        const auto [binding, binding_inserted] = ygg::formalism::insert(repository, binding_builder);
+        const auto [binding, binding_inserted] = repository.insert(binding_builder);
         (void) binding_inserted;
 
         auto atom_builder = urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
-        return ygg::formalism::insert(repository, atom_builder).first;
+        return repository.insert(atom_builder).first;
     }
 
     tyr::formalism::LiteralView<GroundTag, tyr::formalism::FluentTag> fluent_literal(tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> atom,
                                                                                      bool polarity = true)
     {
         auto literal_builder = urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::FluentTag>>(atom.index(), polarity);
-        return ygg::formalism::insert(repository, literal_builder).first;
+        return repository.insert(literal_builder).first;
     }
 
     tyr::formalism::AtomView<GroundTag, tyr::formalism::StaticTag> static_atom(const std::string& name)
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::StaticTag>>(name, 0);
-        const auto [predicate, predicate_inserted] = ygg::formalism::insert(repository, predicate_builder);
+        const auto [predicate, predicate_inserted] = repository.insert(predicate_builder);
         if (predicate_inserted)
             static_predicates.push_back(predicate.index());
 
         auto binding_builder = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>();
         binding_builder.relation = predicate.index();
-        const auto binding = ygg::formalism::insert(repository, binding_builder).first;
+        const auto binding = repository.insert(binding_builder).first;
 
         auto atom_builder = urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::StaticTag>>(binding.index());
-        return ygg::formalism::insert(repository, atom_builder).first;
+        return repository.insert(atom_builder).first;
     }
 
     tyr::formalism::LiteralView<GroundTag, tyr::formalism::StaticTag> static_literal(tyr::formalism::AtomView<GroundTag, tyr::formalism::StaticTag> atom,
                                                                                      bool polarity = true)
     {
         auto literal_builder = urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::StaticTag>>(atom.index(), polarity);
-        return ygg::formalism::insert(repository, literal_builder).first;
+        return repository.insert(literal_builder).first;
     }
 
     tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag> fluent_function_term(const std::string& name)
     {
         auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(name, 0);
-        const auto function = ygg::formalism::insert(repository, function_builder).first;
+        const auto function = repository.insert(function_builder).first;
         fluent_functions.push_back(function.index());
 
         auto binding_builder = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
         binding_builder.relation = function.index();
-        const auto binding = ygg::formalism::insert(repository, binding_builder).first;
+        const auto binding = repository.insert(binding_builder).first;
 
         auto term_builder = urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(binding.index());
-        return ygg::formalism::insert(repository, term_builder).first;
+        return repository.insert(term_builder).first;
     }
 
     void initial_fluent_function_value(tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag> term, ygg::float_t value)
     {
         auto value_builder = urd::data<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(term.index(), value);
-        initial_fluent_fterm_values.push_back(ygg::formalism::insert(repository, value_builder).first.index());
+        initial_fluent_fterm_values.push_back(repository.insert(value_builder).first.index());
     }
 
     tyr::formalism::RuleBodyView<GroundTag>
@@ -145,7 +143,7 @@ struct GroundQueueFixture
             condition_builder.fluent_literals.push_back(literal.index());
         for (const auto literal : static_literals)
             condition_builder.static_literals.push_back(literal.index());
-        return ygg::formalism::insert(repository, condition_builder).first;
+        return repository.insert(condition_builder).first;
     }
 
     tyr::formalism::RuleBodyView<GroundTag>
@@ -155,11 +153,11 @@ struct GroundQueueFixture
             op,
             tyr::formalism::FunctionExpression<GroundTag>(term.index()),
             tyr::formalism::FunctionExpression<GroundTag>(value));
-        const auto comparison = ygg::formalism::insert(repository, comparison_builder).first;
+        const auto comparison = repository.insert(comparison_builder).first;
 
         auto condition_builder = urd::data<tyr::formalism::RuleBody<GroundTag>>();
         condition_builder.numeric_constraints.emplace_back(comparison.index());
-        return ygg::formalism::insert(repository, condition_builder).first;
+        return repository.insert(condition_builder).first;
     }
 
     /// Identical rules are one rule: a rule already in the program is not added again.
@@ -170,7 +168,7 @@ struct GroundQueueFixture
         rule_builder.body = body.index();
         rule_builder.fluent_heads.push_back(head.index());
         rule_builder.cost = cost;
-        const auto [ground_rule, inserted] = ygg::formalism::insert(repository, rule_builder);
+        const auto [ground_rule, inserted] = repository.insert(rule_builder);
         if (inserted)
             ground_rules.push_back(ground_rule.index());
         return ground_rule;
@@ -207,7 +205,7 @@ struct GroundQueueFixture
                                                    initial_fluent_fterm_values.begin(),
                                                    initial_fluent_fterm_values.end());
         program_builder.rules.insert(program_builder.rules.end(), ground_rules.begin(), ground_rules.end());
-        return ygg::formalism::insert(repository, program_builder).first;
+        return repository.insert(program_builder).first;
     }
 };
 

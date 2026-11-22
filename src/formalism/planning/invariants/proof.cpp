@@ -56,7 +56,7 @@ void append_literals(std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>
 {
     for (const auto literal : condition.template get_literals<T>())
     {
-        auto atom = urd::clone(literal.get_atom().context()[literal.get_atom().index()]);
+        auto atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
         if (sigma != nullptr)
             atom = unification::apply_substitution(atom, *sigma);
         out.emplace_back(std::move(atom), literal.get_polarity());
@@ -113,7 +113,7 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(ActionView<LiftedTag> o
             if (literal.get_polarity() != polarity || (!polarity && is_overridden_delete(effect, literal)))
                 continue;
 
-            auto atom = urd::clone(literal.get_atom().context()[literal.get_atom().index()]);
+            auto atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
             if (has_predicate(inv, atom.predicate))
                 result.push_back(EffectAtomRef { effect, std::move(atom) });
         }
@@ -380,7 +380,7 @@ ProofResult prove_invariant(const urd::builder<Invariant, Repository>& inv, cons
                 if (!literal.get_polarity())
                     continue;
 
-                const auto add_atom = urd::clone(literal.get_atom().context()[literal.get_atom().index()]);
+                const auto add_atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
                 if (!has_predicate(inv, add_atom.predicate))
                     continue;
 

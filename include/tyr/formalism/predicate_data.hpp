@@ -25,6 +25,7 @@
 #include <urd/elements/flat.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/values.hpp>
 
 namespace urd
 {

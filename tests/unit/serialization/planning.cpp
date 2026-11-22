@@ -1,10 +1,10 @@
+#include "tyr/formalism/repository.hpp"
 #include "tyr/serialization/formalism/planning/planning.hpp"
 
 #include "planning_fixtures.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -204,7 +204,7 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
         {
             const auto message = std::string(error.what());
             EXPECT_TRUE(message.starts_with("Unregistered serialization type: "));
-            EXPECT_NE(message.find(nested ? "RowIndex" : "Atom"), std::string::npos) << message;
+            EXPECT_NE(message.find(nested ? "key<" : "Atom"), std::string::npos) << message;
         }
         EXPECT_THROW(incomplete.serialize(first), std::logic_error);
         EXPECT_THROW(incomplete.tables(), std::logic_error);
@@ -223,7 +223,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     const auto atom = make_atom(repository, "truck");
     auto variable_data = urd::data<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>> {};
     variable_data.atoms.push_back(atom.index());
-    const auto variable = ygg::formalism::insert(repository, variable_data).first;
+    const auto variable = repository.insert(variable_data).first;
     const auto fact_data = urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(variable.index(), tyr::formalism::FDRValue::none());
     const auto fact = urd::resolve(fact_data, repository);
     ASSERT_FALSE(fact.get_atom().has_value());
@@ -245,7 +245,7 @@ TEST(TyrSerialization, ExpressionsKeepConstantsInline)
     auto repository = tyr::formalism::Repository();
     const auto constant = tyr::formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
     auto binary_data = urd::data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
-    const auto binary = ygg::formalism::insert(repository, binary_data).first;
+    const auto binary = repository.insert(binary_data).first;
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<BinaryView>("binary_operators", "b");
 

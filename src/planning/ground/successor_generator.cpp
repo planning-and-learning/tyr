@@ -66,7 +66,6 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
-#include <yggdrasil/formalism/membership.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
@@ -665,7 +664,7 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     if (!std::ranges::all_of(indices, [&](const auto& value) { return source_repository.contains(value); })
         || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.contains(value); }))
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
-    if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
+    if (!std::ranges::all_of(objects, [&](const auto& value) { return target_repository.contains(value); }))
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
 
     const auto constants = task->get_task().get_domain().get_constants();
@@ -695,14 +694,10 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
 template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
 ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, Binding binding)
 {
-    if constexpr (requires { binding.context().owner(binding.index()); })
-        if (binding.context().owner(binding.index()) == nullptr)
-            throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->try_get_applicable_action_binding(
         node,
         action_of(binding),
-        urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }),
-                     binding.context()));
+        binding.template resolve<formalism::Object>());
 }
 
 template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
@@ -712,7 +707,7 @@ ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const So
 formalism::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_binding(ActionBindingView<GroundTag> binding)
 {
     const auto& repository = *m_impl->definition->task->get_repository();
-    if (!ygg::formalism::contains(repository, binding))
+    if (!repository.contains(binding))
         throw std::invalid_argument("SuccessorGenerator: action binding does not belong to the task repository.");
     // Bindings in the grounded task already have validated schemas and objects.
     if (m_impl->definition->action_binding_to_ground_action.contains(binding))
@@ -722,7 +717,7 @@ formalism::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_bindi
     const auto objects = binding.template resolve<formalism::Object>();
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
-    if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(repository, value); }))
+    if (!std::ranges::all_of(objects, [&](const auto& value) { return repository.contains(value); }))
         throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
     return binding;
 }

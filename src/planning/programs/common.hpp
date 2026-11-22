@@ -51,7 +51,7 @@ create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::Grou
 
 /// A layer over `parent`, which stays frozen from here on: the layer's deleter holds the parent, so each layer keeps
 /// its chain alive (domain, task, program, transform layers, per-worker workspace).
-formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository> parent, std::size_t num_objects);
+formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository> parent);
 
 /// Lists the task's predicates (its derived ones too), functions, objects, static and fluent atoms and function term
 /// values in `program`, as the task's records: a program is a layer over the task's repository. The lists are dense: each

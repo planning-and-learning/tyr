@@ -33,7 +33,7 @@ namespace tyr::datalog
 template<typename T, typename Kind, typename F>
 concept AnnotationStoragePolicyFor = requires(T& policy,
                                               const T& const_policy,
-                                              formalism::PredicateRowIndex<F> head,
+                                              formalism::PredicateRowKey<F> head,
                                               WitnessAnnotation<Kind> predicate_witness,
                                               PredicateAnnotations<Kind>& annotations,
                                               PredicateAnnotations<Kind, true>& delta_annotations,
@@ -50,7 +50,7 @@ concept AnnotationStoragePolicyFor = requires(T& policy,
 };
 
 template<typename T, typename Kind, typename F>
-concept AnnotationInitializingPolicyFor = requires(const T& const_policy, formalism::PredicateRowIndex<F> head, PredicateAnnotations<Kind>& annotations) {
+concept AnnotationInitializingPolicyFor = requires(const T& const_policy, formalism::PredicateRowKey<F> head, PredicateAnnotations<Kind>& annotations) {
     { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
 };
 

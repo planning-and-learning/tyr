@@ -78,7 +78,7 @@ enum class SchedulerIterationTrigger : std::uint8_t
 /// What a witness names as the rule instance that derived a fact: a ground rule is its own instance, a lifted one is
 /// instantiated by a binding of its variables, its (rule, objects) row.
 template<TaskKind Kind>
-using RuleKey = std::conditional_t<std::same_as<Kind, GroundTag>, urd::index<formalism::Rule<GroundTag>>, formalism::RuleRowIndex>;
+using RuleKey = std::conditional_t<std::same_as<Kind, GroundTag>, urd::index<formalism::Rule<GroundTag>>, formalism::RuleRowKey>;
 
 class StaticConsistencyGraph;
 template<TaskKind Kind>

@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
@@ -28,11 +29,9 @@
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -170,8 +169,7 @@ auto create_rpg_datalog_program(const formalism::PlanningTask<LiftedTag>& planni
     require_unit_cost(cost_mode);
 
     const auto task = planning_task.get_task();
-    const auto num_objects = task.get_num_objects();
-    auto repository = layer_over(planning_task.get_repository(), num_objects);
+    auto repository = layer_over(planning_task.get_repository());
     const auto program = create_rpg_program(task, rule_to_action, *repository);
     auto result = LayeredProgram { program, std::move(repository) };
 
@@ -189,10 +187,9 @@ auto create_rpg_datalog_program(const formalism::PlanningTask<LiftedTag>& planni
             rule_to_action = std::move(mapped);
         };
         auto rules = datalog::RuleMapping {};
-        result = transform(result, num_objects, rules, decompose_static_literals_pass());
+        result = transform(result, rules, decompose_static_literals_pass());
         map_rules(rules);
         result = transform(result,
-                           num_objects,
                            rules,
                            [&](formalism::ProgramView<LiftedTag> source, formalism::Repository& destination, datalog::RuleMapping& output_rules)
                            {

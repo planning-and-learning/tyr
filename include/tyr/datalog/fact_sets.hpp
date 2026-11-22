@@ -97,26 +97,26 @@ template<formalism::FactKind T>
 /// The fact of the function at `index` with row `row`, as a row view.
 template<formalism::FactKind T>
 [[nodiscard]] auto row(const TaggedFactSets<T>& facts, ygg::uint_t index, urd::index<ygg::Row<formalism::Function<T>>> id)
-{ return facts.repository->view(formalism::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(index), id }); }
+{ return facts.repository->view(formalism::FunctionRowKey<T> { urd::index<formalism::Function<T>>(index), id }); }
 
 /// Adds the fact; whether it is new.
 template<formalism::FactKind T>
-bool insert(TaggedFactSets<T>& facts, formalism::PredicateRowIndex<T> fact)
-{ return facts.predicate[fact.relation.value].insert(fact.row).second; }
+bool insert(TaggedFactSets<T>& facts, formalism::PredicateRowKey<T> fact)
+{ return facts.predicate[fact.template get<formalism::Predicate<T>>().value].insert(fact.template get<ygg::Row<formalism::Predicate<T>>>()).second; }
 
 template<formalism::FactKind T>
-[[nodiscard]] bool contains(const TaggedFactSets<T>& facts, formalism::PredicateRowIndex<T> fact)
-{ return facts.predicate[fact.relation.value].contains(fact.row); }
+[[nodiscard]] bool contains(const TaggedFactSets<T>& facts, formalism::PredicateRowKey<T> fact)
+{ return facts.predicate[fact.template get<formalism::Predicate<T>>().value].contains(fact.template get<ygg::Row<formalism::Predicate<T>>>()); }
 
 /// Widens the fact's interval by `interval` (its hull), adding it where it has none; whether the interval changed.
 template<formalism::FactKind T>
-bool insert(TaggedFactSets<T>& facts, formalism::FunctionRowIndex<T> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool insert(TaggedFactSets<T>& facts, formalism::FunctionRowKey<T> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
-    auto& values = facts.function[fact.relation.value];
-    const auto [it, inserted] = values.try_emplace(fact.row, interval);
+    auto& values = facts.function[fact.template get<formalism::Function<T>>().value];
+    const auto [it, inserted] = values.try_emplace(fact.template get<ygg::Row<formalism::Function<T>>>(), interval);
     if (inserted)
         return true;
-    auto& held = values.at(fact.row);
+    auto& held = values.at(fact.template get<ygg::Row<formalism::Function<T>>>());
     const auto widened = hull(held, interval);
     if (widened == held)
         return false;
@@ -126,10 +126,11 @@ bool insert(TaggedFactSets<T>& facts, formalism::FunctionRowIndex<T> fact, const
 
 /// The fact's interval; empty where it has none.
 template<formalism::FactKind T>
-[[nodiscard]] ygg::ClosedInterval<ygg::float_t> value(const TaggedFactSets<T>& facts, formalism::FunctionRowIndex<T> fact)
+[[nodiscard]] ygg::ClosedInterval<ygg::float_t> value(const TaggedFactSets<T>& facts, formalism::FunctionRowKey<T> fact)
 {
-    const auto& values = facts.function[fact.relation.value];
-    return values.contains(fact.row) ? values.at(fact.row) : ygg::ClosedInterval<ygg::float_t>();
+    const auto& values = facts.function[fact.template get<formalism::Function<T>>().value];
+    return values.contains(fact.template get<ygg::Row<formalism::Function<T>>>()) ? values.at(fact.template get<ygg::Row<formalism::Function<T>>>()) :
+                                                                                    ygg::ClosedInterval<ygg::float_t>();
 }
 
 /// Adds the facts of `other`; whether any fact or interval changed.
@@ -142,7 +143,7 @@ bool insert(TaggedFactSets<T>& facts, const TaggedFactSets<T>& other)
             changed |= facts.predicate[i].insert(row).second;
     for (ygg::uint_t i = 0; i < other.function.size(); ++i)
         for (const auto& [row, interval] : other.function[i])
-            changed |= insert(facts, formalism::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(i), row }, interval);
+            changed |= insert(facts, formalism::FunctionRowKey<T> { urd::index<formalism::Function<T>>(i), row }, interval);
     return changed;
 }
 
@@ -225,11 +226,11 @@ public:
 
 /// Adds the fact; whether it is new.
 template<formalism::FactKind F>
-bool insert(MutableFactSets& facts, formalism::PredicateRowIndex<F> fact)
+bool insert(MutableFactSets& facts, formalism::PredicateRowKey<F> fact)
 { return insert(facts.template get<F>(), fact); }
 
 template<formalism::FactKind F>
-[[nodiscard]] bool contains(const MutableFactSets& facts, formalism::PredicateRowIndex<F> fact)
+[[nodiscard]] bool contains(const MutableFactSets& facts, formalism::PredicateRowKey<F> fact)
 { return contains(facts.template get<F>(), fact); }
 
 /// Adds the program's facts of each mutable kind.

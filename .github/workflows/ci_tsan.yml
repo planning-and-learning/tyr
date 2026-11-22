@@ -62,7 +62,6 @@ jobs:
             -DTYR_BUILD_TESTS=ON \
             -DTYR_ENABLE_LTO=OFF \
             -DTYR_USE_LLD=OFF \
-            -DTYR_RELATION_STORAGE_POLICY=Bit \
             -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread" \
             -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=thread" \

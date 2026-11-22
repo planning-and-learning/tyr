@@ -17,6 +17,7 @@
 
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
@@ -25,10 +26,10 @@
 #include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
@@ -54,32 +55,42 @@ struct RuleBindingFixture
     tyr::formalism::RuleRowView binding;
 };
 
+/// A worker's grounding state: its builder and its (empty) binding, which a lifted rule instance grounds through.
+struct Worker
+{
+    tyr::formalism::Builder builder;
+    urd::flat_vector<urd::index<tyr::formalism::Object>> objects;
+    tyr::formalism::GroundingContext<tyr::formalism::Builder, tyr::formalism::Repository> grounder;
+
+    explicit Worker(tyr::formalism::Repository& repository) : builder(), objects(), grounder(builder, repository, objects) {}
+};
+
 RuleBindingFixture make_nullary_rule_binding(tyr::formalism::Repository& repository)
 {
     auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>();
     predicate_builder.name = "p";
     predicate_builder.arity = 0;
-    const auto [predicate, predicate_success] = ygg::formalism::insert(repository, predicate_builder);
+    const auto [predicate, predicate_success] = repository.insert(predicate_builder);
     EXPECT_TRUE(predicate_success);
 
     auto atom_builder = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
     atom_builder.predicate = predicate.index();
-    const auto [atom, atom_success] = ygg::formalism::insert(repository, atom_builder);
+    const auto [atom, atom_success] = repository.insert(atom_builder);
     EXPECT_TRUE(atom_success);
 
     auto condition_builder = urd::data<tyr::formalism::ConjunctiveCondition<LiftedTag>>();
-    const auto [condition, condition_success] = ygg::formalism::insert(repository, condition_builder);
+    const auto [condition, condition_success] = repository.insert(condition_builder);
     EXPECT_TRUE(condition_success);
 
     auto rule_builder = urd::data<tyr::formalism::Rule<LiftedTag>>();
     rule_builder.body = condition.index();
     rule_builder.fluent_heads.push_back(atom.index());
-    const auto [rule, rule_success] = ygg::formalism::insert(repository, rule_builder);
+    const auto [rule, rule_success] = repository.insert(rule_builder);
     EXPECT_TRUE(rule_success);
 
     auto binding_builder = urd::data<ygg::Row<tyr::formalism::Rule<LiftedTag>>>();
     binding_builder.relation = rule.index();
-    const auto [binding, binding_success] = ygg::formalism::insert(repository, binding_builder);
+    const auto [binding, binding_success] = repository.insert(binding_builder);
     EXPECT_TRUE(binding_success);
 
     return { rule, binding };
@@ -136,9 +147,11 @@ TEST(TyrDatalogCostPolicyTest, RuleCostPolicyDefaultsToZero)
     auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
+    auto worker = Worker(repository);
+    const auto instance = tyr::datalog::RuleInstance<LiftedTag>(fixture.rule, worker.grounder);
     const auto policy = tyr::datalog::RuleCostPolicy();
 
-    EXPECT_EQ(policy.get_cost(fixture.binding), 0);
+    EXPECT_EQ(policy.get_cost(instance), 0);
 }
 
 TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedDefaultsToZero)
@@ -146,9 +159,11 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedDefaultsToZero)
     auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
+    auto worker = Worker(repository);
+    const auto instance = tyr::datalog::RuleInstance<LiftedTag>(fixture.rule, worker.grounder);
     const auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
 
-    EXPECT_EQ(policy.get_cost(fixture.binding), 0);
+    EXPECT_EQ(policy.get_cost(instance), 0);
 }
 
 TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
@@ -156,10 +171,12 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     auto repository = tyr::formalism::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
+    auto worker = Worker(repository);
+    const auto instance = tyr::datalog::RuleInstance<LiftedTag>(fixture.rule, worker.grounder);
     auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
     policy.set_cost(fixture.binding.index(), 3);
 
-    EXPECT_EQ(policy.get_cost(fixture.binding), 3);
+    EXPECT_EQ(policy.get_cost(instance), 3);
 }
 
 }

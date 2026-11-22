@@ -47,9 +47,7 @@
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/detail/repository_instantiations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -890,7 +888,6 @@ template class MatchTree<formalism::Axiom<GroundTag>>;
 
 }
 
-TYR_MATCH_TREE_INTERNS()
 
 // The repositories' symbols, which the library's other sources only declare (yggdrasil/formalism/symbol_context.hpp).
 YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::Action<tyr::GroundTag>>, 5)

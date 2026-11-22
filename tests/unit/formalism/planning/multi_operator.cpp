@@ -1,5 +1,4 @@
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -65,7 +64,7 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
         data.args.emplace_back(1.0);
 
         EXPECT_FALSE(std::is_sorted(data.args.begin(), data.args.end()));
-        const auto [view, inserted] = tyr::formalism::insert(repository, data);
+        const auto [view, inserted] = repository.insert(data);
         EXPECT_TRUE(inserted);
         EXPECT_EQ(data.index, view.index());
         EXPECT_TRUE(std::is_sorted(data.args.begin(), data.args.end()));
@@ -75,7 +74,7 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
 
         std::swap(data.args[0], data.args[2]);
         data.index = urd::index<Lifted>();
-        const auto [duplicate, duplicate_inserted] = tyr::formalism::insert(repository, data);
+        const auto [duplicate, duplicate_inserted] = repository.insert(data);
         EXPECT_FALSE(duplicate_inserted);
         EXPECT_EQ(duplicate, view);
         EXPECT_EQ(data.index, view.index());

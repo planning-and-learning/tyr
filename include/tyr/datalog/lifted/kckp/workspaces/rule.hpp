@@ -75,7 +75,7 @@ struct ApplicabilityCache
 
 /// The heads of kind F of a rule's binding.
 template<typename F>
-using HeadBindings = urd::Store<urd::sequence<formalism::PredicateRowIndex<F>>>;
+using HeadBindings = urd::Store<urd::sequence<formalism::PredicateRowKey<F>>>;
 
 template<>
 struct RuleWorkspace<LiftedTag>

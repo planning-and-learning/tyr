@@ -173,13 +173,13 @@ public:
 
 private:
     template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(formalism::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated(formalism::PredicateRowKey<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void update_numeric_constraint_satisfaction(formalism::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(formalism::PredicateRowIndex<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated_for(formalism::PredicateRowKey<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     using Rules = urd::Store<urd::sequence<formalism::RuleView<GroundTag>>>;
 

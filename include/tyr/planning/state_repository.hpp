@@ -28,6 +28,8 @@
 #include <concepts>
 #include <memory>
 #include <stdexcept>
+#include <tuple>
+#include <type_traits>
 #include <urd/config.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
@@ -35,13 +37,54 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/keyed.hpp>
+#include <yggdrasil/formalism/symbol_repository.hpp>
 
 namespace tyr::planning
 {
 
-/// Always owned by a StateRepositoryPtr (std::make_shared): the states it hands out keep it alive.
+/// The pools of a state's storages as a part of its repository (ygg::formalism::KeyedRepository), read (Writable false)
+/// or written into: each storage S interned under its key PackedStorage<S> (StateRepository::pack, its
+/// StateComponentRepository), which interning a state's builder writes into its record; a storage being built viewed
+/// through its task's formalism repository, as a state's view reads it.
+template<TaskKind Kind, bool Writable>
+class StoragePart
+{
+    std::conditional_t<Writable, StateRepository<Kind>, const StateRepository<Kind>>* m_repository;
+
+public:
+    /// The keys it resolves: its storages' packed keys.
+    using KeyTypes = boost::mp11::mp_list<PackedStorage<FactStorage<Kind>>, PackedStorage<AtomStorage<Kind>>, PackedStorage<NumericStorage<Kind>>>;
+    /// The repository a storage is viewed through: the state repository.
+    template<typename T>
+    using Owner = StateRepository<Kind>;
+    /// Whether it writes records under keys K: one of its keys, where written into.
+    template<typename K>
+    static constexpr bool writes = Writable && boost::mp11::mp_contains<KeyTypes, K>::value;
+
+    explicit StoragePart(std::conditional_t<Writable, StateRepository<Kind>, const StateRepository<Kind>>& repository) noexcept : m_repository(&repository) {}
+
+    /// A storage being built, read through its task's formalism repository (never a temporary).
+    template<typename S>
+    [[nodiscard]] urd::borrowed_view<S, formalism::Repository, urd::builder<S, formalism::Repository>>
+    view(const urd::builder<S, formalism::Repository>& storage URD_LIFETIMEBOUND) const noexcept
+    { return { &storage, m_repository->get_task()->get_repository().get() }; }
+
+    /// A storage interned into its pool: the view of its key, and whether it was new (the pools do not say: false).
+    template<typename S, typename Storage>
+        requires Writable
+    std::pair<urd::index_view<S, StateRepository<Kind>, urd::key_t<S>>, bool> insert(const urd::builder<S, formalism::Repository>& storage,
+                                                                                   Storage& /*builders*/) const
+    { return { { m_repository->pack(storage), m_repository }, false }; }
+};
+
+/// Always owned by a StateRepositoryPtr (std::make_shared): the states it hands out keep it alive. A keyed repository
+/// (ygg::formalism::KeyedRepository) of its own parts: its states' records, interned whole in a pool shared by its
+/// workers, and the pools of their storages (StoragePart); its records are read, viewed, found and inserted, and a
+/// state's builder interned, by the keyed members (operator[], at, view, find, insert), its domain operations below
+/// (register_state: the axiom closure, deltas to a parent) storing through them.
 template<TaskKind Kind>
-class StateRepository : public std::enable_shared_from_this<StateRepository<Kind>>
+class StateRepository : public ygg::formalism::KeyedRepository<StateRepository<Kind>>, public std::enable_shared_from_this<StateRepository<Kind>>
 {
 private:
     struct Impl;
@@ -49,6 +92,9 @@ private:
     explicit StateRepository(std::unique_ptr<Impl> impl);
 
 public:
+    /// The states' records, each once (references stay valid; thread-safe, so that workers share it).
+    using PackedStates = urd::Store<urd::pool<urd::data<State<Kind>>, urd::index<State<Kind>>>, urd::stable_refs, urd::layered, urd::concurrent>;
+
     /// A private repository; with `concurrent`, one whose workers (make_worker) share canonical state storage.
     explicit StateRepository(TaskPtr<Kind> task, bool concurrent = false);
     ~StateRepository();
@@ -62,41 +108,17 @@ public:
 
     /// The kind of record it holds: a repository nesting it resolves states here (ygg::formalism::Nests).
     using SymbolTypes = boost::mp11::mp_list<State<Kind>>;
+    /// The keys it resolves itself: its states' indices, its storages' packed keys.
+    using KeyTypes = boost::mp11::mp_append<boost::mp11::mp_list<urd::index<State<Kind>>>, typename StoragePart<Kind, false>::KeyTypes>;
+    /// Its own parts, as read (Writable false) or written into (ygg::formalism::key_parts): its states, its storages.
+    template<bool Writable>
+    using OwnParts = std::tuple<ygg::formalism::HeldPart<std::conditional_t<Writable, StateRepository, const StateRepository>,
+                                                         std::conditional_t<Writable, PackedStates, const PackedStates>,
+                                                         boost::mp11::mp_list<urd::index<State<Kind>>>>,
+                                StoragePart<Kind, Writable>>;
 
-    /// The stored record of a registered state (urd's resolves contract; a PackedStateView is the usual handle).
-    [[nodiscard]] const urd::data<State<Kind>>& operator[](urd::index<State<Kind>> state_index) const;
-
-    /// A registered state, packed: the view of its record's index, through this repository (as a state's view reads its
-    /// index: StateView::pack).
-    [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return { state_index, this }; }
-
-    /// A state's storage being built, read through its task's formalism repository (a state's view reads its storages so).
-    [[nodiscard]] FactStorageView<Kind> view(const urd::builder<FactStorage<Kind>, formalism::Repository>& storage) const noexcept
-    { return { &storage, get_task()->get_repository().get() }; }
-
-    [[nodiscard]] AtomStorageView<Kind> view(const urd::builder<AtomStorage<Kind>, formalism::Repository>& storage) const noexcept
-    { return { &storage, get_task()->get_repository().get() }; }
-
-    [[nodiscard]] NumericStorageView<Kind> view(const urd::builder<NumericStorage<Kind>, formalism::Repository>& storage) const noexcept
-    { return { &storage, get_task()->get_repository().get() }; }
-
-    /// A state record or a storage record held outside the repository, as its view here (a storage record's packed key
-    /// is unpacked here: StateRepository::unpack); never a temporary.
-    [[nodiscard]] urd::borrowed_view<State<Kind>, StateRepository> view(const urd::data<State<Kind>>& state URD_LIFETIMEBOUND) const noexcept
-    { return { &state, this }; }
-
-    [[nodiscard]] urd::borrowed_view<FactStorage<Kind>, StateRepository> view(const urd::data<FactStorage<Kind>>& storage URD_LIFETIMEBOUND) const noexcept
-    { return { &storage, this }; }
-
-    [[nodiscard]] urd::borrowed_view<AtomStorage<Kind>, StateRepository> view(const urd::data<AtomStorage<Kind>>& storage URD_LIFETIMEBOUND) const noexcept
-    { return { &storage, this }; }
-
-    [[nodiscard]] urd::borrowed_view<NumericStorage<Kind>, StateRepository>
-    view(const urd::data<NumericStorage<Kind>>& storage URD_LIFETIMEBOUND) const noexcept
-    { return { &storage, this }; }
-
-    template<typename T>
-    void view(const urd::data<T>&& record) const = delete;
+    /// No layer below it: its workers share its states instead.
+    [[nodiscard]] const StateRepository* parent() const noexcept { return nullptr; }
 
     /// Const: the state's builder comes from the repository's pool of scratch builders.
     StateView<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
@@ -109,6 +131,11 @@ public:
     urd::builder<FactStorage<Kind>, formalism::Repository> unpack(const PackedStorage<FactStorage<Kind>>& packed) const;
     urd::builder<AtomStorage<Kind>, formalism::Repository> unpack(const PackedStorage<AtomStorage<Kind>>& packed) const;
     urd::builder<NumericStorage<Kind>, formalism::Repository> unpack(const PackedStorage<NumericStorage<Kind>>& packed) const;
+
+    /// A state's storage packed into this repository's (StoragePart::insert: interning a state's builder).
+    PackedStorage<FactStorage<Kind>> pack(const urd::builder<FactStorage<Kind>, formalism::Repository>& storage);
+    PackedStorage<AtomStorage<Kind>> pack(const urd::builder<AtomStorage<Kind>, formalism::Repository>& storage);
+    PackedStorage<NumericStorage<Kind>> pack(const urd::builder<NumericStorage<Kind>, formalism::Repository>& storage);
 
     StateView<Kind>
     create_state(AxiomEvaluator<Kind>& axiom_evaluator,
@@ -136,12 +163,6 @@ public:
     /// Copies an already extended state of this task into repository-owned storage; source storage remains borrowed and unchanged.
     StateView<Kind> register_extended_state(const StateBuilderView<Kind>& source);
 
-    /// Interns a state built elsewhere (a program state's, through a repository nesting this one): registered as an
-    /// already extended state (register_extended_state), its index. Storage: the builder storage of the interning, unused.
-    template<typename Storage>
-    urd::index<State<Kind>> insert(const urd::builder<State<Kind>, StateRepository<Kind>>& built, Storage& /*storage*/)
-    { return register_extended_state(urd::resolve(built, *this)).pack().index(); }
-
     [[nodiscard]] StateRepositoryPtr<Kind> make_worker() const;
 
     /// All repositories sharing this storage must be quiescent while inspecting memory usage.
@@ -158,10 +179,19 @@ public:
     [[nodiscard]] size_t num_states() const noexcept;
 
 private:
+    friend class ygg::formalism::KeyedRepository<StateRepository>;
+
+    /// Its own parts as read: its states, its storages; written into, likewise.
+    [[nodiscard]] OwnParts<false> own_parts() const { return { { *this, *m_states }, StoragePart<Kind, false>(*this) }; }
+
+    [[nodiscard]] OwnParts<true> own_parts() { return { { *this, *m_states }, StoragePart<Kind, true>(*this) }; }
+
     /// A state record's storages, read from this repository's, into a builder.
     void unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const;
 
     std::unique_ptr<Impl> m_impl;
+    /// Its states' pool, in its Impl's storage (shared by its workers).
+    PackedStates* m_states;
 };
 
 extern template class StateRepository<GroundTag>;

@@ -21,10 +21,8 @@ jobs:
         include:
           - os: ubuntu-latest
             build_type: Debug
-            relation_storage_policy: Bit
           - os: macos-latest
             build_type: Release
-            relation_storage_policy: Word
 
     steps:
       - name: Checkout Tyr
@@ -55,7 +53,6 @@ jobs:
                 -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
                 -DTYR_BUILD_TESTS=ON \
                 -DTYR_BUILD_EXECUTABLES=ON \
-                -DTYR_RELATION_STORAGE_POLICY=${{ matrix.relation_storage_policy }} \
                 -DCMAKE_INSTALL_LIBDIR=lib \
                 -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')" \
                 -DPython3_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')" \

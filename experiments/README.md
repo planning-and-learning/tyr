@@ -77,8 +77,7 @@ cmake -S . -B build \
   -DTYR_HEADER_INSTANTIATION=OFF \
   -DTYR_ENABLE_SEMI_NAIVE=ON \
   -DTYR_ENABLE_INNER_PARALLELISM=OFF \
-  -DTYR_STATE_STORAGE_POLICY=TreeBitset \
-  -DTYR_RELATION_STORAGE_POLICY=Word
+  -DTYR_STATE_STORAGE_POLICY=TreeBitset
 
 cmake --build build --target gbfs_lazy -j16
 ```

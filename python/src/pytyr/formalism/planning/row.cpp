@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/repository.hpp"
 #include "bindings.hpp"
 #include "tyr/declarations.hpp"
 
@@ -25,7 +26,6 @@
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/formatter.hpp>
-#include <tyr/formalism/interning.hpp>
 #include <tyr/formalism/planning/action_view.hpp>
 #include <tyr/formalism/planning/axiom_view.hpp>
 #include <urd/python/bindings.hpp>
@@ -49,9 +49,11 @@ void bind_row_view(nb::module_& m, RepositoryBinding& repository)
 void bind_row(nb::module_& m, RepositoryBinding& repository)
 {
     // The rows of its own relations; those of predicates and functions are bound with the formalism's records.
-    urd::python::bind_index<ygg::RowIndex<Action<LiftedTag>>>(m);
+    urd::python::bind_index<ygg::Row<Action<LiftedTag>>>(m);
+    urd::python::bind_index<urd::key<Action<LiftedTag>, ygg::Row<Action<LiftedTag>>>>(m);
     urd::python::bind_data<ygg::Row<Action<LiftedTag>>>(m);
-    urd::python::bind_index<ygg::RowIndex<Axiom<LiftedTag>>>(m);
+    urd::python::bind_index<ygg::Row<Axiom<LiftedTag>>>(m);
+    urd::python::bind_index<urd::key<Axiom<LiftedTag>, ygg::Row<Axiom<LiftedTag>>>>(m);
     urd::python::bind_data<ygg::Row<Axiom<LiftedTag>>>(m);
 
     bind_row_view<Predicate<DerivedTag>>(m, repository);

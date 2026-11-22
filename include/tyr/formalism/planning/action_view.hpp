@@ -67,13 +67,10 @@ public:
         requires std::same_as<T, ::tyr::LiftedTag>
     { return get_variables().size(); }
 
-    /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
-    auto get_column_types() const
+    /// Its rows' column types (a key of row pools): one object column per argument, computed.
+    ygg::UniformColumnTypes get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return std::views::iota(std::size_t { 0 }, std::size_t(get_arity()))
-               | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
-    }
+    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(get_variables().size()); }
 
     auto get_action() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>

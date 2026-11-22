@@ -2,8 +2,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
@@ -110,7 +108,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     auto filtered = std::optional<tyr::formalism::ProgramView<::tyr::GroundTag>> {};
     auto retained_predicate_source_index = static_cast<ygg::uint_t>(0);
     {
-        const auto intern = [&](auto data) { return ygg::formalism::insert(source, data).first; };
+        const auto intern = [&](auto data) { return source.insert(data).first; };
         const auto predicate = [&]<tyr::formalism::FactKind T>(const char* name)
         { return intern(urd::data<tyr::formalism::Predicate<T>> { std::string(name), 0 }); };
         const auto function = [&]<tyr::formalism::FactKind T>(const char* name)

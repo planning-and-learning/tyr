@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/fdr_context.hpp"
 
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"

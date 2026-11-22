@@ -19,23 +19,24 @@
 #define TYR_DATALOG_POLICIES_COST_CONCEPTS_HPP_
 
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/datalog/rule_instance.hpp"
 
 #include <concepts>
 
 namespace tyr::datalog
 {
 
-/// A ground rule instance's credit is read by its key, a lifted one's by its row (whose objects its actions read).
-template<typename T, typename RuleInstanceKey, typename Key>
-concept RuleCostPolicyFor = requires(T& policy, const T& const_policy, RuleInstanceKey predicate_rule, Key predicate_rule_key, Cost cost) {
-    { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;
+/// A rule instance's credit is read from the instance (a ground rule, or a lifted rule's binding with the worker's
+/// builder): read only, the policy is shared by the workers; its overrides are set by rule key.
+template<typename T, typename Kind>
+concept RuleCostPolicyFor = requires(T& policy, const T& const_policy, const RuleInstance<Kind>& instance, RuleKey<Kind> rule_key, Cost cost) {
+    { const_policy.get_cost(instance) } -> std::same_as<Cost>;
     { policy.clear() } -> std::same_as<void>;
-    { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
+    { policy.set_cost(rule_key, cost) } -> std::same_as<void>;
 };
 
 template<typename T>
-concept RuleCostPolicyConcept =
-    RuleCostPolicyFor<T, RuleKey<GroundTag>, RuleKey<GroundTag>> || RuleCostPolicyFor<T, formalism::RuleRowView, RuleKey<LiftedTag>>;
+concept RuleCostPolicyConcept = RuleCostPolicyFor<T, GroundTag> || RuleCostPolicyFor<T, LiftedTag>;
 
 }
 

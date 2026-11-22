@@ -49,13 +49,10 @@ public:
 
     auto get_head() const noexcept { return self().template member<&urd::record_of<V>::head>(); }
 
-    /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
-    auto get_column_types() const
+    /// Its rows' column types (a key of row pools): one object column per argument, computed.
+    ygg::UniformColumnTypes get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return std::views::iota(std::size_t { 0 }, std::size_t(get_body().get_arity()))
-               | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
-    }
+    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(urd::visit_view(get_body(), [](const auto& body) { return static_cast<std::size_t>(body.get_arity()); })); }
 
     auto get_axiom() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>

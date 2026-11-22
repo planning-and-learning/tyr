@@ -101,8 +101,10 @@ private:
     void extract_relaxed_plan(formalism::PredicateRowView<F> head)
     {
         auto& markings = m_predicate_markings.template get<F>();
-        assert(static_cast<ygg::uint_t>(head.index().relation.value) < markings.size());
-        if (!markings[static_cast<ygg::uint_t>(head.index().relation.value)].insert(head.index().row).second)
+        assert(static_cast<ygg::uint_t>(head.index().template get<formalism::Predicate<F>>().value) < markings.size());
+        if (!markings[static_cast<ygg::uint_t>(head.index().template get<formalism::Predicate<F>>().value)]
+                 .insert(head.index().template get<ygg::Row<formalism::Predicate<F>>>())
+                 .second)
             return;
 
         const auto* annotation = this->workspace().annotations.find(head.index());

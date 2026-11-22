@@ -68,11 +68,11 @@ template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>
 {
     urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> index;
-    ygg::RowIndex<::tyr::formalism::Function<F>> row;
+    urd::key<::tyr::formalism::Function<F>, ygg::Row<::tyr::formalism::Function<F>>> row;
 
     data() = default;
 
-    data(ygg::RowIndex<::tyr::formalism::Function<F>> row_) : index(), row(row_) {}
+    data(urd::key<::tyr::formalism::Function<F>, ygg::Row<::tyr::formalism::Function<F>>> row_) : index(), row(row_) {}
 
     static constexpr bool copyable() noexcept
     {

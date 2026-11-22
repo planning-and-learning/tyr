@@ -32,7 +32,7 @@ void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::clear_achi
 template<TaskKind Kind, typename AggregationFunction>
 template<formalism::FactKind F>
 const typename MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::Achievers*
-MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(formalism::PredicateRowIndex<F> head) const noexcept
+MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(formalism::PredicateRowKey<F> head) const noexcept
 {
     const auto* entry = m_achievers.template get<F>().find(head);
     return entry ? &entry->achievers : nullptr;
@@ -40,7 +40,7 @@ MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(
 
 template<TaskKind Kind, typename AggregationFunction>
 template<formalism::FactKind F>
-void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_achiever(formalism::PredicateRowIndex<F> head, PredicateWitness witness)
+void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_achiever(formalism::PredicateRowKey<F> head, PredicateWitness witness)
 {
     m_achievers.template get<F>().update(head,
                                          [&](auto& entry, bool initialized)
@@ -70,20 +70,20 @@ template class MinCostAnnotationPolicy<MaxAggregation>;
 template class MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>;
 template class MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>;
 template const MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::Achievers*
-    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(formalism::PredicateRowIndex<formalism::FluentTag>) const noexcept;
+    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(formalism::PredicateRowKey<formalism::FluentTag>) const noexcept;
 template const MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::Achievers*
-    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(formalism::PredicateRowIndex<formalism::DerivedTag>) const noexcept;
+    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::find_achievers(formalism::PredicateRowKey<formalism::DerivedTag>) const noexcept;
 template const MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::Achievers*
-    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(formalism::PredicateRowIndex<formalism::FluentTag>) const noexcept;
+    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(formalism::PredicateRowKey<formalism::FluentTag>) const noexcept;
 template const MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::Achievers*
-    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(formalism::PredicateRowIndex<formalism::DerivedTag>) const noexcept;
-template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::PredicateRowIndex<formalism::FluentTag>,
+    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::find_achievers(formalism::PredicateRowKey<formalism::DerivedTag>) const noexcept;
+template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::PredicateRowKey<formalism::FluentTag>,
                                                                                                WitnessAnnotation<GroundTag>);
-template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::PredicateRowIndex<formalism::DerivedTag>,
+template void MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>::record_achiever(formalism::PredicateRowKey<formalism::DerivedTag>,
                                                                                                WitnessAnnotation<GroundTag>);
-template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::PredicateRowIndex<formalism::FluentTag>,
+template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::PredicateRowKey<formalism::FluentTag>,
                                                                                                WitnessAnnotation<LiftedTag>);
-template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::PredicateRowIndex<formalism::DerivedTag>,
+template void MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>::record_achiever(formalism::PredicateRowKey<formalism::DerivedTag>,
                                                                                                WitnessAnnotation<LiftedTag>);
 
 }

@@ -80,7 +80,7 @@ struct RPGPolicy<LiftedTag>
     }
 
     static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation<LiftedTag>& witness)
-    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation); }
+    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().template get<formalism::Rule<LiftedTag>>()); }
 
     /// Grounds every action of the witness's rule with the binding the witness recovers.
     template<typename Workspace, typename Callback>
@@ -90,7 +90,7 @@ struct RPGPolicy<LiftedTag>
                                         Callback callback)
     {
         const auto& mapping = definition.rpg_program.get_rule_to_action_mapping();
-        const auto it = mapping.find(witness.get_rule_key().relation);
+        const auto it = mapping.find(witness.get_rule_key().template get<formalism::Rule<LiftedTag>>());
         if (it == mapping.end())
             return;
 
@@ -98,7 +98,7 @@ struct RPGPolicy<LiftedTag>
         workspace.binding.clear();
         auto recovered = false;
         const auto& origins = definition.rpg_program.get_rule_splitting().origins;
-        if (const auto origin = origins.find(witness.get_rule_key().relation); origin != origins.end())
+        if (const auto origin = origins.find(witness.get_rule_key().template get<formalism::Rule<LiftedTag>>()); origin != origins.end())
         {
             workspace.binding.resize(origin->second.num_source_variables);
             recover_split_binding(definition, workspace, witness);
@@ -119,7 +119,7 @@ struct RPGPolicy<LiftedTag>
     template<typename Workspace>
     static void recover_split_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag>& witness)
     {
-        const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
+        const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().template get<formalism::Rule<LiftedTag>>());
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
         auto position = static_cast<size_t>(0);
         for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
@@ -147,7 +147,8 @@ struct RPGPolicy<LiftedTag>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<LiftedTag>& witness, Callback&& callback)
     {
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
-        const auto& const_rule_workspace = *workspace.const_workspace->engine.rules[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
+        const auto& const_rule_workspace =
+            *workspace.const_workspace->engine.rules[static_cast<ygg::uint_t>(witness.get_rule_key().template get<formalism::Rule<LiftedTag>>().value)];
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
         for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
             binding.push_back(object);

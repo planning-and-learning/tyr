@@ -189,7 +189,7 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
     const auto effect = op.get_effects()[static_cast<std::ptrdiff_t>(threat.effect_index)];
     const auto add_literal = effect.get_effect().get_literals()[static_cast<std::ptrdiff_t>(threat.add_index)];
     assert(add_literal.get_polarity());
-    const auto& add_atom = add_literal.get_atom().context()[add_literal.get_atom().index()];
+    const auto& add_atom = *add_literal.get_atom().context()[add_literal.get_atom().index()];
 
     const auto* part = find_part(inv, add_atom.predicate);
     if (part == nullptr)
@@ -202,7 +202,7 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
             if (literal.get_polarity() || is_overridden_delete(conj_effect, literal))
                 continue;
 
-            const auto& del_atom = literal.get_atom().context()[literal.get_atom().index()];
+            const auto& del_atom = *literal.get_atom().context()[literal.get_atom().index()];
 
             if (has_predicate(inv, del_atom.predicate))
                 continue;

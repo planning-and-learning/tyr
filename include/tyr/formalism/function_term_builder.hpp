@@ -57,7 +57,7 @@ template<::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>, C>
 {
     urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> index;
-    urd::built_t<ygg::RowIndex<::tyr::formalism::Function<F>>, C> row;
+    urd::built_t<urd::key<::tyr::formalism::Function<F>, ygg::Row<::tyr::formalism::Function<F>>>, C> row;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &builder::row>> {}; }
 

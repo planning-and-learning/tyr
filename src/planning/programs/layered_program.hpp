@@ -60,9 +60,9 @@ struct LayeredProgram
 /// pass adds only its new records (the source's are found in the layers below, so the tables that refer to them stay
 /// valid) and maps every source rule in `rules`.
 template<typename Pass>
-LayeredProgram transform(const LayeredProgram& source, std::size_t num_objects, datalog::RuleMapping& rules, Pass&& pass)
+LayeredProgram transform(const LayeredProgram& source, datalog::RuleMapping& rules, Pass&& pass)
 {
-    auto repository = layer_over(source.repository, num_objects);
+    auto repository = layer_over(source.repository);
     const auto program = std::forward<Pass>(pass)(source.program, *repository, rules);
     return { program, std::move(repository) };
 }

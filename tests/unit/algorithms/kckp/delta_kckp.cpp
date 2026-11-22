@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/repository.hpp"
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 
 #include "planning/parser.hpp"
@@ -23,7 +24,6 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
@@ -321,7 +321,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
             if (object.get_name() == "loc-x0-y0")
                 binding.values.push_back(object.index().value);
         ASSERT_EQ(binding.values.size(), 1);
-        assignments.predicate.insert(tyr::formalism::insert(*additional.workspace_repository, binding).first);
+        assignments.predicate.insert(additional.workspace_repository->insert(binding).first);
         break;
     }
     update();

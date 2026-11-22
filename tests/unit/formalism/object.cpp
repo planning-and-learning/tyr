@@ -1,6 +1,5 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -49,7 +48,7 @@ namespace
 template<typename Repository, typename T>
 concept SymbolRepositoryFor =
     ygg::formalism::SupportsSymbol<Repository, T> && requires(const std::remove_reference_t<Repository>& repository, urd::index<T> index) {
-        { repository[index] } -> std::same_as<const urd::data<T>&>;
+        { repository[index] } -> std::same_as<urd::stored_ref<T>>;
     };
 
 /// A context whose repository reads T's records and is numbered (layer()).
@@ -75,7 +74,7 @@ TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
 {
     auto repository = tyr::formalism::Repository();
     auto data = ObjectData(std::string("truck"));
-    const auto object = tyr::formalism::insert(repository, data).first;
+    const auto object = repository.insert(data).first;
     const auto view = repository.view(object.index());
     EXPECT_EQ(view, object);
     EXPECT_EQ(&view.context(), &repository);

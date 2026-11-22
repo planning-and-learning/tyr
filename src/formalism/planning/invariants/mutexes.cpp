@@ -75,7 +75,7 @@ extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, Ato
                     static_assert(false, "Unhandled case");
                 }
             },
-            urd::stored<Term>(terms[static_cast<std::ptrdiff_t>(position)]));
+            urd::as_member<Term>(terms[static_cast<std::ptrdiff_t>(position)]));
         if (!matches)
             return std::nullopt;
     }

@@ -19,6 +19,7 @@
 #define TYR_TESTS_UNIT_DATALOG_LIFTED_SOLVER_FIXTURES_HPP_
 
 #include "planning/parser.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
@@ -37,7 +38,6 @@
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
@@ -84,7 +84,7 @@
 
 namespace tyr::tests
 {
-static_assert(tyr::formalism::SymbolRepository::thread_safe && tyr::formalism::RelationRepository::thread_safe);
+static_assert(tyr::formalism::Repository::thread_safe);
 
 namespace
 {
@@ -275,7 +275,7 @@ struct LiftedPredicateProgram
 LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constraint = false)
 {
     auto repository = std::make_shared<tyr::formalism::Repository>();
-    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
+    const auto intern = [&]<typename T>(urd::data<T> data) { return repository->insert(data).first; };
     const auto source_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("source"), 1));
     const auto goal_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
     const auto value_function = intern(urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("value"), 1));

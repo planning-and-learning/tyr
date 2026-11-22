@@ -1,8 +1,6 @@
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
@@ -102,7 +100,7 @@ template<tyr::TaskKind Kind>
 void expect_condition_atom_projection()
 {
     auto repository = tyr::formalism::Repository();
-    const auto intern = [&](auto data) { return tyr::formalism::insert(repository, data).first; };
+    const auto intern = [&](auto data) { return repository.insert(data).first; };
     const auto atoms = [&]<tyr::formalism::FactKind F>()
     {
         const auto atom = [&](const char* name)
@@ -163,7 +161,7 @@ void expect_condition_atom_projection()
         EXPECT_TRUE(opposite.begin() == opposite.end());
         auto foreign_repository = tyr::formalism::Repository();
         auto foreign_data = urd::data<tyr::formalism::Predicate<F>>(std::string("positive"), 0);
-        const auto foreign = tyr::formalism::insert(foreign_repository, foreign_data).first;
+        const auto foreign = foreign_repository.insert(foreign_data).first;
         ASSERT_EQ(foreign.index(), pair.first.get_predicate().index());
         ASSERT_NE(foreign, pair.first.get_predicate());
         auto absent = condition.template get_atoms<F>(true, foreign);

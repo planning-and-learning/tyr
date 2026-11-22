@@ -1,10 +1,10 @@
 #ifndef TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 #define TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -45,15 +45,15 @@ namespace tyr::tests
 inline tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> make_atom(tyr::formalism::Repository& repository, const std::string& object_name)
 {
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 1);
-    const auto predicate = ygg::formalism::insert(repository, predicate_data).first;
+    const auto predicate = repository.insert(predicate_data).first;
     auto object_data = urd::data<tyr::formalism::Object>(object_name);
-    const auto object = ygg::formalism::insert(repository, object_data).first;
+    const auto object = repository.insert(object_data).first;
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
     binding_data.values.push_back(object.index().value);
-    const auto binding = ygg::formalism::insert(repository, binding_data).first;
+    const auto binding = repository.insert(binding_data).first;
     auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    return ygg::formalism::insert(repository, atom_data).first;
+    return repository.insert(atom_data).first;
 }
 
 template<TaskKind Kind>

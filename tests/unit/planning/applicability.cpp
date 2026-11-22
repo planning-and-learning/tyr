@@ -1,3 +1,4 @@
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/applicability.hpp"
 
 #include "applicability_schema.hpp"
@@ -7,7 +8,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
@@ -73,7 +73,7 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
     {
         auto result = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            result += task->get_repository()->size(action.index());
+            result += task->get_repository()->template size<ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>>(action.index());
         return result;
     };
     const auto num_action_bindings = count_action_bindings();
@@ -322,7 +322,7 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
     const auto static_state = tyr::planning::StaticState(urd::resolve(atoms, *destination), urd::resolve(fterm_values, *destination));
     auto literal = urd::data<tyr::formalism::Literal<GroundTag, formalism::StaticTag>>(present.index(), true);
 
-    EXPECT_TRUE(tyr::planning::is_statically_applicable(tyr::formalism::insert(*destination, literal).first, static_state));
+    EXPECT_TRUE(tyr::planning::is_statically_applicable(destination->insert(literal).first, static_state));
     EXPECT_TRUE(tyr::planning::is_statically_applicable(absent, static_state));
     EXPECT_TRUE(static_state.test(present));
     EXPECT_FALSE(static_state.test(absent.get_atom()));

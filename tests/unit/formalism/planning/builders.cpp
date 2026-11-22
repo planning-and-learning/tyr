@@ -5,7 +5,6 @@
 #include "tyr/formalism/function_builder.hpp"
 #include "tyr/formalism/function_term_builder.hpp"
 #include "tyr/formalism/function_term_value_builder.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_builder.hpp"
 #include "tyr/formalism/multi_operator_builder.hpp"
 #include "tyr/formalism/numeric_effect_builder.hpp"
@@ -62,11 +61,11 @@ TEST(TyrFormalismPlanningBuilders, ReadsBuiltAndInternedChildrenAlike)
 {
     auto repository = Repository();
     auto predicate_data = urd::data<f::Predicate<FluentTag>>(std::string("at"), 2);
-    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
+    const auto [predicate, predicate_created] = repository.insert(predicate_data);
     auto object_data = urd::data<f::Object>(std::string("truck"));
-    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     auto variable_data = urd::data<f::Variable>(std::string("?x"));
-    const auto [variable, variable_created] = ygg::formalism::insert(repository, variable_data);
+    const auto [variable, variable_created] = repository.insert(variable_data);
     ASSERT_TRUE(predicate_created && object_created && variable_created);
 
     auto parameter_pool = urd::Store<urd::slots<ParametersBuilder>> {};

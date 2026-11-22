@@ -124,7 +124,7 @@ public:
             [&]<typename F>(F)
             {
                 for (const auto fact : bucket.predicate.template get<F>())
-                    activate(fact.relation);
+                    activate(fact.template get<formalism::Predicate<F>>());
             });
     }
 

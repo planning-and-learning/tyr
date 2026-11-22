@@ -20,7 +20,6 @@
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -58,7 +57,7 @@ auto make_binding(tyr::formalism::Repository& repository,
     data.relation = relation.index();
     for (const auto object : objects)
         data.values.push_back(object.value);
-    return ygg::formalism::insert(repository, data).first;
+    return repository.insert(data).first;
 }
 
 /// What every projection of the binding allows: the intersection of its empty, vertex and edge assignments.
@@ -79,7 +78,7 @@ ygg::ClosedInterval<ygg::float_t> interval_of(const Set& set, Binding binding)
 
 template<typename T>
 auto intern(tyr::formalism::Repository& repository, urd::data<T> data)
-{ return ygg::formalism::insert(repository, data).first; }
+{ return repository.insert(data).first; }
 
 struct Fixture
 {

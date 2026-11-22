@@ -27,7 +27,6 @@
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/grounding_context.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -63,7 +62,7 @@ std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> eleme
 
 /// The key of the atom's row, interned as ground_binding does, without its view (which finds the layer that owns the row).
 template<FactKind F>
-std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
+std::pair<PredicateRowKey<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context);
 
 /// The row of the function term's function the context's binding grounds it to, without interning the ground function
 /// term.
@@ -130,7 +129,7 @@ inline void ground(TermListView terms, const GroundingContext<Builder, Repositor
 }
 
 template<FactKind F>
-std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
+std::pair<PredicateRowKey<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
     auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
 

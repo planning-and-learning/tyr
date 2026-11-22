@@ -75,11 +75,11 @@ template StaticState::StaticState(formalism::TaskView<LiftedTag> task);
 
 namespace
 {
-/// A writable layer over a formalism task's frozen repository, for the objects of its task. The layers do not own
-/// their parents: the Task does, through m_task, which it declares first and so destroys last.
+/// A writable layer over a formalism task's frozen repository. The layers do not own their parents: the Task does,
+/// through m_task, which it declares first and so destroys last.
 template<TaskKind Kind>
 formalism::RepositoryPtr layer_over(const formalism::PlanningTask<Kind>& task)
-{ return std::make_shared<formalism::Repository>(task.get_task().get_num_objects(), task.get_repository().get()); }
+{ return std::make_shared<formalism::Repository>(task.get_repository().get()); }
 }
 
 Task<LiftedTag>::Task(formalism::PlanningTask<LiftedTag> task) :

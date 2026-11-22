@@ -41,7 +41,7 @@ public:
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::FDRValue::none(); }
 
     auto get_atom_index() const noexcept
-    { return has_value() ? std::make_optional(self().context()[get_variable().index()].atoms[get_value().value - 1]) : std::nullopt; }
+    { return has_value() ? std::make_optional(self().context()[get_variable().index()]->atoms[get_value().value - 1]) : std::nullopt; }
 
     auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
 

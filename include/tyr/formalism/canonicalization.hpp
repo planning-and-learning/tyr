@@ -32,45 +32,7 @@ namespace tyr::formalism
  * has a canonicalize overload, a no-op where it is canonical as built, so a record without one is a compile error.
  */
 
-inline void canonicalize(urd::data<Variable>&)
-{  // Trivially canonical
-}
-
-inline void canonicalize(urd::data<Parameters>&)
-{
-    // Canonical as built: the order of the variables is their parameter indices
-}
-
-inline void canonicalize(urd::data<Object>&)
-{
-    // Trivially canonical
-}
-
-template<typename Tag>
-void canonicalize(urd::data<ygg::Row<Tag>>&)
-{
-    // Trivially canonical
-}
-
 inline void canonicalize(Term&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<Predicate<T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<Function<T>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T>
-void canonicalize(urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
 {
     // Trivially canonical
 }
@@ -88,36 +50,6 @@ void canonicalize(urd::data<BinaryOperator<T, O>>& data)
 template<TaskKind T>
 void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
 { ygg::canonicalize<false>(data.args); }
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<Atom<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<Literal<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<FunctionTerm<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind F>
-void canonicalize(urd::data<FunctionTermValue<GroundTag, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<NumericEffect<T, F>>&)
-{
-    // Trivially canonical
-}
 
 }
 

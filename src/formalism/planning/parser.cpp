@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/parser.hpp"
 
 #include "loki_to_tyr.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include <loki/loki.hpp>
 #include <yggdrasil/io/project_path.hpp>

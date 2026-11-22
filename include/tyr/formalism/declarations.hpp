@@ -47,15 +47,9 @@
 namespace ygg::formalism
 {
 template<typename... Ts>
-class SymbolRepository;
-
-template<typename... Ts>
-class ConcurrentSymbolRepository;
-
-template<typename Width, typename... Ts>
 class RelationRepository;
 
-template<typename Width, typename... Ts>
+template<typename... Ts>
 class ConcurrentRelationRepository;
 
 template<typename SymbolRepo, typename RelationRepo>
@@ -277,21 +271,6 @@ constexpr auto& tagged_member(Self& self) noexcept
 
 }
 
-#if defined(TYR_RELATION_STORAGE_WORD) == defined(TYR_RELATION_STORAGE_BIT)
-#error "Exactly one of TYR_RELATION_STORAGE_WORD or TYR_RELATION_STORAGE_BIT must be defined"
-#endif
-
-namespace tyr::formalism
-{
-/// How tyr's relation repositories store an object column (yggdrasil's Width): 32 bits (urd::word), or the bits the
-/// largest object index needs (urd::bit), as the build chooses.
-#if defined(TYR_RELATION_STORAGE_WORD)
-using RelationStorage = urd::word;
-#else
-using RelationStorage = urd::bit;
-#endif
-
-}
 
 namespace tyr::formalism
 {
@@ -448,21 +427,20 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes, boost::mp11::mp_list<Rule<LiftedTag>>>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 
-using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 
 template<typename... Ts>
-using StoredRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<RelationStorage, Ts...>;
+using StoredRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<Ts...>;
 
 using RelationRepository = boost::mp11::mp_apply<StoredRelationRepository, RelationRepositoryTypes>;
 
 template<typename... Ts>
-using StoredRelations = ::ygg::formalism::ConcurrentRelations<RelationStorage, Ts...>;
+using StoredRelations = ::ygg::formalism::ConcurrentRelations<Ts...>;
 
 /// Named by what it holds (yggdrasil's Symbols and Relations), not by its stores: a call with a repository argument
 /// then never instantiates them (yggdrasil/formalism/declarations.hpp).
 using Repository = ::ygg::formalism::Repository<boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>,
                                                 boost::mp11::mp_apply<StoredRelations, RelationRepositoryTypes>>;
-/// The pools of a writer's builders and scratch records, interned into a Repository (ygg::formalism::insert).
+/// The pools of a writer's builders and scratch records, interned into a Repository (Repository::insert).
 using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<BuilderTypes, Repository>>;
 using RepositoryPtr = std::shared_ptr<Repository>;
 
@@ -488,9 +466,9 @@ using PredicateRowView = ygg::RowView<Predicate<T>, Repository>;
 template<FactKind T>
 using FunctionRowView = ygg::RowView<Function<T>, Repository>;
 template<FactKind F>
-using PredicateRowIndex = ygg::RowIndex<Predicate<F>>;
+using PredicateRowKey = urd::key<Predicate<F>, ygg::Row<Predicate<F>>>;
 template<FactKind F>
-using FunctionRowIndex = ygg::RowIndex<Function<F>>;
+using FunctionRowKey = urd::key<Function<F>, ygg::Row<Function<F>>>;
 /// Predicate rows read from a sequence of their indices.
 template<FactKind F>
 using PredicateRowsView = ygg::RowsView<Predicate<F>, urd::Store<urd::sequence<urd::index<ygg::Row<Predicate<F>>>>>, Repository>;

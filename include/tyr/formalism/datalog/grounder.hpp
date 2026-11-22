@@ -34,7 +34,6 @@
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/grounder.hpp"
 #include "tyr/formalism/grounding_context.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"

@@ -21,10 +21,8 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: "3.13"
-            relation_storage_policy: Bit
           - os: macos-latest
             python-version: "3.13"
-            relation_storage_policy: Word
 
     steps:
       - name: Checkout repository
@@ -53,7 +51,6 @@ jobs:
           PIP_NO_CACHE_DIR: 1
           TYR_HEADER_INSTANTIATION: OFF
           TYR_ENABLE_LTO: OFF
-          TYR_RELATION_STORAGE_POLICY: ${{ matrix.relation_storage_policy }}
 
       - name: Test
         run: pytest python/tests

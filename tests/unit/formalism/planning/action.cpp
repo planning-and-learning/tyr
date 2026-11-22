@@ -1,5 +1,3 @@
-#include "tyr/formalism/detail/repository_instantiations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
@@ -75,7 +73,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     auto repository = tyr::formalism::Repository();
 
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?internal"));
-    const auto [variable, variable_created] = ygg::formalism::insert(repository, variable_data);
+    const auto [variable, variable_created] = repository.insert(variable_data);
     ASSERT_TRUE(variable_created);
 
     auto action_data = ActionData {};
@@ -83,17 +81,17 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     action_data.original_name = "move";
     action_data.variables.push_back(variable.index());
     action_data.original_arity = 0;
-    const auto [action, action_created] = ygg::formalism::insert(repository, action_data);
+    const auto [action, action_created] = repository.insert(action_data);
     ASSERT_TRUE(action_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
+    const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Action<::tyr::LiftedTag>>> {};
     binding_data.relation = action.index();
     binding_data.values.push_back(object.index().value);
-    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
+    const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
     EXPECT_EQ(fmt::format("{}", binding), "(move-internal truck)");
@@ -118,19 +116,19 @@ TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndBindingObjects)
     auto source = tyr::formalism::Repository(&source_action.context());
     auto destination = tyr::formalism::Repository();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    const auto source_object = tyr::formalism::insert(source, object_data).first;
+    const auto source_object = source.insert(object_data).first;
     object_data.name = "padding";
-    (void) tyr::formalism::insert(destination, object_data);
+    (void) destination.insert(object_data);
     auto function_data = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("padding"), 1);
-    (void) tyr::formalism::insert(destination, function_data);
+    (void) destination.insert(function_data);
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("padding"), 1);
-    (void) tyr::formalism::insert(destination, predicate_data);
+    (void) destination.insert(predicate_data);
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?padding"));
-    (void) tyr::formalism::insert(destination, variable_data);
+    (void) destination.insert(variable_data);
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>> {};
     binding_data.relation = source_action.index();
     binding_data.values.push_back(source_object.index().value);
-    const auto binding = tyr::formalism::insert(source, binding_data).first;
+    const auto binding = source.insert(binding_data).first;
 
     auto builder = tyr::formalism::Builder {};
     const auto copied_binding = destination.view(urd::copy(binding, destination, builder));

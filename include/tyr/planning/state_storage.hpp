@@ -100,6 +100,25 @@ struct PackedStorage
 namespace urd
 {
 
+/// A state's storage is interned under its packed key, in its state repository's pool of its kind (StoragePart).
+template<::tyr::TaskKind Kind>
+struct key_of<::tyr::planning::FactStorage<Kind>>
+{
+    using type = ::tyr::planning::PackedStorage<::tyr::planning::FactStorage<Kind>>;
+};
+
+template<::tyr::TaskKind Kind>
+struct key_of<::tyr::planning::AtomStorage<Kind>>
+{
+    using type = ::tyr::planning::PackedStorage<::tyr::planning::AtomStorage<Kind>>;
+};
+
+template<::tyr::TaskKind Kind>
+struct key_of<::tyr::planning::NumericStorage<Kind>>
+{
+    using type = ::tyr::planning::PackedStorage<::tyr::planning::NumericStorage<Kind>>;
+};
+
 /// A packed storage reads as its storage unpacked, through its state repository (StateRepository::unpack).
 template<typename S>
 struct resolution<::tyr::planning::PackedStorage<S>>

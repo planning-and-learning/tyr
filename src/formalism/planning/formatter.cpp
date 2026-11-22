@@ -304,7 +304,8 @@ fmt::formatter<urd::owning_view<tf::FDRFact<tf::FluentTag>, tf::Repository>>::fo
 
 fmt::format_context::iterator fmt::formatter<tf::ActionRowBuilderView>::format(const tf::ActionRowBuilderView& value, fmt::format_context& context) const
 {
-    // The relation in whatever form the binding holds it (interned, as a staged binding's is).
+    // The relation in whatever form the binding holds it (interned, as a staged binding's is); its values as a stored
+    // binding's are written (ygg::values_text).
     const auto name = urd::visit_view(value.get_relation(), [](const auto& action) { return std::string(action.get_name()); });
     if (value.get_values().empty())
         return fmt::format_to(context.out(), "({})", name);

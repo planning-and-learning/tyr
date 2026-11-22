@@ -206,7 +206,7 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
     dictionaries = Dictionaries()
     if nested:
         register_table(dictionaries, formalism.FunctionTermGroundStatic, "terms", "t")
-    missing = "RowIndex" if nested else "FunctionTerm"
+    missing = "key<" if nested else "FunctionTerm"
     with pytest.raises(ValueError, match=f"^Unregistered serialization type: .*{missing}"):
         serialize(dictionaries, term)
     with pytest.raises(RuntimeError, match="Serialization failed"):

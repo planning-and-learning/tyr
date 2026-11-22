@@ -57,10 +57,6 @@ namespace tyr::formalism
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
 
-inline void canonicalize(urd::data<ConditionalEffect<LiftedTag>>&) {}
-
-inline void canonicalize(urd::data<ConditionalEffect<GroundTag>>&) {}
-
 inline void canonicalize(urd::data<ConjunctiveEffect<LiftedTag>>& data)
 {
     canonicalize(data.literals);
@@ -77,12 +73,6 @@ inline void canonicalize(urd::data<ConjunctiveEffect<GroundTag>>& data)
 inline void canonicalize(urd::data<Action<LiftedTag>>& data) { canonicalize(data.effects); }
 
 inline void canonicalize(urd::data<Action<GroundTag>>& data) { canonicalize(data.effects); }
-
-inline void canonicalize(urd::data<Axiom<LiftedTag>>&) {}
-
-inline void canonicalize(urd::data<Axiom<GroundTag>>&) {}
-
-inline void canonicalize(urd::data<Metric>&) {}
 
 inline void canonicalize(urd::data<Task<LiftedTag>>& data)
 {
@@ -107,19 +97,7 @@ inline void canonicalize(urd::data<Domain>& data)
     canonicalize(data.axioms);
 }
 
-template<FactKind T>
-void canonicalize(urd::data<FDRVariable<T>>&)
-{
-    // Trivially canonical
-}
-
 inline void canonicalize(urd::data<Invariant>& data) { canonicalize(data.atoms); }
-
-template<FactKind T>
-void canonicalize(urd::data<FDRFact<T>>&)
-{
-    // Trivially canonical
-}
 
 inline void canonicalize(urd::data<Task<GroundTag>>& data)
 {

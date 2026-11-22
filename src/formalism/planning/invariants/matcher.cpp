@@ -152,7 +152,7 @@ void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& res
         // Each atom of the invariant is a pattern, read as its record.
         for (const auto part : data.invariant().get_atoms())
         {
-            const auto& pattern = part.context()[part.index()];
+            const auto& pattern = *part.context()[part.index()];
             if (pattern.predicate != atom.predicate)
                 continue;
 

@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
 
 #include "../../programs/common.hpp"
@@ -25,11 +26,9 @@
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -296,7 +295,7 @@ static auto create_ground_datalog_program(const formalism::PlanningTask<LiftedTa
                                           ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
     const auto task = planning_task.get_task();
-    auto repository = layer_over(planning_task.get_repository(), task.get_num_objects());
+    auto repository = layer_over(planning_task.get_repository());
     auto program = create_ground_program(task, predicate_to_actions, predicate_to_axioms, effect_to_predicate, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository));
 }

@@ -68,11 +68,11 @@ template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::Atom<::tyr::GroundTag, F>>
 {
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, F>> index;
-    ygg::RowIndex<::tyr::formalism::Predicate<F>> row;
+    urd::key<::tyr::formalism::Predicate<F>, ygg::Row<::tyr::formalism::Predicate<F>>> row;
 
     data() = default;
 
-    data(ygg::RowIndex<::tyr::formalism::Predicate<F>> row_) : index(), row(row_) {}
+    data(urd::key<::tyr::formalism::Predicate<F>, ygg::Row<::tyr::formalism::Predicate<F>>> row_) : index(), row(row_) {}
 
     static constexpr bool copyable() noexcept
     {

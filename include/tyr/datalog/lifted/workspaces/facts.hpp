@@ -37,7 +37,7 @@ struct FactsWorkspace<LiftedTag>
     FactsWorkspace(formalism::ProgramView<LiftedTag> program, const formalism::Repository& workspace_repository);
 
     template<formalism::FactKind F>
-    bool insert(formalism::PredicateRowIndex<F> binding)
+    bool insert(formalism::PredicateRowKey<F> binding)
     {
         if (!tyr::datalog::insert(fact_sets, binding))
             return false;
@@ -45,7 +45,7 @@ struct FactsWorkspace<LiftedTag>
         return true;
     }
 
-    bool insert(formalism::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+    bool insert(formalism::FunctionRowKey<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
     { return tyr::datalog::insert(fact_sets.get<formalism::FluentTag>(), binding, interval); }
 
     void reset();

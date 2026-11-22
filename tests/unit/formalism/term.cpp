@@ -1,4 +1,3 @@
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
@@ -23,10 +22,10 @@ TEST(TyrFormalismTerm, ReadoutFollowsReferencedObjectsToTheirLayer)
 {
     auto parent = tyr::formalism::Repository();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("parent"));
-    const auto object = tyr::formalism::insert(parent, object_data).first;
+    const auto object = parent.insert(object_data).first;
     auto child = tyr::formalism::Repository(&parent);
     object_data.name = "child";
-    const auto child_object = tyr::formalism::insert(child, object_data).first;
+    const auto child_object = child.insert(object_data).first;
 
     const auto parent_term = urd::resolve(Term(object.index()), child);
     const auto child_term = urd::resolve(Term(child_object.index()), child);
@@ -34,5 +33,5 @@ TEST(TyrFormalismTerm, ReadoutFollowsReferencedObjectsToTheirLayer)
     EXPECT_EQ(&std::get<tyr::formalism::ObjectView>(parent_term).context(), &parent);
     EXPECT_EQ(&std::get<tyr::formalism::ObjectView>(child_term).context(), &child);
     EXPECT_EQ(std::get<tyr::formalism::ParameterIndex>(parameter), tyr::formalism::ParameterIndex(0));
-    EXPECT_EQ(urd::stored<tyr::formalism::Term>(child_term), Term(child_object.index()));
+    EXPECT_EQ(urd::as_member<tyr::formalism::Term>(child_term), Term(child_object.index()));
 }

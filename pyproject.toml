@@ -84,7 +84,6 @@ CMAKE_INSTALL_LIBDIR = "lib"
 TYR_HEADER_INSTANTIATION = {env = "TYR_HEADER_INSTANTIATION", default = false}
 TYR_ENABLE_INNER_PARALLELISM = {env = "TYR_ENABLE_INNER_PARALLELISM", default = false}
 TYR_ENABLE_SEMI_NAIVE = {env = "TYR_ENABLE_SEMI_NAIVE", default = true}
-TYR_RELATION_STORAGE_POLICY = {env = "TYR_RELATION_STORAGE_POLICY", default = "Word"}
 
 [tool.cibuildwheel]
 build = "cp311-*"

@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 
 #include "effect_atom_index.hpp"
@@ -27,11 +28,9 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -536,7 +535,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     const auto& planning_domain = planning_task.get_domain();
 
     auto task = planning_task.get_task();
-    auto repository = std::make_shared<formalism::Repository>(task.get_num_objects(), planning_domain.get_repository().get());
+    auto repository = std::make_shared<formalism::Repository>(planning_domain.get_repository().get());
     auto builder = formalism::Builder();
 
     auto ground_task = formalism::checkout<formalism::Task<GroundTag>>(builder);

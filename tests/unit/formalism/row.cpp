@@ -1,5 +1,4 @@
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
@@ -51,12 +50,13 @@ struct RowPublicView<tyr::formalism::Axiom<::tyr::LiftedTag>, tyr::formalism::Re
 
 template<typename Relation, typename Repository>
 concept RowContract =
-    requires(const Repository& repository, ygg::RowIndex<Relation> index) { repository.view(index); } && std::totally_ordered<ygg::RowIndex<Relation>>
-    && std::totally_ordered<urd::data<ygg::Row<Relation>>> && std::totally_ordered<ygg::RowView<Relation, Repository>>
+    requires(const Repository& repository, urd::key<Relation, ygg::Row<Relation>> index) { repository.view(index); }
+    && std::totally_ordered<urd::key<Relation, ygg::Row<Relation>>> && std::totally_ordered<urd::data<ygg::Row<Relation>>>
+    && std::totally_ordered<ygg::RowView<Relation, Repository>>
     && std::same_as<ygg::RowView<Relation, Repository>, typename RowPublicView<Relation, Repository>::type>
-    && requires(ygg::RowIndex<Relation>& index, urd::data<ygg::Row<Relation>>& data, const ygg::RowView<Relation, Repository>& view) {
-           index.relation;
-           index.row;
+    && requires(urd::key<Relation, ygg::Row<Relation>>& index, urd::data<ygg::Row<Relation>>& data, const ygg::RowView<Relation, Repository>& view) {
+           index.template get<Relation>();
+           index.template get<ygg::Row<Relation>>();
            data.relation;
            data.values;
            view.get_values();
@@ -75,19 +75,13 @@ static_assert(row_contracts<tyr::formalism::Repository>(tyr::formalism::Relation
 using Binding = ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>);
 
-#if defined(TYR_RELATION_STORAGE_WORD)
-static_assert(std::same_as<tyr::formalism::RelationStorage, urd::word>);
-#else
-static_assert(std::same_as<tyr::formalism::RelationStorage, urd::bit>);
-#endif
-
 // A row copied into another repository: its relation copied (at another index there), its values as they are (its
 // objects name the same objects in both: they are interned alike, as the layers of one task share theirs).
 TEST(TyrFormalismPlanningCopy, CopiesBindingRelationsAndKeepsTheirValues)
 {
     auto source = tyr::formalism::Repository();
     auto destination = tyr::formalism::Repository();
-    const auto intern = []<typename T>(auto& repository, urd::data<T> data) { return ygg::formalism::insert(repository, data).first; };
+    const auto intern = []<typename T>(auto& repository, urd::data<T> data) { return repository.insert(data).first; };
 
     const auto source_a = intern(source, urd::data<tyr::formalism::Object>(std::string("a")));
     const auto destination_a = intern(destination, urd::data<tyr::formalism::Object>(std::string("a")));
@@ -120,11 +114,11 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     auto builder = tyr::formalism::Builder {};
     auto a_data = urd::data<tyr::formalism::Object>(std::string("a"));
     auto b_data = urd::data<tyr::formalism::Object>(std::string("b"));
-    const auto a = tyr::formalism::insert(repository, a_data).first;
-    const auto b = tyr::formalism::insert(repository, b_data).first;
+    const auto a = repository.insert(a_data).first;
+    const auto b = repository.insert(b_data).first;
     using Predicate = tyr::formalism::Predicate<tyr::formalism::StaticTag>;
     auto predicate_data = urd::data<Predicate>(std::string("p"), 2);
-    const auto predicate = tyr::formalism::insert(repository, predicate_data).first;
+    const auto predicate = repository.insert(predicate_data).first;
 
     auto data = tyr::formalism::checkout<ygg::Row<Predicate>>(builder);
     urd::store(data->relation, predicate);

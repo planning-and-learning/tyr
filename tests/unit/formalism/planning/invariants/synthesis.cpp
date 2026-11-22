@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 
 #include "planning/parser.hpp"
@@ -22,7 +23,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -87,17 +87,17 @@ auto intern_invariant(tyr::formalism::Repository& repository, std::size_t num_ri
     for (std::size_t position = 0; position < num_rigid_variables + num_counted_variables; ++position)
     {
         auto variable = urd::data<tyr::formalism::Variable>(urd::flat_string(fmt::format("?v{}", position)));
-        parameters.variables.push_back(tyr::formalism::insert(repository, variable).first.index());
+        parameters.variables.push_back(repository.insert(variable).first.index());
     }
-    const auto parameters_index = tyr::formalism::insert(repository, parameters).first.index();
+    const auto parameters_index = repository.insert(parameters).first.index();
     const auto add = [&](const auto& atom)
     {
         auto atom_data = urd::clone(atom);
         atom_data.parameters = parameters_index;
-        data.atoms.push_back(tyr::formalism::insert(repository, atom_data).first.index());
+        data.atoms.push_back(repository.insert(atom_data).first.index());
     };
     (add(atoms), ...);
-    return tyr::formalism::insert(repository, data).first;
+    return repository.insert(data).first;
 }
 
 /// The atoms in text form, sorted. Both sides live in different repositories, so atoms are compared by text rather than
@@ -148,7 +148,7 @@ std::string invariant_text(tyr::formalism::InvariantView invariant)
     {
         auto terms = urd::Store<urd::sequence<tyr::formalism::Term>> {};
         for (const auto term : atom.get_terms())
-            terms.push_back(urd::stored<tyr::formalism::Term>(term));
+            terms.push_back(urd::as_member<tyr::formalism::Term>(term));
         atoms.push_back(atom_text(atom.get_predicate().get_name().view(), terms));
     }
     return invariant_text(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));

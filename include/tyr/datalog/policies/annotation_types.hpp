@@ -72,7 +72,7 @@ private:
 template<TaskKind Kind, formalism::FactKind F>
 struct PredicateAchiever
 {
-    formalism::PredicateRowIndex<F> head;
+    formalism::PredicateRowKey<F> head;
     WitnessAnnotation<Kind> witness;
 };
 
@@ -80,11 +80,11 @@ template<TaskKind Kind, formalism::FactKind F>
 struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey<Kind, F>>
 {
     RuleKey<Kind> rule_key;
-    formalism::PredicateRowIndex<F> head;
+    formalism::PredicateRowKey<F> head;
 
     PredicateAchieverKey() = default;
 
-    PredicateAchieverKey(RuleKey<Kind> rule_key_, formalism::PredicateRowIndex<F> head_) : rule_key(rule_key_), head(head_) {}
+    PredicateAchieverKey(RuleKey<Kind> rule_key_, formalism::PredicateRowKey<F> head_) : rule_key(rule_key_), head(head_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
 };
@@ -237,9 +237,10 @@ class DenseRelationMap
 public:
     static constexpr bool thread_safe = ThreadSafe;
 
-    using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>, formalism::PredicateRowIndex<F>, formalism::FunctionRowIndex<F>>;
-    using Relation = decltype(std::declval<Key>().relation);
-    using Row = decltype(std::declval<Key>().row);
+    using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>, formalism::PredicateRowKey<F>, formalism::FunctionRowKey<F>>;
+    using RelationTag = std::conditional_t<std::same_as<R, formalism::PredicateTag>, formalism::Predicate<F>, formalism::Function<F>>;
+    using Relation = urd::index<RelationTag>;
+    using Row = urd::index<ygg::Row<RelationTag>>;
 
     explicit DenseRelationMap(size_t num_relations = 0) : m_lanes(num_relations) {}
 
@@ -270,13 +271,13 @@ public:
     template<std::invocable<const Value&> Read>
     std::invoke_result_t<Read, const Value&> read(Key key, Read&& read, std::invoke_result_t<Read, const Value&> missing) const
     {
-        const auto relation = ygg::uint_t(key.relation.value);
-        return relation < m_lanes.size() ? m_lanes[relation].visit(key.row, std::forward<Read>(read), missing) : missing;
+        const auto relation = ygg::uint_t(key.template get<RelationTag>().value);
+        return relation < m_lanes.size() ? m_lanes[relation].visit(key.template get<ygg::Row<RelationTag>>(), std::forward<Read>(read), missing) : missing;
     }
 
     template<std::invocable<Value&, bool> Update>
     decltype(auto) update(Key key, Update&& update)
-    { return this->update(key.relation, key.row, std::forward<Update>(update)); }
+    { return this->update(key.template get<RelationTag>(), key.template get<ygg::Row<RelationTag>>(), std::forward<Update>(update)); }
 
     template<std::invocable<Value&, bool> Update>
     decltype(auto) update(Relation relation, Row row, Update&& update)
@@ -289,7 +290,7 @@ public:
         return m_lanes[index].update(row, std::forward<Update>(update));
     }
 
-    [[nodiscard]] const Value* find(Key key) const noexcept { return find(key.relation, key.row); }
+    [[nodiscard]] const Value* find(Key key) const noexcept { return find(key.template get<RelationTag>(), key.template get<ygg::Row<RelationTag>>()); }
 
     Value* find(Key key) noexcept
         requires(!ThreadSafe)
@@ -337,19 +338,19 @@ public:
     void clear() noexcept { m_annotations.clear(); }
 
     template<formalism::FactKind F>
-    void insert_or_assign(formalism::PredicateRowIndex<F> key, Annotation annotation)
+    void insert_or_assign(formalism::PredicateRowKey<F> key, Annotation annotation)
     {
         m_annotations.template get<F>().update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
     }
 
     template<formalism::FactKind F>
-    [[nodiscard]] Cost fetch_cost(formalism::PredicateRowIndex<F> key) const noexcept
+    [[nodiscard]] Cost fetch_cost(formalism::PredicateRowKey<F> key) const noexcept
     {
         return m_annotations.template get<F>().read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
     }
 
     template<formalism::FactKind F>
-    std::optional<CostUpdate> insert_if_better(formalism::PredicateRowIndex<F> key, Annotation annotation)
+    std::optional<CostUpdate> insert_if_better(formalism::PredicateRowKey<F> key, Annotation annotation)
     {
         return m_annotations.template get<F>().update(key,
                                                       [&](auto& incumbent, bool initialized)
@@ -365,11 +366,11 @@ public:
     }
 
     template<formalism::FactKind F>
-    [[nodiscard]] const Annotation* find(formalism::PredicateRowIndex<F> key) const noexcept
+    [[nodiscard]] const Annotation* find(formalism::PredicateRowKey<F> key) const noexcept
     { return m_annotations.template get<F>().find(key); }
 
     template<formalism::FactKind F>
-    Annotation* find(formalism::PredicateRowIndex<F> key) noexcept
+    Annotation* find(formalism::PredicateRowKey<F> key) noexcept
         requires(!ThreadSafe)
     { return const_cast<Annotation*>(std::as_const(*this).find(key)); }
 
@@ -385,7 +386,7 @@ using PredicateAnnotations = PredicateAnnotationMap<Kind, ThreadSafe>;
 
 /// A store of staged annotations for the predicate facts of kind F, keyed by their rows.
 template<typename T, typename F>
-concept PredicateAnnotationStoreFor = requires(T& store, const T& const_store, formalism::PredicateRowIndex<F> key, typename T::Annotation annotation) {
+concept PredicateAnnotationStoreFor = requires(T& store, const T& const_store, formalism::PredicateRowKey<F> key, typename T::Annotation annotation) {
     { const_store.fetch_cost(key) } -> std::same_as<Cost>;
     { const_store.find(key) } -> std::same_as<const typename T::Annotation*>;
     { store.insert_if_better(key, std::move(annotation)) } -> std::same_as<std::optional<CostUpdate>>;
@@ -412,14 +413,14 @@ public:
     void clear() noexcept { m_entries.clear(); }
 
     template<formalism::FactKind F>
-    [[nodiscard]] Cost fetch_cost(formalism::PredicateRowIndex<F> key) const noexcept
+    [[nodiscard]] Cost fetch_cost(formalism::PredicateRowKey<F> key) const noexcept
     {
         const auto* annotation = find(key);
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
     template<formalism::FactKind F>
-    [[nodiscard]] const Annotation* find(formalism::PredicateRowIndex<F> key) const noexcept
+    [[nodiscard]] const Annotation* find(formalism::PredicateRowKey<F> key) const noexcept
     {
         const auto& entries = m_entries.template get<F>();
         const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.first == key; });
@@ -427,7 +428,7 @@ public:
     }
 
     template<formalism::FactKind F>
-    std::optional<CostUpdate> insert_if_better(formalism::PredicateRowIndex<F> key, Annotation annotation)
+    std::optional<CostUpdate> insert_if_better(formalism::PredicateRowKey<F> key, Annotation annotation)
     {
         auto& entries = m_entries.template get<F>();
         const auto new_cost = get_cost(annotation);
@@ -448,7 +449,7 @@ public:
 
 private:
     template<typename F>
-    using Entries = urd::Store<urd::sequence<std::pair<formalism::PredicateRowIndex<F>, Annotation>>>;
+    using Entries = urd::Store<urd::sequence<std::pair<formalism::PredicateRowKey<F>, Annotation>>>;
 
     MutableFamily<Entries> m_entries;
 };

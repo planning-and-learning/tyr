@@ -2,12 +2,12 @@
 #define TYR_TESTS_UNIT_PLANNING_APPLICABILITY_SCHEMA_HPP_
 
 #include "planning/parser.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/applicability.hpp"
@@ -156,7 +156,7 @@ void expect_schema_queries_match_filtered_successors()
     {
         auto count = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            count += task->get_repository()->size(action.index());
+            count += task->get_repository()->template size<ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>>(action.index());
         return count;
     };
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -732,14 +732,14 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(source->check_action_binding(initial_node, task->get_repository()->view(offer(*offered_alias, ObjectIndices(aliased_indices)))),
               tyr::planning::ActionBindingStatus::INAPPLICABLE);
     EXPECT_EQ(count_action_bindings(task), count_before_check);
-    const auto rejected_binding = tyr::formalism::insert(*task->get_repository(), rejected_data).first;
+    const auto rejected_binding = task->get_repository()->insert(rejected_data).first;
     const auto rejected_count = count_action_bindings(task);
     EXPECT_EQ(source->check_action_binding(initial_node, rejected_binding), tyr::planning::ActionBindingStatus::INAPPLICABLE);
     EXPECT_EQ(count_action_bindings(task), rejected_count);
     rejected_data.values.clear();
     for (const auto index : local_indices)
         rejected_data.values.push_back(index.value);
-    const auto outside_binding = tyr::formalism::insert(*task->get_repository(), rejected_data).first;
+    const auto outside_binding = task->get_repository()->insert(rejected_data).first;
     const auto outside_count = count_action_bindings(task);
     EXPECT_EQ(source->check_action_binding(initial_node, outside_binding), rejected_domain);
     EXPECT_EQ(count_action_bindings(task), outside_count);
@@ -767,7 +767,7 @@ void expect_schema_queries_match_filtered_successors()
     for (const auto index : distinct_indices)
         foreign_built.values.push_back(index.value);
     EXPECT_THROW(source->check_action_binding(initial_node, foreign_task->get_repository()->view(foreign_built)), std::invalid_argument);
-    const auto foreign_binding = tyr::formalism::insert(*foreign_task->get_repository(), foreign_data).first;
+    const auto foreign_binding = foreign_task->get_repository()->insert(foreign_data).first;
     EXPECT_THROW(source->check_action_binding(initial_node, foreign_binding), std::invalid_argument);
     if constexpr (std::same_as<Kind, GroundTag>)
         EXPECT_THROW(source->materialize_action_binding(foreign_binding), std::invalid_argument);

@@ -17,6 +17,7 @@
 
 #include "common.hpp"
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -24,11 +25,9 @@
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -132,7 +131,7 @@ struct Layer
     std::shared_ptr<const formalism::Repository> parent;
     formalism::Repository repository;
 
-    Layer(std::shared_ptr<const formalism::Repository> parent_, std::size_t num_objects) : parent(std::move(parent_)), repository(num_objects, parent.get()) {}
+    explicit Layer(std::shared_ptr<const formalism::Repository> parent_) : parent(std::move(parent_)), repository(parent.get()) {}
 };
 
 /// Appends the records to `list`, asserting that each sits at the position of its index.
@@ -147,9 +146,9 @@ void append_dense(List& list, const Range& records)
 }
 }
 
-formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository> parent, std::size_t num_objects)
+formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository> parent)
 {
-    auto layer = std::make_shared<Layer>(std::move(parent), num_objects);
+    auto layer = std::make_shared<Layer>(std::move(parent));
     return formalism::RepositoryPtr(layer, &layer->repository);
 }
 

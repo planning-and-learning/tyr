@@ -95,7 +95,7 @@ std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::PredicateView<fo
     const auto atom = m_repository->find(m_lookup);
     if (!atom)
         return std::nullopt;
-    return static_cast<ygg::uint_t>(atom->index().row.value);
+    return static_cast<ygg::uint_t>(atom->index().get<ygg::Row<formalism::Predicate<formalism::DerivedTag>>>().value);
 }
 
 }

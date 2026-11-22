@@ -20,6 +20,8 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/datalog/ground/rule_instance.hpp"
+#include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -28,7 +30,6 @@
 #include <cassert>
 #include <gtl/phmap.hpp>
 #include <ranges>
-#include <span>
 #include <tuple>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
@@ -38,7 +39,6 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
-#include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -50,8 +50,8 @@ class RuleCostPolicy
 public:
     RuleCostPolicy() = default;
 
-    template<typename RuleKey>
-    [[nodiscard]] Cost get_cost(RuleKey) const noexcept
+    template<TaskKind Kind>
+    [[nodiscard]] Cost get_cost(const RuleInstance<Kind>& /*instance*/) const noexcept
     { return static_cast<Cost>(0); }
 
     void clear() noexcept {}
@@ -97,9 +97,6 @@ class RuleCostOverridePolicy
 public:
     /// The rule an action is translated to: actions are mapped by rule, a lifted rule's by its rule alone.
     using Rule = urd::index<formalism::Rule<Kind>>;
-    /// What the credit of a rule instance is read from: a ground rule's key; a lifted instance's row as a view, since
-    /// its action cost reads the row's objects.
-    using RuleInstanceKey = std::conditional_t<std::same_as<Kind, GroundTag>, RuleKey<GroundTag>, formalism::RuleRowView>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::ActionView<GroundTag>, formalism::ActionView<LiftedTag>>;
 
 private:
@@ -110,12 +107,14 @@ public:
 
     explicit RuleCostOverridePolicy(const RuleToActionMapping& predicate_rule_to_action) noexcept : m_predicate_rule_to_action(&predicate_rule_to_action) {}
 
-    [[nodiscard]] Cost get_cost(RuleInstanceKey rule_key) const
+    /// The credit of a rule instance: its override, else the largest cost of its actions. Read only: the policy is shared
+    /// by the workers evaluating rules in parallel; a lookup writes into the instance's (the worker's) builder.
+    [[nodiscard]] Cost get_cost(const RuleInstance<Kind>& instance) const
     {
         const auto& costs = storage().get_costs();
-        if (const auto it = costs.find(key_of(rule_key)); it != costs.end())
+        if (const auto it = costs.find(instance.witness_key()); it != costs.end())
             return it->second;
-        return get_action_cost(rule_key);
+        return get_action_cost(instance);
     }
 
     void clear() noexcept
@@ -136,14 +135,6 @@ public:
     void set_cost(RuleKey<Kind> rule_key, Cost cost) { storage().set_cost(rule_key, cost); }
 
 private:
-    static RuleKey<Kind> key_of(RuleInstanceKey rule_key) noexcept
-    {
-        if constexpr (std::same_as<Kind, GroundTag>)
-            return rule_key;
-        else
-            return rule_key.index();
-    }
-
     auto& storage() noexcept { return predicate_storage; }
 
     [[nodiscard]] const auto& storage() const noexcept { return predicate_storage; }
@@ -151,14 +142,14 @@ private:
     [[nodiscard]] const auto* mapping() const noexcept { return m_predicate_rule_to_action; }
 
     /// The credit of a rule is the largest credit of its actions: the rule is the cheapest of their parallel arcs.
-    [[nodiscard]] Cost get_action_cost(RuleKey<GroundTag> rule) const
+    [[nodiscard]] Cost get_action_cost(const RuleInstance<GroundTag>& instance) const
         requires std::same_as<Kind, GroundTag>
     {
         const auto* rule_to_action = mapping();
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto actions = rule_to_action->find(rule);
+        const auto actions = rule_to_action->find(instance.witness_key());
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
         auto credit = static_cast<Cost>(0);
@@ -168,33 +159,35 @@ private:
         return credit;
     }
 
-    [[nodiscard]] Cost get_action_cost(formalism::RuleRowView rule_binding) const
+    [[nodiscard]] Cost get_action_cost(const RuleInstance<LiftedTag>& instance) const
         requires std::same_as<Kind, LiftedTag>
     {
+        const auto rule_binding = instance.cost_key();
         const auto* rule_to_action = mapping();
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto actions = rule_to_action->find(rule_binding.index().relation);
+        const auto actions = rule_to_action->find(urd::get<formalism::Rule<LiftedTag>>(rule_binding.index()));
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
         if (m_action_costs.empty())
             return static_cast<Cost>(0);
-        // An action's binding is the first values of the rule's row, its arity many: the row of the task's repository
-        // that holds them (if it holds them, its cost may be set), by its identity.
+        // An action's binding is the first values of the rule's row, its arity many: written into a scratch row of the
+        // worker's builder and found in the task's repository (only a row it holds may have its cost set).
         const auto values = rule_binding.get_values();
+        auto lookup = instance.builder().scratch<ygg::Row<formalism::Action<LiftedTag>>>();
         auto credit = static_cast<Cost>(0);
         for (const auto action : actions->second)
         {
             const auto arity = action.get_arity();
             if (values.size() < arity)
                 continue;
-            m_binding.assign(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(arity));
-            const auto row = m_action_repository->find_row(action.index(), std::span<const ygg::Value>(m_binding));
-            if (row.is_none())
+            lookup->relation = action.index();
+            lookup->values.set(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(arity));
+            const auto binding = m_action_repository->find(*lookup);
+            if (!binding.has_value())
                 continue;
-            const auto binding = m_action_repository->view(ygg::RowIndex<formalism::Action<LiftedTag>> { action.index(), row });
-            if (const auto cost = m_action_costs.find(binding); cost != m_action_costs.end())
+            if (const auto cost = m_action_costs.find(*binding); cost != m_action_costs.end())
                 credit = std::max(credit, cost->second);
         }
         return credit;
@@ -205,8 +198,6 @@ private:
     /// The costs of action bindings, by their identity; the repository they are rows of (none before the first).
     gtl::flat_hash_map<formalism::ActionRowView, Cost, urd::Hash<formalism::ActionRowView>, urd::EqualTo<formalism::ActionRowView>> m_action_costs;
     const formalism::Repository* m_action_repository { nullptr };
-    /// The binding of a lookup, written here (reused: it allocates once grown).
-    mutable std::vector<ygg::Value> m_binding;
 };
 
 }

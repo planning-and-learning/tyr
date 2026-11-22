@@ -69,13 +69,13 @@ template<>
 struct data<::tyr::formalism::Axiom<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
-    ygg::RowIndex<::tyr::formalism::Axiom<::tyr::LiftedTag>> row;
+    urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Axiom<::tyr::LiftedTag>>> row;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> body;
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
 
-    data(ygg::RowIndex<::tyr::formalism::Axiom<::tyr::LiftedTag>> row_,
+    data(urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Axiom<::tyr::LiftedTag>>> row_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> body_,
          urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),

@@ -43,7 +43,7 @@ public:
     static constexpr bool records_propositional_achievers = false;
 
     template<TaskKind Kind, formalism::FactKind F>
-    void initialize_annotation(formalism::PredicateRowIndex<F>, PredicateAnnotations<Kind>&) const noexcept
+    void initialize_annotation(formalism::PredicateRowKey<F>, PredicateAnnotations<Kind>&) const noexcept
     {
     }
 
@@ -63,33 +63,33 @@ public:
     static constexpr bool records_propositional_achievers = false;
 
     template<TaskKind Kind, formalism::FactKind F>
-    void initialize_annotation(formalism::PredicateRowIndex<F> head, PredicateAnnotations<Kind>& annotations) const
+    void initialize_annotation(formalism::PredicateRowKey<F> head, PredicateAnnotations<Kind>& annotations) const
     { annotations.insert_or_assign(head, BaseAnnotation(static_cast<Cost>(0))); }
 
     void clear_achievers() noexcept {}
 
     template<TaskKind Kind, formalism::FactKind F>
-    void record_achiever(formalism::PredicateRowIndex<F>, const WitnessAnnotation<Kind>&) const noexcept
+    void record_achiever(formalism::PredicateRowKey<F>, const WitnessAnnotation<Kind>&) const noexcept
     {
     }
 
     template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore Annotations>
-    std::optional<CostUpdate> publish_annotation(formalism::PredicateRowIndex<F> head, WitnessAnnotation<Kind> witness, Annotations& annotations) const
+    std::optional<CostUpdate> publish_annotation(formalism::PredicateRowKey<F> head, WitnessAnnotation<Kind> witness, Annotations& annotations) const
     { return annotations.insert_if_better(head, Annotation<Kind>(witness)); }
 
     template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore Annotations>
-    bool try_update_candidate(formalism::PredicateRowIndex<F> head, WitnessAnnotation<Kind>&& witness, Annotations& annotations) const
+    bool try_update_candidate(formalism::PredicateRowKey<F> head, WitnessAnnotation<Kind>&& witness, Annotations& annotations) const
     { return publish_annotation(head, std::move(witness), annotations).has_value(); }
 
     template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore DeltaAnnotations>
-    [[nodiscard]] bool can_update(formalism::PredicateRowIndex<F> head,
+    [[nodiscard]] bool can_update(formalism::PredicateRowKey<F> head,
                                   Cost cost,
                                   const PredicateAnnotations<Kind>& annotations,
                                   const DeltaAnnotations& delta_annotations) const noexcept
     { return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head)); }
 
     template<TaskKind Kind, formalism::FactKind F, PredicateAnnotationStore DeltaAnnotations>
-    CostUpdate commit_annotation(formalism::PredicateRowIndex<F> head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<Kind>& annotations) const
+    CostUpdate commit_annotation(formalism::PredicateRowKey<F> head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<Kind>& annotations) const
     {
         const auto old_cost = annotations.fetch_cost(head);
         if (const auto* delta_annotation = delta_annotations.find(head))
@@ -118,10 +118,10 @@ public:
     void clear_achievers() noexcept;
 
     template<formalism::FactKind F>
-    [[nodiscard]] const Achievers* find_achievers(formalism::PredicateRowIndex<F> head) const noexcept;
+    [[nodiscard]] const Achievers* find_achievers(formalism::PredicateRowKey<F> head) const noexcept;
 
     template<formalism::FactKind F>
-    void record_achiever(formalism::PredicateRowIndex<F> head, PredicateWitness witness);
+    void record_achiever(formalism::PredicateRowKey<F> head, PredicateWitness witness);
 
 private:
     struct IndexedAchievers

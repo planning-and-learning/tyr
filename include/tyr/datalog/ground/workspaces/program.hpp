@@ -61,7 +61,7 @@ public:
 
     /// The rules that wait on the fact, if any.
     template<formalism::FactKind F>
-    [[nodiscard]] const Rules* find(formalism::PredicateRowIndex<F> fact) const noexcept
+    [[nodiscard]] const Rules* find(formalism::PredicateRowKey<F> fact) const noexcept
     { return precondition_to_rules.template get<F>().find(fact); }
 };
 

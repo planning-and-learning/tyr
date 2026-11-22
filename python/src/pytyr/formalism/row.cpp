@@ -29,11 +29,12 @@ namespace tyr::formalism
 {
 namespace
 {
-/// A row of Relation: its index (relation and row) and its record.
+/// A row of Relation: its index in its pool, its key (relation and row) and its record.
 template<typename Relation>
 void bind_row_of(nb::module_& m)
 {
-    urd::python::bind_index<ygg::RowIndex<Relation>>(m);
+    urd::python::bind_index<ygg::Row<Relation>>(m);
+    urd::python::bind_index<urd::key<Relation, ygg::Row<Relation>>>(m);
     urd::python::bind_data<ygg::Row<Relation>>(m);
 }
 }  // namespace

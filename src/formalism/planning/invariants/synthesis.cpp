@@ -19,7 +19,6 @@
 
 #include "normalization.hpp"
 #include "refinement.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"

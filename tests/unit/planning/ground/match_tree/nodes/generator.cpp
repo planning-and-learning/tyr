@@ -33,14 +33,12 @@ static_assert(!ygg::formalism::SupportsSymbol<tyr::planning::match_tree::Reposit
 static_assert(!ygg::formalism::SupportsSymbol<tyr::planning::match_tree::Repository<Action>, Action>);
 
 template<typename T>
-concept MatchTreeCanIntern = requires(tyr::planning::match_tree::Repository<Action>& repository, urd::data<T>& data) {
-    repository.insert(data);
-    tyr::planning::match_tree::insert(repository, data);
-};
+concept MatchTreeCanIntern = requires(tyr::planning::match_tree::Repository<Action>& repository, urd::data<T>& data) { repository.insert(data); };
 static_assert(MatchTreeCanIntern<Generator>);
 static_assert(!MatchTreeCanIntern<tyr::planning::match_tree::ElementGeneratorNode<Axiom>>);
 
-static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<Action>&>().view(std::declval<urd::index<Generator>>())));
+static_assert(std::same_as<decltype(std::declval<const tyr::planning::match_tree::Repository<Action>&>().view(std::declval<urd::index<Generator>>())),
+                           urd::index_view<Generator, tyr::planning::match_tree::Repository<Action>>>);
 
 TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
 {

@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/values.hpp>
 
 namespace urd
 {
@@ -82,20 +83,28 @@ struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
     { return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::name, &data::original_name, &data::original_arity, &data::variables, &data::condition, &data::effects> {}; }
+    {
+        return urd::Members<&data::index,
+                            &data::name,
+                            &data::original_name,
+                            &data::original_arity,
+                            &data::variables,
+                            &data::condition,
+                            &data::effects> {};
+    }
 };
 
 template<>
 struct data<::tyr::formalism::Action<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::Action<::tyr::GroundTag>> index;
-    ygg::RowIndex<::tyr::formalism::Action<::tyr::LiftedTag>> row;
+    urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>> row;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition;
     urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>> effects;
 
     data() = default;
 
-    data(ygg::RowIndex<::tyr::formalism::Action<::tyr::LiftedTag>> row_,
+    data(urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>> row_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition_,
          urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>> effects_) :
         index(),

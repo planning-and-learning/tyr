@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 
 #include "../metric.hpp"
@@ -23,7 +25,6 @@
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/kckp/static_extensions.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
@@ -55,7 +56,6 @@
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
-#include <yggdrasil/formalism/membership.hpp>
 
 namespace tyr::planning
 {
@@ -233,7 +233,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
         if (!std::ranges::all_of(indices, [&](const auto& value) { return objects.context().contains(value); })
             || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.contains(value); }))
             return false;
-        if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
+        if (!std::ranges::all_of(objects, [&](const auto& value) { return target_repository.contains(value); }))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
         return true;
     }
@@ -243,12 +243,9 @@ struct SuccessorGenerator<LiftedTag>::Impl
         const auto action = action_of(binding);
         if (!binding.context().contains(action.index()))
             throw std::invalid_argument("SuccessorGenerator: action schema does not belong to its source repository.");
-        // A borrowed binding's action may have no pool yet (no stored types): its values are read as objects directly.
         if (!validate_binding_objects(
                 action,
-                urd::resolve(
-                    urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }),
-                    binding.context())))
+                binding.template resolve<formalism::Object>()))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
     }
 
@@ -504,7 +501,7 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node,
 {
     evaluator.workspace.binding.clear();
     for (const auto value : binding.values)
-        evaluator.workspace.binding.push_back(urd::index<formalism::Object>(static_cast<std::uint32_t>(value)));
+        evaluator.workspace.binding.push_back(ygg::decode_value<urd::index<formalism::Object>>(value));
 
     auto grounder_context =
         formalism::GroundingContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
@@ -985,24 +982,19 @@ ActionBindingStatus SuccessorGenerator<LiftedTag>::Impl::check_action_binding(co
 template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Source& node, Binding binding)
 {
-    if constexpr (requires { binding.context().owner(binding.index()); })
-        if (binding.context().owner(binding.index()) == nullptr)
-            throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
-    // A borrowed binding's action may have no pool yet (no stored types): its values are read as objects directly.
+    // A binding builder's row reads its values untyped (ygg::Value): each is an object's index.
     return m_impl->check_action_binding(
         node,
         action_of(binding),
-        urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }),
-                     binding.context()));
+        binding.template resolve<formalism::Object>());
 }
 
 formalism::ActionRowView SuccessorGenerator<LiftedTag>::materialize_action_binding(ActionBindingView<LiftedTag> binding)
 {
     m_impl->validate_binding(binding);
     // Relation bindings preserve object order and are already canonical.
-    return m_impl->definition->task->get_repository()
-        ->insert(urd::make<ygg::Row<formalism::Action<LiftedTag>>>(action_of(binding), binding.get_values()))
-        .first;
+    auto row = urd::make<ygg::Row<formalism::Action<LiftedTag>>>(action_of(binding), binding.get_values());
+    return m_impl->definition->task->get_repository()->insert(row).first;
 }
 
 template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>

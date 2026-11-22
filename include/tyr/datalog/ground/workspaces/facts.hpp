@@ -41,10 +41,10 @@ struct FactsWorkspace<GroundTag>
     FactsWorkspace(formalism::ProgramView<GroundTag> program, const formalism::Repository& workspace_repository);
 
     template<formalism::FactKind F>
-    bool insert(formalism::PredicateRowIndex<F> binding)
+    bool insert(formalism::PredicateRowKey<F> binding)
     { return tyr::datalog::insert(fact_sets, binding); }
 
-    bool insert(formalism::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+    bool insert(formalism::FunctionRowKey<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
     { return tyr::datalog::insert(fact_sets.get<formalism::FluentTag>(), binding, interval); }
 
     void reset();

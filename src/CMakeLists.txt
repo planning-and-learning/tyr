@@ -31,7 +31,6 @@ add_library(
 
     formalism/formatter.cpp
     formalism/grounder.cpp
-    formalism/interning.cpp
     formalism/repository.cpp
     formalism/variable_dependency_graph.cpp
     formalism/datalog/formatter.cpp
@@ -182,12 +181,6 @@ if(TYR_ENABLE_SEMI_NAIVE)
 endif()
 
 target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_POLICY=${TYR_STATE_STORAGE_POLICY})
-
-if("${TYR_RELATION_STORAGE_POLICY}" STREQUAL "Word")
-    target_compile_definitions(core PUBLIC TYR_RELATION_STORAGE_WORD)
-elseif("${TYR_RELATION_STORAGE_POLICY}" STREQUAL "Bit")
-    target_compile_definitions(core PUBLIC TYR_RELATION_STORAGE_BIT)
-endif()
 
 target_include_directories(
     core

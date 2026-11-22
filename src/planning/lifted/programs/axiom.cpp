@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
 
 #include "../../programs/common.hpp"
@@ -39,7 +40,6 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
@@ -119,12 +119,11 @@ auto create_axiom_program(formalism::TaskView<LiftedTag> task, formalism::Reposi
 auto create_axiom_datalog_program(const formalism::PlanningTask<LiftedTag>& planning_task)
 {
     const auto task = planning_task.get_task();
-    const auto num_objects = task.get_num_objects();
-    auto repository = layer_over(planning_task.get_repository(), num_objects);
+    auto repository = layer_over(planning_task.get_repository());
     const auto program = create_axiom_program(task, *repository);
 
     auto rules = datalog::RuleMapping {};
-    auto result = transform(LayeredProgram { program, std::move(repository) }, num_objects, rules, decompose_static_literals_pass());
+    auto result = transform(LayeredProgram { program, std::move(repository) }, rules, decompose_static_literals_pass());
     return datalog::Program<LiftedTag>(result.program, std::move(result.repository));
 }
 }

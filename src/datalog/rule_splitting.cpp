@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/datalog/rule_splitting.hpp"
 
 #include "tyr/datalog/fact_sets.hpp"
@@ -26,12 +27,10 @@
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/expression_arity.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -342,7 +341,7 @@ private:
         urd::store(data->predicate, atom.get_predicate());
         for (const auto term : atom.get_terms())
         {
-            const auto value = urd::stored<formalism::Term>(term);
+            const auto value = urd::as_member<formalism::Term>(term);
             urd::build_member(data->terms.emplace_back(),
                               formalism::unification::is_parameter(value) ? formalism::Term(local.at(formalism::unification::get_parameter(value))) : value,
                               destination);

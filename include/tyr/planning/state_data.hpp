@@ -183,14 +183,6 @@ struct data<::tyr::planning::State<Kind>>
 
 namespace tyr::planning
 {
-template<TaskKind Kind>
-bool is_canonical(const urd::data<State<Kind>>&) noexcept
-{ return true; }
-
-template<TaskKind Kind>
-void canonicalize(urd::data<State<Kind>>&) noexcept
-{
-}
 }
 
 #endif

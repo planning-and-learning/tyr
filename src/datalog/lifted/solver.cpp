@@ -50,7 +50,6 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/interning.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -121,7 +120,7 @@ public:
 private:
     /// The goal atoms of kind F, by their position among all goal atoms.
     template<typename F>
-    using GoalPositions = urd::Store<urd::map<formalism::PredicateRowIndex<F>, size_t>>;
+    using GoalPositions = urd::Store<urd::map<formalism::PredicateRowKey<F>, size_t>>;
 
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
     /// constraints, propositional rules only, one stratum, and annotations without achievers.

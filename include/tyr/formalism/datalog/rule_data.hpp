@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/values.hpp>
 
 namespace urd
 {

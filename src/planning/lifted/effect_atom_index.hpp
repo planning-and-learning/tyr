@@ -110,7 +110,7 @@ public:
     }
 
 private:
-    using AtomIndex = formalism::PredicateRowIndex<formalism::DerivedTag>;
+    using AtomIndex = formalism::PredicateRowKey<formalism::DerivedTag>;
 
     /// The atoms of one effect predicate, grouped by the applicability row of their action binding, refilled in the
     /// storage held: clear keeps each row's.
