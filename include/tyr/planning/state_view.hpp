@@ -56,9 +56,12 @@
 #include <ranges>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 /// A state's builder, registered (StateView: shared from its repository's pool, its index set) or being built
@@ -292,5 +295,56 @@ public:
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"unpack", &view_mixin::unpack>> {}; }
 };
+
+namespace tyr::planning
+{
+
+/// A state read through its repository: a registered state's view (StateView) or a builder's (StateBuilderView).
+template<typename V>
+concept StateReadable = requires(const V& state) {
+    state.get_fact_storage();
+    state.get_numeric_storage();
+};
+
+/// A state's storages, hashed and compared by what they hold (facts: a ground state's values per variable, a lifted
+/// state's atom bits; numeric values), not by their views: a view hashes and compares with its context, which differs
+/// between repositories.
+inline void hash_combine_facts(ygg::hash_t& result, const FactStorageView<GroundTag>& facts) { urd::hash_combine(result, facts.get_values()); }
+
+inline void hash_combine_facts(ygg::hash_t& result, const FactStorageView<LiftedTag>& facts) { urd::hash_combine(result, facts.get_indices()); }
+
+inline bool equal_facts(const FactStorageView<GroundTag>& lhs, const FactStorageView<GroundTag>& rhs)
+{ return urd::EqualTo<> {}(lhs.get_values(), rhs.get_values()); }
+
+inline bool equal_facts(const FactStorageView<LiftedTag>& lhs, const FactStorageView<LiftedTag>& rhs)
+{ return urd::EqualTo<> {}(lhs.get_indices(), rhs.get_indices()); }
+
+template<TaskKind Kind>
+void hash_combine_numerics(ygg::hash_t& result, const NumericStorageView<Kind>& numerics)
+{ urd::hash_combine(result, numerics.get_values()); }
+
+template<TaskKind Kind>
+bool equal_numerics(const NumericStorageView<Kind>& lhs, const NumericStorageView<Kind>& rhs)
+{ return urd::EqualTo<> {}(lhs.get_values(), rhs.get_values()); }
+
+/// The hash of a state's unextended content (its facts and numeric values, not its derived atoms), by what its storages
+/// hold: the same state hashes alike whichever repository it is read through (the workers').
+template<StateReadable V>
+ygg::hash_t hash_unextended(const V& state)
+{
+    auto result = ygg::hash_t { 0 };
+    hash_combine_facts(result, state.get_fact_storage());
+    hash_combine_numerics(result, state.get_numeric_storage());
+    return result;
+}
+
+/// Whether two states have equal unextended content (hash_unextended), whichever repositories they are read through.
+template<StateReadable V, StateReadable W>
+bool equal_unextended(const V& lhs, const W& rhs)
+{
+    return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage()) && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage());
+}
+
+}
 
 #endif

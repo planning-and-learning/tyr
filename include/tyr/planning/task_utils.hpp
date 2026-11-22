@@ -28,6 +28,7 @@
 #include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/programs/state_inputs.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>

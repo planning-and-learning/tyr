@@ -308,7 +308,7 @@ private:
     {
         if (m_mode == RepositoryMode::SHARED)
             return urd::index<tyr::planning::Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state.pack().index().value) % num_workers));
-        return m_hash.owner(tyr::planning::StateContext { *state.context().get_task(), state, ygg::float_t { 0 } }, num_workers);
+        return m_hash.owner(state, num_workers);
     }
 
     void observe_repository(Lane& lane, const tyr::planning::StateView<Kind>& state) const
@@ -1100,9 +1100,9 @@ std::optional<uint64_t> find_weighted_astar_seed(tyr::planning::SuccessorGenerat
     {
         const auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(seed);
         const auto start_owner =
-            hash.owner(tyr::planning::StateContext { (*start.get_state().context().get_task()), start.get_state(), ygg::float_t { 0 } }, 2);
-        if (hash.owner(tyr::planning::StateContext { state_repository, **direct, ygg::float_t { 0 } }, 2) == start_owner
-            && hash.owner(tyr::planning::StateContext { state_repository, **via, ygg::float_t { 0 } }, 2) != start_owner)
+            hash.owner(start.get_state(), 2);
+        if (hash.owner(urd::resolve(**direct, state_repository), 2) == start_owner
+            && hash.owner(urd::resolve(**via, state_repository), 2) != start_owner)
             return seed;
     }
     return std::nullopt;

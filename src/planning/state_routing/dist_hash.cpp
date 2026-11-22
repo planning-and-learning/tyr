@@ -59,7 +59,8 @@ void DistHash<Kind, LMCutDistHashTag>::initialize(const StateView<Kind>& start_s
 }
 
 template<TaskKind Kind>
-ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const StateContext<Kind>& state) const noexcept
+template<StateReadable V>
+ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const V& state) const noexcept
 {
     assert(m_initialized);
     if (m_features.empty())
@@ -68,12 +69,16 @@ ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const StateContext<Kind>& sta
 
     auto result = static_cast<ygg::hash_t>(m_seed);
     for (const auto& feature : m_features)
-        if (state.fact_storage().get(feature.fact.variable) == feature.fact.value)
+        if (state.get_fact_storage().get(feature.fact.variable) == feature.fact.value)
             urd::hash_combine(result, feature.atom);
     return result;
 }
 
 template class DistHash<GroundTag, LMCutDistHashTag>;
 template class DistHash<LiftedTag, LMCutDistHashTag>;
+template ygg::hash_t DistHash<GroundTag, LMCutDistHashTag>::hash(const StateView<GroundTag>&) const noexcept;
+template ygg::hash_t DistHash<GroundTag, LMCutDistHashTag>::hash(const StateBuilderView<GroundTag>&) const noexcept;
+template ygg::hash_t DistHash<LiftedTag, LMCutDistHashTag>::hash(const StateView<LiftedTag>&) const noexcept;
+template ygg::hash_t DistHash<LiftedTag, LMCutDistHashTag>::hash(const StateBuilderView<LiftedTag>&) const noexcept;
 
 }

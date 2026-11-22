@@ -107,6 +107,13 @@ struct formatter<tyr::planning::siw::Statistics<Kind>, char> : tyr::formalism::d
     fmt::format_context::iterator format(const tyr::planning::siw::Statistics<Kind>& value, fmt::format_context& ctx) const;
 };
 
+/// A state's bits, as a record holds them: their positions, as a dense set writes them ({0, 3, 64}).
+template<>
+struct formatter<::tyr::planning::StateBitWords, char> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const ::tyr::planning::StateBitWords& value, fmt::format_context& ctx) const;
+};
+
 /// A state, registered or being built: its atoms, facts and numeric values (and its index, where it has one).
 template<::tyr::TaskKind Kind>
 struct formatter<::tyr::planning::StateView<Kind>, char> : tyr::formalism::detail::without_format_spec

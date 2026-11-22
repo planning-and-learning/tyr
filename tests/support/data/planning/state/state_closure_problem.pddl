@@ -1,0 +1,5 @@
+(define (problem state-closure-problem)
+  (:domain state-closure)
+  (:init (enabled) (= (step) 1) (= (value) 0) (= (total-cost) 0))
+  (:goal (ready))
+  (:metric minimize (total-cost)))

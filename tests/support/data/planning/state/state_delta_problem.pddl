@@ -1,0 +1,6 @@
+(define (problem state-delta-problem)
+  (:domain state-delta)
+  (:objects a b c - place)
+  (:init (at a) (= (value) 0) (= (total-cost) 0))
+  (:goal (and (marked a) (marked b) (marked c)))
+  (:metric minimize (total-cost)))

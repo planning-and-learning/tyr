@@ -79,7 +79,7 @@ public:
     std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
         m_dist_hash.initialize(start_state);
-        const auto owner = m_dist_hash.owner(StateContext<Kind> { *start_state.context().get_task(), start_state, ygg::float_t { 0 } }, engine.num_workers());
+        const auto owner = m_dist_hash.owner(start_state, engine.num_workers());
         auto& worker = engine.get_worker(owner);
         return { owner, materialize_state(start_state, *worker.state_repository, *worker.axiom_evaluator) };
     }
@@ -93,7 +93,7 @@ public:
                                   ygg::float_t metric,
                                   size_t num_workers)
     {
-        const auto owner = m_dist_hash.owner(StateContext<Kind> { parent.context(), *target, ygg::float_t { 0 } }, num_workers);
+        const auto owner = m_dist_hash.owner(urd::resolve(*target, parent.context()), num_workers);
         const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner.value));
         assert(owner_index < sender.registration_repositories.size());
         auto& repository = *sender.registration_repositories[owner_index];

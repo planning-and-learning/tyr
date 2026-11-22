@@ -1,3 +1,4 @@
+#include "planning/parser.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -30,6 +31,7 @@
 #include <concepts>
 #include <future>
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -277,7 +279,7 @@ void expect_state_builder_identity()
 }
 
 template<TaskKind Kind>
-void expect_state_builder_lifecycle()
+void expect_state_builder_lifecycle(const tyr::planning::TaskPtr<Kind>& task)
 {
     using Builder = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>;
     using Fact = urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>;
@@ -286,11 +288,11 @@ void expect_state_builder_lifecycle()
     const auto variable = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(0);
     auto source = Builder {};
     auto target = Builder {};
-    // A builder mutates; its storages are read through their views (through the formalism repository).
-    const auto repository = tyr::formalism::Repository();
-    const auto facts = [&](const Builder& state) { return urd::resolve(state.fact_storage, repository); };
-    const auto atoms = [&](const Builder& state) { return urd::resolve(state.atom_storage, repository); };
-    const auto numerics = [&](const Builder& state) { return urd::resolve(state.numeric_storage, repository); };
+    // A builder mutates; its storages are read through their views, through a state repository of its task.
+    const auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    const auto facts = [&](const Builder& state) { return urd::resolve(state.fact_storage, *repository); };
+    const auto atoms = [&](const Builder& state) { return urd::resolve(state.atom_storage, *repository); };
+    const auto numerics = [&](const Builder& state) { return urd::resolve(state.numeric_storage, *repository); };
     if constexpr (std::same_as<Kind, GroundTag>)
     {
         source.resize_fluent_facts(1);
@@ -943,6 +945,20 @@ void expect_exact_successor_deltas(const tyr::planning::TaskPtr<Kind>& task, boo
 
 }
 
+namespace
+{
+/// A lifted task of the state tests' fixtures (tests/support/data/planning/state).
+tyr::planning::TaskPtr<LiftedTag> make_state_task(const std::string& domain, const std::string& problem)
+{
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/state";
+    return tyr::planning::Task<LiftedTag>::create(make_test_parser(fixture_root / domain).parse_task(fixture_root / problem));
+}
+
+/// A small lifted task with derived predicates, numeric fluents and action costs.
+tyr::planning::TaskPtr<LiftedTag> make_state_closure_task()
+{ return make_state_task("state_closure_domain.pddl", "state_closure_problem.pddl"); }
+}  // namespace
+
 TEST(TyrPlanningStateTest, BuilderIdentityUsesOnlyFluentFactsAndNumericValues)
 {
     expect_state_builder_identity<GroundTag>();
@@ -951,24 +967,26 @@ TEST(TyrPlanningStateTest, BuilderIdentityUsesOnlyFluentFactsAndNumericValues)
 
 TEST(TyrPlanningStateTest, BuilderPartsRetainIndependentDataAndRegistration)
 {
-    expect_state_builder_lifecycle<GroundTag>();
-    expect_state_builder_lifecycle<LiftedTag>();
+    const auto lifted_task = make_state_closure_task();
+    const auto ground_task = lifted_task->instantiate_ground_task(*ygg::ExecutionContext::create(1)).task;
+    ASSERT_TRUE(ground_task);
+    expect_state_builder_lifecycle<GroundTag>(ground_task);
+    expect_state_builder_lifecycle<LiftedTag>(lifted_task);
 }
 
 TEST(TyrPlanningStateTest, GroundBuilderRetainsNonbinaryFactsAndDerivedAtoms)
 {
     auto builder = urd::builder<tyr::planning::State<GroundTag>, tyr::planning::StateRepository<GroundTag>> {};
-    const auto repository = tyr::formalism::Repository();
     const auto variable = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(1);
     const auto derived = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(64);
     builder.resize_fluent_facts(2);
-    EXPECT_EQ(urd::resolve(builder.fact_storage, repository).get(variable), tyr::formalism::FDRValue::none());
-    EXPECT_FALSE(urd::resolve(builder.atom_storage, repository).test(derived));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue::none());
+    EXPECT_FALSE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
     builder.set(urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>(variable, tyr::formalism::FDRValue(37)));
     builder.set(derived);
-    EXPECT_EQ(urd::resolve(builder.fact_storage, repository).get(variable), tyr::formalism::FDRValue(37));
-    EXPECT_TRUE(urd::resolve(builder.atom_storage, repository).test(derived));
-    EXPECT_FALSE(urd::resolve(builder.atom_storage, repository).test(urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue(37));
+    EXPECT_TRUE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_FALSE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)).value)));
     EXPECT_EQ(builder.atom_storage.indices.size(), 1);
 }
 
@@ -976,58 +994,33 @@ TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
 {
     using Fact = urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>;
     auto builder = urd::builder<tyr::planning::State<LiftedTag>, tyr::planning::StateRepository<LiftedTag>> {};
-    const auto repository = tyr::formalism::Repository();
     const auto low = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(1);
     const auto high = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(130);
     const auto derived = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(130);
-    EXPECT_EQ(urd::resolve(builder.fact_storage, repository).get(high), tyr::formalism::FDRValue::none());
-    EXPECT_FALSE(urd::resolve(builder.atom_storage, repository).test(derived));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
+    EXPECT_FALSE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
     builder.set(Fact(high, tyr::formalism::FDRValue::none()));
     EXPECT_TRUE(builder.fact_storage.indices.empty());
     builder.set(Fact(low, tyr::formalism::FDRValue(1)));
     builder.set(Fact(high, tyr::formalism::FDRValue(1)));
     builder.set(derived);
-    EXPECT_EQ(urd::resolve(builder.fact_storage, repository).get(high), tyr::formalism::FDRValue(1));
-    EXPECT_TRUE(urd::resolve(builder.atom_storage, repository).test(derived));
-    EXPECT_FALSE(urd::resolve(builder.atom_storage, repository).test(urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue(1));
+    EXPECT_TRUE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_FALSE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)).value)));
     builder.set(Fact(high, tyr::formalism::FDRValue::none()));
-    EXPECT_EQ(urd::resolve(builder.fact_storage, repository).get(high), tyr::formalism::FDRValue::none());
-    EXPECT_EQ(urd::resolve(builder.fact_storage, repository).get(low), tyr::formalism::FDRValue(1));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(low.value))), tyr::formalism::FDRValue(1));
     EXPECT_EQ(builder.fact_storage.indices.size(), 1);
     builder.set(Fact(low, tyr::formalism::FDRValue::none()));
     EXPECT_TRUE(builder.fact_storage.indices.empty());
-    EXPECT_TRUE(urd::resolve(builder.atom_storage, repository).test(derived));
+    EXPECT_TRUE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
 }
 
 TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransitionCosts)
 {
     expect_packed_state_identity<LiftedTag>();
     expect_packed_state_identity<GroundTag>();
-    const auto lifted_task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(R"(
-(define (domain state-closure)
-  (:requirements :adl :numeric-fluents :action-costs :derived-predicates)
-  (:predicates (enabled) (on) (live) (ready))
-  (:functions (step) (value) (total-cost))
-  (:derived (live) (on))
-  (:derived (ready) (and (live) (> (value) 0)))
-  (:action cheap :parameters () :precondition (and (enabled) (not (on)))
-    :effect (and (on) (increase (total-cost) 1)))
-  (:action expensive :parameters () :precondition (and (enabled) (not (on)))
-    :effect (and (on) (increase (total-cost) 7)))
-  (:action raise :parameters () :precondition (on)
-    :effect (and (increase (value) (step)) (increase (total-cost) 1)))
-  (:action disable :parameters () :precondition (on)
-    :effect (and (not (on)) (increase (total-cost) 1))))
-)",
-                                                                                           "state-closure-domain.pddl")
-                                                                        .parse_task(R"(
-(define (problem state-closure-problem)
-  (:domain state-closure)
-  (:init (enabled) (= (step) 1) (= (value) 0) (= (total-cost) 0))
-  (:goal (ready))
-  (:metric minimize (total-cost)))
-)",
-                                                                                    "state-closure-problem.pddl"));
+    const auto lifted_task = make_state_closure_task();
     const auto ground_task = lifted_task->instantiate_ground_task(*ygg::ExecutionContext::create(1)).task;
     ASSERT_TRUE(ground_task);
     for (const auto concurrent : { false, true })
@@ -1041,29 +1034,7 @@ TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransition
 /// the same atom (move ?from ?to with ?from = ?to), and writing a numeric value without changing it.
 TEST(TyrPlanningStateTest, GeneratedSuccessorDeltasAreExact)
 {
-    const auto lifted_task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(R"(
-(define (domain state-delta)
-  (:requirements :typing :numeric-fluents :action-costs)
-  (:types place)
-  (:predicates (at ?p - place) (marked ?p - place))
-  (:functions (value) (total-cost))
-  (:action move :parameters (?from ?to - place) :precondition (at ?from)
-    :effect (and (not (at ?from)) (at ?to) (increase (total-cost) 1)))
-  (:action stay :parameters (?p - place) :precondition (at ?p)
-    :effect (and (at ?p) (assign (value) (value)) (increase (total-cost) 1)))
-  (:action mark :parameters (?p - place) :precondition (at ?p)
-    :effect (and (marked ?p) (increase (value) 1) (increase (total-cost) 1))))
-)",
-                                                                                           "state-delta-domain.pddl")
-                                                                        .parse_task(R"(
-(define (problem state-delta-problem)
-  (:domain state-delta)
-  (:objects a b c - place)
-  (:init (at a) (= (value) 0) (= (total-cost) 0))
-  (:goal (and (marked a) (marked b) (marked c)))
-  (:metric minimize (total-cost)))
-)",
-                                                                                    "state-delta-problem.pddl"));
+    const auto lifted_task = make_state_task("state_delta_domain.pddl", "state_delta_problem.pddl");
     const auto ground_task = lifted_task->instantiate_ground_task(*ygg::ExecutionContext::create(1)).task;
     ASSERT_TRUE(ground_task);
     for (const auto concurrent : { false, true })

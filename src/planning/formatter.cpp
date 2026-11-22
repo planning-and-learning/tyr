@@ -17,6 +17,9 @@
 
 #include "tyr/planning/formatter.hpp"
 
+#include <string_view>
+#include <limits>
+#include <bit>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
@@ -223,6 +226,20 @@ template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<tyr::planning::PackedLabeledNode<Kind>>::format(const tyr::planning::PackedLabeledNode<Kind>& value,
                                                                                              fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.unpack()); }
+
+fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBitWords>::format(const ::tyr::planning::StateBitWords& value,
+                                                                                    fmt::format_context& ctx) const
+{
+    auto out = fmt::format_to(ctx.out(), "{{");
+    auto separator = std::string_view {};
+    for (std::size_t w = 0; w < value.words.size(); ++w)
+        for (auto word = value.words[w]; word != 0; word &= word - 1)
+        {
+            out = fmt::format_to(out, "{}{}", separator, w * std::numeric_limits<urd::word_t>::digits + static_cast<std::size_t>(std::countr_zero(word)));
+            separator = ", ";
+        }
+    return fmt::format_to(out, "}}");
+}
 
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::GroundTag>>;
 template struct fmt::formatter<tyr::planning::siw::Statistics<::tyr::GroundTag>>;

@@ -1174,13 +1174,13 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
         auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
         const auto expensive_owner =
-            hash.owner(tyr::planning::StateContext { (*expensive.value().get_state().context().get_task()), expensive.value().get_state(), ygg::float_t { 0 } },
+            hash.owner(expensive.value().get_state(),
                        3);
         const auto cheap_owner =
-            hash.owner(tyr::planning::StateContext { (*cheap.value().get_state().context().get_task()), cheap.value().get_state(), ygg::float_t { 0 } }, 3);
+            hash.owner(cheap.value().get_state(), 3);
         if (expensive_owner != cheap_owner
             && hash.owner(
-                   tyr::planning::StateContext { (*cheap_wait->node.get_state().context().get_task()), cheap_wait->node.get_state(), ygg::float_t { 0 } },
+                   cheap_wait->node.get_state(),
                    3)
                    == cheap_owner)
             seed = candidate;
@@ -1261,13 +1261,9 @@ TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeurist
     {
         auto hash = tyr::planning::DistHash<LiftedTag, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
-        if (hash.owner(tyr::planning::StateContext { (*successors.front().node.get_state().context().get_task()),
-                                                     successors.front().node.get_state(),
-                                                     ygg::float_t { 0 } },
+        if (hash.owner(successors.front().node.get_state(),
                        3)
-            != hash.owner(tyr::planning::StateContext { (*successors.back().node.get_state().context().get_task()),
-                                                        successors.back().node.get_state(),
-                                                        ygg::float_t { 0 } },
+            != hash.owner(successors.back().node.get_state(),
                           3))
             seed = candidate;
     }

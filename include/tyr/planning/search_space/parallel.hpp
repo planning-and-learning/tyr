@@ -160,9 +160,6 @@ private:
     static const SearchNode& get_search_node(WorkerStateIndex<Kind> state, std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers)
     { return get_worker(state, workers).get_search_node(state.state); }
 
-    template<TaskKind Kind>
-    static bool equal_unextended(const StateView<Kind>& lhs, const StateView<Kind>& rhs) noexcept
-    { return urd::EqualTo<> {}(lhs.get_fact_storage(), rhs.get_fact_storage()) && urd::EqualTo<> {}(lhs.get_numeric_storage(), rhs.get_numeric_storage()); }
 
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static Node<Kind> materialize(WorkerStateIndex<Kind> state,

@@ -20,9 +20,9 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_routing/dist_hash_concepts.hpp"
 
 #include <boost/hash2/xxhash.hpp>
@@ -49,16 +49,18 @@ public:
 
     void initialize(const StateView<Kind>&) const noexcept {}
 
-    [[nodiscard]] ygg::hash_t hash(const StateContext<Kind>& state) const noexcept
+    /// By the state's unextended content (hash_unextended): the same state routes to the same owner from every worker.
+    template<StateReadable V>
+    [[nodiscard]] ygg::hash_t hash(const V& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
-        urd::hash_combine(result, state.fact_storage());
-        urd::hash_combine(result, state.numeric_storage());
+        urd::hash_combine(result, hash_unextended(state));
         // Final avalanche over the accumulated hash, using XXH64's 64-bit seed and result.
         return boost::hash2::xxhash_64(result).result();
     }
 
-    [[nodiscard]] urd::index<Worker> owner(const StateContext<Kind>& state, size_t num_workers) const noexcept
+    template<StateReadable V>
+    [[nodiscard]] urd::index<Worker> owner(const V& state, size_t num_workers) const noexcept
     {
         assert(num_workers > 0);
         // The ordinary single-worker search path pays no state-hashing cost.
@@ -78,9 +80,12 @@ public:
     /// Select the initial state's unit-cost LM-cut frontier and positive task goals once before routing.
     void initialize(const StateView<Kind>& start_state);
 
-    [[nodiscard]] ygg::hash_t hash(const StateContext<Kind>& state) const noexcept;
+    /// Instantiated in the source for StateView and StateBuilderView.
+    template<StateReadable V>
+    [[nodiscard]] ygg::hash_t hash(const V& state) const noexcept;
 
-    [[nodiscard]] urd::index<Worker> owner(const StateContext<Kind>& state, size_t num_workers) const noexcept
+    template<StateReadable V>
+    [[nodiscard]] urd::index<Worker> owner(const V& state, size_t num_workers) const noexcept
     {
         assert(num_workers > 0);
         return urd::index<Worker>(static_cast<ygg::uint_t>(num_workers == 1 ? 0 : hash(state) % num_workers));
