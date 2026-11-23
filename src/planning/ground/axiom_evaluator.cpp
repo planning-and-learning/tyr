@@ -47,6 +47,7 @@
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "yggdrasil/formalism/row_view.hpp"
 
 #include <atomic>

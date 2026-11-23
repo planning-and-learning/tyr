@@ -20,6 +20,7 @@
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_view.hpp"
 
 namespace tyr::planning
 {

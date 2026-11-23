@@ -22,6 +22,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
 #include <fmt/base.h>

@@ -78,7 +78,7 @@ public:
     using PackedStates = urd::Store<urd::pool<urd::data<State<Kind>>, urd::index<State<Kind>>>, urd::stable_refs, urd::layered, urd::concurrent>;
 
     /// A private repository; with `concurrent`, one whose workers (make_worker) share canonical state storage.
-    explicit StateRepository(TaskPtr<Kind> task, bool concurrent = false);
+    explicit StateRepository(const TaskPtr<Kind>& task, bool concurrent = false);
     ~StateRepository();
 
     StateRepository(const StateRepository&) = delete;

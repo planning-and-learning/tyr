@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_RULE_INSTANCE_HPP_
 #define TYR_DATALOG_GROUND_RULE_INSTANCE_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/repository.hpp"
 

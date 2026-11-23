@@ -225,7 +225,7 @@ struct StateRepository<Kind>::Impl
 
 /// The root of a cohort is worker 0; make_worker numbers the others.
 template<TaskKind Kind>
-StateRepository<Kind>::StateRepository(TaskPtr<Kind> task, bool concurrent) :
+StateRepository<Kind>::StateRepository(const TaskPtr<Kind>& task, bool concurrent) :
     StateRepository(std::make_unique<Impl>(0, task, concurrent, std::make_shared<typename Impl::Storage>(*task), std::make_shared<std::atomic<ygg::uint_t>>(1)))
 {
 }

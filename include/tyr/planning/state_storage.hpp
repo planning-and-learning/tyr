@@ -174,7 +174,9 @@ struct built_form<::tyr::planning::StateBitWords, C>
     using type = ::tyr::planning::StateBits;
 
     static void assign(const ::tyr::planning::StateBitWords& bits, type& into)
-    { into.assign_words(std::span<const word_t>(bits.words.data(), bits.words.size())); }
+    {
+        into.assign_words(std::span<const word_t>(bits.words.data(), bits.words.size()));
+    }
 };
 
 /// A state's derived atoms being built: their bits (its record holds their words, state_data.hpp).
@@ -184,8 +186,7 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
     urd::key<::tyr::planning::AtomStorage<Kind>> index;
     urd::built_t<::tyr::planning::StateBitWords, C> indices;
 
-    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom)
-    { indices.insert(static_cast<ygg::uint_t>(atom.value)); }
+    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { indices.insert(static_cast<ygg::uint_t>(atom.value)); }
 
     void clear() { indices.clear(); }
 

@@ -59,6 +59,7 @@
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/rpg.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <boost/mp11.hpp>

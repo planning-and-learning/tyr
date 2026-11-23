@@ -21,6 +21,7 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <cstdint>

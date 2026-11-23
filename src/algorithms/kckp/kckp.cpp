@@ -18,6 +18,7 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
 
 #include <algorithm>
+#include <urd/graphs.hpp>
 
 namespace tyr::kckp
 {
