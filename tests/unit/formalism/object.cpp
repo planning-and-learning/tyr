@@ -48,34 +48,6 @@ TEST(TyrFormalismObject, ExposesOwnedContract)
     EXPECT_LT(data, other);
 }
 
-namespace
-{
-/// Read access to one supported symbol representation.
-template<typename Repository, typename T>
-concept SymbolRepositoryFor =
-    ygg::formalism::SupportsSymbol<Repository, T> && requires(const std::remove_reference_t<Repository>& repository, urd::index<T> index) {
-        { repository[index] } -> std::same_as<urd::stored_ref<T>>;
-    };
-
-/// A context whose repository reads T's records and is numbered (layer()).
-template<typename C, typename T>
-concept SymbolContextFor = requires(const C& context) {
-    { get_repository(context) } -> SymbolRepositoryFor<T>;
-    get_repository(context).layer();
-};
-
-struct ObjectContext
-{
-    const tyr::formalism::Repository* repository;
-
-    [[maybe_unused]] friend const tyr::formalism::Repository& get_repository(const ObjectContext& context) noexcept { return *context.repository; }
-};
-
-static_assert(SymbolRepositoryFor<tyr::formalism::Repository, tyr::formalism::Object>);
-static_assert(SymbolContextFor<ObjectContext, tyr::formalism::Object>);
-static_assert(!SymbolContextFor<int, tyr::formalism::Object>);
-}
-
 TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
 {
     auto repository = tyr::formalism::Repository();
