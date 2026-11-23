@@ -25,6 +25,7 @@
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 namespace tyr::formalism
@@ -53,6 +54,14 @@ private:
     DomainView m_domain;
     std::optional<std::filesystem::path> m_path;
 };
+
+/// A parsed domain is serialized as its domain and the path it was read from (pyyggdrasil.serialization).
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<PlanningDomain> /*type*/)
+{
+    ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
+    ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
+}
 
 }
 

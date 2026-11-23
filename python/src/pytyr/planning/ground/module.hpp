@@ -26,6 +26,9 @@ namespace tyr::planning
 {
 
 void bind_ground_module_definitions(nb::module_& m);
+
+/// The serialization hooks of the ground task kind's types (pyyggdrasil.serialization), once they are bound.
+void bind_ground_serialization();
 /// The records of the ground match trees (match_tree.cpp).
 void bind_match_tree(nb::module_& m);
 

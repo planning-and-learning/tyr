@@ -16,7 +16,7 @@
  */
 
 #include "bindings.hpp"
-#include "pytyr/conversions.hpp"
+#include "pytyr/formalism/conversions.hpp"
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"

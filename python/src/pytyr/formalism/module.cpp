@@ -34,6 +34,8 @@ void bind_module_definitions(nb::module_& m)
 
     // After planning: datalog binds its rules and programs on planning's repository class.
     bind_datalog_formalism(m);
+
+    bind_serialization();
 }
 
 }  // namespace tyr::formalism

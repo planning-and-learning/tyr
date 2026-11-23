@@ -119,6 +119,23 @@ struct PackedLabeledNode
 
     [[nodiscard]] LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };
+
+/// A node is serialized as its state and its metric value, a labeled node as its label and its node
+/// (pyyggdrasil.serialization).
+template<class Archive, TaskKind Kind, typename State>
+void describe_fields(Archive& ar, std::type_identity<Node<Kind, State>> /*type*/)
+{
+    ar.field("state", [](const auto& value) -> decltype(auto) { return (value.get_state()); });
+    ar.field("metric", [](const auto& value) -> decltype(auto) { return (value.get_metric()); });
+}
+
+template<class Archive, TaskKind Kind, typename State, typename Binding>
+void describe_fields(Archive& ar, std::type_identity<LabeledNode<Kind, State, Binding>> /*type*/)
+{
+    ar.field("label", [](const auto& value) -> decltype(auto) { return (value.label); });
+    ar.field("node", [](const auto& value) -> decltype(auto) { return (value.node); });
+}
+
 }
 
 /// A node: its state and its metric (a template over its state's view, written as that view writes it).

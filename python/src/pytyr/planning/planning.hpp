@@ -19,7 +19,7 @@
 #define TYR_PYTHON_PLANNING_PLANNING_HPP_
 
 #include "module.hpp"
-#include "pytyr/conversions.hpp"
+#include "pytyr/formalism/conversions.hpp"
 #include "pytyr/module.hpp"
 
 #include <nanobind/stl/chrono.h>

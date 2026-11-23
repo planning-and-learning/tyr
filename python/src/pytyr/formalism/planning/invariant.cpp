@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include "bindings.hpp"
-#include "pytyr/conversions.hpp"
+#include "pytyr/formalism/conversions.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 

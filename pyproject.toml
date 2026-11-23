@@ -48,6 +48,8 @@ testpaths = ["python/tests"]
 pythonpath = ["."]
 
 [tool.scikit-build]
+# A persistent build directory per wheel tag: a reinstall rebuilds only what changed.
+build-dir = "build/wheel/{wheel_tag}"
 build.targets = ["pytyr_wheel"]
 cmake.build-type = "Release"
 install.components = ["pytyr"]

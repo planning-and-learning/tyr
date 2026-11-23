@@ -21,6 +21,7 @@
 #include "tyr/planning/node.hpp"
 
 #include <span>
+#include <type_traits>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -74,6 +75,17 @@ PackedPlan<Kind> replay_plan(const PackedNode<Kind>& initial,
                              SuccessorGenerator<Kind>& generator,
                              StateRepository<Kind>& states,
                              AxiomEvaluator<Kind>& axioms);
+
+/// A plan is serialized as its start, its labeled successor nodes, its length and its cost (pyyggdrasil.serialization).
+template<class Archive, TaskKind Kind>
+void describe_fields(Archive& ar, std::type_identity<Plan<Kind>> /*type*/)
+{
+    ar.field("start_node", [](const auto& value) -> decltype(auto) { return (value.get_start_node()); });
+    ar.field("labeled_succ_nodes", [](const auto& value) -> decltype(auto) { return (value.get_labeled_succ_nodes()); });
+    ar.field("length", [](const auto& value) -> decltype(auto) { return (value.get_length()); });
+    ar.field("cost", [](const auto& value) -> decltype(auto) { return (value.get_cost()); });
+}
+
 }
 
 #endif

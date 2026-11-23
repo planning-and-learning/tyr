@@ -18,7 +18,7 @@ table whose prefix is ``a``:
      },
      "bindings": {
        "prefix": "b",
-       "rows": [{"relation": "p0", "objects": ["o0"]}]
+       "rows": [{"relation": "p0", "values": ["o0"]}]
      },
      "predicates": {
        "prefix": "p",
@@ -34,9 +34,9 @@ Table names and prefixes are chosen by the caller. Both must be nonempty and uni
 Registrations are fixed when serialization begins. Rows follow first encounter order, including dependencies encountered
 inside other rows. Values that compare equal under their native equality share a row.
 
-Import ``Dictionaries`` from ``pyyggdrasil.serialization``, and ``register_table``, ``serialize``, and ``table`` from
-``pytyr.serialization``. These free functions accept the shared registry as their first argument. Its ``tables()``
-method returns all snapshots.
+Import ``Dictionaries`` from ``pyyggdrasil.serialization``. Its methods ``register_table``, ``serialize``, and
+``table`` serve every native type of the libraries, which each type's class enables; ``tables()`` returns all
+snapshots.
 
 Use a native type's ``Fields`` enum to inspect the ordered default column names without creating an entity or registry:
 
@@ -44,7 +44,7 @@ Use a native type's ``Fields`` enum to inspect the ordered default column names 
 
    from pytyr import formalism
 
-   list(formalism.RowActionLifted.Fields.__members__)  # ["relation", "objects"]
+   list(formalism.RowActionLifted.Fields.__members__)  # ["relation", "values"]
 
 This describes the native declaration; registration's ``fields`` selection and ``project`` callback do not change it.
 
@@ -53,9 +53,9 @@ completion and selections checked against the registered native type:
 
 .. code:: python
 
-   register_table(
-       dictionaries, formalism.RowActionLifted, "actions", "a",
-       fields=[formalism.RowActionLifted.Fields.objects],
+   dictionaries.register_table(
+       formalism.RowActionLifted, "actions", "a",
+       fields=[formalism.RowActionLifted.Fields.values],
    )
 
 ``fields=None`` keeps all declared fields; ``fields=[]`` creates empty rows. Selection happens before recursive
@@ -67,8 +67,7 @@ Pass ``project`` to define a complete row with your own column names and values:
 
 .. code:: python
 
-   register_table(
-       dictionaries,
+   dictionaries.register_table(
        formalism.RowActionLifted,
        "actions",
        "a",
@@ -120,10 +119,9 @@ affect the registry or later snapshots. Shared ``JSONValue``, ``Row``, and ``Tab
 ``pyyggdrasil.serialization.table``. Both ``table()`` and ``tables()`` expose generic rows because selection and
 projection can change their columns.
 
-Registered planning states contain ``fluent_ground_atoms``, ``derived_ground_atoms``, and
-``fluent_ground_function_term_values``. Static facts belong to the task representation. Function-term values are pairs
-of a term representation or reference and its numeric value. A registered FDR fact preserves its ``fdr_variable`` and
-numeric ``value``; zero represents the native none value.
+Registered planning states contain ``fluent_atoms``, ``derived_atoms``, and ``fluent_fterm_values``. Static facts belong
+to the task representation. Function-term values are pairs of a term representation or reference and its numeric value.
+A registered FDR fact preserves its ``variable`` and numeric ``value``; zero represents the native none value.
 
 Registered nodes contain ``state`` and ``metric``. Plans, labeled nodes, and task owners are not registerable and cannot
 be serialized directly. Serialize their states, nodes, actions, or underlying formalism views instead. Native text

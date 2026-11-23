@@ -1,8 +1,8 @@
-#ifndef PYTYR_CONVERSIONS_HPP_
-#define PYTYR_CONVERSIONS_HPP_
+#ifndef PYTYR_FORMALISM_CONVERSIONS_HPP_
+#define PYTYR_FORMALISM_CONVERSIONS_HPP_
 
 // The conversions from Python of the formalism repository's builders (urd::python::detail::conversions): declared here,
-// instantiated once in conversions.cpp, so that a source that binds a builder compiles its own kind's conversions only,
+// instantiated once in formalism/conversions.cpp, so that a source that binds a builder compiles its own kind's conversions only,
 // not those of every kind its children reach (brokkr's template rule T5).
 
 #include "pytyr/module.hpp"

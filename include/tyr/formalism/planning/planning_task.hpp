@@ -81,6 +81,15 @@ private:
     [[no_unique_address]] std::conditional_t<std::same_as<T, LiftedTag>, std::shared_ptr<const VariableDomains>, std::monostate> m_variable_domains;
 };
 
+/// A parsed task is serialized as its task, its domain and the path it was read from (pyyggdrasil.serialization).
+template<class Archive, TaskKind Kind>
+void describe_fields(Archive& ar, std::type_identity<PlanningTask<Kind>> /*type*/)
+{
+    ar.field("task", [](const auto& value) -> decltype(auto) { return (value.get_task()); });
+    ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
+    ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
+}
+
 }
 
 #endif

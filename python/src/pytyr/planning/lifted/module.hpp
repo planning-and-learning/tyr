@@ -27,6 +27,9 @@ namespace tyr::planning
 
 void bind_lifted_module_definitions(nb::module_& m);
 
+/// The serialization hooks of the lifted task kind's types (pyyggdrasil.serialization), once they are bound.
+void bind_lifted_serialization();
+
 /// The lifted Datalog programs' bindings (programs.cpp).
 void bind_lifted_programs(nb::module_& m);
 

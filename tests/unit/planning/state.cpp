@@ -488,9 +488,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         EXPECT_TRUE(state.test(fact.get_atom().value()));
         EXPECT_TRUE(registered.test(fact.get_atom().value()));
         EXPECT_EQ(fact.get_atom_index(), fact.get_atom().value().index());
-        const auto unassigned = tyr::formalism::computed_fact_view(
-            urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>(fact.get_variable().index(), tyr::formalism::FDRValue::none()),
-            fact.context());
+        const auto unassigned =
+            urd::resolve(urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>(fact.get_variable().index(), tyr::formalism::FDRValue::none()),
+                         fact.context());
         EXPECT_FALSE(unassigned.get_atom_index());
         EXPECT_FALSE(unassigned.get_atom());
     }

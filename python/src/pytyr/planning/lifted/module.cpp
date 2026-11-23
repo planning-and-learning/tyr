@@ -83,6 +83,8 @@ formalism task's repository afterwards.
     bind_lifted_programs(m);
 
     bind_kind_definitions<LiftedTag>(m);
+
+    bind_lifted_serialization();
 }
 
 }  // namespace tyr::planning

@@ -15,7 +15,6 @@ from pytyr import (
     datalog as datalog,
     formalism as formalism,
     planning as planning,
-    serialization as serialization,
 )
 
 

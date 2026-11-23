@@ -1,6 +1,4 @@
-#include "tyr/serialization/formalism/planning/planning.hpp"
-
-#include "planning_fixtures.hpp"
+#include "serialization_fixtures.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
@@ -16,12 +14,6 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/serialization/formalism/enums.hpp"
-#include "tyr/serialization/planning/ground/task.hpp"
-#include "tyr/serialization/planning/lifted/task.hpp"
-#include "tyr/serialization/planning/node.hpp"
-#include "tyr/serialization/planning/plan.hpp"
-#include "tyr/serialization/planning/state_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <boost/json.hpp>
@@ -42,9 +34,9 @@ namespace
 TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
 {
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::PredicateRowView<tyr::formalism::FluentTag>>(),
-              (urd::Store<urd::sequence<std::string>> { "relation", "objects" }));
+              (urd::Store<urd::sequence<std::string>> { "relation", "values" }));
     EXPECT_EQ((ygg::serialization::fields<tyr::formalism::AtomView<LiftedTag, tyr::formalism::FluentTag>>()),
-              (urd::Store<urd::sequence<std::string>> { "predicate", "terms" }));
+              (urd::Store<urd::sequence<std::string>> { "parameters", "predicate", "terms" }));
     EXPECT_EQ((ygg::serialization::fields<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>>()),
               (urd::Store<urd::sequence<std::string>> { "row" }));
 
@@ -54,7 +46,6 @@ TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
     const auto dummy = 0;
     auto writer = ygg::serialization::FieldWriter { &archive, &dummy };
     EXPECT_NO_THROW(writer.field("unused", [](int) -> int { throw std::runtime_error("excluded getter ran"); }));
-    EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<tyr::formalism::TermView>()) { throw std::runtime_error("excluded variant getter ran"); }));
     EXPECT_TRUE(std::move(archive).take_fields().empty());
 }
 
@@ -65,11 +56,11 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                                         "domain",
                                                         "derived_predicates",
                                                         "objects",
-                                                        "static_ground_atoms",
-                                                        "fluent_ground_atoms",
-                                                        "static_ground_function_term_values",
-                                                        "fluent_ground_function_term_values",
-                                                        "auxiliary_ground_function_term_value",
+                                                        "static_atoms",
+                                                        "fluent_atoms",
+                                                        "static_fterm_values",
+                                                        "fluent_fterm_values",
+                                                        "auxiliary_fterm_value",
                                                         "goal",
                                                         "metric",
                                                         "axioms" }));
@@ -78,17 +69,17 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                                         "domain",
                                                         "derived_predicates",
                                                         "objects",
-                                                        "static_ground_atoms",
-                                                        "fluent_ground_atoms",
-                                                        "derived_ground_atoms",
-                                                        "static_ground_function_term_values",
-                                                        "fluent_ground_function_term_values",
-                                                        "auxiliary_ground_function_term_value",
+                                                        "static_atoms",
+                                                        "fluent_atoms",
+                                                        "derived_atoms",
+                                                        "static_fterm_values",
+                                                        "fluent_fterm_values",
+                                                        "auxiliary_fterm_value",
                                                         "goal",
                                                         "metric",
                                                         "axioms",
-                                                        "fdr_variables",
-                                                        "fdr_facts",
+                                                        "fluent_variables",
+                                                        "fluent_facts",
                                                         "ground_actions",
                                                         "ground_axioms" }));
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::PlanningTask<LiftedTag>>(), (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
@@ -112,7 +103,7 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     EXPECT_EQ(atoms[0].as_object().at("row").as_string(), "b0");
     const auto binding = dictionaries.table<tyr::formalism::PredicateRowView<tyr::formalism::FluentTag>>()[0].as_object();
     EXPECT_EQ(binding.at("relation").as_string(), "p0");
-    EXPECT_EQ(binding.at("objects").as_array()[0].as_string(), "o0");
+    EXPECT_EQ(binding.at("values").as_array()[0].as_string(), "o0");
     auto binding_fields = urd::Store<urd::sequence<std::string>> {};
     for (const auto& field : binding)
         binding_fields.emplace_back(field.key().data(), field.key().size());
@@ -132,7 +123,7 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 {
     auto repository = tyr::formalism::Repository();
     const auto binding = make_atom(repository, "truck").get_row();
-    for (const auto& fields : { urd::Store<urd::sequence<std::string>> { "objects" }, urd::Store<urd::sequence<std::string>> {} })
+    for (const auto& fields : { urd::Store<urd::sequence<std::string>> { "values" }, urd::Store<urd::sequence<std::string>> {} })
     {
         auto dictionaries = ygg::serialization::Dictionaries {};
         dictionaries.register_table<tyr::formalism::PredicateRowView<tyr::formalism::FluentTag>>("bindings", "b", fields);
@@ -148,7 +139,7 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
         EXPECT_EQ(dictionaries.table<tyr::formalism::ObjectView>().size(), fields.size());
         if (!fields.empty())
         {
-            EXPECT_EQ(rows[0].as_object().at("objects").as_array()[0].as_string(), "o0");
+            EXPECT_EQ(rows[0].as_object().at("values").as_array()[0].as_string(), "o0");
         }
     }
 }
@@ -233,7 +224,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     dictionaries.register_table<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
     EXPECT_EQ(dictionaries.serialize(fact).as_string(), "f0");
     const auto row = dictionaries.table<tyr::formalism::FDRFactView<tyr::formalism::FluentTag>>()[0].as_object();
-    EXPECT_EQ(row.at("fdr_variable").as_string(), "v0");
+    EXPECT_EQ(row.at("variable").as_string(), "v0");
     EXPECT_EQ(row.at("value").as_uint64(), 0);
     EXPECT_EQ(dictionaries.table<tyr::formalism::FDRVariableView<tyr::formalism::FluentTag>>().size(), 1);
 }
@@ -254,7 +245,7 @@ TEST(TyrSerialization, ExpressionsKeepConstantsInline)
     ASSERT_EQ(operators.size(), 1);
     EXPECT_EQ(operators[0].as_object().at("lhs"), 3.0);
     EXPECT_EQ(operators[0].as_object().at("rhs"), 3.0);
-    EXPECT_EQ(operators[0].as_object().at("operator").as_string(), "-");
+    EXPECT_EQ(operators[0].as_object().at("operation").as_string(), "-");
 }
 
 TEST(TyrSerialization, EnumsUseNativeText)

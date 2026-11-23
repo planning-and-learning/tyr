@@ -27,6 +27,8 @@
 #include "tyr/planning/static_state.hpp"
 #include "tyr/planning/task.hpp"
 
+#include <type_traits>
+
 namespace tyr::planning
 {
 
@@ -59,6 +61,13 @@ private:
 
     StaticState m_static_state;
 };
+
+/// A ground task is serialized as the formalism task it was made from (pyyggdrasil.serialization).
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<Task<GroundTag>> /*type*/)
+{
+    ar.field("formalism_task", [](const auto& value) -> decltype(auto) { return (value.get_formalism_task()); });
+}
 
 }
 

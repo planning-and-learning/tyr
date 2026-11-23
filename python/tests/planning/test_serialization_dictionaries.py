@@ -19,7 +19,6 @@ from typing_extensions import TypeIs
 from pytyr import formalism
 from pytyr.planning import SearchStatus, ground, lifted
 from pytyr.planning.algorithms import brfs
-from pytyr.serialization import register_table, serialize, table
 
 DOMAIN = """(define (domain serialize)
   (:requirements :strips :fluents :derived-predicates)
@@ -65,8 +64,8 @@ def _rows(value: object) -> list[Row]:
 
 
 def test_default_fields_need_no_live_entity() -> None:
-    assert list(formalism.RowActionLifted.Fields.__members__) == ["relation", "objects"]
-    assert list(formalism.AtomLiftedFluent.Fields.__members__) == ["predicate", "terms"]
+    assert list(formalism.RowActionLifted.Fields.__members__) == ["relation", "values"]
+    assert list(formalism.AtomLiftedFluent.Fields.__members__) == ["parameters", "predicate", "terms"]
     assert list(formalism.AtomGroundFluent.Fields.__members__) == ["row"]
     assert formalism.Object.Fields.name.name == "name"
     assert formalism.Object.Fields.name.value == "name"
@@ -80,22 +79,21 @@ def test_field_enum_selection_validates_the_native_type_before_registration() ->
     (atom,) = task.get_task().get_static_atoms()
     dictionaries = Dictionaries()
     with pytest.raises(TypeError):
-        register_table(dictionaries, formalism.RowPredicateStatic, "bindings", "b", fields="relation")
-    register_table(
-        dictionaries,
+        dictionaries.register_table(formalism.RowPredicateStatic, "bindings", "b", fields="relation")
+    dictionaries.register_table(
         formalism.RowPredicateStatic,
         "bindings",
         "b",
         fields=[formalism.RowPredicateStatic.Fields.relation],
     )
-    register_table(
-        dictionaries, formalism.PredicateStatic, "predicates", "p", fields=[formalism.PredicateStatic.Fields.name]
+    dictionaries.register_table(
+        formalism.PredicateStatic, "predicates", "p", fields=[formalism.PredicateStatic.Fields.name]
     )
-    register_table(dictionaries, formalism.AtomGroundStatic, "atoms", "a")
-    assert serialize(dictionaries, atom) == "a0"
-    assert table(dictionaries, formalism.AtomGroundStatic) == [{"row": "b0"}]
-    assert table(dictionaries, formalism.RowPredicateStatic) == [{"relation": "p0"}]
-    assert table(dictionaries, formalism.PredicateStatic) == [{"name": "ready"}]
+    dictionaries.register_table(formalism.AtomGroundStatic, "atoms", "a")
+    assert dictionaries.serialize(atom) == "a0"
+    assert dictionaries.table(formalism.AtomGroundStatic) == [{"row": "b0"}]
+    assert dictionaries.table(formalism.RowPredicateStatic) == [{"relation": "p0"}]
+    assert dictionaries.table(formalism.PredicateStatic) == [{"name": "ready"}]
 
 
 @pytest.mark.parametrize("backend", ["ground", "lifted"])
@@ -125,43 +123,43 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert plan is not None
     rejected = Dictionaries()
     with pytest.raises(ValueError, match=r"Unregistered serialization type: .*Plan"):
-        serialize(rejected, plan)
+        rejected.serialize(plan)
     with pytest.raises(RuntimeError, match="Serialization failed"):
         rejected.tables()
 
     dictionaries = Dictionaries()
-    register_table(dictionaries, state_type, "visited", "s")
-    register_table(dictionaries, node_type, "nodes", "v")
-    register_table(dictionaries, formalism.RowActionLifted, "actions", "a")
-    register_table(dictionaries, formalism.ActionLifted, "action_schemas", "A", fields=["name"])
-    register_table(dictionaries, formalism.FunctionTermGroundFluent, "functions", "n", fields=[])
-    register_table(dictionaries, formalism.AtomGroundFluent, "atoms", "p", fields=[])
-    register_table(dictionaries, formalism.AtomGroundDerived, "derived", "d", fields=[])
-    assert table(dictionaries, state_type) == []
+    dictionaries.register_table(state_type, "visited", "s")
+    dictionaries.register_table(node_type, "nodes", "v")
+    dictionaries.register_table(formalism.RowActionLifted, "actions", "a")
+    dictionaries.register_table(formalism.ActionLifted, "action_schemas", "A", fields=["name"])
+    dictionaries.register_table(formalism.FunctionTermGroundFluent, "functions", "n", fields=[])
+    dictionaries.register_table(formalism.AtomGroundFluent, "atoms", "p", fields=[])
+    dictionaries.register_table(formalism.AtomGroundDerived, "derived", "d", fields=[])
+    assert dictionaries.table(state_type) == []
     start = plan.get_start_node()
     references = sys.getrefcount(start)
-    assert serialize(dictionaries, start) == "v0"
+    assert dictionaries.serialize(start) == "v0"
     assert sys.getrefcount(start) > references
     (step,) = plan.get_labeled_succ_nodes()
     assert [atom.get_predicate().get_name() for atom in plan.get_start_node().get_state().fluent_atoms()] == ["start"]
     assert [atom.get_predicate().get_name() for atom in step.node.get_state().fluent_atoms()] == ["done"]
-    assert serialize(dictionaries, step.node) == "v1"
-    assert serialize(dictionaries, step.label) == "a0"
-    assert table(dictionaries, formalism.RowActionLifted) == [{"relation": "A0", "objects": []}]
-    assert table(dictionaries, formalism.ActionLifted) == [{"name": step.label.get_relation().get_name()}]
+    assert dictionaries.serialize(step.node) == "v1"
+    assert dictionaries.serialize(step.label) == "a0"
+    assert dictionaries.table(formalism.RowActionLifted) == [{"relation": "A0", "values": []}]
+    assert dictionaries.table(formalism.ActionLifted) == [{"name": step.label.get_relation().get_name()}]
     assert list(formalism.RowActionLifted.Fields.__members__) == list(
-        _rows(table(dictionaries, formalism.RowActionLifted))[0]
+        _rows(dictionaries.table(formalism.RowActionLifted))[0]
     )
-    assert [row["state"] for row in _rows(table(dictionaries, node_type))] == ["s0", "s1"]
-    assert serialize(dictionaries, start) == "v0"
-    states = _rows(table(dictionaries, state_type))
+    assert [row["state"] for row in _rows(dictionaries.table(node_type))] == ["s0", "s1"]
+    assert dictionaries.serialize(start) == "v0"
+    states = _rows(dictionaries.table(state_type))
     assert len(states) == 2
-    assert states[0]["fluent_ground_atoms"] == ["p0"]
-    assert states[1]["fluent_ground_atoms"] == ["p1"]
-    assert states[0]["fluent_ground_function_term_values"] == [["n0", 3.0]]
-    assert states[1]["fluent_ground_function_term_values"] == [["n0", 2.0]]
-    assert states[0]["derived_ground_atoms"] == ["d0"]
-    assert states[1]["derived_ground_atoms"] == []
+    assert states[0]["fluent_atoms"] == ["p0"]
+    assert states[1]["fluent_atoms"] == ["p1"]
+    assert states[0]["fluent_fterm_values"] == [["n0", 3.0]]
+    assert states[1]["fluent_fterm_values"] == [["n0", 2.0]]
+    assert states[0]["derived_atoms"] == ["d0"]
+    assert states[1]["derived_atoms"] == []
     tables = dictionaries.tables()
     assert tables["visited"] == {"prefix": "s", "rows": states}
     encoded_tables = json.dumps(tables)
@@ -170,7 +168,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     snapshot["visited"]["rows"][0]["annotation"] = {"selected": True}
     assert "annotation" not in dictionaries.tables()["visited"]["rows"][0]
     states.clear()
-    assert len(_rows(table(dictionaries, state_type))) == 2
+    assert len(_rows(dictionaries.table(state_type))) == 2
     del start, step, plan, result, generator, evaluator, repository, task, parser
     gc.collect()
     assert dictionaries.tables() == tables
@@ -182,20 +180,20 @@ def test_registration_errors_and_explicit_native_text() -> None:
     term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
     dictionaries = Dictionaries()
     with pytest.raises(ValueError, match="prefix must end in a non-digit"):
-        register_table(dictionaries, formalism.FunctionTermGroundStatic, "terms", "t0")
-    register_table(dictionaries, formalism.FunctionTermGroundStatic, "terms", "t", fields=[])
+        dictionaries.register_table(formalism.FunctionTermGroundStatic, "terms", "t0")
+    dictionaries.register_table(formalism.FunctionTermGroundStatic, "terms", "t", fields=[])
     with pytest.raises(ValueError, match="Type already has a dictionary table"):
-        register_table(dictionaries, formalism.FunctionTermGroundStatic, "more_terms", "u")
-    assert serialize(dictionaries, term) == "t0"
+        dictionaries.register_table(formalism.FunctionTermGroundStatic, "more_terms", "u")
+    assert dictionaries.serialize(term) == "t0"
     with pytest.raises(RuntimeError):
-        register_table(dictionaries, formalism.FunctionTermGroundFluent, "fluent_terms", "f")
+        dictionaries.register_table(formalism.FunctionTermGroundFluent, "fluent_terms", "f")
     with pytest.raises(ValueError, match="Type has no registered dictionary table"):
-        table(dictionaries, formalism.FunctionTermGroundFluent)
+        dictionaries.table(formalism.FunctionTermGroundFluent)
 
     text = Dictionaries()
-    register_table(text, formalism.FunctionTermGroundStatic, "terms", "t", project=lambda value: {"text": str(value)})
-    assert serialize(text, term) == "t0"
-    assert table(text, formalism.FunctionTermGroundStatic) == [{"text": str(term)}]
+    text.register_table(formalism.FunctionTermGroundStatic, "terms", "t", project=lambda value: {"text": str(value)})
+    assert text.serialize(term) == "t0"
+    assert text.table(formalism.FunctionTermGroundStatic) == [{"text": str(term)}]
 
 
 @pytest.mark.parametrize("nested", [False, True])
@@ -205,40 +203,40 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
     term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
     dictionaries = Dictionaries()
     if nested:
-        register_table(dictionaries, formalism.FunctionTermGroundStatic, "terms", "t")
+        dictionaries.register_table(formalism.FunctionTermGroundStatic, "terms", "t")
     missing = "key<" if nested else "FunctionTerm"
     with pytest.raises(ValueError, match=f"^Unregistered serialization type: .*{missing}"):
-        serialize(dictionaries, term)
+        dictionaries.serialize(term)
     with pytest.raises(RuntimeError, match="Serialization failed"):
-        serialize(dictionaries, term)
+        dictionaries.serialize(term)
     with pytest.raises(RuntimeError, match="Serialization failed"):
         dictionaries.tables()
 
 
-@pytest.mark.parametrize("fields", [[], ["static_ground_atoms", "name"]])
+@pytest.mark.parametrize("fields", [[], ["static_atoms", "name"]])
 def test_task_field_selection_limits_collected_descendants(fields: list[str]) -> None:
     parser = formalism.Parser(DOMAIN, None, ParserOptions())
     task = parser.parse_task(PROBLEM, None, ParserOptions())
     dictionaries = Dictionaries()
-    register_table(dictionaries, formalism.TaskLifted, "tasks", "t", fields=fields)
-    register_table(dictionaries, formalism.AtomGroundStatic, "static_atoms", "a")
-    register_table(dictionaries, formalism.RowPredicateStatic, "bindings", "b")
-    register_table(dictionaries, formalism.PredicateStatic, "predicates", "p")
-    register_table(dictionaries, formalism.AtomGroundFluent, "fluent_atoms", "f")
+    dictionaries.register_table(formalism.TaskLifted, "tasks", "t", fields=fields)
+    dictionaries.register_table(formalism.AtomGroundStatic, "static_atoms", "a")
+    dictionaries.register_table(formalism.RowPredicateStatic, "bindings", "b")
+    dictionaries.register_table(formalism.PredicateStatic, "predicates", "p")
+    dictionaries.register_table(formalism.AtomGroundFluent, "fluent_atoms", "f")
 
-    assert serialize(dictionaries, task.get_task()) == "t0"
-    (row,) = _rows(table(dictionaries, formalism.TaskLifted))
+    assert dictionaries.serialize(task.get_task()) == "t0"
+    (row,) = _rows(dictionaries.table(formalism.TaskLifted))
     if fields == []:
         assert row == {}
         assert all(not snapshot["rows"] for name, snapshot in dictionaries.tables().items() if name != "tasks")
     else:
         assert row["name"] == "serialize-1"
-        assert row["static_ground_atoms"] == ["a0"]
-        assert table(dictionaries, formalism.AtomGroundStatic) == [{"row": "b0"}]
-        assert table(dictionaries, formalism.RowPredicateStatic) == [{"relation": "p0", "objects": []}]
-        assert [predicate["name"] for predicate in _rows(table(dictionaries, formalism.PredicateStatic))] == ["ready"]
-        assert list(row) == ["name", "static_ground_atoms"]
-        assert table(dictionaries, formalism.AtomGroundFluent) == []
+        assert row["static_atoms"] == ["a0"]
+        assert dictionaries.table(formalism.AtomGroundStatic) == [{"row": "b0"}]
+        assert dictionaries.table(formalism.RowPredicateStatic) == [{"relation": "p0", "values": []}]
+        assert [predicate["name"] for predicate in _rows(dictionaries.table(formalism.PredicateStatic))] == ["ready"]
+        assert list(row) == ["name", "static_atoms"]
+        assert dictionaries.table(formalism.AtomGroundFluent) == []
 
 
 @pytest.mark.parametrize("fields", [None, ["name"]])
@@ -279,23 +277,23 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
         }
 
     dictionaries = Dictionaries()
-    register_table(dictionaries, formalism.RowActionLifted, "bindings", "b", fields=fields, project=project)
-    register_table(dictionaries, formalism.Object, "objects", "o")
-    register_table(dictionaries, formalism.ActionLifted, "actions", "a")
-    assert serialize(dictionaries, binding) == "b0"
-    assert serialize(dictionaries, binding) == "b0"
+    dictionaries.register_table(formalism.RowActionLifted, "bindings", "b", fields=fields, project=project)
+    dictionaries.register_table(formalism.Object, "objects", "o")
+    dictionaries.register_table(formalism.ActionLifted, "actions", "a")
+    assert dictionaries.serialize(binding) == "b0"
+    assert dictionaries.serialize(binding) == "b0"
     assert calls == [binding]
-    assert table(dictionaries, formalism.ActionLifted) == []
+    assert dictionaries.table(formalism.ActionLifted) == []
     if fields is None:
         expected = [{"name": "finish", "objects": ["o0"], "details\0": payload}]
-        assert table(dictionaries, formalism.RowActionLifted) == expected
+        assert dictionaries.table(formalism.RowActionLifted) == expected
         assert json.dumps(dictionaries.tables()["bindings"]["rows"], ensure_ascii=False) == json.dumps(
             expected, ensure_ascii=False
         )
-        assert [row["name"] for row in _rows(table(dictionaries, formalism.Object))] == ["item"]
+        assert [row["name"] for row in _rows(dictionaries.table(formalism.Object))] == ["item"]
     else:
-        assert table(dictionaries, formalism.RowActionLifted) == [{"name": "finish"}]
-        assert table(dictionaries, formalism.Object) == []
+        assert dictionaries.table(formalism.RowActionLifted) == [{"name": "finish"}]
+        assert dictionaries.table(formalism.Object) == []
 
 
 def test_invalid_projection_invalidates_registry() -> None:
@@ -306,9 +304,9 @@ def test_invalid_projection_invalidates_registry() -> None:
     def project(_value: formalism.Variable) -> dict[str, object]:
         return {"unknown": object()}
 
-    register_table(dictionaries, formalism.Variable, "expressions", "e", project=project)
+    dictionaries.register_table(formalism.Variable, "expressions", "e", project=project)
     with pytest.raises(TypeError):
-        serialize(dictionaries, expression)
+        dictionaries.serialize(expression)
     with pytest.raises(RuntimeError):
         dictionaries.tables()
 
@@ -324,17 +322,17 @@ def test_cyclic_projection_invalidates_registry_and_unwinds(kind: Literal["list"
         cycle["self"] = cycle
 
     failed = Dictionaries()
-    register_table(failed, formalism.Object, "objects", "o", project=lambda _value: {"cycle": cycle})
+    failed.register_table(formalism.Object, "objects", "o", project=lambda _value: {"cycle": cycle})
     with pytest.raises(RecursionError):
-        serialize(failed, value)
+        failed.serialize(value)
     with pytest.raises(RuntimeError, match="Serialization failed"):
         failed.tables()
 
     shared = {"nested": [1, 2]}
     fresh = Dictionaries()
-    register_table(fresh, formalism.Object, "objects", "o", project=lambda _value: {"first": shared, "second": shared})
-    assert serialize(fresh, value) == "o0"
-    assert table(fresh, formalism.Object) == [{"first": shared, "second": shared}]
+    fresh.register_table(formalism.Object, "objects", "o", project=lambda _value: {"first": shared, "second": shared})
+    assert fresh.serialize(value) == "o0"
+    assert fresh.table(formalism.Object) == [{"first": shared, "second": shared}]
 
 
 @pytest.mark.parametrize(
@@ -350,15 +348,14 @@ def test_projection_uses_native_enum_text(value: object, expected: str) -> None:
     repository = formalism.Repository()
     expression = repository.insert(formalism.VariableData("e"))[0]
     dictionaries = Dictionaries()
-    register_table(
-        dictionaries,
+    dictionaries.register_table(
         formalism.Variable,
         "expressions",
         "e",
-        project=lambda _expression: {"operator": value},
+        project=lambda _expression: {"operation": value},
     )
-    assert serialize(dictionaries, expression) == "e0"
-    assert table(dictionaries, formalism.Variable) == [{"operator": expected}]
+    assert dictionaries.serialize(expression) == "e0"
+    assert dictionaries.table(formalism.Variable) == [{"operation": expected}]
 
 
 def test_projection_retains_native_values_from_exhausted_generator() -> None:
@@ -372,18 +369,17 @@ def test_projection_retains_native_values_from_exhausted_generator() -> None:
     repository = formalism.Repository()
     expression = repository.insert(formalism.VariableData("e"))[0]
     dictionaries = Dictionaries()
-    register_table(
-        dictionaries,
+    dictionaries.register_table(
         formalism.Variable,
         "expressions",
         "e",
         project=lambda _expression: {"objects": objects()},
     )
-    register_table(dictionaries, formalism.Object, "objects", "o")
-    assert serialize(dictionaries, expression) == "e0"
+    dictionaries.register_table(formalism.Object, "objects", "o")
+    assert dictionaries.serialize(expression) == "e0"
     gc.collect()
-    assert table(dictionaries, formalism.Variable) == [{"objects": ["o0", None]}]
-    assert table(dictionaries, formalism.Object) == [{"name": "generated"}]
+    assert dictionaries.table(formalism.Variable) == [{"objects": ["o0", None]}]
+    assert dictionaries.table(formalism.Object) == [{"name": "generated"}]
 
 
 class _Holder:
@@ -413,18 +409,18 @@ def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
     this = weakref.proxy(holder)
 
     def project(atom: formalism.AtomGroundStatic) -> dict[str, object]:
-        return {"objects": [serialize(this.dictionaries, item) for item in atom.get_row().resolve_objects()]}
+        return {"objects": [this.dictionaries.serialize(item) for item in atom.get_row().resolve_objects()]}
 
-    register_table(dictionaries, formalism.AtomGroundStatic, "atoms", "a", project=project)
-    register_table(dictionaries, formalism.Object, "objects", "o")
+    dictionaries.register_table(formalism.AtomGroundStatic, "atoms", "a", project=project)
+    dictionaries.register_table(formalism.Object, "objects", "o")
     half = len(atoms) // 2
     start = time.perf_counter()
     for atom in atoms[:half]:
-        serialize(dictionaries, atom)
+        dictionaries.serialize(atom)
     first = time.perf_counter() - start
     start = time.perf_counter()
     for atom in atoms[half:]:
-        serialize(dictionaries, atom)
+        dictionaries.serialize(atom)
     second = time.perf_counter() - start
-    assert len(_rows(table(dictionaries, formalism.AtomGroundStatic))) == len(atoms)
+    assert len(_rows(dictionaries.table(formalism.AtomGroundStatic))) == len(atoms)
     assert second < 2.5 * first + 0.05, (first, second)

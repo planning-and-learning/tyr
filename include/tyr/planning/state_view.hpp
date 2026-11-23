@@ -168,8 +168,7 @@ public:
     [[nodiscard]] auto get_fluent_facts() const noexcept
     {
         return get_fluent_fact_index_values()
-               | std::views::transform([repository = get_formalism_repository().get()](auto fact)
-                                       { return ::tyr::formalism::computed_fact_view(std::move(fact), *repository); });
+               | std::views::transform([repository = get_formalism_repository().get()](auto fact) { return urd::resolve(std::move(fact), *repository); });
     }
 
     template<::tyr::formalism::FactKind F>
@@ -348,6 +347,21 @@ ygg::hash_t hash_unextended(const V& state)
 template<StateReadable V, StateReadable W>
 bool equal_unextended(const V& lhs, const W& rhs)
 { return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage()) && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage()); }
+
+/// A state is serialized by what it holds, not by its storages: its fluent atoms, its derived atoms and its fluent
+/// function values (pyyggdrasil.serialization).
+template<class Archive, TaskKind Kind>
+void describe_fields(Archive& ar, std::type_identity<StateView<Kind>> /*type*/)
+{
+    ar.field("fluent_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<formalism::FluentTag>()); });
+    ar.field("derived_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<formalism::DerivedTag>()); });
+    ar.field("fluent_fterm_values", [](const auto& value) -> decltype(auto) { return (value.template get_fterm_values<formalism::FluentTag>()); });
+}
+
+/// A packed state is serialized as the state it holds, unpacked (the same row as its StateView).
+template<class Serializer, TaskKind Kind>
+StateView<Kind> serialize_as(Serializer& /*serializer*/, const PackedStateView<Kind>& value)
+{ return value.unpack(); }
 
 }
 

@@ -1,5 +1,5 @@
-#ifndef TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
-#define TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
+#ifndef TYR_TESTS_UNIT_PLANNING_SERIALIZATION_FIXTURES_HPP_
+#define TYR_TESTS_UNIT_PLANNING_SERIALIZATION_FIXTURES_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -19,13 +19,6 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/serialization/formalism/enums.hpp"
-#include "tyr/serialization/formalism/planning/planning.hpp"
-#include "tyr/serialization/planning/ground/task.hpp"
-#include "tyr/serialization/planning/lifted/task.hpp"
-#include "tyr/serialization/planning/node.hpp"
-#include "tyr/serialization/planning/plan.hpp"
-#include "tyr/serialization/planning/state_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <boost/json.hpp>
@@ -131,11 +124,11 @@ void check_runtime_serialization()
     {
         const auto& row = state.as_object();
         EXPECT_EQ(row.size(), 3);
-        EXPECT_TRUE(row.at("fluent_ground_atoms").is_array());
-        EXPECT_TRUE(row.at("derived_ground_atoms").is_array());
-        EXPECT_TRUE(row.at("fluent_ground_function_term_values").is_array());
-        EXPECT_FALSE(row.contains("static_ground_atoms"));
-        const auto& numeric = row.at("fluent_ground_function_term_values").as_array();
+        EXPECT_TRUE(row.at("fluent_atoms").is_array());
+        EXPECT_TRUE(row.at("derived_atoms").is_array());
+        EXPECT_TRUE(row.at("fluent_fterm_values").is_array());
+        EXPECT_FALSE(row.contains("static_atoms"));
+        const auto& numeric = row.at("fluent_fterm_values").as_array();
         ASSERT_EQ(numeric.size(), 1);
         EXPECT_EQ(numeric[0].as_array().size(), 2);
     }
