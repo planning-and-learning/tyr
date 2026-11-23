@@ -18,21 +18,28 @@
 #ifndef TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 #define TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <urd/elements/builder.hpp>
 #include <urd/elements/clone.hpp>
 #include <urd/elements/equal_to.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/elements/less.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::invariant
 {

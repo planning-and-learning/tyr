@@ -3,8 +3,13 @@
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
+#include <boost/mp11/detail/mp_list.hpp>
 #include <concepts>
 #include <gtest/gtest.h>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 using Function = tyr::formalism::Function<tyr::formalism::StaticTag>;
 using FunctionData = urd::data<Function>;

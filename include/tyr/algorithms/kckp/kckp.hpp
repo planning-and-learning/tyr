@@ -27,13 +27,13 @@
 #include <type_traits>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/data.hpp>
-#include <urd/graphs.hpp>
-#include <urd/key_range.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/graphs/bit_matrix.hpp>
 #include <urd/repr/graphs/bit_rows.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::kckp

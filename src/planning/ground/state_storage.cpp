@@ -17,6 +17,8 @@
 
 #include "tyr/planning/ground/state_storage.hpp"
 
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/ground/task.hpp"
 
 #include <urd/bits.hpp>

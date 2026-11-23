@@ -19,6 +19,10 @@
 #define TYR_FORMALISM_UNIFICATION_TERM_OPERATIONS_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+
+#include <cista/containers/variant.h>
+#include <urd/elements/index.hpp>
 
 namespace tyr::formalism::unification
 {

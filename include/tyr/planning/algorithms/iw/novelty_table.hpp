@@ -18,21 +18,28 @@
 #ifndef TYR_PLANNING_ALGORITHMS_IW_NOVELTY_TABLE_HPP_
 #define TYR_PLANNING_ALGORITHMS_IW_NOVELTY_TABLE_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/planning/algorithms/iw/utils.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_repository.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <span>
 #include <stdexcept>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>

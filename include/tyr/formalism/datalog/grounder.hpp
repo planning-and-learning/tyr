@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_GROUNDER_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -44,7 +45,9 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <urd/elements/flat.hpp>
 #include <utility>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 /// `ground` of Datalog's records: a rule's body and its binding (the shared records' in formalism/grounder.hpp).

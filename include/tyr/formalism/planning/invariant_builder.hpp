@@ -18,15 +18,18 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANT_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANT_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/invariant_data.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace urd
 {
@@ -35,7 +38,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Invariant, C>
 {
-    urd::index<::tyr::formalism::Invariant> index;
+    urd::key<::tyr::formalism::Invariant> index;
     urd::built_t<ygg::uint_t, C> num_rigid_variables = 0;
     urd::built_t<ygg::uint_t, C> num_counted_variables = 0;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> atoms;

@@ -18,18 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/action_index.hpp"
 
-#include <string>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/values.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace urd
 {
@@ -37,7 +36,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::Action<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Action<::tyr::LiftedTag>> index;
     urd::flat_string name;
     urd::flat_string original_name;
     ygg::uint_t original_arity = 0;
@@ -83,21 +82,16 @@ struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
     { return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::original_name,
-                            &data::original_arity,
-                            &data::variables,
-                            &data::condition,
-                            &data::effects> {};
-    }
+    { return urd::Members<&data::index, &data::name, &data::original_name, &data::original_arity, &data::variables, &data::condition, &data::effects> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Action<::tyr::LiftedTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::Action<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::Action<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::Action<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Action<::tyr::GroundTag>> index;
     urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>> row;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition;
     urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>> effects;
@@ -127,6 +121,9 @@ struct data<::tyr::formalism::Action<::tyr::GroundTag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row, &data::condition, &data::effects> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::condition, &data::effects> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Action<::tyr::GroundTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::Action<::tyr::GroundTag>>(index); }
 };
 
 }

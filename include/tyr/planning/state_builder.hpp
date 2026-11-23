@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_STATE_BUILDER_HPP_
 #define TYR_PLANNING_STATE_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -35,6 +36,7 @@
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
@@ -54,6 +56,10 @@
 #include <ranges>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/builder.hpp>
+#include <urd/elements/children.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -71,7 +77,7 @@ struct builder<::tyr::planning::State<Kind>, C>
 {
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.
-    urd::index<::tyr::planning::State<Kind>> index;
+    urd::key<::tyr::planning::State<Kind>> index;
     urd::built_t<urd::key<::tyr::planning::FactStorage<Kind>>, C> fact_storage;
     urd::built_t<urd::key<::tyr::planning::AtomStorage<Kind>>, C> atom_storage;
     urd::built_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage;

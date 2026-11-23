@@ -15,11 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/repository.hpp"
 #include "bindings.hpp"
+#include "pytyr/conversions.hpp"
 #include "pytyr/formalism/planning/bindings.hpp"
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>

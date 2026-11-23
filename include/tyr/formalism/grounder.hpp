@@ -18,10 +18,12 @@
 #ifndef TYR_FORMALISM_GROUNDER_HPP_
 #define TYR_FORMALISM_GROUNDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
@@ -37,11 +39,17 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <concepts>
 #include <optional>
 #include <type_traits>
+#include <urd/elements/flat.hpp>
 #include <utility>
+#include <variant>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/values.hpp>
 
 /// `ground` and `try_ground` of the shared records (terms, atoms, literals, function terms, numeric expressions and
 /// effects); planning's records in planning/grounder.hpp, Datalog's in datalog/grounder.hpp.

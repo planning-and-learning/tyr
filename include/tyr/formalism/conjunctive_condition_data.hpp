@@ -18,16 +18,19 @@
 #ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
 #define TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
-#include <tuple>
+#include <boost/mp11/detail/mp_list.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -35,7 +38,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals;
@@ -81,12 +84,15 @@ struct data<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>
         return urd::
             Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {};
     }
+
+    [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals;
     urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> positive_facts;
@@ -132,6 +138,9 @@ struct data<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>
         return urd::
             Members<&data::index, &data::static_literals, &data::derived_literals, &data::positive_facts, &data::negative_facts, &data::numeric_constraints> {};
     }
+
+    [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>(index); }
 };
 
 }

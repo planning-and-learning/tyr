@@ -1,9 +1,15 @@
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <optional>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 
 namespace tyr::tests::planning_fdr_fact
 {

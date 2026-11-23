@@ -18,16 +18,16 @@
 #ifndef TYR_FORMALISM_ATOM_DATA_HPP_
 #define TYR_FORMALISM_ATOM_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
 #include <type_traits>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <variant>
-#include <vector>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace urd
 {
@@ -35,7 +35,7 @@ namespace urd
 template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::Atom<::tyr::LiftedTag, F>>
 {
-    urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, F>> index;
+    urd::key<::tyr::formalism::Atom<::tyr::LiftedTag, F>> index;
     urd::index<::tyr::formalism::Parameters> parameters;
     urd::index<::tyr::formalism::Predicate<F>> predicate;
     ::tyr::formalism::TermList terms;
@@ -62,12 +62,15 @@ struct data<::tyr::formalism::Atom<::tyr::LiftedTag, F>>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::parameters, &data::predicate, &data::terms> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Atom<::tyr::LiftedTag, F>> key() const noexcept
+    { return urd::key<::tyr::formalism::Atom<::tyr::LiftedTag, F>>(index); }
 };
 
 template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::Atom<::tyr::GroundTag, F>>
 {
-    urd::index<::tyr::formalism::Atom<::tyr::GroundTag, F>> index;
+    urd::key<::tyr::formalism::Atom<::tyr::GroundTag, F>> index;
     urd::key<::tyr::formalism::Predicate<F>, ygg::Row<::tyr::formalism::Predicate<F>>> row;
 
     data() = default;
@@ -85,6 +88,9 @@ struct data<::tyr::formalism::Atom<::tyr::GroundTag, F>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Atom<::tyr::GroundTag, F>> key() const noexcept
+    { return urd::key<::tyr::formalism::Atom<::tyr::GroundTag, F>>(index); }
 };
 
 }

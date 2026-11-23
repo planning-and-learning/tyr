@@ -19,8 +19,6 @@
 #define PYTYR_MODULE_HPP_
 
 #include <nanobind/nanobind.h>
-// The type casters of every TU of this module (each TU binding Stores includes this header): one set, so that all
-// TUs see the same casters.
 #include <urd/python/flat.hpp>
 #include <urd/python/maps/flat_map.hpp>
 #include <urd/python/maps/index_map.hpp>
@@ -38,6 +36,8 @@
 #include <urd/python/values/sparse_set.hpp>
 #include <urd/python/values/unordered_flat_set.hpp>
 #include <yggdrasil/python/type_casters/closed_interval.hpp>
+// The type casters of every TU of this module (each TU binding Stores includes this header): one set, so that all
+// TUs see the same casters.
 
 namespace nb = nanobind;
 

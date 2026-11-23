@@ -17,17 +17,22 @@
 
 #include "matching.hpp"
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
+#include "tyr/formalism/unification/match_policy.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
-#include "tyr/formalism/unification/substitution.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
-#include <urd/config.hpp>
+#include <cstddef>
+#include <optional>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::invariant

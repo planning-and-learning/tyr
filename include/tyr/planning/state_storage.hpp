@@ -19,7 +19,9 @@
 #define TYR_PLANNING_STATE_STORAGE_HPP_
 
 #include "tyr/containers.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage/config.hpp"
 #include "tyr/planning/task.hpp"
 
@@ -28,17 +30,22 @@
 #include <cstddef>
 #include <limits>
 #include <ranges>
+#include <span>
 #include <string_view>
 #include <tuple>
+#include <urd/config.hpp>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-#include <span>
+#include <urd/tags.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -144,17 +151,11 @@ struct stored_ref_of<S>
     using type = ::tyr::planning::StoredStorage<S, ::tyr::planning::StoragePool<S>>;
 };
 
-/// A stored storage's values are read from its pool, unpacked into their built form; its key is its own.
+/// A stored storage's values are read from its pool, unpacked into their built form.
 template<auto Member, ::tyr::planning::StateStorageKind S, typename Pool>
 struct stored_field<Member, ::tyr::planning::StoredStorage<S, Pool>>
 {
-    [[nodiscard]] static auto read(const ::tyr::planning::StoredStorage<S, Pool>& stored)
-    {
-        if constexpr (std::same_as<member_type_t<Member>, key<S>>)
-            return stored.key();
-        else
-            return stored.pool().unpack(stored.key());
-    }
+    [[nodiscard]] static auto read(const ::tyr::planning::StoredStorage<S, Pool>& stored) { return stored.pool().unpack(stored.key()); }
 };
 
 /// A state's storage is held in its state's builder as its builder, in place (its record holds the storage's key): a
@@ -180,6 +181,7 @@ struct built_form<::tyr::planning::StateBitWords, C>
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::AtomStorage<Kind>, C>
 {
+    urd::key<::tyr::planning::AtomStorage<Kind>> index;
     urd::built_t<::tyr::planning::StateBitWords, C> indices;
 
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index)
@@ -190,7 +192,11 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
     /// Takes the bits of a view of a builder of its kind (another state's).
     void assign(const urd::borrowed_view<::tyr::planning::AtomStorage<Kind>, C, builder>& storage) { indices = storage.get_indices(); }
 
-    void swap(builder& other) noexcept { indices.swap(other.indices); }
+    void swap(builder& other) noexcept
+    {
+        std::swap(index, other.index);
+        indices.swap(other.indices);
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
 
@@ -209,6 +215,7 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::NumericStorage<Kind>, C>
 {
+    urd::key<::tyr::planning::NumericStorage<Kind>> index;
     urd::built_t<urd::flat_vector<ygg::float_t>, C> values;
 
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value)
@@ -224,7 +231,11 @@ struct builder<::tyr::planning::NumericStorage<Kind>, C>
     /// Takes the values of a view of a builder of its kind (another state's).
     void assign(const urd::borrowed_view<::tyr::planning::NumericStorage<Kind>, C, builder>& storage) { values = storage.get_values(); }
 
-    void swap(builder& other) noexcept { values.swap(other.values); }
+    void swap(builder& other) noexcept
+    {
+        std::swap(index, other.index);
+        values.swap(other.values);
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
 

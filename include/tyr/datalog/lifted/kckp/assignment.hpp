@@ -21,10 +21,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
-#include <limits>
 #include <string_view>
 #include <urd/elements/concepts.hpp>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog

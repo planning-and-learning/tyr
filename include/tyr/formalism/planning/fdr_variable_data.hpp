@@ -18,14 +18,15 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -33,7 +34,7 @@ namespace urd
 template<::tyr::formalism::FactKind T>
 struct data<::tyr::formalism::FDRVariable<T>>
 {
-    urd::index<::tyr::formalism::FDRVariable<T>> index;
+    urd::key<::tyr::formalism::FDRVariable<T>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>> atoms;
 
     data() = default;
@@ -51,6 +52,8 @@ struct data<::tyr::formalism::FDRVariable<T>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atoms> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atoms> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::FDRVariable<T>> key() const noexcept { return urd::key<::tyr::formalism::FDRVariable<T>>(index); }
 };
 
 }

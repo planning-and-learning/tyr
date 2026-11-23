@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_ALGORITHMS_CONCEPTS_HPP_
 #define TYR_PLANNING_ALGORITHMS_CONCEPTS_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
 

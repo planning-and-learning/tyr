@@ -5,8 +5,14 @@
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <fmt/format.h>
 #include <gtest/gtest.h>
 #include <type_traits>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 using ObjectData = urd::data<tyr::formalism::Object>;
 using ObjectIndex = urd::index<tyr::formalism::Object>;

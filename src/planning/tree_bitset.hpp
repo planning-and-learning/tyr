@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <span>
 #include <urd/bits.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

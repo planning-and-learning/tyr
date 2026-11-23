@@ -18,13 +18,16 @@
 #ifndef TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_IMPL_HPP_
 #define TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_IMPL_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 
 #include <cstddef>
+#include <urd/elements/data.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
 
 namespace tyr::formalism::unification
 {

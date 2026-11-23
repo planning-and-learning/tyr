@@ -1,16 +1,28 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
 
 #include <concepts>
+#include <fmt/format.h>
 #include <gtest/gtest.h>
 #include <string>
 #include <urd/elements/copy.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/copy.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_function_term

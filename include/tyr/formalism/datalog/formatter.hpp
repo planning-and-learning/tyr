@@ -18,10 +18,12 @@
 #ifndef TYR_FORMALISM_DATALOG_FORMATTER_HPP_
 #define TYR_FORMALISM_DATALOG_FORMATTER_HPP_
 
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
 
-#include <fmt/format.h>
+#include <fmt/base.h>
+#include <urd/elements/view.hpp>
 
 // Rules, ground rule bodies and programs in Datalog: each view has an fmt::formatter whose format is defined in
 // src/formalism/datalog/formatter.cpp. The shared records they hold print PDDL on their own (formalism/formatter.hpp) and

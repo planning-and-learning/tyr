@@ -1,13 +1,21 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <tuple>
+#include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
 
-namespace tyr::tests::planning_binary_operator
+namespace tyr::tests::formalism_binary_operator
 {
 
 template<typename Entity>
@@ -50,4 +58,4 @@ static_assert(std::same_as<urd::index_view<GroundArithmetic, tyr::formalism::Rep
 static_assert(std::same_as<urd::index_view<GroundBoolean, tyr::formalism::Repository>,
                            tyr::formalism::BinaryOperatorView<::tyr::GroundTag, tyr::formalism::BooleanOperatorKind>>);
 
-}  // namespace tyr::tests::planning_binary_operator
+}  // namespace tyr::tests::formalism_binary_operator

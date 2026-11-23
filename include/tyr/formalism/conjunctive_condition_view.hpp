@@ -18,14 +18,19 @@
 #ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_VIEW_HPP_
 #define TYR_FORMALISM_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <concepts>
 #include <ranges>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
 
 namespace tyr::formalism::detail

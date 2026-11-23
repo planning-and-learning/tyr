@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <iterator>
 #include <urd/graph_types.hpp>
+#include <urd/graphs.hpp>
 #include <urd/repr/queues/queue.hpp>
 #include <urd/store.hpp>
 #include <utility>

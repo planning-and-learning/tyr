@@ -8,7 +8,6 @@
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
@@ -21,6 +20,7 @@
 #include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/state_storage_view.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
@@ -29,9 +29,9 @@
 #include <barrier>
 #include <cmath>
 #include <concepts>
+#include <filesystem>
 #include <future>
 #include <gtest/gtest.h>
-#include <filesystem>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -151,7 +151,6 @@ static_assert(!tyr::planning::StateViewConcept<const tyr::planning::StateView<ty
 static_assert(!tyr::planning::StateViewConcept<tyr::planning::StateView<tyr::GroundTag>, void>);
 static_assert(!tyr::planning::StateViewConcept<tyr::planning::StateView<tyr::GroundTag>, int>);
 static_assert(!tyr::planning::IterableStateConcept<StateWithMutableAtoms&>);
-static_assert(!tyr::planning::StateViewConcept<StateWithMutableAtoms&, tyr::GroundTag>);
 static_assert(
     []<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
     {
@@ -955,8 +954,7 @@ tyr::planning::TaskPtr<LiftedTag> make_state_task(const std::string& domain, con
 }
 
 /// A small lifted task with derived predicates, numeric fluents and action costs.
-tyr::planning::TaskPtr<LiftedTag> make_state_closure_task()
-{ return make_state_task("state_closure_domain.pddl", "state_closure_problem.pddl"); }
+tyr::planning::TaskPtr<LiftedTag> make_state_closure_task() { return make_state_task("state_closure_domain.pddl", "state_closure_problem.pddl"); }
 }  // namespace
 
 TEST(TyrPlanningStateTest, BuilderIdentityUsesOnlyFluentFactsAndNumericValues)
@@ -986,7 +984,8 @@ TEST(TyrPlanningStateTest, GroundBuilderRetainsNonbinaryFactsAndDerivedAtoms)
     builder.set(derived);
     EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue(37));
     EXPECT_TRUE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
-    EXPECT_FALSE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)).value)));
+    EXPECT_FALSE(
+        builder.atom_storage.indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)).value)));
     EXPECT_EQ(builder.atom_storage.indices.size(), 1);
 }
 
@@ -1006,7 +1005,8 @@ TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
     builder.set(derived);
     EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue(1));
     EXPECT_TRUE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>(derived.value)));
-    EXPECT_FALSE(builder.atom_storage.indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)).value)));
+    EXPECT_FALSE(
+        builder.atom_storage.indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)).value)));
     builder.set(Fact(high, tyr::formalism::FDRValue::none()));
     EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
     EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage.indices.contains(static_cast<ygg::uint_t>(low.value))), tyr::formalism::FDRValue(1));

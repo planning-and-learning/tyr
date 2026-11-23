@@ -17,17 +17,33 @@
 
 #include "constraints.hpp"
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
+#include "tyr/formalism/repository.hpp"
+
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
 #include <map>
+#include <optional>
 #include <set>
 #include <type_traits>
 #include <urd/config.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/partitions/disjoint_sets.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
+#include <utility>
+#include <variant>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::invariant

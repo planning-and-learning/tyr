@@ -18,17 +18,20 @@
 #ifndef TYR_FORMALISM_PLANNING_AXIOM_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_AXIOM_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_builder.hpp"
 #include "tyr/formalism/conjunctive_condition_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/axiom_data.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace urd
 {
@@ -37,7 +40,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Axiom<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> body;
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C> head;
@@ -52,7 +55,7 @@ struct builder<::tyr::formalism::Axiom<::tyr::LiftedTag>, C>
 template<typename C>
 struct builder<::tyr::formalism::Axiom<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
     urd::built_t<urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> body;
     urd::built_t<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> head;

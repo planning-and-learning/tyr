@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_CONJUNCTIVE_CONDITION_CANONICALIZATION_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 

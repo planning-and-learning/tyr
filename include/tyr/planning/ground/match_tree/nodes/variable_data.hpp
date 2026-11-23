@@ -21,21 +21,19 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <optional>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <variant>
-#include <vector>
 
 namespace urd
 {
 template<typename Tag>
 struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
 {
-    urd::index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
+    urd::key<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
     urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> variable;
     urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>> domain_children;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
@@ -68,6 +66,9 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::domain_children, &data::dontcare_child> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variable, &data::domain_children, &data::dontcare_child> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::match_tree::VariableSelectorNode<Tag>> key() const noexcept
+    { return urd::key<::tyr::planning::match_tree::VariableSelectorNode<Tag>>(index); }
 };
 }
 

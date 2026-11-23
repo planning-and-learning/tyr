@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_ALGORITHMS_IW_STATISTICS_HPP_
 #define TYR_PLANNING_ALGORITHMS_IW_STATISTICS_HPP_
 
-#include "tyr/planning/declarations.hpp"
+#include "tyr/declarations.hpp"
 
 #include <optional>
 #include <yggdrasil/core/config.hpp>

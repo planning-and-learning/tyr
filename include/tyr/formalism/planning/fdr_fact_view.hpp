@@ -24,7 +24,11 @@
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 
 #include <optional>
+#include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 /// A fact: its variable and value.
 template<::tyr::formalism::FactKind T, typename V>

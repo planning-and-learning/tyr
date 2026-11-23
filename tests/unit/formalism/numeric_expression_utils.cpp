@@ -17,10 +17,14 @@
 
 #include "tyr/formalism/numeric_expression_utils.hpp"
 
+#include "tyr/formalism/enums.hpp"
+
 #include <gtest/gtest.h>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests
 {

@@ -24,13 +24,10 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
-#include <concepts>
-#include <type_traits>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/row_view_concepts.hpp>
 
 namespace tyr::planning
 {

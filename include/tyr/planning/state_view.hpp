@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_STATE_VIEW_HPP_
 #define TYR_PLANNING_STATE_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -37,6 +38,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
@@ -56,8 +58,12 @@
 #include <ranges>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/builder.hpp>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
 #include <utility>
@@ -341,9 +347,7 @@ ygg::hash_t hash_unextended(const V& state)
 /// Whether two states have equal unextended content (hash_unextended), whichever repositories they are read through.
 template<StateReadable V, StateReadable W>
 bool equal_unextended(const V& lhs, const W& rhs)
-{
-    return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage()) && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage());
-}
+{ return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage()) && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage()); }
 
 }
 

@@ -20,15 +20,22 @@
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/variable_domain.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
 
 // The domains of a program's and of a task's variables while they are computed (program_domains.cpp,
 // task_domains.cpp): the objects each parameter may take, as sets, and their conversion to the public, sorted

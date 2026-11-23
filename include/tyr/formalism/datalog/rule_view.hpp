@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_RULE_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_RULE_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
@@ -27,8 +28,13 @@
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <concepts>
+#include <cstddef>
 #include <ranges>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/values.hpp>
 
@@ -59,9 +65,12 @@ public:
     { return self().template member<::tyr::formalism::heads_of<F, T>>(); }
 
     /// Its rows' column types (a key of row pools): one object column per argument, computed.
-    ygg::UniformColumnTypes get_column_types() const
+    [[nodiscard]] ygg::UniformColumnTypes get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(urd::visit_view(get_body(), [](const auto& body) { return static_cast<std::size_t>(body.get_arity()); })); }
+    {
+        return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(
+            urd::visit_view(get_body(), [](const auto& body) { return static_cast<std::size_t>(body.get_arity()); }));
+    }
 
     static constexpr auto functions() noexcept
     {

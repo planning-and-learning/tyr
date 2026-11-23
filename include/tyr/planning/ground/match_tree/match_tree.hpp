@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_MATCH_TREE_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_MATCH_TREE_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
@@ -25,11 +26,13 @@
 
 #include <memory>
 #include <optional>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/queues/queue.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <urd/tags.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::match_tree

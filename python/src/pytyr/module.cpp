@@ -22,6 +22,8 @@
 #include "planning/module.hpp"
 #include "serialization/module.hpp"
 
+#include <nanobind/nanobind.h>
+
 namespace tyr
 {
 

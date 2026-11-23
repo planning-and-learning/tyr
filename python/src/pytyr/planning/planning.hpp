@@ -19,6 +19,7 @@
 #define TYR_PYTHON_PLANNING_PLANNING_HPP_
 
 #include "module.hpp"
+#include "pytyr/conversions.hpp"
 #include "pytyr/module.hpp"
 
 #include <nanobind/stl/chrono.h>
@@ -28,6 +29,7 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/trampoline.h>
 #include <ranges>
 #include <type_traits>
 #include <tyr/planning/algorithms/astar_eager.hpp>
@@ -51,7 +53,6 @@
 #include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/formatter.hpp>
-#include <tyr/planning/state_storage/policy.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/heuristics/blind.hpp>
@@ -60,19 +61,16 @@
 #include <tyr/planning/heuristics/rpg_add.hpp>
 #include <tyr/planning/heuristics/rpg_ff.hpp>
 #include <tyr/planning/heuristics/rpg_max.hpp>
-#include <tyr/planning/lifted/programs/action.hpp>
-#include <tyr/planning/lifted/programs/axiom.hpp>
-#include <tyr/planning/lifted/programs/ground.hpp>
 #include <tyr/planning/lifted/successor_generator.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/node.hpp>
 #include <tyr/planning/plan.hpp>
-#include <tyr/planning/programs/rpg.hpp>
 #include <tyr/planning/search_space/search_node.hpp>
 #include <tyr/planning/state_builder.hpp>
 #include <tyr/planning/state_data.hpp>
 #include <tyr/planning/state_repository.hpp>
 #include <tyr/planning/state_routing/dist_hash.hpp>
+#include <tyr/planning/state_storage/policy.hpp>
 #include <tyr/planning/task.hpp>
 #include <tyr/planning/worker_state_index.hpp>
 #include <urd/python/bindings.hpp>

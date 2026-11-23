@@ -22,9 +22,10 @@
 
 #include <string_view>
 #include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
 
 namespace tyr::analysis
 {

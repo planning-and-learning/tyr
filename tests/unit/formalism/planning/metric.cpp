@@ -1,9 +1,14 @@
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests::planning_metric
 {

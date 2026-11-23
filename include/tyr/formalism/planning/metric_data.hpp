@@ -18,10 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_METRIC_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_METRIC_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 
-#include <tuple>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 
 namespace urd
@@ -30,7 +33,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Metric>
 {
-    urd::index<::tyr::formalism::Metric> index;
+    urd::key<::tyr::formalism::Metric> index;
     ::tyr::formalism::OptimizationDirection optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
     ::tyr::formalism::FunctionExpression<::tyr::GroundTag> fexpr;
 
@@ -55,6 +58,8 @@ struct data<::tyr::formalism::Metric>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::optimization_direction, &data::fexpr> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::optimization_direction, &data::fexpr> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Metric> key() const noexcept { return urd::key<::tyr::formalism::Metric>(index); }
 };
 
 }

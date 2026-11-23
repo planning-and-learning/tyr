@@ -19,21 +19,13 @@
 #define TYR_ANALYSIS_FORMATTER_HPP_
 
 #include "tyr/analysis/declarations.hpp"
-#include "tyr/analysis/domains_view.hpp"
-#include "tyr/analysis/variable_domains.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 
-#include <algorithm>
 #include <fmt/core.h>
-#include <fmt/ostream.h>
 #include <fmt/ranges.h>
-#include <ostream>
-#include <sstream>
-#include <urd/format.hpp>
-#include <vector>
+#include <type_traits>
 #include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {

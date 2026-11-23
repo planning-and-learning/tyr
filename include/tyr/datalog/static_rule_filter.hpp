@@ -18,7 +18,9 @@
 #ifndef TYR_DATALOG_STATIC_RULE_FILTER_HPP_
 #define TYR_DATALOG_STATIC_RULE_FILTER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 namespace tyr::datalog
 {

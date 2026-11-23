@@ -2,8 +2,12 @@ enable_testing()
 
 find_package(GTest "1.11.0" REQUIRED COMPONENTS GTest PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 
+# The tests' main, compiled once for all of them (an object library: it links nothing).
+add_library(tyr_test_main OBJECT "${PROJECT_SOURCE_DIR}/tests/support/main.cpp")
+target_link_libraries(tyr_test_main PRIVATE tyr::core TBB::tbb GTest::gtest)
+target_include_directories(tyr_test_main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 function(add_gtest test_name)
-    add_executable(${test_name} ${ARGN} "${PROJECT_SOURCE_DIR}/tests/support/main.cpp")
+    add_executable(${test_name} ${ARGN} $<TARGET_OBJECTS:tyr_test_main>)
     target_link_libraries(${test_name} PRIVATE tyr::core TBB::tbb GTest::gtest)
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(NAME ${test_name} COMMAND ${test_name})
@@ -15,11 +19,17 @@ endfunction()
 add_gtest(
     formalism_core_types
     "formalism/row.cpp"
+    "formalism/binary_operator.cpp"
     "formalism/function.cpp"
+    "formalism/function_term_value.cpp"
+    "formalism/literal.cpp"
+    "formalism/multi_operator.cpp"
+    "formalism/numeric_effect.cpp"
     "formalism/object.cpp"
     "formalism/parameter.cpp"
     "formalism/predicate.cpp"
     "formalism/term.cpp"
+    "formalism/unary_operator.cpp"
     "formalism/variable.cpp"
 )
 
@@ -35,7 +45,6 @@ add_gtest(
     "formalism/planning/action.cpp"
     "formalism/planning/atom.cpp"
     "formalism/planning/axiom.cpp"
-    "formalism/planning/binary_operator.cpp"
     "formalism/planning/conditional_effect.cpp"
     "formalism/planning/conjunctive_condition.cpp"
     "formalism/planning/conjunctive_effect.cpp"
@@ -45,13 +54,8 @@ add_gtest(
     "formalism/planning/builders.cpp"
     "formalism/planning/formatter.cpp"
     "formalism/planning/function_term.cpp"
-    "formalism/planning/function_term_value.cpp"
-    "formalism/planning/literal.cpp"
-    "formalism/planning/numeric_effect.cpp"
     "formalism/planning/metric.cpp"
-    "formalism/planning/multi_operator.cpp"
     "formalism/planning/task.cpp"
-    "formalism/planning/unary_operator.cpp"
 )
 
 add_gtest(

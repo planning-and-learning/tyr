@@ -1,4 +1,6 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -8,12 +10,20 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
-namespace tyr::tests::planning_multi_operator
+namespace tyr::tests::formalism_multi_operator
 {
 
 template<typename Entity>
@@ -81,4 +91,4 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
     }
 }
 
-}  // namespace tyr::tests::planning_multi_operator
+}  // namespace tyr::tests::formalism_multi_operator

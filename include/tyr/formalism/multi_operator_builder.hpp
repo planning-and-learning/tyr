@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_MULTI_OPERATOR_BUILDER_HPP_
 #define TYR_FORMALISM_MULTI_OPERATOR_BUILDER_HPP_
 
-#include "tyr/formalism/function_term_builder.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -35,7 +36,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::ArithmeticOperatorKindOnly O, typename C>
 struct builder<::tyr::formalism::MultiOperator<T, O>, C>
 {
-    urd::index<::tyr::formalism::MultiOperator<T, O>> index;
+    urd::key<::tyr::formalism::MultiOperator<T, O>> index;
     urd::built_t<O, C> operation = O::Add;
     urd::built_t<urd::flat_vector<::tyr::formalism::FunctionExpression<T>>, C> args;
 

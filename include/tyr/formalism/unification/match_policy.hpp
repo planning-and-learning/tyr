@@ -22,7 +22,6 @@
 #include "tyr/formalism/unification/match_state.hpp"
 
 #include <cstdint>
-#include <optional>
 
 namespace tyr::formalism::unification
 {

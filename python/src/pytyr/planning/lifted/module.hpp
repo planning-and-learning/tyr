@@ -20,10 +20,15 @@
 
 #include "../module.hpp"
 
+#include <nanobind/nanobind.h>
+
 namespace tyr::planning
 {
 
 void bind_lifted_module_definitions(nb::module_& m);
+
+/// The lifted Datalog programs' bindings (programs.cpp).
+void bind_lifted_programs(nb::module_& m);
 
 }  // namespace tyr::planning
 

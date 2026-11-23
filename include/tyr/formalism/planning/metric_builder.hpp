@@ -18,18 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_METRIC_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_METRIC_BUILDER_HPP_
 
-#include "tyr/formalism/binary_operator_builder.hpp"
-#include "tyr/formalism/function_term_builder.hpp"
-#include "tyr/formalism/multi_operator_builder.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/unary_operator_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -38,7 +36,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Metric, C>
 {
-    urd::index<::tyr::formalism::Metric> index;
+    urd::key<::tyr::formalism::Metric> index;
     urd::built_t<::tyr::formalism::OptimizationDirection, C> optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
     urd::built_t<::tyr::formalism::FunctionExpression<::tyr::GroundTag>, C> fexpr;
 

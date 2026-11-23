@@ -18,16 +18,17 @@
 #ifndef TYR_ANALYSIS_STRATIFICATION_HPP_
 #define TYR_ANALYSIS_STRATIFICATION_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 // for Program (ptr only), Rule
 
 #include <urd/elements/flat.hpp>
-#include <vector>
-#include <yggdrasil/core/family.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::analysis

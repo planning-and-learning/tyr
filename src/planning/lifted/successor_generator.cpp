@@ -15,8 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 
 #include "../metric.hpp"
@@ -25,7 +23,9 @@
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/kckp/static_extensions.hpp"
 #include "tyr/datalog/solver.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fmt/ostream.h>
+#include <iostream>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -243,9 +244,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
         const auto action = action_of(binding);
         if (!binding.context().contains(action.index()))
             throw std::invalid_argument("SuccessorGenerator: action schema does not belong to its source repository.");
-        if (!validate_binding_objects(
-                action,
-                binding.template resolve<formalism::Object>()))
+        if (!validate_binding_objects(action, binding.template resolve<formalism::Object>()))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
     }
 
@@ -983,10 +982,7 @@ template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Source& node, Binding binding)
 {
     // A binding builder's row reads its values untyped (ygg::Value): each is an object's index.
-    return m_impl->check_action_binding(
-        node,
-        action_of(binding),
-        binding.template resolve<formalism::Object>());
+    return m_impl->check_action_binding(node, action_of(binding), binding.template resolve<formalism::Object>());
 }
 
 formalism::ActionRowView SuccessorGenerator<LiftedTag>::materialize_action_binding(ActionBindingView<LiftedTag> binding)

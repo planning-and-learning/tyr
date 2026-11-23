@@ -22,14 +22,13 @@
 #include "tyr/analysis/domains_view.hpp"
 #include "tyr/analysis/program_analysis.hpp"
 #include "tyr/analysis/variable_domains.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
-#include <utility>
-#include <vector>
 
 namespace tyr::analysis
 {

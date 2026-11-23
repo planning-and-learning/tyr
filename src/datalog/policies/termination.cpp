@@ -18,6 +18,7 @@
 #include "tyr/datalog/policies/termination.hpp"
 
 #include "tyr/datalog/applicability.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
 
 #include <boost/mp11.hpp>
 #include <cassert>

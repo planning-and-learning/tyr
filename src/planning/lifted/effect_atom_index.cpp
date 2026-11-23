@@ -17,9 +17,21 @@
 
 #include "effect_atom_index.hpp"
 
+#include "tyr/datalog/fact_sets.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/planning/programs/state_inputs.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <optional>
+#include <span>
+#include <urd/elements/index.hpp>
+#include <utility>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::planning
 {

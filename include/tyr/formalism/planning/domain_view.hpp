@@ -27,6 +27,7 @@
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

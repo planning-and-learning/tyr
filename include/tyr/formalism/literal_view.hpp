@@ -18,11 +18,13 @@
 #ifndef TYR_FORMALISM_LITERAL_VIEW_HPP_
 #define TYR_FORMALISM_LITERAL_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

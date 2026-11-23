@@ -18,17 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
-#include <optional>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -36,7 +36,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
     urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
@@ -70,12 +70,15 @@ struct data<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> index;
     urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
     urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
@@ -114,6 +117,9 @@ struct data<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>(index); }
 };
 
 }

@@ -18,11 +18,15 @@
 #ifndef TYR_FORMALISM_FORMATTER_HPP_
 #define TYR_FORMALISM_FORMATTER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
-#include <fmt/format.h>
+#include <fmt/base.h>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/formatter.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 

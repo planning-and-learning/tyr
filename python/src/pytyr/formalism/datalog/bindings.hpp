@@ -19,7 +19,9 @@
 #define TYR_PYTHON_FORMALISM_DATALOG_BINDINGS_HPP_
 
 #include "pytyr/formalism/module.hpp"
+#include "tyr/formalism/declarations.hpp"
 
+#include <nanobind/nanobind.h>
 #include <tyr/formalism/datalog/declarations.hpp>
 
 namespace tyr::formalism

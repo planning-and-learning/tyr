@@ -21,7 +21,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground/state_layout.hpp"
 #include "tyr/planning/state_storage.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -31,31 +33,8 @@
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
-
-namespace tyr::planning
-{
-
-/// Where the fluent FDR values and derived atoms of a ground task's states lie, packed bitwise into ygg::uint_t blocks.
-template<>
-struct StateLayout<GroundTag>
-{
-    /// Bit range of a fluent FDR variable's value.
-    struct VariableInfo
-    {
-        ygg::uint_t begin;
-        uint8_t offset;
-        uint8_t length;
-    };
-
-    explicit StateLayout(const Task<GroundTag>& task);
-
-    urd::Store<urd::sequence<VariableInfo>> fluent_infos;
-    ygg::uint_t fluent_num_blocks;
-    ygg::uint_t derived_num_bits;
-};
-
-}
 
 namespace urd
 {
@@ -64,6 +43,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
 {
+    urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<ygg::uint_t>, C> values;
 
     void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact)
@@ -79,7 +59,11 @@ struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
     /// Takes the values of a view of a builder of its kind (another state's).
     void assign(const urd::borrowed_view<::tyr::planning::FactStorage<::tyr::GroundTag>, C, builder>& storage) { values = storage.get_values(); }
 
-    void swap(builder& other) noexcept { values.swap(other.values); }
+    void swap(builder& other) noexcept
+    {
+        std::swap(index, other.index);
+        values.swap(other.values);
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
 

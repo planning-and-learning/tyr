@@ -1,3 +1,4 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
@@ -5,6 +6,7 @@
 #include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/parameters_data.hpp"
@@ -16,6 +18,11 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 #include <string>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <utility>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests::datalog_rule
 {

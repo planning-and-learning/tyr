@@ -25,20 +25,23 @@
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-#include <boost/mp11.hpp>
 #include <cassert>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <urd/tags.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::datalog

@@ -18,10 +18,12 @@
 #ifndef TYR_FORMALISM_EXPRESSION_PROPERTIES_HPP_
 #define TYR_FORMALISM_EXPRESSION_PROPERTIES_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
@@ -34,14 +36,17 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 
 #include <algorithm>
+#include <concepts>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <variant>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 /// The function terms the shared records (operators, function terms, numeric effects and conditions) read.

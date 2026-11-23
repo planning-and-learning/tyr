@@ -19,28 +19,32 @@
 #define TYR_DATALOG_POLICIES_COST_HPP_
 
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/datalog/rule_instance.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/repository.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <concepts>
+#include <cstddef>
 #include <gtl/phmap.hpp>
-#include <ranges>
-#include <tuple>
+#include <type_traits>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
-#include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::datalog
 {

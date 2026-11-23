@@ -19,7 +19,7 @@
 #define TYR_DATALOG_APPLICABILITY_LIFTED_DECL_HPP_
 
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 
 #include <memory>

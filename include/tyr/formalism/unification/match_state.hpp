@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_UNIFICATION_MATCH_STATE_HPP_
 #define TYR_FORMALISM_UNIFICATION_MATCH_STATE_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
 namespace tyr::formalism::unification

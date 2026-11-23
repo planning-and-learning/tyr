@@ -22,26 +22,28 @@
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
-#include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/rule_instance.hpp"
-#include "tyr/formalism/numeric_expression_utils.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <algorithm>
-#include <boost/mp11.hpp>
+#include <boost/mp11/detail/mp_list.hpp>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <optional>
 #include <ranges>
-#include <tuple>
 #include <type_traits>
-#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
@@ -49,9 +51,10 @@
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
-#include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::datalog
 {

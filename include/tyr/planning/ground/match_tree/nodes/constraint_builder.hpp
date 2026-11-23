@@ -18,14 +18,17 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_CONSTRAINT_BUILDER_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_CONSTRAINT_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/binary_operator_builder.hpp"
-#include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
+#include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -34,7 +37,7 @@ namespace urd
 template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, C>
 {
-    urd::index<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
+    urd::key<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
     urd::built_t<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>, ::tyr::formalism::Repository>
         constraint;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> true_child;

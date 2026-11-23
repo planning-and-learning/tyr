@@ -20,8 +20,12 @@
 
 #include "tyr/formalism/declarations.hpp"
 
+#include <cstddef>
 #include <ranges>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/values.hpp>
 
 namespace urd
@@ -38,7 +42,7 @@ public:
     auto get_arity() const noexcept { return self().template member<&urd::record_of<V>::arity>(); }
 
     /// Its rows' column types (a key of row pools): one object column per argument, computed.
-    ygg::UniformColumnTypes get_column_types() const
+    [[nodiscard]] ygg::UniformColumnTypes get_column_types() const
     { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(static_cast<std::size_t>(get_arity())); }
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {}; }

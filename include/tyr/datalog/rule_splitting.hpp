@@ -19,16 +19,22 @@
 #define TYR_DATALOG_RULE_SPLITTING_HPP_
 
 #include "tyr/datalog/rule_mapping.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
+#include <cstddef>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {

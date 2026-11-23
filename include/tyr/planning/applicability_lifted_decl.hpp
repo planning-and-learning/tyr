@@ -18,6 +18,8 @@
 #ifndef TYR_PLANNING_APPLICABILITY_LIFTED_DECL_HPP_
 #define TYR_PLANNING_APPLICABILITY_LIFTED_DECL_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/planning/applicability_decl.hpp"

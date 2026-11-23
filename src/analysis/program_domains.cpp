@@ -17,13 +17,18 @@
 
 #include "domain_sets.hpp"
 #include "static_literal_compatibility.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/program_analysis.hpp"
+#include "tyr/analysis/variable_domains.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
@@ -61,12 +66,15 @@
 #include <stddef.h>
 #include <type_traits>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/formalism/row_view.hpp>

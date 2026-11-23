@@ -20,10 +20,12 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {

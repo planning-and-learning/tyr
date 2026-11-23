@@ -21,10 +21,10 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 
-#include <tuple>
 #include <type_traits>
-#include <urd/elements/flat.hpp>
-#include <utility>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {

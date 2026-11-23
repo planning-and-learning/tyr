@@ -18,18 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_TASK_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_TASK_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
-#include <optional>
-#include <string>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -37,7 +35,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::Task<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> index;
     urd::flat_string name;
     urd::index<::tyr::formalism::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
@@ -135,12 +133,14 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
                             &data::metric,
                             &data::axioms> {};
     }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::Task<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::Task<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Task<::tyr::GroundTag>> index;
     urd::flat_string name;
     urd::index<::tyr::formalism::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
@@ -251,6 +251,8 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
                             &data::ground_actions,
                             &data::ground_axioms> {};
     }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::GroundTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::GroundTag>>(index); }
 };
 
 }

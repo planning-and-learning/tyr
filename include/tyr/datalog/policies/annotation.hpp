@@ -18,12 +18,18 @@
 #ifndef TYR_DATALOG_POLICIES_ANNOTATION_HPP_
 #define TYR_DATALOG_POLICIES_ANNOTATION_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <boost/mp11.hpp>
 #include <concepts>
+#include <cstddef>
 #include <optional>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>

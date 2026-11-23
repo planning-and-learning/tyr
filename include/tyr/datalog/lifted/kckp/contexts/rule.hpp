@@ -26,11 +26,12 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/declarations.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 
 #include <cstddef>
 #include <urd/config.hpp>
+#include <urd/elements/index.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog

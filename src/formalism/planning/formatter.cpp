@@ -324,8 +324,9 @@ fmt::formatter<std::pair<tf::ActionRowView, tf::PlanFormatting>>::format(const s
                                                                          fmt::format_context& context) const
 {
     auto out = fmt::format_to(context.out(), "({}", value.first.get_relation().get_original_name());
-    for (const auto object : value.first.template resolve<tf::Object>(0, value.first.get_relation().get_original_arity()))
-        out = fmt::format_to(out, " {}", object.get_name());
+    // Its original arguments only: an action's row has further columns after them.
+    for (std::size_t column = 0; column < value.first.get_relation().get_original_arity(); ++column)
+        out = fmt::format_to(out, " {}", value.first.template resolve<tf::Object>(column).get_name());
     return fmt::format_to(out, ")");
 }
 

@@ -18,8 +18,11 @@
 #ifndef TYR_SRC_FORMALISM_PLANNING_LOKI_TO_TYR_HPP_
 #define TYR_SRC_FORMALISM_PLANNING_LOKI_TO_TYR_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -34,12 +37,16 @@
 #include <string>
 #include <unordered_set>
 #include <urd/elements/equal_to.hpp>
+#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <variant>
 

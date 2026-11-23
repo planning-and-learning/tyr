@@ -1,11 +1,16 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/rule_body_data.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests::datalog_conjunctive_condition
 {

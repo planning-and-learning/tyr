@@ -18,16 +18,17 @@
 #ifndef TYR_FORMALISM_UNIFICATION_SUBSTITUTION_HPP_
 #define TYR_FORMALISM_UNIFICATION_SUBSTITUTION_HPP_
 
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <optional>
 #include <span>
-#include <string_view>
-#include <type_traits>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/less.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/ordered_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
@@ -35,8 +36,8 @@
 #include <urd/repr/values/indexed.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
-#include <vector>
 
 namespace tyr::formalism::unification
 {

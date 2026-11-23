@@ -18,14 +18,16 @@
 #ifndef TYR_FORMALISM_FUNCTION_BUILDER_HPP_
 #define TYR_FORMALISM_FUNCTION_BUILDER_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_view.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace urd
 {
@@ -34,7 +36,7 @@ namespace urd
 template<::tyr::formalism::FactKind T, typename C>
 struct builder<::tyr::formalism::Function<T>, C>
 {
-    urd::index<::tyr::formalism::Function<T>> index;
+    urd::key<::tyr::formalism::Function<T>> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<ygg::uint_t, C> arity = 0;
 

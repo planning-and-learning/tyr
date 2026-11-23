@@ -17,7 +17,10 @@
 
 #include "domain_sets.hpp"
 #include "static_literal_compatibility.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/variable_domains.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
@@ -48,6 +51,7 @@
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
@@ -75,6 +79,9 @@
 #include <stddef.h>
 #include <type_traits>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>

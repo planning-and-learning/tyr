@@ -18,13 +18,15 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MATCHING_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHING_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
 #include <cstddef>
 #include <optional>
+#include <urd/elements/builder.hpp>
+#include <urd/elements/data.hpp>
 
 namespace tyr::formalism::invariant
 {

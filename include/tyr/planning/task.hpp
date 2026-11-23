@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_TASK_HPP_
 #define TYR_PLANNING_TASK_HPP_
 
-#include "tyr/planning/declarations.hpp"
+#include "tyr/declarations.hpp"
 
 namespace tyr::planning
 {

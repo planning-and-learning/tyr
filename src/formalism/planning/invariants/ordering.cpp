@@ -17,21 +17,28 @@
 
 #include "tyr/formalism/planning/invariants/ordering.hpp"
 
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <fmt/format.h>
 #include <limits>
 #include <random>
 #include <string>
 #include <type_traits>
+#include <urd/elements/flat.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <variant>
 #include <vector>

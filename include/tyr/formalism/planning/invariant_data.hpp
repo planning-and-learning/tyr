@@ -17,14 +17,15 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANT_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANT_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace urd
@@ -35,7 +36,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Invariant>
 {
-    urd::index<::tyr::formalism::Invariant> index;
+    urd::key<::tyr::formalism::Invariant> index;
     ygg::uint_t num_rigid_variables = 0;
     ygg::uint_t num_counted_variables = 0;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms;
@@ -69,6 +70,8 @@ struct data<::tyr::formalism::Invariant>
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Invariant> key() const noexcept { return urd::key<::tyr::formalism::Invariant>(index); }
 };
 
 }

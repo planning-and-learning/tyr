@@ -18,15 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace urd
 {
@@ -34,7 +36,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Axiom<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> body;
     urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
@@ -63,12 +65,15 @@ struct data<::tyr::formalism::Axiom<::tyr::LiftedTag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::head> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::head> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::Axiom<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Axiom<::tyr::GroundTag>> index;
     urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Axiom<::tyr::LiftedTag>>> row;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> body;
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
@@ -97,6 +102,9 @@ struct data<::tyr::formalism::Axiom<::tyr::GroundTag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::head> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Axiom<::tyr::GroundTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::Axiom<::tyr::GroundTag>>(index); }
 };
 
 }

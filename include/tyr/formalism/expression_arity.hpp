@@ -18,9 +18,11 @@
 #ifndef TYR_FORMALISM_EXPRESSION_ARITY_HPP_
 #define TYR_FORMALISM_EXPRESSION_ARITY_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
@@ -38,11 +40,14 @@
 #include <numeric>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <variant>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 /// The parameters and function arities of the shared records (atoms, literals, function terms, function expressions and

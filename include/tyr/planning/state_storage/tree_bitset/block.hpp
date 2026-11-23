@@ -22,7 +22,6 @@
 #include <limits>
 #include <urd/repr/pools/tree_bitset.hpp>
 #include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::tree_bitset

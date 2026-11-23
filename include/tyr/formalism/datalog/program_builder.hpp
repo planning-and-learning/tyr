@@ -42,7 +42,7 @@ namespace urd
 template<::tyr::TaskKind T, typename C>
 struct builder<::tyr::formalism::Program<T>, C>
 {
-    urd::index<::tyr::formalism::Program<T>> index;
+    urd::key<::tyr::formalism::Program<T>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;

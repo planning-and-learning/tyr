@@ -18,17 +18,15 @@
 #ifndef TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/action_index.hpp"
 
-#include <optional>
-#include <string>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -36,7 +34,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Domain>
 {
-    urd::index<::tyr::formalism::Domain> index;
+    urd::key<::tyr::formalism::Domain> index;
     urd::flat_string name;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates;
@@ -122,6 +120,8 @@ struct data<::tyr::formalism::Domain>
                             &data::actions,
                             &data::axioms> {};
     }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Domain> key() const noexcept { return urd::key<::tyr::formalism::Domain>(index); }
 };
 
 }

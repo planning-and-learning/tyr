@@ -1,7 +1,10 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameters_data.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
@@ -10,7 +13,13 @@
 #include <gtest/gtest.h>
 #include <ranges>
 #include <string>
+#include <urd/elements/data.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::tests::planning_conjunctive_condition
 {

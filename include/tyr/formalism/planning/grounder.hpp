@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 #define TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounder.hpp"
@@ -29,13 +30,19 @@
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder_decl.hpp"
 #include "tyr/formalism/repository.hpp"
 
+#include <urd/elements/children.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 /// `ground` of planning's records: facts and conditions as FDR facts, effects, actions and axioms (the shared records'

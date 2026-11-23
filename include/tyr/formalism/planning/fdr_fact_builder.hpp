@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_FACT_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_FACT_BUILDER_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {

@@ -18,14 +18,15 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_VARIABLE_BUILDER_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_VARIABLE_BUILDER_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_variable_builder.hpp"
-#include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
+#include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -34,7 +35,7 @@ namespace urd
 template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::VariableSelectorNode<Tag>, C>
 {
-    urd::index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
+    urd::key<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
     urd::built_t<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>, ::tyr::formalism::Repository> variable;
     urd::built_t<urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>>, C> domain_children;
     urd::built_t<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>, C> dontcare_child;

@@ -19,14 +19,16 @@
 #define TYR_SRC_DATALOG_SOLVER_IMPL_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/solver.hpp"
+#include "tyr/declarations.hpp"
 
-#include <boost/mp11.hpp>
 #include <concepts>
 #include <limits>
 #include <yggdrasil/execution/onetbb.hpp>

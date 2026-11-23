@@ -14,9 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-#include "tyr/formalism/repository.hpp"
 #include "bindings.hpp"
+#include "pytyr/conversions.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>

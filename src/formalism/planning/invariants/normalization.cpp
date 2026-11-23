@@ -18,15 +18,24 @@
 #include "normalization.hpp"
 
 #include "matching.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <urd/elements/builder.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <variant>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::invariant
 {

@@ -20,9 +20,11 @@
 
 #include "tyr/datalog/applicability_lifted_decl.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -44,6 +46,7 @@
 #include <algorithm>
 #include <utility>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog

@@ -1,16 +1,23 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
 
 #include "analysis/static_literal_compatibility.hpp"
+#include "tyr/analysis/variable_domain.hpp"
+#include "tyr/formalism/declarations.hpp"
 
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <initializer_list>
 #include <span>
+#include <urd/elements/index.hpp>
+#include <urd/graph_types.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests
 {

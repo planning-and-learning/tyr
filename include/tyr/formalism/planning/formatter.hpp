@@ -18,11 +18,15 @@
 #ifndef TYR_FORMALISM_PLANNING_FORMATTER_HPP_
 #define TYR_FORMALISM_PLANNING_FORMATTER_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 
-#include <fmt/format.h>
+#include <fmt/base.h>
+#include <urd/elements/view.hpp>
 #include <utility>
 
 namespace tyr::formalism

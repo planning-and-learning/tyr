@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_PROGRAM_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_PROGRAM_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
@@ -26,6 +27,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

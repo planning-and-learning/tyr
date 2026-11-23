@@ -18,14 +18,18 @@
 #ifndef TYR_FORMALISM_PLANNING_GROUNDER_DECL_HPP_
 #define TYR_FORMALISM_PLANNING_GROUNDER_DECL_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::formalism
 {

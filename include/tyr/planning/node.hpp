@@ -18,14 +18,18 @@
 #ifndef TYR_PLANNING_NODE_HPP_
 #define TYR_PLANNING_NODE_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_view_concepts.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <fmt/format.h>
 #include <memory>
 #include <ranges>
@@ -33,10 +37,12 @@
 #include <tuple>
 #include <type_traits>
 #include <urd/elements/concepts.hpp>
+#include <urd/elements/less.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/row_view_concepts.hpp>
 
 namespace tyr::planning
 {

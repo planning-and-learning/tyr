@@ -18,17 +18,20 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_builder.hpp"
 #include "tyr/formalism/numeric_effect_builder.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_builder.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -37,7 +40,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>, C> numeric_effects;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>, C>
@@ -58,7 +61,7 @@ struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>, C>
 template<typename C>
 struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> add_facts;
     urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> del_facts;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>, C> numeric_effects;

@@ -20,22 +20,20 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
-#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <limits>
 #include <urd/elements/hash.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/wrappers/recycling.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
-#include <vector>
-#include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {

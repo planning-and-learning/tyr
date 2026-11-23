@@ -18,12 +18,14 @@
 #ifndef TYR_PLANNING_APPLICABILITY_HPP_
 #define TYR_PLANNING_APPLICABILITY_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -40,6 +42,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
@@ -56,6 +59,7 @@
 #include "tyr/planning/static_state.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <concepts>
 #include <iterator>
 #include <limits>
@@ -64,6 +68,9 @@
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>

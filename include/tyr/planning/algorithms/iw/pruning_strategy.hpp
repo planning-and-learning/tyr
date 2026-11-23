@@ -18,15 +18,19 @@
 #ifndef TYR_PLANNING_ALGORITHMS_IW_PRUNING_STRATEGY_HPP_
 #define TYR_PLANNING_ALGORITHMS_IW_PRUNING_STRATEGY_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/algorithms/iw/novelty_table.hpp"
 #include "tyr/planning/algorithms/iw/utils.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <urd/config.hpp>
+#include <urd/elements/index.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::iw

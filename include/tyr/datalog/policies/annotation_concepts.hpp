@@ -18,9 +18,13 @@
 #ifndef TYR_DATALOG_POLICIES_ANNOTATION_CONCEPTS_HPP_
 #define TYR_DATALOG_POLICIES_ANNOTATION_CONCEPTS_HPP_
 
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-#include <boost/mp11.hpp>
+#include <boost/mp11/detail/mp_list.hpp>
 #include <concepts>
 #include <optional>
 #include <type_traits>

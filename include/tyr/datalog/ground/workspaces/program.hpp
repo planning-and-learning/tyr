@@ -32,6 +32,7 @@
 
 #include <boost/mp11.hpp>
 #include <type_traits>
+#include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>

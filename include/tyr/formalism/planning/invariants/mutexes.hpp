@@ -18,13 +18,15 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 
 #include <optional>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
 
 namespace tyr::formalism::invariant
 {

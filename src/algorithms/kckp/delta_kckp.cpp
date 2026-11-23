@@ -17,10 +17,18 @@
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 
+#include "tyr/algorithms/kckp/kckp.hpp"
+
+#include <cassert>
+#include <cstddef>
+#include <limits>
+#include <span>
 #include <stdexcept>
 #include <urd/graphs.hpp>
+#include <urd/kinds.hpp>
 #include <urd/sets.hpp>
 #include <urd/store.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::kckp
 {

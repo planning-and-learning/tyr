@@ -1,12 +1,27 @@
 #include "tyr/datalog/static_rule_filter.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_data.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>
+#include <initializer_list>
+#include <optional>
 #include <string>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <utility>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::tests::datalog_program
 {

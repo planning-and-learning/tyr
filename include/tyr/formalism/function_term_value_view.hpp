@@ -18,12 +18,10 @@
 #ifndef TYR_FORMALISM_FUNCTION_TERM_VALUE_VIEW_HPP_
 #define TYR_FORMALISM_FUNCTION_TERM_VALUE_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 
-#include <urd/elements/flat.hpp>
-#include <utility>
-#include <vector>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

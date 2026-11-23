@@ -18,10 +18,15 @@
 #ifndef TYR_PLANNING_HEURISTICS_LMCUT_HPP_
 #define TYR_PLANNING_HEURISTICS_LMCUT_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
 
 #include <cstddef>
 #include <memory>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {

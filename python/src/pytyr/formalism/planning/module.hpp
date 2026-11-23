@@ -18,6 +18,8 @@
 #ifndef TYR_PYTHON_FORMALISM_PLANNING_MODULE_HPP_
 #define TYR_PYTHON_FORMALISM_PLANNING_MODULE_HPP_
 
+#include "pytyr/module.hpp"
+
 #include <nanobind/nanobind.h>
 
 namespace nb = nanobind;

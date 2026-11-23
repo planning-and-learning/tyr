@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
 #define TYR_FORMALISM_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
 
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 
 #include <stdexcept>
 

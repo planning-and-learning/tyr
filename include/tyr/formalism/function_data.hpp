@@ -20,12 +20,12 @@
 
 #include "tyr/formalism/declarations.hpp"
 
-#include <string>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/values.hpp>
 
 namespace urd
 {
@@ -33,7 +33,7 @@ namespace urd
 template<::tyr::formalism::FactKind T>
 struct data<::tyr::formalism::Function<T>>
 {
-    urd::index<::tyr::formalism::Function<T>> index;
+    urd::key<::tyr::formalism::Function<T>> index;
     urd::flat_string name;
     ygg::uint_t arity = 0;
 
@@ -52,6 +52,8 @@ struct data<::tyr::formalism::Function<T>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::name, &data::arity> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name, &data::arity> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Function<T>> key() const noexcept { return urd::key<::tyr::formalism::Function<T>>(index); }
 };
 
 }

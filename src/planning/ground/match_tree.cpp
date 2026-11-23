@@ -58,6 +58,7 @@
 #include <optional>
 #include <span>
 #include <urd/elements/flat.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/queues/queue.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -67,6 +68,7 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/symbol_context_impl.hpp>
 #include <yggdrasil/formalism/symbol_context_instantiations.hpp>
 
 namespace tyr::planning::match_tree
@@ -887,7 +889,6 @@ template class MatchTree<formalism::Action<GroundTag>>;
 template class MatchTree<formalism::Axiom<GroundTag>>;
 
 }
-
 
 // The repositories' symbols, which the library's other sources only declare (yggdrasil/formalism/symbol_context.hpp).
 YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::Action<tyr::GroundTag>>, 5)

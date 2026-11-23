@@ -18,19 +18,24 @@
 #ifndef TYR_PLANNING_STATIC_STATE_HPP_
 #define TYR_PLANNING_STATIC_STATE_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <functional>
 #include <limits>
 #include <ranges>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <urd/tags.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning

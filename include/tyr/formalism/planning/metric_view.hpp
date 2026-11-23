@@ -21,7 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 
-#include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

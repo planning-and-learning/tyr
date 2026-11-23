@@ -13,6 +13,13 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/variable_domains.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::analysis
 {

@@ -95,6 +95,10 @@ TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::PlanningTask<LiftedTag> ta
 GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::ExecutionContext& execution_context, const GroundTaskInstantiationOptions& options)
 { return tyr::planning::instantiate_ground_task(*this, execution_context, options); }
 
+// Defined here, not in the header: reading the task's records instantiates the repository's reads, which every source
+// including the header would compile again.
+bool Task<LiftedTag>::has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
+
 Task<GroundTag>::Task(formalism::PlanningTask<GroundTag> task) :
     m_task(std::move(task)),
     m_repository(layer_over(m_task)),
@@ -102,5 +106,7 @@ Task<GroundTag>::Task(formalism::PlanningTask<GroundTag> task) :
     m_static_state(m_task.get_task())
 {
 }
+
+bool Task<GroundTag>::has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 }

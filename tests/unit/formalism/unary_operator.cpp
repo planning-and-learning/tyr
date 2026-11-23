@@ -1,4 +1,6 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
@@ -7,9 +9,15 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
 
-namespace tyr::tests::planning_unary_operator
+namespace tyr::tests::formalism_unary_operator
 {
 
 template<typename Entity>
@@ -44,4 +52,4 @@ TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
                  std::invalid_argument);
 }
 
-}  // namespace tyr::tests::planning_unary_operator
+}  // namespace tyr::tests::formalism_unary_operator

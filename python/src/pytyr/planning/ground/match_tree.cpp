@@ -16,6 +16,8 @@
  */
 
 #include "module.hpp"
+#include "pytyr/conversions.hpp"
+#include "pytyr/module.hpp"
 
 #include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/planning/formatter.hpp>

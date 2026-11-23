@@ -18,12 +18,14 @@
 #ifndef TYR_FORMALISM_PLANNING_PLANNING_DOMAIN_HPP_
 #define TYR_FORMALISM_PLANNING_PLANNING_DOMAIN_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
-#include "tyr/formalism/repository.hpp"
 
 #include <filesystem>
 #include <optional>
+#include <stdexcept>
+#include <utility>
 
 namespace tyr::formalism
 {

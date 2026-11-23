@@ -18,12 +18,15 @@
 #ifndef TYR_FORMALISM_NUMERIC_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_NUMERIC_EFFECT_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 
+#include <concepts>
 #include <stdexcept>
-#include <tuple>
-#include <urd/elements/flat.hpp>
-#include <utility>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 
 namespace tyr::formalism
 {
@@ -38,7 +41,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::NumericEffectFactKind F>
 struct data<::tyr::formalism::NumericEffect<T, F>>
 {
-    urd::index<::tyr::formalism::NumericEffect<T, F>> index;
+    urd::key<::tyr::formalism::NumericEffect<T, F>> index;
     ::tyr::formalism::NumericEffectOperatorKind operation = ::tyr::formalism::default_numeric_effect_operator<F>;
     urd::index<::tyr::formalism::FunctionTerm<T, F>> fterm;
     ::tyr::formalism::FunctionExpression<T> fexpr;
@@ -70,6 +73,8 @@ struct data<::tyr::formalism::NumericEffect<T, F>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::fterm, &data::fexpr> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::fterm, &data::fexpr> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::NumericEffect<T, F>> key() const noexcept { return urd::key<::tyr::formalism::NumericEffect<T, F>>(index); }
 };
 
 }

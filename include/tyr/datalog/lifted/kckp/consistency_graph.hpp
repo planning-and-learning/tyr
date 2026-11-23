@@ -19,11 +19,14 @@
 #define TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
@@ -42,11 +45,17 @@
 #include "tyr/formalism/variable_dependency_graph.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <cstddef>
 #include <string_view>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>

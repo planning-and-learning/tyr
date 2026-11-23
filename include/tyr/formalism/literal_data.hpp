@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_LITERAL_DATA_HPP_
 #define TYR_FORMALISM_LITERAL_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
 #include <type_traits>
-#include <urd/elements/flat.hpp>
-#include <utility>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -31,7 +32,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::Literal<T, F>>
 {
-    urd::index<::tyr::formalism::Literal<T, F>> index;
+    urd::key<::tyr::formalism::Literal<T, F>> index;
     urd::index<::tyr::formalism::Atom<T, F>> atom;
     bool polarity = false;
 
@@ -50,6 +51,8 @@ struct data<::tyr::formalism::Literal<T, F>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::polarity> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atom, &data::polarity> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Literal<T, F>> key() const noexcept { return urd::key<::tyr::formalism::Literal<T, F>>(index); }
 };
 
 }

@@ -18,9 +18,11 @@
 #ifndef TYR_PLANNING_WORKER_STATE_INDEX_HPP_
 #define TYR_PLANNING_WORKER_STATE_INDEX_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 
 namespace tyr::planning
 {

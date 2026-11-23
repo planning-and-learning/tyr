@@ -20,17 +20,19 @@
 
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <cstddef>
+#include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/interning.hpp>
 #include <yggdrasil/formalism/values.hpp>
 
 /// The repository's insert preparation (prepare_for_insert, found by ADL from yggdrasil's insert): a record is made
-/// canonical (canonicalization.hpp and its planning and Datalog counterparts). Included where the repository's members are instantiated (src/formalism/repository.cpp) and where a
-/// grounder needs schema_in_destination; kept out of repository.hpp, so code that only reads or inserts does not
+/// canonical (canonicalization.hpp and its planning and Datalog counterparts). Included where the repository's members are instantiated
+/// (src/formalism/repository.cpp) and where a grounder needs schema_in_destination; kept out of repository.hpp, so code that only reads or inserts does not
 /// compile the canonicalization.
 namespace tyr::formalism
 {

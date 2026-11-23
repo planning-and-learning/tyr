@@ -19,24 +19,33 @@
 #define TYR_DATALOG_FACT_SETS_HPP_
 
 #include "tyr/datalog/declarations.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <boost/mp11.hpp>
+#include <boost/mp11/algorithm.hpp>
 #include <cassert>
 #include <concepts>
 #include <iterator>
 #include <ranges>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/ordered_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/sparse_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::datalog
 {

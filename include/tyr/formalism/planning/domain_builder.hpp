@@ -18,6 +18,8 @@
 #ifndef TYR_FORMALISM_PLANNING_DOMAIN_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_DOMAIN_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_builder.hpp"
 #include "tyr/formalism/object_builder.hpp"
 #include "tyr/formalism/planning/action_builder.hpp"
@@ -26,11 +28,11 @@
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/predicate_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -39,7 +41,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Domain, C>
 {
-    urd::index<::tyr::formalism::Domain> index;
+    urd::key<::tyr::formalism::Domain> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;

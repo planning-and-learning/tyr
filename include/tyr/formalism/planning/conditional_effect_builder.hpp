@@ -18,17 +18,19 @@
 #ifndef TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -37,7 +39,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect;
@@ -55,7 +57,7 @@ struct builder<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>, C>
 template<typename C>
 struct builder<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> index;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>, C> effect;
 

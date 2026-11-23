@@ -18,25 +18,24 @@
 #ifndef TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 
-#include "tyr/formalism/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/numeric_effect_data.hpp"
 
+#include <boost/mp11/detail/mp_list.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/values.hpp>
 
 namespace urd
 {
 template<>
 struct data<::tyr::formalism::Rule<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::Rule<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_heads;
@@ -79,12 +78,14 @@ struct data<::tyr::formalism::Rule<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::variables, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::Rule<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::Rule<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Rule<::tyr::GroundTag>> index;
     urd::index<::tyr::formalism::RuleBody<::tyr::GroundTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_heads;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_heads;
@@ -123,6 +124,8 @@ struct data<::tyr::formalism::Rule<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Rule<::tyr::GroundTag>> key() const noexcept { return urd::key<::tyr::formalism::Rule<::tyr::GroundTag>>(index); }
 };
 }
 

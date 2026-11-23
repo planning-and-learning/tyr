@@ -18,11 +18,12 @@
 #ifndef TYR_FORMALISM_BINARY_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_BINARY_OPERATOR_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
-#include <urd/elements/flat.hpp>
-#include <utility>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -30,7 +31,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
 struct data<::tyr::formalism::BinaryOperator<T, O>>
 {
-    urd::index<::tyr::formalism::BinaryOperator<T, O>> index;
+    urd::key<::tyr::formalism::BinaryOperator<T, O>> index;
     O operation {};
     ::tyr::formalism::FunctionExpression<T> lhs;
     ::tyr::formalism::FunctionExpression<T> rhs;
@@ -57,6 +58,8 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::lhs, &data::rhs> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::lhs, &data::rhs> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::BinaryOperator<T, O>> key() const noexcept { return urd::key<::tyr::formalism::BinaryOperator<T, O>>(index); }
 };
 
 }

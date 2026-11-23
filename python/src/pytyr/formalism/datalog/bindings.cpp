@@ -18,7 +18,9 @@
 #include "bindings.hpp"
 
 #include "pytyr/module.hpp"
+#include "tyr/formalism/declarations.hpp"
 
+#include <nanobind/nanobind.h>
 #include <tyr/formalism/repository.hpp>
 
 namespace tyr::formalism

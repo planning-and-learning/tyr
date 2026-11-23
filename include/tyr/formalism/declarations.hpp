@@ -41,7 +41,6 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
-#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace ygg::formalism
@@ -271,7 +270,6 @@ constexpr auto& tagged_member(Self& self) noexcept
 
 }
 
-
 namespace tyr::formalism
 {
 
@@ -426,7 +424,6 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
 
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes, boost::mp11::mp_list<Rule<LiftedTag>>>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
-
 
 template<typename... Ts>
 using StoredRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<Ts...>;

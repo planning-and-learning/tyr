@@ -20,11 +20,17 @@
 
 #include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
+#include <cassert>
 #include <span>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {

@@ -18,8 +18,10 @@
 #ifndef TYR_DATALOG_POLICIES_COST_CONCEPTS_HPP_
 #define TYR_DATALOG_POLICIES_COST_CONCEPTS_HPP_
 
-#include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/rule_instance.hpp"
+#include "tyr/declarations.hpp"
 
 #include <concepts>
 

@@ -20,12 +20,16 @@
 
 #include "tyr/formalism/declarations.hpp"
 
-#include <cstddef>
+#include <boost/mp11/algorithm.hpp>
+#include <boost/mp11/detail/mp_list.hpp>
+#include <cassert>
 #include <type_traits>
 #include <urd/graph_types.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/graphs/bit_matrix.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 

@@ -18,13 +18,16 @@
 #ifndef TYR_PLANNING_PROGRAMS_STATE_INPUTS_HPP_
 #define TYR_PLANNING_PROGRAMS_STATE_INPUTS_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>

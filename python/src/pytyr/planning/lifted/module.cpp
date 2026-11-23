@@ -19,16 +19,17 @@
 
 #include "../planning.hpp"
 #include "pytyr/module.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
+#include <tyr/planning/lifted/programs/action.hpp>
 #include <urd/python/owner.hpp>
 #include <urd/python/sequences/sequence.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/planning/state_repository.hpp"
 
 namespace tyr::planning
 {
@@ -79,102 +80,7 @@ formalism task's repository afterwards.
             .def("instantiate_ground_task", &Task<LiftedTag>::instantiate_ground_task, "execution_context"_a, "options"_a = GroundTaskInstantiationOptions());
     ygg::add_print(task);
 
-    using ApplicableProgram = ApplicableActionProgram;
-    nb::class_<ApplicableProgram>(m, "ApplicableActionProgram")
-        .def(nb::init<const formalism::PlanningTask<LiftedTag>&>(), "task"_a, nb::keep_alive<1, 2>())
-        .def("get_datalog_program", nb::overload_cast<>(&ApplicableProgram::get_datalog_program), nb::rv_policy::reference_internal)
-        .def("get_const_program_workspace", &ApplicableProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
-        .def(
-            "get_conditional_effect_to_predicate_mapping",
-            [](const ApplicableProgram& self)
-            {
-                using Key = std::pair<const formalism::ActionView<LiftedTag>*, const formalism::ConditionalEffectView<LiftedTag>*>;
-                using Entry = std::pair<Key, const formalism::PredicateView<formalism::DerivedTag>*>;
-                auto result = urd::Store<urd::sequence<Entry>> {};
-                for (const auto& [key, predicate] : self.get_conditional_effect_to_predicate_mapping())
-                    result.emplace_back(Key { &key.first, &key.second }, &predicate);
-                return result;
-            },
-            nb::rv_policy::reference_internal)
-        .def(
-            "get_predicate_to_action_mapping",
-            [](const ApplicableProgram& self)
-            {
-                using Entry = std::pair<const formalism::PredicateView<formalism::DerivedTag>*, const formalism::ActionView<LiftedTag>*>;
-                auto result = urd::Store<urd::sequence<Entry>> {};
-                for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
-                    result.emplace_back(&predicate, &action);
-                return result;
-            },
-            nb::rv_policy::reference_internal);
-
-    using AxiomProgram = AxiomEvaluatorProgram;
-    nb::class_<AxiomProgram>(m, "AxiomEvaluatorProgram")
-        .def(nb::init<const formalism::PlanningTask<LiftedTag>&>(), "task"_a, nb::keep_alive<1, 2>())
-        .def("get_datalog_program", nb::overload_cast<>(&AxiomProgram::get_datalog_program), nb::rv_policy::reference_internal)
-        .def("get_const_program_workspace", &AxiomProgram::get_const_program_workspace, nb::rv_policy::reference_internal);
-
-    using RelaxedProgram = RPGProgram<LiftedTag>;
-    nb::class_<RelaxedProgram>(m, "RPGProgram")
-        .def(nb::init<const formalism::PlanningTask<LiftedTag>&, CostMode>(), "task"_a, "cost_mode"_a = CostMode::UNIT, nb::keep_alive<1, 2>())
-        .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
-        .def("get_goal", &RelaxedProgram::get_goal)
-        .def("get_rule_to_action_mapping",
-             [](const RelaxedProgram& self)
-             {
-                 const auto& repository = self.get_datalog_program().get_program_repository();
-                 using Entry = std::pair<formalism::RuleView<LiftedTag>, formalism::ActionView<LiftedTag>>;
-                 auto result = urd::Store<urd::sequence<Entry>> {};
-                 for (const auto& [rule, actions] : self.get_rule_to_action_mapping())
-                     for (const auto action : actions)
-                         result.emplace_back(urd::resolve(rule, repository), action);
-                 return result;
-             });
-
-    nb::class_<GroundTaskProgram>(m, "GroundTaskProgram")
-        .def(nb::init<const formalism::PlanningTask<LiftedTag>&>(), "task"_a, nb::keep_alive<1, 2>())
-        .def("get_datalog_program", nb::overload_cast<>(&GroundTaskProgram::get_datalog_program), nb::rv_policy::reference_internal)
-        .def("get_const_program_workspace", &GroundTaskProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
-        .def(
-            "get_conditional_effect_to_predicate_mapping",
-            [](const GroundTaskProgram& self)
-            {
-                using Key = std::pair<const formalism::ActionView<LiftedTag>*, const formalism::ConditionalEffectView<LiftedTag>*>;
-                using Entry = std::pair<Key, const formalism::PredicateView<formalism::DerivedTag>*>;
-                auto result = urd::Store<urd::sequence<Entry>> {};
-                for (const auto& [key, predicate] : self.get_conditional_effect_to_predicate_mapping())
-                    result.emplace_back(Key { &key.first, &key.second }, &predicate);
-                return result;
-            },
-            nb::rv_policy::reference_internal)
-        .def(
-            "get_predicate_to_action_mapping",
-            [](const GroundTaskProgram& self)
-            {
-                using Entry = std::pair<const formalism::PredicateView<formalism::DerivedTag>*, const formalism::ActionView<LiftedTag>*>;
-                auto result = urd::Store<urd::sequence<Entry>> {};
-                for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
-                    result.emplace_back(&predicate, &action);
-                return result;
-            },
-            nb::rv_policy::reference_internal)
-        .def(
-            "get_predicate_to_axiom_mapping",
-            [](const GroundTaskProgram& self)
-            {
-                using Axioms = urd::Store<urd::sequence<const formalism::AxiomView<LiftedTag>*>>;
-                using Entry = std::pair<const formalism::PredicateView<formalism::DerivedTag>*, Axioms>;
-                auto result = urd::Store<urd::sequence<Entry>> {};
-                for (const auto& [predicate, axioms] : self.get_predicate_to_axiom_mapping())
-                {
-                    auto views = Axioms {};
-                    for (const auto& axiom : axioms)
-                        views.push_back(&axiom);
-                    result.emplace_back(&predicate, std::move(views));
-                }
-                return result;
-            },
-            nb::rv_policy::reference_internal);
+    bind_lifted_programs(m);
 
     bind_kind_definitions<LiftedTag>(m);
 }

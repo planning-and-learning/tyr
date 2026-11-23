@@ -18,9 +18,11 @@
 #ifndef TYR_FORMALISM_BINARY_OPERATOR_VIEW_HPP_
 #define TYR_FORMALISM_BINARY_OPERATOR_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

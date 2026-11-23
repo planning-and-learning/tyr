@@ -20,7 +20,12 @@ nanobind_add_module(
     NB_SUPPRESS_WARNINGS
     module.cpp
     pytyr/module.cpp
+    pytyr/conversions.cpp
     pytyr/serialization/module.cpp
+    pytyr/serialization/module_part_0.cpp
+    pytyr/serialization/module_part_1.cpp
+    pytyr/serialization/module_part_2.cpp
+    pytyr/serialization/module_part_3.cpp
     ${PYTYR_FORMALISM_SOURCES}
     pytyr/datalog/module.cpp
     pytyr/datalog/ground/module.cpp
@@ -29,6 +34,7 @@ nanobind_add_module(
     pytyr/planning/ground/module.cpp
     pytyr/planning/ground/match_tree.cpp
     pytyr/planning/lifted/module.cpp
+    pytyr/planning/lifted/programs.cpp
     pytyr/planning/algorithms/astar_eager/ground.cpp
     pytyr/planning/algorithms/brfs/ground.cpp
     pytyr/planning/algorithms/gbfs_lazy/ground.cpp
@@ -46,9 +52,9 @@ target_link_libraries(_pytyr PRIVATE tyr::core TBB::tbb)
 target_include_directories(_pytyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # The bindings of one directory bind types of one family and share most of their instantiations: batched, they compile
 # them once (brokkr's template rules, rule 11). formalism and formalism/planning exceed the heaviest translation unit
-# merged whole, so they are batched by at most 11 sources.
+# merged whole, so they are batched by at most 6 sources.
 brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} DIRECTORIES pytyr/formalism/datalog)
-brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 11 DIRECTORIES pytyr/formalism pytyr/formalism/planning)
+brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 6 DIRECTORIES pytyr/formalism pytyr/formalism/planning)
 # The bindings are the build's heaviest translation units: where memory is tight, cap how many compile at once
 # (-DTYR_PYTHON_COMPILE_JOBS=6 at -j12 lowers the peak memory by about 3 GB for 10 s more), so that they do not take
 # every parallel slot at the same time.

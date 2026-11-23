@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 

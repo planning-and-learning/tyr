@@ -19,8 +19,6 @@
 #define TYR_PLANNING_STATE_STORAGE_TREE_BITSET_FACT_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_storage.hpp"
-#include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
@@ -30,10 +28,10 @@
 #include <concepts>
 #include <span>
 #include <type_traits>
-#include <utility>
-#include <vector>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 
 namespace tyr::planning
 {
@@ -73,12 +71,15 @@ public:
     /// A stored storage's values or bits, in their built form.
     [[nodiscard]] Built unpack(Key key) const;
 
-    /// The storages in its pool (its set is shared with the other bitset storage of the state, whose rows it counts too): its set's rows, none below it (not layered: urd::count_at's size and base).
+    /// The storages in its pool (its set is shared with the other bitset storage of the state, whose rows it counts too): its set's rows, none below it (not
+    /// layered: urd::count_at's size and base).
     [[nodiscard]] std::size_t size() const noexcept { return m_context->bitsets.size(); }
+
     [[nodiscard]] std::size_t base() const noexcept { return 0; }
 
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
-    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_blocks, &StateComponentRepository::m_flips, &StateComponentRepository::m_bits> {}; }
+    static constexpr auto memory_members() noexcept
+    { return urd::Members<&StateComponentRepository::m_blocks, &StateComponentRepository::m_flips, &StateComponentRepository::m_bits> {}; }
 
     Handle insert(const Unpacked& unpacked);
 

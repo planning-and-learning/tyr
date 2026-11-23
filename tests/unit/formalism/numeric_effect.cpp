@@ -1,4 +1,6 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -7,9 +9,15 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
+#include <yggdrasil/core/config.hpp>
 
-namespace tyr::tests::planning_numeric_effect
+namespace tyr::tests::formalism_numeric_effect
 {
 
 namespace lifted_tests
@@ -96,4 +104,4 @@ TEST(TyrFormalismPlanningGroundNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 
 }
 
-}  // namespace tyr::tests::planning_numeric_effect
+}  // namespace tyr::tests::formalism_numeric_effect

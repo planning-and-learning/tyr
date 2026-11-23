@@ -18,12 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <concepts>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

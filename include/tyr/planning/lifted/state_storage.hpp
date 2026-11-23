@@ -22,12 +22,14 @@
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 
 #include <cassert>
 #include <climits>
 #include <cstddef>
 #include <ranges>
 #include <tuple>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace urd
@@ -37,6 +39,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
 {
+    urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>> index;
     urd::built_t<::tyr::planning::StateBitWords, C> indices;
 
     void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact)
@@ -54,7 +57,11 @@ struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
     /// Takes the bits of a view of a builder of its kind (another state's).
     void assign(const urd::borrowed_view<::tyr::planning::FactStorage<::tyr::LiftedTag>, C, builder>& storage) { indices = storage.get_indices(); }
 
-    void swap(builder& other) noexcept { indices.swap(other.indices); }
+    void swap(builder& other) noexcept
+    {
+        std::swap(index, other.index);
+        indices.swap(other.indices);
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
 

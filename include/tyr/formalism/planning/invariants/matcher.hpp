@@ -18,18 +18,20 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 
-#include "tyr/formalism/atom_data.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
 #include <cassert>
 #include <cstddef>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <urd/tags.hpp>
 
 namespace tyr::formalism::invariant
 {

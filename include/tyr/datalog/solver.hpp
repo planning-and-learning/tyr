@@ -18,8 +18,11 @@
 #ifndef TYR_DATALOG_SOLVER_HPP_
 #define TYR_DATALOG_SOLVER_HPP_
 
-#include "tyr/datalog/ground/contexts/program.hpp"
-#include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/policies/annotation_concepts.hpp"
+#include "tyr/datalog/policies/cost_concepts.hpp"
+#include "tyr/datalog/policies/termination_concepts.hpp"
+#include "tyr/declarations.hpp"
 
 #include <yggdrasil/execution/declarations.hpp>
 

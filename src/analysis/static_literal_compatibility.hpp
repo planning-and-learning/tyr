@@ -20,15 +20,18 @@
 #include <initializer_list>
 #include <optional>
 #include <urd/bits.hpp>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/graph_types.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/sequences/jagged.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::analysis::detail
 {

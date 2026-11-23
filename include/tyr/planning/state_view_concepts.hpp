@@ -28,7 +28,9 @@
 #include <ranges>
 #include <type_traits>
 #include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 
@@ -88,9 +90,12 @@ concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs
 };
 
 /// State contents and task context, accepting values and references without requiring repository identity; compared
-/// and hashed by its identity (urd::Identifiable).
+/// and hashed by its identity (urd::Identifiable). It asks only for members whose types are written out: the range
+/// accessors' types are deduced, and asking for them would compile their bodies (and the repository's reads) in every
+/// source that names a Node. The state views have them (IterableStateConcept, IterableViewStateConcept), asserted where
+/// they are defined (src/planning/state.cpp).
 template<typename T, typename Kind>
-concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && IterableViewStateConcept<T> && urd::Identifiable<std::remove_cvref_t<T>>
+concept StateViewConcept = TaskKind<Kind> && urd::Identifiable<std::remove_cvref_t<T>>
                            && requires(const std::remove_reference_t<T>& state,
                                        urd::index<formalism::FDRVariable<formalism::FluentTag>> variable,
                                        urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
@@ -102,10 +107,7 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                                        formalism::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
                                        formalism::AtomView<GroundTag, formalism::StaticTag> static_atom_view,
                                        formalism::AtomView<GroundTag, formalism::FluentTag> fluent_atom_view,
-                                       formalism::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view,
-                                       formalism::PredicateView<formalism::StaticTag> static_predicate,
-                                       formalism::PredicateView<formalism::FluentTag> fluent_predicate,
-                                       formalism::PredicateView<formalism::DerivedTag> derived_predicate) {
+                                       formalism::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view) {
                                   { state.context() } -> std::same_as<const StateRepository<Kind>&>;
                                   { state.get_formalism_repository() } -> std::same_as<const formalism::RepositoryPtr&>;
                                   { state.value(variable) } -> std::same_as<formalism::FDRValue>;
@@ -119,9 +121,6 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                                   { state.test(static_atom_view) } -> std::same_as<bool>;
                                   { state.test(fluent_atom_view) } -> std::same_as<bool>;
                                   { state.test(derived_atom_view) } -> std::same_as<bool>;
-                                  { state.get_atoms(static_predicate) } -> AtomViewRangeConcept<formalism::StaticTag>;
-                                  { state.get_atoms(fluent_predicate) } -> AtomViewRangeConcept<formalism::FluentTag>;
-                                  { state.get_atoms(derived_predicate) } -> AtomViewRangeConcept<formalism::DerivedTag>;
                               };
 
 }

@@ -18,13 +18,14 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_BUILDER_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_BUILDER_HPP_
 
-#include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -33,7 +34,7 @@ namespace urd
 template<typename Tag, typename C>
 struct builder<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>
 {
-    urd::index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
+    urd::key<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
     urd::built_t<urd::flat_vector<urd::index<Tag>>, ::tyr::formalism::Repository> elements;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &builder::elements>> {}; }

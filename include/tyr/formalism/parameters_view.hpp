@@ -23,6 +23,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

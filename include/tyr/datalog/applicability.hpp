@@ -19,6 +19,7 @@
 #define TYR_DATALOG_APPLICABILITY_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -44,6 +45,7 @@
 #include <stdexcept>
 #include <utility>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog

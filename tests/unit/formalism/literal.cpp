@@ -1,11 +1,16 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
-namespace tyr::tests::planning_literal
+namespace tyr::tests::formalism_literal
 {
 
 namespace lifted_tests
@@ -66,4 +71,4 @@ static_assert(std::same_as<urd::index_view<tyr::formalism::Literal<::tyr::Ground
                            tyr::formalism::LiteralView<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 }
 
-}  // namespace tyr::tests::planning_literal
+}  // namespace tyr::tests::formalism_literal

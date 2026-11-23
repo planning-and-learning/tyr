@@ -21,7 +21,6 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <concepts>
-#include <utility>
 
 namespace tyr::formalism::unification
 {

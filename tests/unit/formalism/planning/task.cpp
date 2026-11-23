@@ -1,3 +1,5 @@
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
@@ -5,6 +7,11 @@
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <cstddef>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests::planning_task
 {

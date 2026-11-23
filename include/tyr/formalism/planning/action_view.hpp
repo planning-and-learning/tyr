@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -25,8 +26,12 @@
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <concepts>
 #include <ranges>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/values.hpp>
 
@@ -68,7 +73,7 @@ public:
     { return get_variables().size(); }
 
     /// Its rows' column types (a key of row pools): one object column per argument, computed.
-    ygg::UniformColumnTypes get_column_types() const
+    [[nodiscard]] ygg::UniformColumnTypes get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
     { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(get_variables().size()); }
 

@@ -113,6 +113,7 @@
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/relation_repository.hpp>
 #include <yggdrasil/formalism/repository.hpp>
+#include <yggdrasil/formalism/repository_instantiations.hpp>
 #include <yggdrasil/formalism/row_builder.hpp>
 #include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -124,5 +125,10 @@ namespace tyr::formalism
 using ygg::formalism::checkout;
 
 }
+
+// Its reads, finds and inserts instantiated once, in src/formalism/repository*.cpp (brokkr's include rule I7): a file
+// that reads records through the repository completes none of its stores. Its builder's members need no declaration
+// here: their definitions (yggdrasil/formalism/builder_impl.hpp) are seen only by the sources that instantiate them.
+YGG_FORMALISM_REPOSITORY(extern, tyr::formalism::Repository, 63, 9)
 
 #endif

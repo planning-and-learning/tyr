@@ -18,12 +18,11 @@
 #ifndef TYR_FORMALISM_BOOLEAN_OPERATOR_UTILS_HPP_
 #define TYR_FORMALISM_BOOLEAN_OPERATOR_UTILS_HPP_
 
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 
 #include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <type_traits>
+#include <concepts>
+#include <stdexcept>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 

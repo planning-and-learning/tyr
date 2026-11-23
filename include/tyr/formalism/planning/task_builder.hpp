@@ -18,25 +18,28 @@
 #ifndef TYR_FORMALISM_PLANNING_TASK_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_TASK_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_builder.hpp"
 #include "tyr/formalism/conjunctive_condition_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_builder.hpp"
 #include "tyr/formalism/object_builder.hpp"
 #include "tyr/formalism/planning/action_builder.hpp"
 #include "tyr/formalism/planning/axiom_builder.hpp"
 #include "tyr/formalism/planning/domain_builder.hpp"
 #include "tyr/formalism/planning/fdr_fact_builder.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_builder.hpp"
 #include "tyr/formalism/planning/metric_builder.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -45,7 +48,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::Task<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<urd::index<::tyr::formalism::Domain>, C> domain;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
@@ -97,7 +100,7 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
 template<typename C>
 struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::Task<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Task<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<urd::index<::tyr::formalism::Domain>, C> domain;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;

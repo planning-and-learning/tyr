@@ -17,9 +17,14 @@
 
 #include "tyr/datalog/formatter.hpp"
 
-#include <fmt/format.h>
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
+#include "tyr/datalog/statistics/program.hpp"
+#include "tyr/datalog/statistics/rule.hpp"
+
+#include <fmt/base.h>
 #include <limits>
 #include <yggdrasil/core/chrono.hpp>
+#include <yggdrasil/core/config.hpp>
 
 fmt::format_context::iterator fmt::formatter<tyr::datalog::StaticConsistencyGraph>::format(const tyr::datalog::StaticConsistencyGraph&,
                                                                                            fmt::format_context& ctx) const

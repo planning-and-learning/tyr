@@ -22,16 +22,17 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
-#include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-#include <boost/mp11.hpp>
 #include <cassert>
 #include <cstddef>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {

@@ -20,6 +20,8 @@
 
 #include "../planning.hpp"
 
+#include <nanobind/trampoline.h>
+
 namespace tyr::planning::iw
 {
 

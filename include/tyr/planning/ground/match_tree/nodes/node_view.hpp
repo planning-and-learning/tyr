@@ -31,6 +31,7 @@
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 #include <utility>
 
 namespace urd

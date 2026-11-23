@@ -18,8 +18,11 @@
 #ifndef TYR_FORMALISM_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_CANONICALIZATION_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 
+#include <concepts>
 #include <urd/elements/data.hpp>
 #include <utility>
 #include <yggdrasil/semantics/canonicalization.hpp>

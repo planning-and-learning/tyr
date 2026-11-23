@@ -18,9 +18,11 @@
 #ifndef TYR_PLANNING_APPLICABILITY_DECL_HPP_
 #define TYR_PLANNING_APPLICABILITY_DECL_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage_view.hpp"
 
+#include <urd/elements/builder.hpp>
 #include <urd/elements/view.hpp>
 #include <yggdrasil/core/config.hpp>
 

@@ -16,16 +16,27 @@
  */
 
 // The members of the repository, which the library's other sources only declare (tyr/formalism/repository.hpp): with
-// every insert's preparation in sight (interning.hpp).
-// Compiled on its own, outside the unity batches (src/CMakeLists.txt).
+// every insert's preparation in sight (interning.hpp). Split over this source (its own members and its relations' keys),
+// repository_builder.cpp (its builder's construction) and repository_symbols_{0,1,2}.cpp (a third of its symbols' keys and its builder's types each), so that
+// no one source holds them all (brokkr's template rule T5). Each compiled on its own, outside the unity batches
+// (src/CMakeLists.txt).
 
 #include "tyr/formalism/repository.hpp"
 
 #include "tyr/formalism/interning.hpp"
 
+#include <cstddef>
 #include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/repository_impl.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
 
-YGG_FORMALISM_REPOSITORY(, tyr::formalism::Repository, 63, 9)
-YGG_FORMALISM_BUILDER(, tyr::formalism::Builder, 72)
+// The counts the sources' ranges cover: the symbols (repository_symbols_*.cpp), the relations (a Schema and its row
+// families, here) and the builder's types (repository_symbols_*.cpp).
+constexpr auto symbol_count = std::size_t { 63 };
+constexpr auto relation_count = std::size_t { 9 };
+constexpr auto builder_type_count = std::size_t { 72 };
+static_assert(boost::mp11::mp_size<tyr::formalism::Repository::SymbolTypes>::value == symbol_count);
+static_assert(boost::mp11::mp_size<tyr::formalism::Repository::RelationTypes>::value == relation_count);
+static_assert(boost::mp11::mp_size<tyr::formalism::Builder::Types>::value == builder_type_count);
+YGG_FORMALISM_REPOSITORY_MEMBERS(, tyr::formalism::Repository)
+YGG_FORMALISM_PART_KEYS(, tyr::formalism::Repository, 1, 0, 10)

@@ -20,13 +20,18 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
 #include <boost/mp11.hpp>
+#include <boost/mp11/detail/mp_list.hpp>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <mutex>
@@ -35,6 +40,10 @@
 #include <tuple>
 #include <type_traits>
 #include <urd/config.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/less.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
@@ -43,11 +52,13 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/wrappers/recycling.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::datalog
 {

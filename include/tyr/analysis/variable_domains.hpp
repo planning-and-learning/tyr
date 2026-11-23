@@ -19,10 +19,12 @@
 #define TYR_ANALYSIS_VARIABLE_DOMAINS_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <concepts>
 #include <string_view>
 #include <urd/elements/concepts.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
 
 namespace tyr::analysis
 {

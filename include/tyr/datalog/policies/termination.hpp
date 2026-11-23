@@ -22,10 +22,10 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
-#include "tyr/datalog/policies/termination_concepts.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 
 #include <optional>
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {

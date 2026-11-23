@@ -18,18 +18,22 @@
 #ifndef TYR_PLANNING_STATE_DATA_HPP_
 #define TYR_PLANNING_STATE_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
-#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/config.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 
 #include <concepts>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
@@ -60,6 +64,9 @@ struct data<::tyr::planning::FactStorage<::tyr::GroundTag>>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::values> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>> key() const noexcept
+    { return urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>>(index); }
 };
 
 /// A lifted state's fluent facts: a bit per (binary) fluent variable, as words. Its pool packs them and names them by
@@ -85,6 +92,9 @@ struct data<::tyr::planning::FactStorage<::tyr::LiftedTag>>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::indices> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>> key() const noexcept
+    { return urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>>(index); }
 };
 
 /// A state's derived atoms: a bit per derived atom, as words. Its pool packs them and names them by its handle.
@@ -109,6 +119,8 @@ struct data<::tyr::planning::AtomStorage<Kind>>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::indices> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::AtomStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::AtomStorage<Kind>>(index); }
 };
 
 /// A state's numeric values: a value per function term, NaN where it has none. Its pool packs them and names them by
@@ -134,6 +146,8 @@ struct data<::tyr::planning::NumericStorage<Kind>>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::values> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::NumericStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::NumericStorage<Kind>>(index); }
 };
 
 /// A state as its repository stores it: its index and the keys of its storages (each a handle in its pool, by the storage
@@ -142,7 +156,7 @@ struct data<::tyr::planning::NumericStorage<Kind>>
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::State<Kind>>
 {
-    urd::index<::tyr::planning::State<Kind>> index;
+    urd::key<::tyr::planning::State<Kind>> index;
     urd::key<::tyr::planning::FactStorage<Kind>> fact_storage;
     urd::key<::tyr::planning::AtomStorage<Kind>> atom_storage;
     urd::key<::tyr::planning::NumericStorage<Kind>> numeric_storage;
@@ -175,6 +189,8 @@ struct data<::tyr::planning::State<Kind>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact_storage, &data::numeric_storage> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::State<Kind>> key() const noexcept { return urd::key<::tyr::planning::State<Kind>>(index); }
 };
 
 }  // namespace urd

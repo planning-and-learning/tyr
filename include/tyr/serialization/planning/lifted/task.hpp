@@ -1,9 +1,10 @@
 #ifndef TYR_SERIALIZATION_PLANNING_LIFTED_TASK_HPP_
 #define TYR_SERIALIZATION_PLANNING_LIFTED_TASK_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/serialization/formalism/planning/planning.hpp"
-#include "yggdrasil/serialization/dictionaries.hpp"
+
+#include <type_traits>
 
 namespace ygg::serialization
 {

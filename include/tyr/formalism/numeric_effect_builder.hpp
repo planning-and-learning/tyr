@@ -18,18 +18,17 @@
 #ifndef TYR_FORMALISM_NUMERIC_EFFECT_BUILDER_HPP_
 #define TYR_FORMALISM_NUMERIC_EFFECT_BUILDER_HPP_
 
-#include "tyr/formalism/binary_operator_builder.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_term_builder.hpp"
-#include "tyr/formalism/multi_operator_builder.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/unary_operator_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -38,7 +37,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::NumericEffectFactKind F, typename C>
 struct builder<::tyr::formalism::NumericEffect<T, F>, C>
 {
-    urd::index<::tyr::formalism::NumericEffect<T, F>> index;
+    urd::key<::tyr::formalism::NumericEffect<T, F>> index;
     urd::built_t<::tyr::formalism::NumericEffectOperatorKind, C> operation = ::tyr::formalism::default_numeric_effect_operator<F>;
     urd::built_t<urd::index<::tyr::formalism::FunctionTerm<T, F>>, C> fterm;
     urd::built_t<::tyr::formalism::FunctionExpression<T>, C> fexpr;

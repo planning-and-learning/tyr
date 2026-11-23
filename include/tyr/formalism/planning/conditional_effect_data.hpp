@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -34,7 +35,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>
 {
-    urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> condition;
     urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> effect;
@@ -63,12 +64,15 @@ struct data<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::condition, &data::effect> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>(index); }
 };
 
 template<>
 struct data<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>
 {
-    urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> index;
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> condition;
     urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> effect;
 
@@ -93,6 +97,9 @@ struct data<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::condition, &data::effect> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::effect> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> key() const noexcept
+    { return urd::key<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>(index); }
 };
 
 }

@@ -18,13 +18,17 @@
 #ifndef TYR_FORMALISM_DATALOG_RULE_BODY_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_RULE_BODY_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

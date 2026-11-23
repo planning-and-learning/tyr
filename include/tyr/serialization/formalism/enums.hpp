@@ -4,6 +4,10 @@
 #include "tyr/formalism/enums.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
+#include <boost/json/conversion.hpp>
+#include <boost/json/value.hpp>
+#include <string>
+
 namespace ygg::serialization
 {
 

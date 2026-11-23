@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PARAMETERS_BUILDER_HPP_
 #define TYR_FORMALISM_PARAMETERS_BUILDER_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/parameters_view.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -35,7 +36,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Parameters, C>
 {
-    urd::index<::tyr::formalism::Parameters> index;
+    urd::key<::tyr::formalism::Parameters> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variables", &builder::variables>> {}; }

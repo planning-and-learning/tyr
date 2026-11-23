@@ -18,25 +18,13 @@
 #ifndef TYR_DATALOG_FORMATTER_HPP_
 #define TYR_DATALOG_FORMATTER_HPP_
 
-#include "tyr/datalog/lifted/kckp/assignment.hpp"
 #include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/formatter.hpp"
 
 #include <fmt/base.h>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-#include <fmt/ranges.h>
-#include <limits>
-#include <ostream>
-#include <ranges>
-#include <string>
-#include <urd/format.hpp>
-#include <vector>
-#include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
 {

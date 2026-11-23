@@ -19,21 +19,22 @@
 #define TYR_PLANNING_GROUND_STATE_STORAGE_VECTORS_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_storage.hpp"
+#include "tyr/planning/ground/state_layout.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
 #include <span>
-#include <utility>
-#include <vector>
 #include <type_traits>
 #include <urd/memory.hpp>
 #include <urd/repr/pools/pools.hpp>
 #include <urd/repr/pools/tree_vector.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -92,10 +93,12 @@ public:
 
     /// The storages in its pool: its set's rows, none below it (not layered: urd::count_at's size and base).
     [[nodiscard]] std::size_t size() const noexcept { return m_array_set->size(); }
+
     [[nodiscard]] std::size_t base() const noexcept { return 0; }
 
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
-    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_buffer, &StateComponentRepository::m_flips, &StateComponentRepository::m_writes> {}; }
+    static constexpr auto memory_members() noexcept
+    { return urd::Members<&StateComponentRepository::m_buffer, &StateComponentRepository::m_flips, &StateComponentRepository::m_writes> {}; }
 
     Handle insert(const Unpacked& unpacked);
 
@@ -151,6 +154,7 @@ public:
 
     /// The storages in its pool: its set's rows, none below it (not layered: urd::count_at's size and base).
     [[nodiscard]] std::size_t size() const noexcept { return m_array_set->size(); }
+
     [[nodiscard]] std::size_t base() const noexcept { return 0; }
 
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).

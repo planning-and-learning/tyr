@@ -18,8 +18,17 @@
 #include "tyr/formalism/planning/parser.hpp"
 
 #include "loki_to_tyr.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 
-#include <loki/loki.hpp>
+#include <filesystem>
+#include <loki/semantic/options.hpp>
+#include <loki/semantic/parser.hpp>
+#include <loki/semantic/translator.hpp>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 #include <yggdrasil/io/project_path.hpp>
 
 namespace tyr::formalism

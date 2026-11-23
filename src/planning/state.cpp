@@ -23,8 +23,13 @@ template struct urd::builder<::tyr::planning::State<::tyr::LiftedTag>, ::tyr::pl
 
 namespace tyr::planning
 {
+// The range accessors StateViewConcept does not ask for (state_view_concepts.hpp), of both state views.
 static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateView<::tyr::GroundTag>>);
 static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateView<::tyr::GroundTag>>);
 static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateView<::tyr::LiftedTag>>);
 static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateView<::tyr::LiftedTag>>);
+static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateBuilderView<::tyr::GroundTag>>);
+static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateBuilderView<::tyr::GroundTag>>);
+static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateBuilderView<::tyr::LiftedTag>>);
+static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateBuilderView<::tyr::LiftedTag>>);
 }

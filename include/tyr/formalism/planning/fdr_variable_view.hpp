@@ -20,7 +20,9 @@
 
 #include "tyr/formalism/declarations.hpp"
 
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

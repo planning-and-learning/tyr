@@ -19,17 +19,20 @@
 #define TYR_DATALOG_LIFTED_KCKP_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/analysis/program_analysis.hpp"
+#include "tyr/analysis/variable_domains.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
-#include "tyr/formalism/repository.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <memory>
 #include <optional>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <yggdrasil/core/family.hpp>
 
 namespace tyr::datalog
 {

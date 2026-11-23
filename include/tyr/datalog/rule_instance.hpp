@@ -18,7 +18,7 @@
 #ifndef TYR_DATALOG_RULE_INSTANCE_HPP_
 #define TYR_DATALOG_RULE_INSTANCE_HPP_
 
-#include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/declarations.hpp"
 
 namespace tyr::datalog
 {

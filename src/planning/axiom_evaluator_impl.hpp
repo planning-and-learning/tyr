@@ -18,10 +18,13 @@
 #ifndef TYR_SRC_PLANNING_AXIOM_EVALUATOR_IMPL_HPP_
 #define TYR_SRC_PLANNING_AXIOM_EVALUATOR_IMPL_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/declarations.hpp"
 
 #include <memory>
 #include <utility>
+#include <yggdrasil/execution/declarations.hpp>
 
 /// The parts of AxiomEvaluator<Kind> that do not depend on the kind. Each kind's source file defines its
 /// AxiomDefinition (shared by all workers), its AxiomWorkspace (one per worker) and compute_extended_state.

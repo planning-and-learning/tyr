@@ -18,11 +18,13 @@
 #include "tyr/analysis/listeners.hpp"
 
 #include "tyr/analysis/stratification.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/expression_properties.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -32,6 +34,9 @@
 #include <gtl/phmap.hpp>
 #include <type_traits>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
+#include <urd/store.hpp>
 #include <utility>
 
 namespace tyr::analysis

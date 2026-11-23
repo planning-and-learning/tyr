@@ -17,24 +17,31 @@
 
 #include "tyr/formalism/planning/fdr_context.hpp"
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
+#include <atomic>
 #include <cassert>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <urd/config.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism

@@ -18,16 +18,15 @@
 #ifndef TYR_FORMALISM_DATALOG_PROGRAM_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_PROGRAM_DATA_HPP_
 
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <optional>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace urd
 {
@@ -35,7 +34,7 @@ namespace urd
 template<::tyr::TaskKind T>
 struct data<::tyr::formalism::Program<T>>
 {
-    urd::index<::tyr::formalism::Program<T>> index;
+    urd::key<::tyr::formalism::Program<T>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
@@ -139,6 +138,8 @@ struct data<::tyr::formalism::Program<T>>
                             &data::goal,
                             &data::rules> {};
     }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Program<T>> key() const noexcept { return urd::key<::tyr::formalism::Program<T>>(index); }
 };
 
 }

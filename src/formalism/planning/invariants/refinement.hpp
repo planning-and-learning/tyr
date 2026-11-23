@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_REFINEMENT_HPP_
 
 #include "proof.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "utils.hpp"

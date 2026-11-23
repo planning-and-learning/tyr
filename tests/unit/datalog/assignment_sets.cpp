@@ -18,20 +18,29 @@
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 
 #include "tyr/analysis/variable_domain.hpp"
+#include "tyr/datalog/lifted/kckp/assignment.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <initializer_list>
 #include <string>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_data.hpp>
 
 namespace tyr::tests

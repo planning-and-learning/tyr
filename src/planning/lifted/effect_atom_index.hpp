@@ -19,6 +19,7 @@
 #define TYR_SRC_PLANNING_LIFTED_EFFECT_ATOM_INDEX_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -34,10 +35,12 @@
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
@@ -50,10 +53,14 @@
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/programs/state_inputs.hpp"
 
+#include <cstddef>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/maps/dense_multimap.hpp>
 #include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
@@ -61,9 +68,12 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning

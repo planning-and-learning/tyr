@@ -22,9 +22,9 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 
 #include <cstdint>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
 
 namespace tyr::formalism::invariant
 {

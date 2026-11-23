@@ -18,10 +18,12 @@
 #ifndef TYR_FORMALISM_UNIFICATION_MATCH_TERM_HPP_
 #define TYR_FORMALISM_UNIFICATION_MATCH_TERM_HPP_
 
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/unification/match_policy.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 
-#include <urd/elements/less.hpp>
+#include <urd/elements/index.hpp>
 
 namespace tyr::formalism::unification
 {

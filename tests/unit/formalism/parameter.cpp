@@ -1,6 +1,7 @@
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <concepts>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>

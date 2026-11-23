@@ -20,6 +20,8 @@
 
 #include "module.hpp"
 
+#include <nanobind/nanobind.h>
+
 namespace tyr::formalism
 {
 

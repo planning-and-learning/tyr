@@ -18,13 +18,14 @@
 #ifndef TYR_PLANNING_AXIOM_EVALUATOR_HPP_
 #define TYR_PLANNING_AXIOM_EVALUATOR_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
 
 #include <concepts>
 #include <cstddef>
 #include <memory>
-#include <yggdrasil/core/config.hpp>
+#include <urd/elements/builder.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
@@ -63,9 +64,11 @@ private:
 
 // Each kind defines compute_extended_state in its own source file (src/planning/{ground,lifted}/axiom_evaluator.cpp).
 template<>
-void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder, const StateRepository<GroundTag>& repository);
+void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder,
+                                                       const StateRepository<GroundTag>& repository);
 template<>
-void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder, const StateRepository<LiftedTag>& repository);
+void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder,
+                                                       const StateRepository<LiftedTag>& repository);
 
 extern template class AxiomEvaluator<GroundTag>;
 extern template class AxiomEvaluator<LiftedTag>;

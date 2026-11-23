@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_LITERAL_BUILDER_HPP_
 #define TYR_FORMALISM_LITERAL_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/literal_view.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -35,7 +36,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::Literal<T, F>, C>
 {
-    urd::index<::tyr::formalism::Literal<T, F>> index;
+    urd::key<::tyr::formalism::Literal<T, F>> index;
     urd::built_t<urd::index<::tyr::formalism::Atom<T, F>>, C> atom;
     urd::built_t<bool, C> polarity = false;
 

@@ -18,15 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VARIABLE_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -35,7 +37,7 @@ namespace urd
 template<::tyr::formalism::FactKind T, typename C>
 struct builder<::tyr::formalism::FDRVariable<T>, C>
 {
-    urd::index<::tyr::formalism::FDRVariable<T>> index;
+    urd::key<::tyr::formalism::FDRVariable<T>> index;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>>, C> atoms;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &builder::atoms>> {}; }

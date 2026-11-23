@@ -15,11 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/unification/apply_substitution.hpp"
 #include "tyr/formalism/unification/match.hpp"
+#include "tyr/formalism/unification/match_result.hpp"
+#include "tyr/formalism/unification/match_state.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
+#include "tyr/formalism/unification/structure_traits.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
 
+#include <cstddef>
 #include <gtest/gtest.h>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>

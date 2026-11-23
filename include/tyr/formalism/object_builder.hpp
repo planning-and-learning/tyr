@@ -21,12 +21,14 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <variant>
-#include <vector>
 
 namespace urd
 {
@@ -35,7 +37,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Object, C>
 {
-    urd::index<::tyr::formalism::Object> index;
+    urd::key<::tyr::formalism::Object> index;
     urd::built_t<urd::flat_string, C> name;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &builder::name>> {}; }

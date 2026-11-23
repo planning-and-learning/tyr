@@ -1,7 +1,14 @@
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/repository.hpp"
 
+#include <cista/containers/variant.h>
 #include <concepts>
 #include <gtest/gtest.h>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
+#include <variant>
 
 using Term = tyr::formalism::Term;
 

@@ -18,12 +18,14 @@
 #ifndef TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
 #define TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/repository.hpp"
 
+#include <concepts>
 #include <filesystem>
 #include <memory>
 #include <optional>

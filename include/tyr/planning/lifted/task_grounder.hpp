@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_GROUNDER_HPP_
 #define TYR_PLANNING_LIFTED_TASK_GROUNDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
 

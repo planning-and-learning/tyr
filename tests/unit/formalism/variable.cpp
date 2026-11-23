@@ -5,6 +5,9 @@
 
 #include <concepts>
 #include <gtest/gtest.h>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 using VariableData = urd::data<tyr::formalism::Variable>;
 using VariableIndex = urd::index<tyr::formalism::Variable>;

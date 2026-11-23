@@ -18,9 +18,15 @@
 #ifndef TYR_DATALOG_LIFTED_RULE_INSTANCE_HPP_
 #define TYR_DATALOG_LIFTED_RULE_INSTANCE_HPP_
 
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/rule_instance.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/grounder.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <optional>

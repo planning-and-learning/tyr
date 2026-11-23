@@ -3,8 +3,13 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
+#include <boost/mp11/detail/mp_list.hpp>
 #include <concepts>
 #include <gtest/gtest.h>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 using Predicate = tyr::formalism::Predicate<tyr::formalism::StaticTag>;
 using PredicateData = urd::data<Predicate>;

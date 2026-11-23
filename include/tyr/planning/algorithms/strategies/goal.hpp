@@ -18,12 +18,16 @@
 #ifndef TYR_PLANNING_ALGORITHMS_STRATEGIES_GOAL_HPP_
 #define TYR_PLANNING_ALGORITHMS_STRATEGIES_GOAL_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
 
 #include <memory>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {

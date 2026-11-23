@@ -18,10 +18,10 @@
 #ifndef TYR_FORMALISM_PLANNING_PARSER_HPP_
 #define TYR_FORMALISM_PLANNING_PARSER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
-#include "tyr/planning/declarations.hpp"
 
 #include <filesystem>
 #include <loki/semantic/options.hpp>

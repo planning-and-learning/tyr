@@ -15,17 +15,44 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/datalog/solver.hpp"
+
+#include "planning/parser.hpp"
 #include "solver_fixtures.hpp"
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/workspaces/program.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/annotation_types.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/grounder.hpp"
+#include "tyr/formalism/grounding_context.hpp"
+#include "tyr/formalism/repository.hpp"
+#include "tyr/planning/lifted/programs/action.hpp"
+#include "tyr/planning/lifted/programs/axiom.hpp"
+#include "tyr/planning/lifted/programs/ground.hpp"
+#include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <string>
 #include <tyr/datalog/lifted/program.hpp>
 #include <urd/elements/copy.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/formalism/copy.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::tests
 {

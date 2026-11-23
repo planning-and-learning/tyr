@@ -37,7 +37,9 @@
 #include <tyr/datalog/declarations.hpp>
 #include <tyr/datalog/fact_sets.hpp>
 #include <tyr/datalog/formatter.hpp>
+#include <tyr/datalog/ground/contexts/program.hpp>
 #include <tyr/datalog/ground/program.hpp>
+#include <tyr/datalog/lifted/contexts/program.hpp>
 #include <tyr/datalog/lifted/kckp/assignment.hpp>
 #include <tyr/datalog/lifted/kckp/assignment_sets.hpp>
 #include <tyr/datalog/lifted/kckp/consistency_graph.hpp>
@@ -198,11 +200,7 @@ void bind_task_policies(nb::module_& m)
     nb::class_<CostPolicy>(m, "RuleCostOverridePolicy")
         .def(nb::init<>())
         .def("clear", &CostPolicy::clear)
-        .def(
-            "set_cost",
-            [](CostPolicy& self, RuleKey<Kind> rule, Cost cost) { self.set_cost(rule, cost); },
-            "rule"_a,
-            "cost"_a);
+        .def("set_cost", [](CostPolicy& self, RuleKey<Kind> rule, Cost cost) { self.set_cost(rule, cost); }, "rule"_a, "cost"_a);
 }
 
 template<TaskKind Kind, typename Workspace>

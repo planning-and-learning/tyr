@@ -16,33 +16,26 @@
  */
 
 #include "tyr/datalog/cost_buckets.hpp"
-#include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
+#include "tyr/datalog/policies/aggregation.hpp"
+#include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
-#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
-#include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/rule_body_data.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
-#include "tyr/formalism/function_data.hpp"
-#include "tyr/formalism/function_term_data.hpp"
-#include "tyr/formalism/function_term_value_data.hpp"
-#include "tyr/formalism/literal_data.hpp"
-#include "tyr/formalism/multi_operator_data.hpp"
-#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/object_data.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/variable_data.hpp"
 
 #include <gtest/gtest.h>
 #include <string>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/memory.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_data.hpp>
 
 namespace tyr::tests

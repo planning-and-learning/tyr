@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 #define TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
@@ -26,9 +27,9 @@
 #include <algorithm>
 #include <cassert>
 #include <urd/config.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <vector>
 
 namespace tyr::formalism::unification
 {

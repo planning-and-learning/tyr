@@ -20,8 +20,10 @@
 
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 
 namespace urd
@@ -32,7 +34,7 @@ namespace urd
 template<>
 struct data<::tyr::formalism::Parameters>
 {
-    urd::index<::tyr::formalism::Parameters> index;
+    urd::key<::tyr::formalism::Parameters> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
 
     data() = default;
@@ -50,6 +52,8 @@ struct data<::tyr::formalism::Parameters>
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::Parameters> key() const noexcept { return urd::key<::tyr::formalism::Parameters>(index); }
 };
 
 }

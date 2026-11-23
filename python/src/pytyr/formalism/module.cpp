@@ -22,6 +22,8 @@
 #include "planning/module.hpp"
 #include "pytyr/module.hpp"
 
+#include <nanobind/nanobind.h>
+
 namespace tyr::formalism
 {
 void bind_module_definitions(nb::module_& m)

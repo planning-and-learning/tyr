@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 
 #include "planning/parser.hpp"
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -28,12 +28,15 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_data.hpp"
 #include "tyr/formalism/planning/invariants/ordering.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
 #include <boost/json.hpp>
+#include <boost/json/object.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -44,9 +47,14 @@
 #include <set>
 #include <string>
 #include <urd/elements/clone.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
+#include <yggdrasil/io/project_path.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 

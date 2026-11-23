@@ -18,12 +18,12 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_VIEW_HPP_
 #define TYR_PLANNING_STATE_STORAGE_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_storage.hpp"
-#include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/state_storage.hpp"
 
 #include <cassert>
@@ -32,6 +32,8 @@
 #include <cstddef>
 #include <limits>
 #include <ranges>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/elements/view.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
@@ -184,12 +186,6 @@ public:
 
     static constexpr auto functions() noexcept
     { return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>, urd::function<"fterm_values", &view_mixin::fterm_values>> {}; }
-};
-
-/// A stored storage's view (its stored_ref, StoredStorage, read unpacked) has its storage's accessors.
-template<::tyr::planning::StateStorageKind S, typename Pool, typename V>
-struct urd::view_mixin<::tyr::planning::StoredStorage<S, Pool>, V> : urd::view_mixin<S, V>
-{
 };
 
 #endif

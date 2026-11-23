@@ -18,22 +18,33 @@
 #ifndef TYR_PLANNING_STATE_REPOSITORY_HPP_
 #define TYR_PLANNING_STATE_REPOSITORY_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <atomic>
 #include <boost/mp11.hpp>
+#include <boost/mp11/detail/mp_list.hpp>
 #include <concepts>
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <urd/config.hpp>
+#include <urd/elements/builder.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
@@ -80,14 +91,13 @@ public:
     /// The kind of record it holds: a repository nesting it resolves states here (ygg::formalism::Nests).
     using SymbolTypes = boost::mp11::mp_list<State<Kind>>;
     /// The keys it resolves itself: its states' and their storages' (each its pool's handle).
-    using KeyTypes = boost::mp11::
-        mp_list<urd::index<State<Kind>>, urd::key<FactStorage<Kind>>, urd::key<AtomStorage<Kind>>, urd::key<NumericStorage<Kind>>>;
+    using KeyTypes = boost::mp11::mp_list<urd::index<State<Kind>>, urd::key<FactStorage<Kind>>, urd::key<AtomStorage<Kind>>, urd::key<NumericStorage<Kind>>>;
 
     /// The part of its own that holds T's records in Store, read (Writable false) or written into.
     template<bool Writable, typename Store, typename T>
     using Part = ygg::formalism::HeldPart<std::conditional_t<Writable, StateRepository, const StateRepository>,
-                                         std::conditional_t<Writable, Store, const Store>,
-                                         boost::mp11::mp_list<urd::key<T>>>;
+                                          std::conditional_t<Writable, Store, const Store>,
+                                          boost::mp11::mp_list<urd::key<T>>>;
 
     /// Its own parts (ygg::formalism::key_parts): its states, and the pools of their fluent facts, derived atoms and
     /// numeric values.
@@ -159,7 +169,6 @@ private:
     void unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const;
 
     std::unique_ptr<Impl> m_impl;
-
 };
 
 extern template class StateRepository<GroundTag>;

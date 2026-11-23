@@ -17,11 +17,13 @@
 
 #include "bindings.hpp"
 
+#include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/formatter.hpp>
+#include <urd/elements/index.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/python/bindings.hpp>
 

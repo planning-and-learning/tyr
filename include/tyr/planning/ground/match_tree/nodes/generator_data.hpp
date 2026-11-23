@@ -18,25 +18,21 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_DATA_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_DATA_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <optional>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <utility>
-#include <variant>
-#include <vector>
 
 namespace urd
 {
 template<typename Tag>
 struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
 {
-    urd::index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
+    urd::key<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
     urd::flat_vector<urd::index<Tag>> elements;
 
     data() = default;
@@ -54,6 +50,9 @@ struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::elements> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::elements> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> key() const noexcept
+    { return urd::key<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>(index); }
 };
 }
 

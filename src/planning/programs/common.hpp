@@ -18,15 +18,15 @@
 #ifndef TYR_SRC_PLANNING_PROGRAMS_COMMON_HPP_
 #define TYR_SRC_PLANNING_PROGRAMS_COMMON_HPP_
 
-#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/planning/declarations.hpp"
 
-#include <cstddef>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <urd/elements/builder.hpp>
 #include <urd/elements/flat.hpp>
 #include <utility>
 

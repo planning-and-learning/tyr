@@ -18,17 +18,18 @@
 #ifndef TYR_FORMALISM_ATOM_BUILDER_HPP_
 #define TYR_FORMALISM_ATOM_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/object_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameters_builder.hpp"
 #include "tyr/formalism/predicate_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace urd
 {
@@ -37,7 +38,7 @@ namespace urd
 template<::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::Atom<::tyr::LiftedTag, F>, C>
 {
-    urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, F>> index;
+    urd::key<::tyr::formalism::Atom<::tyr::LiftedTag, F>> index;
     urd::built_t<urd::index<::tyr::formalism::Parameters>, C> parameters;
     urd::built_t<urd::index<::tyr::formalism::Predicate<F>>, C> predicate;
     urd::built_t<::tyr::formalism::TermList, C> terms;
@@ -55,7 +56,7 @@ struct builder<::tyr::formalism::Atom<::tyr::LiftedTag, F>, C>
 template<::tyr::formalism::FactKind F, typename C>
 struct builder<::tyr::formalism::Atom<::tyr::GroundTag, F>, C>
 {
-    urd::index<::tyr::formalism::Atom<::tyr::GroundTag, F>> index;
+    urd::key<::tyr::formalism::Atom<::tyr::GroundTag, F>> index;
     urd::built_t<urd::key<::tyr::formalism::Predicate<F>, ygg::Row<::tyr::formalism::Predicate<F>>>, C> row;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &builder::row>> {}; }

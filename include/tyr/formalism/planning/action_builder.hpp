@@ -18,17 +18,21 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_BUILDER_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace urd
 {
@@ -37,7 +41,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::formalism::Action<::tyr::LiftedTag>, C>
 {
-    urd::index<::tyr::formalism::Action<::tyr::LiftedTag>> index;
+    urd::key<::tyr::formalism::Action<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_string, C> name;
     urd::built_t<urd::flat_string, C> original_name;
     urd::built_t<ygg::uint_t, C> original_arity = 0;
@@ -63,7 +67,7 @@ struct builder<::tyr::formalism::Action<::tyr::LiftedTag>, C>
 template<typename C>
 struct builder<::tyr::formalism::Action<::tyr::GroundTag>, C>
 {
-    urd::index<::tyr::formalism::Action<::tyr::GroundTag>> index;
+    urd::key<::tyr::formalism::Action<::tyr::GroundTag>> index;
     urd::built_t<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>>, C> effects;

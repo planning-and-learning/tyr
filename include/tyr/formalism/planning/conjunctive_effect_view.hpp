@@ -18,13 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 
+#include <concepts>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

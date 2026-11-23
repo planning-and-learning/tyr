@@ -18,22 +18,22 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_ATOM_DATA_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_ATOM_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <optional>
-#include <tuple>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
-#include <variant>
-#include <vector>
 
 namespace urd
 {
 template<typename Tag>
 struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 {
-    urd::index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
+    urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> false_child;
@@ -71,6 +71,9 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>> key() const noexcept
+    { return urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>>(index); }
 };
 }
 

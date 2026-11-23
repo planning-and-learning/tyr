@@ -18,9 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VALUE_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VALUE_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/unsigned_integer.hpp>
 
 namespace tyr::formalism

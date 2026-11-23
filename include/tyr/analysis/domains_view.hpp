@@ -24,6 +24,7 @@
 
 #include <string_view>
 #include <urd/elements/concepts.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
 
 namespace tyr::analysis
 {

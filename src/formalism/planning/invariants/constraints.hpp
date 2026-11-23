@@ -18,15 +18,22 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/unification/structure_traits_impl.hpp"
 
-#include <map>
-#include <optional>
+#include <cstddef>
+#include <urd/elements/builder.hpp>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/less.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <variant>
 #include <vector>

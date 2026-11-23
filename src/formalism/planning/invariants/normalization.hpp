@@ -18,8 +18,10 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
-#include "tyr/formalism/repository.hpp"
+
+#include <urd/elements/builder.hpp>
 
 namespace tyr::formalism::invariant
 {

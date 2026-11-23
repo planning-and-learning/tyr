@@ -1,11 +1,16 @@
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
-namespace tyr::tests::planning_function_term_value
+namespace tyr::tests::formalism_function_term_value
 {
 
 template<typename Entity>
@@ -34,4 +39,4 @@ static_assert(GroundFunctionTermValueContract<tyr::formalism::FunctionTermValue<
 static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>, tyr::formalism::Repository>,
                            tyr::formalism::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
 
-}  // namespace tyr::tests::planning_function_term_value
+}  // namespace tyr::tests::formalism_function_term_value

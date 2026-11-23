@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_FUNCTION_TERM_VALUE_DATA_HPP_
 #define TYR_FORMALISM_FUNCTION_TERM_VALUE_DATA_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <tuple>
 #include <type_traits>
-#include <urd/elements/flat.hpp>
-#include <utility>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/data.hpp>
+#include <urd/elements/index.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace urd
@@ -32,7 +33,7 @@ namespace urd
 template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>
 {
-    urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>> index;
+    urd::key<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>> index;
     urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> fterm;
     ygg::float_t value = 0.0;
 
@@ -51,6 +52,9 @@ struct data<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fterm, &data::value> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fterm, &data::value> {}; }
+
+    [[nodiscard]] urd::key<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>> key() const noexcept
+    { return urd::key<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>(index); }
 };
 
 }

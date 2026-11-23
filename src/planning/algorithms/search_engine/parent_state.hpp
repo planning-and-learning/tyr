@@ -18,8 +18,11 @@
 #ifndef TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_PARENT_STATE_HPP_
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_PARENT_STATE_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/worker_state_index.hpp"
+
+#include <urd/elements/index.hpp>
 
 namespace tyr::planning::detail
 {

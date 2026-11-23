@@ -18,10 +18,18 @@
 #ifndef TYR_PLANNING_HEURISTICS_RPG_FF_HPP_
 #define TYR_PLANNING_HEURISTICS_RPG_FF_HPP_
 
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
 
 #include <cstddef>
 #include <memory>
+#include <urd/kinds.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {

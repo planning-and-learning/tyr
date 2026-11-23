@@ -20,15 +20,26 @@
 #include "matching.hpp"
 #include "normalization.hpp"
 #include "proof.hpp"
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <optional>
 #include <urd/elements/clone.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <urd/tags.hpp>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace tyr::formalism::invariant

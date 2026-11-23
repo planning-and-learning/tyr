@@ -18,15 +18,15 @@
 #ifndef TYR_FORMALISM_BINARY_OPERATOR_BUILDER_HPP_
 #define TYR_FORMALISM_BINARY_OPERATOR_BUILDER_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/function_term_builder.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-#include <optional>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <variant>
-#include <vector>
+#include <urd/elements/concepts.hpp>
+#include <urd/elements/index.hpp>
 
 namespace urd
 {
@@ -35,7 +35,7 @@ namespace urd
 template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O, typename C>
 struct builder<::tyr::formalism::BinaryOperator<T, O>, C>
 {
-    urd::index<::tyr::formalism::BinaryOperator<T, O>> index;
+    urd::key<::tyr::formalism::BinaryOperator<T, O>> index;
     urd::built_t<O, C> operation {};
     urd::built_t<::tyr::formalism::FunctionExpression<T>, C> lhs;
     urd::built_t<::tyr::formalism::FunctionExpression<T>, C> rhs;

@@ -21,21 +21,17 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/node_concepts.hpp"
-#include "tyr/planning/state_view_concepts.hpp"
 
 #include <concepts>
 #include <cstdint>
-#include <functional>
 #include <type_traits>
-#include <urd/elements/flat.hpp>
+#include <urd/elements/builder.hpp>
+#include <urd/kinds.hpp>
 #include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
-#include <vector>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/execution/declarations.hpp>
+#include <urd/tags.hpp>
 
 namespace tyr::planning
 {

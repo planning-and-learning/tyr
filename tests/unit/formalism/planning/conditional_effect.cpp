@@ -1,9 +1,14 @@
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <concepts>
+#include <urd/elements/index.hpp>
+#include <urd/elements/view.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests::planning_conditional_effect
 {

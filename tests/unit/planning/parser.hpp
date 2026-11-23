@@ -21,6 +21,7 @@
 #include "tyr/formalism/planning/parser.hpp"
 
 #include <filesystem>
+#include <loki/semantic/options.hpp>
 
 namespace tyr::tests
 {

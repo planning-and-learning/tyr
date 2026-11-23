@@ -19,7 +19,7 @@
 #define TYR_PLANNING_STATE_STORAGE_TREE_BITSET_CONTEXT_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_storage.hpp"
+#include "tyr/planning/ground/state_layout.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"

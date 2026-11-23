@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_TASK_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_TASK_VIEW_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
@@ -33,7 +34,11 @@
 #include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
+#include <concepts>
+#include <cstddef>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/view.hpp>
 
 namespace urd
 {

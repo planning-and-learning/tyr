@@ -2,10 +2,13 @@
 #ifndef TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 #define TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -18,6 +21,7 @@
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
@@ -33,6 +37,11 @@
 #include "tyr/serialization/formalism/enums.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
+#include <boost/json/conversion.hpp>
+#include <boost/json/value.hpp>
+#include <concepts>
+#include <type_traits>
+#include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace ygg::serialization
