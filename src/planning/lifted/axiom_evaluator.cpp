@@ -119,8 +119,6 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<Lifted
     auto& workspace = *evaluator.workspace;
     workspace.reset_evaluation();
 
-    const auto& program = *m_impl->definition->program;
-
     insert_unextended_state(StateContext<LiftedTag> { repository, state_builder, ygg::float_t { 0 } },
                             *m_impl->definition->task->get_repository(),
                             AllStateInputs {},

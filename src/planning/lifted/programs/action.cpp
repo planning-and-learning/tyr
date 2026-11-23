@@ -158,7 +158,6 @@ auto create_action_datalog_program(const formalism::PlanningTask<LiftedTag>& pla
     const auto program = result.program;
     auto repository = result.repository;
     auto builder = formalism::Builder {};
-    auto context = formalism::GroundingContext { builder, *repository };
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
     auto rule_of = urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, urd::index<formalism::Rule<LiftedTag>>>> {};

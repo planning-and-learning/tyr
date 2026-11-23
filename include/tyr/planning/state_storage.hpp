@@ -184,8 +184,8 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
     urd::key<::tyr::planning::AtomStorage<Kind>> index;
     urd::built_t<::tyr::planning::StateBitWords, C> indices;
 
-    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index)
-    { indices.insert(static_cast<ygg::uint_t>(index.value)); }
+    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom)
+    { indices.insert(static_cast<ygg::uint_t>(atom.value)); }
 
     void clear() { indices.clear(); }
 
@@ -218,9 +218,9 @@ struct builder<::tyr::planning::NumericStorage<Kind>, C>
     urd::key<::tyr::planning::NumericStorage<Kind>> index;
     urd::built_t<urd::flat_vector<ygg::float_t>, C> values;
 
-    void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value)
+    void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> term, ygg::float_t value)
     {
-        ::tyr::set(static_cast<ygg::uint_t>(index.value),
+        ::tyr::set(static_cast<ygg::uint_t>(term.value),
                    ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
                    values,
                    std::numeric_limits<ygg::float_t>::quiet_NaN());
