@@ -17,7 +17,6 @@
 
 #include "tyr/formalism/grounder.hpp"
 
-
 #ifndef TYR_HEADER_INSTANTIATION
 
 namespace tyr::formalism

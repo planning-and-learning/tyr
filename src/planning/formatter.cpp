@@ -17,14 +17,14 @@
 
 #include "tyr/planning/formatter.hpp"
 
-#include <string_view>
-#include <limits>
 #include <bit>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
+#include <limits>
 #include <ranges>
 #include <sstream>
+#include <string_view>
 #include <urd/format.hpp>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/io/iostream.hpp>
@@ -228,7 +228,7 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::PackedLabeledNode<Ki
 { return fmt::format_to(ctx.out(), "{}", value.unpack()); }
 
 fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBitWords>::format(const ::tyr::planning::StateBitWords& value,
-                                                                                    fmt::format_context& ctx) const
+                                                                                     fmt::format_context& ctx) const
 {
     auto out = fmt::format_to(ctx.out(), "{{");
     auto separator = std::string_view {};

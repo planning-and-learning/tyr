@@ -1,4 +1,3 @@
-#include "tyr/formalism/repository.hpp"
 #include "tyr/serialization/formalism/planning/planning.hpp"
 
 #include "planning_fixtures.hpp"
@@ -10,6 +9,7 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
 #include "tyr/planning/ground/task.hpp"

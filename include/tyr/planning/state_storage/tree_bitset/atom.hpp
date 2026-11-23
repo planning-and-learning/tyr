@@ -24,9 +24,9 @@
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 #include "tyr/planning/state_storage/tree_bitset/context.hpp"
 
+#include <span>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/pools/tree_bitset.hpp>
-#include <span>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
@@ -73,8 +73,10 @@ public:
     /// A stored storage's bits, in their built form.
     [[nodiscard]] StateBits unpack(Key key) const;
 
-    /// The storages in its pool (its set is shared with the other bitset storage of the state, whose rows it counts too): its set's rows, none below it (not layered: urd::count_at's size and base).
+    /// The storages in its pool (its set is shared with the other bitset storage of the state, whose rows it counts too): its set's rows, none below it (not
+    /// layered: urd::count_at's size and base).
     [[nodiscard]] std::size_t size() const noexcept { return m_context->bitsets.size(); }
+
     [[nodiscard]] std::size_t base() const noexcept { return 0; }
 
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).

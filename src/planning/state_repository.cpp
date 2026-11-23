@@ -44,7 +44,6 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -52,6 +51,7 @@
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/config.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 
 #include <atomic>
 #include <cassert>
@@ -141,7 +141,7 @@ struct StateRepository<Kind>::Impl
         {
             const auto& unpacked = state.fact_storage;
             return urd::key<FactStorage<Kind>>(parent ? fact_repository.insert(unpacked, parent->fact_storage.value, std::span(delta->fluents)) :
-                                                          fact_repository.insert(unpacked));
+                                                        fact_repository.insert(unpacked));
         }
 
         /// The derived atoms of `state`, stored as a difference to `parent_state` if given: their key. Axioms recompute
@@ -151,7 +151,7 @@ struct StateRepository<Kind>::Impl
         {
             const auto& unpacked = state.atom_storage;
             return urd::key<AtomStorage<Kind>>(parent ? atom_repository.insert(unpacked, parent->atom_storage.value, parent_state->get_atom_storage()) :
-                                                          atom_repository.insert(unpacked));
+                                                        atom_repository.insert(unpacked));
         }
 
         /// The numeric values of `state`, stored as `delta` to `parent` if given: their key.
@@ -160,7 +160,7 @@ struct StateRepository<Kind>::Impl
         {
             auto& unpacked = state.numeric_storage;
             return urd::key<NumericStorage<Kind>>(parent ? numeric_repository.insert(unpacked, parent->numeric_storage.value, std::span(delta->numerics)) :
-                                                             numeric_repository.insert(unpacked));
+                                                           numeric_repository.insert(unpacked));
         }
 
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
@@ -226,11 +226,7 @@ struct StateRepository<Kind>::Impl
 /// The root of a cohort is worker 0; make_worker numbers the others.
 template<TaskKind Kind>
 StateRepository<Kind>::StateRepository(TaskPtr<Kind> task, bool concurrent) :
-    StateRepository(std::make_unique<Impl>(0,
-                                           task,
-                                           concurrent,
-                                           std::make_shared<typename Impl::Storage>(*task),
-                                           std::make_shared<std::atomic<ygg::uint_t>>(1)))
+    StateRepository(std::make_unique<Impl>(0, task, concurrent, std::make_shared<typename Impl::Storage>(*task), std::make_shared<std::atomic<ygg::uint_t>>(1)))
 {
 }
 
@@ -427,9 +423,7 @@ std::size_t StateRepository<Kind>::layer() const noexcept
 
 template<TaskKind Kind>
 size_t StateRepository<Kind>::num_states() const noexcept
-{
-    return m_impl->evaluator.storage->packed_states.size();
-}
+{ return m_impl->evaluator.storage->packed_states.size(); }
 
 template class StateRepository<GroundTag>;
 template class StateRepository<LiftedTag>;

@@ -94,7 +94,6 @@ public:
     using NestsBase::get;
 };
 
-
 }
 
 #endif

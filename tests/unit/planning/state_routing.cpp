@@ -71,8 +71,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto dist_hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(17);
 
     const auto expected_source_index = initial.get_state().pack().index();
-    const auto expected_source_hash =
-        dist_hash.hash(initial.get_state());
+    const auto expected_source_hash = dist_hash.hash(initial.get_state());
     auto source = std::optional<tyr::planning::StateView<Kind>>(repository->get_registered_state(expected_source_index));
     auto transferred_source = source;
     source.reset();
@@ -110,21 +109,14 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     move_assigned_source = repository->get_registered_state(expected_source_index);
     EXPECT_EQ(&move_assigned_source.context(), repository.get());
 
-    EXPECT_EQ(
-        dist_hash.hash(initial.get_state()),
-        dist_hash.hash(worker_initial.get_state()));
-    EXPECT_EQ(
-        dist_hash.owner(initial.get_state(), 19),
-        dist_hash.owner(worker_initial.get_state(),
-                        19));
-    EXPECT_EQ(dist_hash.owner(initial.get_state(), 1),
-              urd::index<tyr::planning::Worker>(0));
+    EXPECT_EQ(dist_hash.hash(initial.get_state()), dist_hash.hash(worker_initial.get_state()));
+    EXPECT_EQ(dist_hash.owner(initial.get_state(), 19), dist_hash.owner(worker_initial.get_state(), 19));
+    EXPECT_EQ(dist_hash.owner(initial.get_state(), 1), urd::index<tyr::planning::Worker>(0));
 
     auto derived_only_difference = repository->get_state_builder();
     derived_only_difference->assign_unextended_part(initial.get_state());
     derived_only_difference->set(urd::index<tyr::formalism::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
-    EXPECT_EQ(dist_hash.hash(urd::resolve(*derived_only_difference, *repository)),
-              dist_hash.hash(initial.get_state()));
+    EXPECT_EQ(dist_hash.hash(urd::resolve(*derived_only_difference, *repository)), dist_hash.hash(initial.get_state()));
 
     auto first_numeric = repository->get_state_builder();
     auto second_numeric = repository->get_state_builder();
@@ -135,14 +127,11 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto second_value = first_value + ygg::FloatTolerance<ygg::float_t>::abs_epsilon * ygg::float_t { 0.25 };
     first_numeric->set(numeric_index, first_value);
     second_numeric->set(numeric_index, second_value);
-    EXPECT_EQ(dist_hash.hash(urd::resolve(*first_numeric, *repository)),
-              dist_hash.hash(urd::resolve(*second_numeric, *repository)));
+    EXPECT_EQ(dist_hash.hash(urd::resolve(*first_numeric, *repository)), dist_hash.hash(urd::resolve(*second_numeric, *repository)));
     EXPECT_EQ(urd::resolve(first_numeric->numeric_storage, *repository).get(numeric_index), first_value);
-    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *repository).get(numeric_index),
-              ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
+    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *repository).get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
     second_numeric->set(numeric_index, ygg::float_t { 2 });
-    EXPECT_NE(dist_hash.hash(urd::resolve(*first_numeric, *repository)),
-              dist_hash.hash(urd::resolve(*second_numeric, *repository)));
+    EXPECT_NE(dist_hash.hash(urd::resolve(*first_numeric, *repository)), dist_hash.hash(urd::resolve(*second_numeric, *repository)));
 
     if constexpr (std::same_as<Kind, LiftedTag>)
     {
@@ -155,8 +144,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue { 1 }));
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue::none()));
         EXPECT_EQ(urd::resolve(trailing_zero_facts->fact_storage, *repository).get(low_variable), tyr::formalism::FDRValue { 1 });
-        EXPECT_EQ(dist_hash.hash(urd::resolve(*canonical_facts, *repository)),
-                  dist_hash.hash(urd::resolve(*trailing_zero_facts, *repository)));
+        EXPECT_EQ(dist_hash.hash(urd::resolve(*canonical_facts, *repository)), dist_hash.hash(urd::resolve(*trailing_zero_facts, *repository)));
 
         auto owners = urd::Store<urd::set<ygg::uint_t>> {};
         for (ygg::uint_t mask = 0; mask < 256; ++mask)
@@ -203,9 +191,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);
-    EXPECT_EQ(
-        dist_hash.hash(worker_repository->get_registered_state(owner_node.get_state().pack().index())),
-        remote_hash);
+    EXPECT_EQ(dist_hash.hash(worker_repository->get_registered_state(owner_node.get_state().pack().index())), remote_hash);
 }
 
 template<TaskKind Kind>
@@ -243,22 +229,18 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     first_hash.initialize(initial);
     second_hash.initialize(initial);
     EXPECT_THROW(first_hash.initialize(initial), std::logic_error);
-    EXPECT_EQ(first_hash.hash(initial),
-              second_hash.hash(initial));
-    EXPECT_EQ(first_hash.owner(initial, 1),
-              urd::index<tyr::planning::Worker>(0));
+    EXPECT_EQ(first_hash.hash(initial), second_hash.hash(initial));
+    EXPECT_EQ(first_hash.owner(initial, 1), urd::index<tyr::planning::Worker>(0));
 
     auto side_state = repository->get_state_builder();
     side_state->assign_unextended_part(initial);
     side_state->set(task->get_fdr_context()->get_fact(side.value()));
-    EXPECT_EQ(first_hash.hash(urd::resolve(*side_state, *repository)),
-              first_hash.hash(initial));
+    EXPECT_EQ(first_hash.hash(urd::resolve(*side_state, *repository)), first_hash.hash(initial));
 
     auto landmark_state = repository->get_state_builder();
     landmark_state->assign_unextended_part(initial);
     landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it));
-    EXPECT_NE(first_hash.hash(urd::resolve(*landmark_state, *repository)),
-              first_hash.hash(initial));
+    EXPECT_NE(first_hash.hash(urd::resolve(*landmark_state, *repository)), first_hash.hash(initial));
 }
 
 }

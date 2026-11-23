@@ -52,8 +52,8 @@
 #include "tyr/planning/lifted/programs/axiom.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/task_utils.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/task_utils.hpp"
 #include "yggdrasil/formalism/row_view.hpp"
 
 #include <algorithm>
@@ -109,7 +109,8 @@ struct AxiomWorkspace<LiftedTag>
 }
 
 template<>
-void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder, const StateRepository<LiftedTag>& repository)
+void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder,
+                                                       const StateRepository<LiftedTag>& repository)
 {
     auto& evaluator = m_impl->evaluator;
     if (!evaluator.workspace)

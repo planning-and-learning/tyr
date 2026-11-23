@@ -17,7 +17,6 @@
 
 #include "common.hpp"
 
-#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -28,6 +27,7 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"

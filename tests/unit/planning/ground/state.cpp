@@ -3,7 +3,6 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -11,6 +10,7 @@
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_storage/policy.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>

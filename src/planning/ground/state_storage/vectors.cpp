@@ -16,17 +16,17 @@
  */
 
 #include "tyr/planning/ground/state_storage/vectors.hpp"
-#include "tyr/planning/state_data.hpp"
 
 #include "../../tree_bitset.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_storage_view.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <vector>
 #include <urd/bits.hpp>
+#include <vector>
 
 namespace tyr::planning
 {
@@ -55,7 +55,8 @@ StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::pack(std::span<const ygg::uint_t> values, urd::Store<urd::sequence<ygg::uint_t>>& blocks) const
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::pack(std::span<const ygg::uint_t> values,
+                                                                                          urd::Store<urd::sequence<ygg::uint_t>>& blocks) const
 {
     const auto& infos = m_layout->fluent_infos;
 
@@ -129,7 +130,8 @@ StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::pack(std::span<const urd::word_t> words, urd::Store<urd::sequence<ygg::uint_t>>& blocks)
+void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::pack(std::span<const urd::word_t> words,
+                                                                                          urd::Store<urd::sequence<ygg::uint_t>>& blocks)
 {
     for (std::size_t i = 0; i < blocks.size(); ++i)
         blocks[i] = block_of(words, i);
@@ -184,11 +186,11 @@ void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
     const auto view = m_array_set->at(packed);
     const auto blocks = std::span(view.data(), view.size());
     bits.assign_words((blocks.size() + 1) / 2,
-                                  [blocks](std::span<std::uint64_t> words)
-                                  {
-                                      for (std::size_t i = 0; i < blocks.size(); ++i)
-                                          words[i / 2] |= std::uint64_t { blocks[i] } << (tree_bitset::bits_per_block * (i % 2));
-                                  });
+                      [blocks](std::span<std::uint64_t> words)
+                      {
+                          for (std::size_t i = 0; i < blocks.size(); ++i)
+                              words[i / 2] |= std::uint64_t { blocks[i] } << (tree_bitset::bits_per_block * (i % 2));
+                      });
 }
 
 template class StateComponentRepository<FactStorage<GroundTag>, StateStoragePolicyTag, true>;

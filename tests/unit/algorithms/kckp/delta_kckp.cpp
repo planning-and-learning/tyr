@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/repository.hpp"
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 
 #include "planning/parser.hpp"
@@ -24,6 +23,7 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"

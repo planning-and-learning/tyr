@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 
 #include "effect_atom_index.hpp"
@@ -31,6 +30,7 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
@@ -58,9 +58,9 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/static_state.hpp"
 #include "tyr/planning/task_utils.hpp"
-#include "tyr/planning/state_repository.hpp"
 
 #include <algorithm>
 #include <cstdint>

@@ -1099,10 +1099,8 @@ std::optional<uint64_t> find_weighted_astar_seed(tyr::planning::SuccessorGenerat
     for (uint64_t seed = 0; seed < 1024; ++seed)
     {
         const auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(seed);
-        const auto start_owner =
-            hash.owner(start.get_state(), 2);
-        if (hash.owner(urd::resolve(**direct, state_repository), 2) == start_owner
-            && hash.owner(urd::resolve(**via, state_repository), 2) != start_owner)
+        const auto start_owner = hash.owner(start.get_state(), 2);
+        if (hash.owner(urd::resolve(**direct, state_repository), 2) == start_owner && hash.owner(urd::resolve(**via, state_repository), 2) != start_owner)
             return seed;
     }
     return std::nullopt;

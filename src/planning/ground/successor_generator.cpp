@@ -693,12 +693,7 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
 
 template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
 ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, Binding binding)
-{
-    return m_impl->try_get_applicable_action_binding(
-        node,
-        action_of(binding),
-        binding.template resolve<formalism::Object>());
-}
+{ return m_impl->try_get_applicable_action_binding(node, action_of(binding), binding.template resolve<formalism::Object>()); }
 
 template<ygg::RowViewConcept<formalism::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, Binding binding)

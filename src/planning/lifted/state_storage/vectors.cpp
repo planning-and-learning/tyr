@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
+
 #include "tyr/planning/state_data.hpp"
 
 #include <bit>

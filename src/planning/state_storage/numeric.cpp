@@ -16,8 +16,8 @@
  */
 
 #include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_data.hpp"
 
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_storage/policy.hpp"
 
 #include <urd/elements/equal_to.hpp>

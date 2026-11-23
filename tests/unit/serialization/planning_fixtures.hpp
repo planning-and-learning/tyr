@@ -1,7 +1,6 @@
 #ifndef TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 #define TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 
-#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
@@ -10,6 +9,7 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"

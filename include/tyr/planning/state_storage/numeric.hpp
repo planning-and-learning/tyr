@@ -22,10 +22,10 @@
 #include "tyr/planning/state_storage.hpp"
 
 #include <span>
-#include <utility>
-#include <vector>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -73,6 +73,7 @@ public:
 
     /// The storages in its pool: its set's rows, none below it (not layered: urd::count_at's size and base).
     [[nodiscard]] std::size_t size() const noexcept { return m_float_vectors->size(); }
+
     [[nodiscard]] std::size_t base() const noexcept { return 0; }
 
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).

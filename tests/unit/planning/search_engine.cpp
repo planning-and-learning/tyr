@@ -1173,16 +1173,9 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     {
         auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
-        const auto expensive_owner =
-            hash.owner(expensive.value().get_state(),
-                       3);
-        const auto cheap_owner =
-            hash.owner(cheap.value().get_state(), 3);
-        if (expensive_owner != cheap_owner
-            && hash.owner(
-                   cheap_wait->node.get_state(),
-                   3)
-                   == cheap_owner)
+        const auto expensive_owner = hash.owner(expensive.value().get_state(), 3);
+        const auto cheap_owner = hash.owner(cheap.value().get_state(), 3);
+        if (expensive_owner != cheap_owner && hash.owner(cheap_wait->node.get_state(), 3) == cheap_owner)
             seed = candidate;
     }
     ASSERT_TRUE(seed);
@@ -1261,10 +1254,7 @@ TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeurist
     {
         auto hash = tyr::planning::DistHash<LiftedTag, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
-        if (hash.owner(successors.front().node.get_state(),
-                       3)
-            != hash.owner(successors.back().node.get_state(),
-                          3))
+        if (hash.owner(successors.front().node.get_state(), 3) != hash.owner(successors.back().node.get_state(), 3))
             seed = candidate;
     }
     ASSERT_TRUE(seed);

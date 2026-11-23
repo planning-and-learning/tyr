@@ -160,7 +160,6 @@ private:
     static const SearchNode& get_search_node(WorkerStateIndex<Kind> state, std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers)
     { return get_worker(state, workers).get_search_node(state.state); }
 
-
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static Node<Kind> materialize(WorkerStateIndex<Kind> state,
                                   std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,

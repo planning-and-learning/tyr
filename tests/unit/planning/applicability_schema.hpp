@@ -2,7 +2,6 @@
 #define TYR_TESTS_UNIT_PLANNING_APPLICABILITY_SCHEMA_HPP_
 
 #include "planning/parser.hpp"
-#include "tyr/formalism/repository.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
@@ -10,6 +9,7 @@
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"

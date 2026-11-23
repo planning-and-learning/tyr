@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/datalog/rule_splitting.hpp"
 
 #include "tyr/datalog/fact_sets.hpp"
@@ -31,6 +30,7 @@
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
