@@ -50,6 +50,7 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/keyed.hpp>
 #include <yggdrasil/formalism/nested.hpp>
+#include <yggdrasil/formalism/part_instantiations.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 
 namespace tyr::planning
@@ -196,5 +197,16 @@ materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>
 extern template StateView<LiftedTag>
 materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target, AxiomEvaluator<LiftedTag>& axiom_evaluator);
 }
+
+// The keyed members of the repositories' parts (their states and their storages' pools), instantiated once, in
+// src/planning/state_repository.cpp (brokkr's include rule I7).
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 0, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 1, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 2, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 3, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 0, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 1, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 2, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 3, 1)
 
 #endif
