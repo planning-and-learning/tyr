@@ -147,8 +147,8 @@ add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Dependencies
 
-set(TYR_YGGDRASIL_REQUIRED_VERSION 0.12.0)
-set(TYR_LOKI_REQUIRED_VERSION 1.13.0)
+set(TYR_YGGDRASIL_REQUIRED_VERSION 0.13.0)
+set(TYR_LOKI_REQUIRED_VERSION 1.14.0)
 
 brokkr_find_python_native_prefix(pyurd URD_PREFIX)
 brokkr_find_python_native_prefix(pyurd_native URD_NATIVE_PREFIX)
