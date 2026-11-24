@@ -115,9 +115,10 @@ public:
     /// by the workers evaluating rules in parallel; a lookup writes into the instance's (the worker's) builder.
     [[nodiscard]] Cost get_cost(const RuleInstance<Kind>& instance) const
     {
-        const auto& costs = storage().get_costs();
-        if (const auto it = costs.find(instance.witness_key()); it != costs.end())
-            return it->second;
+        // A lifted instance grounds its (rule, binding) row on first use: only where a cost may be read by it.
+        if (const auto& costs = storage().get_costs(); !costs.empty())
+            if (const auto it = costs.find(instance.witness_key()); it != costs.end())
+                return it->second;
         return get_action_cost(instance);
     }
 
@@ -166,16 +167,17 @@ private:
     [[nodiscard]] Cost get_action_cost(const RuleInstance<LiftedTag>& instance) const
         requires std::same_as<Kind, LiftedTag>
     {
-        const auto rule_binding = instance.cost_key();
         const auto* rule_to_action = mapping();
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto actions = rule_to_action->find(urd::get<formalism::Rule<LiftedTag>>(rule_binding.index()));
+        const auto actions = rule_to_action->find(instance.get_rule().index());
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
         if (m_action_costs.empty())
             return static_cast<Cost>(0);
+        // The row is grounded only here, where its values are read.
+        const auto rule_binding = instance.cost_key();
         // An action's binding is the first values of the rule's row, its arity many: written into a scratch row of the
         // worker's builder and found in the task's repository (only a row it holds may have its cost set).
         const auto values = rule_binding.get_values();

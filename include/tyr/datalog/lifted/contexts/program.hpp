@@ -170,10 +170,12 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     {
         assert(num_threads > 0);
         m_num_threads = num_threads;
+        // One thread evaluating: it alone writes the workspace layer, without the locks of its concurrent stores.
+        m_out.workspace_repository().set_one_writer(is_single_threaded());
     }
 
 private:
-    ProgramExecutionContext(In in, Out out, size_t num_threads) : m_in(in), m_out(out), m_num_threads(num_threads) { assert(num_threads > 0); }
+    ProgramExecutionContext(In in, Out out, size_t num_threads) : m_in(in), m_out(out), m_num_threads(num_threads) { set_num_threads(num_threads); }
 
     void initialize()
     {
