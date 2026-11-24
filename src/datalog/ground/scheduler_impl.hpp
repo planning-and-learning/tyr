@@ -49,7 +49,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::Rul
         auto& unsatisfied_count = states[static_cast<ygg::uint_t>(rule_index.value)].unsatisfied_count;
         assert(unsatisfied_count > 0);
         if (--unsatisfied_count == 0)
-            m_ready.push_back(rule);
+            m_ready.insert(rule.index());
     }
 }
 

@@ -98,9 +98,11 @@ public:
         const auto num_slots = formalism::rule_index_bound(rules);
         m_states.resize(num_slots);
         m_conditions.resize(num_slots);
+        m_rules.resize(num_slots);
         for (const auto rule : rules)
         {
             const auto rule_index = static_cast<ygg::uint_t>(rule.index().value);
+            m_rules[rule_index] = rule;
             const auto body = rule.get_body();
             const auto numeric_constraints = body.get_numeric_constraints().size();
             auto num_literals = size_t { 0 };
@@ -127,7 +129,9 @@ public:
         }
         for (const auto rule : m_numeric_rules)
             m_states[static_cast<ygg::uint_t>(rule.index().value)].numeric_constraint_satisfied.clear();
-        m_ready.assign(m_unconditional_rules.begin(), m_unconditional_rules.end());
+        m_ready.clear();
+        for (const auto rule : m_unconditional_rules)
+            m_ready.insert(rule.index());
     }
 
     /// One condition of `rule` holds, of cost `cost`, aggregated into its support by `aggregate`: a fact of its body is
@@ -139,11 +143,17 @@ public:
         assert(state.unsatisfied_count > 0);
         state.support = aggregate(state.support, cost);
         if (--state.unsatisfied_count == 0)
-            m_ready.push_back(rule);
+            m_ready.insert(rule.index());
     }
 
-    /// The rules whose conditions all hold and that have not fired yet; the solver fires and empties them.
+    /// The rules whose conditions all hold and that have not fired yet, in program order (their indices'): the solver
+    /// fires and empties them. Equally cheap achievers are offered in that order, so that the first, the witness, is the
+    /// same wherever the facts that made them ready came from (a cost bucket hands its facts out in a hash set's order).
     auto& ready() noexcept { return m_ready; }
+
+    /// The rule of an index of the program.
+    [[nodiscard]] formalism::RuleView<GroundTag> rule(urd::index<formalism::Rule<GroundTag>> index) const noexcept
+    { return m_rules[static_cast<ygg::uint_t>(index.value)]; }
 
     /// The cost a ready rule fires with: the aggregate of its conditions' costs.
     [[nodiscard]] Cost support(formalism::RuleView<GroundTag> rule) const noexcept { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
@@ -182,6 +192,8 @@ private:
     void notify_predicate_generated_for(formalism::PredicateRowKey<F> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     using Rules = urd::Store<urd::sequence<formalism::RuleView<GroundTag>>>;
+    /// Rule indices, iterated in their order (a dense set, cleared by the words it touched).
+    using RuleIndices = urd::Store<urd::set<urd::index<formalism::Rule<GroundTag>>>, urd::dense, urd::sorted, urd::proportional_clear>;
 
     formalism::ProgramView<GroundTag> m_program;
     RuleStates m_states;
@@ -189,8 +201,10 @@ private:
     urd::Store<urd::sequence<ygg::uint_t>> m_conditions;
     Rules m_unconditional_rules;
     Rules m_numeric_rules;
+    /// By rule index: its rule.
+    Rules m_rules;
     /// The rules whose conditions all hold and that have not fired yet.
-    Rules m_ready;
+    RuleIndices m_ready;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

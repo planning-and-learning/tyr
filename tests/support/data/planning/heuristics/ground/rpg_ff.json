@@ -266,7 +266,7 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 40
+                    "h": 38
                 }
             }
         },

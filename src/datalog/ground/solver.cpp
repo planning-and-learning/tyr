@@ -61,8 +61,8 @@ public:
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchieverFamily<GroundTag>& pending_achievers)
     {
         auto& ready = scheduler().ready();
-        for (const auto rule : ready)
-            fire(rule, cost_buckets, pending_achievers);
+        for (const auto rule : ready)  // in program order (Scheduler::ready)
+            fire(scheduler().rule(rule), cost_buckets, pending_achievers);
         ready.clear();
         return false;
     }
