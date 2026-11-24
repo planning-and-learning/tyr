@@ -199,7 +199,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
     using T = StateRepository<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
-        .def(nb::new_([](TaskPtr<Kind> task, bool concurrent) { return std::make_shared<T>(std::move(task), concurrent); }), "task"_a, "concurrent"_a = false)
+        .def(nb::new_([](const TaskPtr<Kind>& task, bool concurrent) { return std::make_shared<T>(task, concurrent); }), "task"_a, "concurrent"_a = false)
         .def("get_worker_index", &T::get_worker_index)
         .def("layer", &T::layer)
         .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)

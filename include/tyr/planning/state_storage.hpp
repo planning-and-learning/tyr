@@ -174,9 +174,7 @@ struct built_form<::tyr::planning::StateBitWords, C>
     using type = ::tyr::planning::StateBits;
 
     static void assign(const ::tyr::planning::StateBitWords& bits, type& into)
-    {
-        into.assign_words(std::span<const word_t>(bits.words.data(), bits.words.size()));
-    }
+    { into.assign_words(std::span<const word_t>(bits.words.data(), bits.words.size())); }
 };
 
 /// A state's derived atoms being built: their bits (its record holds their words, state_data.hpp).
