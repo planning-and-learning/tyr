@@ -61,6 +61,14 @@ Stage: build
     cp -a "$(python -c 'import pypddl; print(pypddl.native_prefix() / "lib")')"/* /opt/tyr/runtime-lib/
     cp -a "$(python -c 'import pyyggdrasil; print(pyyggdrasil.native_prefix() / "lib")')"/* /opt/tyr/runtime-lib/
     cp -a "$(python -c 'import pyurd_native; print(pyurd_native.native_prefix() / "lib")')"/* /opt/tyr/runtime-lib/
+    # The libraries auditwheel vendored into a provider's wheel (<package>.libs beside it: pypddl's libquadmath, which
+    # Boost.Charconv needs), which its native libraries load.
+    for package in pypddl pyyggdrasil pyurd_native; do
+        vendored="$(python -c "import $package, pathlib; print(pathlib.Path($package.__file__).parent.parent / '$package.libs')")"
+        if [ -d "$vendored" ]; then
+            cp -a "$vendored"/* /opt/tyr/runtime-lib/
+        fi
+    done
 
 # Runtime stage
 Bootstrap: docker
