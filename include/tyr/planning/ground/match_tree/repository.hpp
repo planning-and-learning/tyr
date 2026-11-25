@@ -50,9 +50,15 @@ namespace tyr::planning::match_tree
 template<typename Tag>
 class Repository;
 
+/// A match tree's builder types under a name of their own (yggdrasil's NamesList).
+template<typename Tag>
+struct Builders : boost::mp11::mp_apply<ygg::formalism::Builders, RepositoryTypes<Tag>>
+{
+};
+
 /// The pools of a match tree's builders and scratch records, interned into its Repository.
 template<typename Tag>
-using BuilderOf = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<RepositoryTypes<Tag>, Repository<Tag>>>;
+using BuilderOf = ygg::formalism::BasicBuilderStorage<Repository<Tag>, Builders<Tag>>;
 using GroundActionBuilder = BuilderOf<formalism::Action<GroundTag>>;
 using GroundAxiomBuilder = BuilderOf<formalism::Axiom<GroundTag>>;
 

@@ -94,19 +94,21 @@ public:
     /// The keys it resolves itself: its states' and their storages' (each its pool's handle).
     using KeyTypes = boost::mp11::mp_list<urd::index<State<Kind>>, urd::key<FactStorage<Kind>>, urd::key<AtomStorage<Kind>>, urd::key<NumericStorage<Kind>>>;
 
-    /// The part of its own that holds T's records in Store, read (Writable false) or written into.
-    template<bool Writable, typename Store, typename T>
-    using Part = ygg::formalism::HeldPart<std::conditional_t<Writable, StateRepository, const StateRepository>,
-                                          std::conditional_t<Writable, Store, const Store>,
-                                          boost::mp11::mp_list<urd::key<T>>>;
+    /// Its own parts' stores and the keys each resolves (ygg::formalism::HeldPart<StateRepository, P>): its states, and the
+    /// pools of their fluent facts, derived atoms and numeric values.
+    using PartStores = boost::mp11::mp_list<PackedStates, StoragePool<FactStorage<Kind>>, StoragePool<AtomStorage<Kind>>, StoragePool<NumericStorage<Kind>>>;
+    using PartKeys = boost::mp11::mp_list<boost::mp11::mp_list<urd::key<State<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<FactStorage<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<AtomStorage<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<NumericStorage<Kind>>>>;
 
-    /// Its own parts (ygg::formalism::key_parts): its states, and the pools of their fluent facts, derived atoms and
-    /// numeric values.
+    /// Part P of its own, read (Writable false) or written into.
+    template<bool Writable, std::size_t P>
+    using Part = ygg::formalism::HeldPart<std::conditional_t<Writable, StateRepository, const StateRepository>, P>;
+
+    /// Its own parts (ygg::formalism::key_parts).
     template<bool Writable>
-    using OwnParts = std::tuple<Part<Writable, PackedStates, State<Kind>>,
-                                Part<Writable, StoragePool<FactStorage<Kind>>, FactStorage<Kind>>,
-                                Part<Writable, StoragePool<AtomStorage<Kind>>, AtomStorage<Kind>>,
-                                Part<Writable, StoragePool<NumericStorage<Kind>>, NumericStorage<Kind>>>;
+    using OwnParts = std::tuple<Part<Writable, 0>, Part<Writable, 1>, Part<Writable, 2>, Part<Writable, 3>>;
 
     /// No layer below it: its workers share its states instead.
     [[nodiscard]] const StateRepository* parent() const noexcept { return nullptr; }

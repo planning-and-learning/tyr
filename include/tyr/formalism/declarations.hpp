@@ -43,18 +43,6 @@
 #include <yggdrasil/formalism/declarations.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
-namespace ygg::formalism
-{
-template<typename... Ts>
-class RelationRepository;
-
-template<typename... Ts>
-class ConcurrentRelationRepository;
-
-template<typename SymbolRepo, typename RelationRepo>
-class Repository;
-}
-
 namespace tyr::formalism
 {
 
@@ -425,20 +413,27 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes, boost::mp11::mp_list<Rule<LiftedTag>>>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 
-template<typename... Ts>
-using StoredRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<Ts...>;
+/// Its symbols and relations, named by what they hold (yggdrasil's Symbols and Relations), not by their stores, and by
+/// classes of their own: a call with a repository argument then never instantiates the stores
+/// (yggdrasil/formalism/declarations.hpp), and the names of everything over a Repository spell these, not every one of
+/// its types (brokkr's template rule T20).
+struct Symbols : boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>
+{
+};
 
-using RelationRepository = boost::mp11::mp_apply<StoredRelationRepository, RelationRepositoryTypes>;
+struct Relations : boost::mp11::mp_apply<::ygg::formalism::ConcurrentRelations, RelationRepositoryTypes>
+{
+};
 
-template<typename... Ts>
-using StoredRelations = ::ygg::formalism::ConcurrentRelations<Ts...>;
+using Repository = ::ygg::formalism::Repository<Symbols, Relations>;
 
-/// Named by what it holds (yggdrasil's Symbols and Relations), not by its stores: a call with a repository argument
-/// then never instantiates them (yggdrasil/formalism/declarations.hpp).
-using Repository = ::ygg::formalism::Repository<boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>,
-                                                boost::mp11::mp_apply<StoredRelations, RelationRepositoryTypes>>;
 /// The pools of a writer's builders and scratch records, interned into a Repository (Repository::insert).
-using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, boost::mp11::mp_push_front<BuilderTypes, Repository>>;
+/// Its builder types under a name of their own (yggdrasil's NamesList), as its Symbols and Relations.
+struct Builders : boost::mp11::mp_apply<ygg::formalism::Builders, BuilderTypes>
+{
+};
+
+using Builder = ygg::formalism::BasicBuilderStorage<Repository, Builders>;
 using RepositoryPtr = std::shared_ptr<Repository>;
 
 /**
