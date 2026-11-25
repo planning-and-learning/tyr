@@ -106,9 +106,9 @@ auto labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(i
 
 Tyr consumes native dependencies from Python packages:
 
-- `pyyggdrasil >= 0.12.0, < 0.13` for shared third-party native dependencies.
-- `pypddl >= 1.13.0, < 1.14` for Loki's PDDL parser library, headers, and CMake package.
-- `pypddl-datasets >= 0.0.17, < 0.1` for the PDDL benchmark data used by the C++ tests and benchmarks (resolved from its cache at CMake configure time).
+- `pyyggdrasil >= 0.14.0, < 0.15` for shared third-party native dependencies.
+- `pypddl >= 1.15.0, < 1.16` for Loki's PDDL parser library, headers, and CMake package.
+- `pypddl-datasets >= 0.0.22, < 0.1` for the PDDL benchmark data used by the C++ tests and benchmarks (resolved from its cache at CMake configure time).
 
 The shared workspace layout, layered install order, and the common
 build-from-source and CMake-integration patterns are documented in the
@@ -121,7 +121,7 @@ Install Tyr's native dependency providers into the active Python environment,
 then configure CMake with their native prefixes:
 
 ```console
-python -m pip install 'pyyggdrasil>=0.12.0,<0.13' 'pybrokkr>=0.3.0,<0.4' 'pypddl>=1.13.0,<1.14' 'pypddl-datasets>=0.0.17,<0.1'
+python -m pip install 'pyyggdrasil>=0.14.0,<0.15' 'pybrokkr>=0.3.1,<0.4' 'pypddl>=1.15.0,<1.16' 'pypddl-datasets>=0.0.22,<0.1'
 
 cmake -S . -B build \
   -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')"

@@ -2,17 +2,17 @@
 requires = [
     "scikit-build-core>=1.0.3,<2",
     "nanobind-backend>=1.0",
-    "pyyggdrasil>=0.13.0,<0.14",
+    "pyyggdrasil>=0.14.0,<0.15",
     "pyurd>=0.6.0,<0.7",
-    "pybrokkr>=0.3.0,<0.4",
-    "pypddl>=1.14.0,<1.15",
+    "pybrokkr>=0.3.1,<0.4",
+    "pypddl>=1.15.0,<1.16",
 ]
 build-backend = "pytyr_build_backend"
 backend-path = ["python"]
 
 [project]
 name = "pytyr"
-version = "0.11.0"
+version = "0.12.0"
 description = "Tyr datalog/planning library"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -22,10 +22,10 @@ authors = [
 ]
 dependencies = [
     "nanobind-backend>=1.0",
-    "pyyggdrasil>=0.13.0,<0.14",
+    "pyyggdrasil>=0.14.0,<0.15",
     "pyurd>=0.6.0,<0.7",
-    "pybrokkr>=0.3.0,<0.4",
-    "pypddl>=1.14.0,<1.15",
+    "pybrokkr>=0.3.1,<0.4",
+    "pypddl>=1.15.0,<1.16",
 ]
 
 [project.urls]
@@ -34,7 +34,7 @@ Homepage = "https://github.com/planning-and-learning/tyr"
 [project.optional-dependencies]
 test = [
     "pytest",
-    "pypddl-datasets>=0.0.17,<0.1",
+    "pypddl-datasets>=0.0.22,<0.1",
     # override and TypeIs for Python 3.11, in the tests, examples and fixture generators.
     "typing-extensions>=4.10",
 ]
@@ -97,7 +97,7 @@ container-engine = "docker"
 # Because --no-isolation also skips scikit-build-core's dynamic build tools,
 # cmake/ninja must be installed here too (manylinux ships cmake but not ninja).
 build-frontend = { name = "build", args = ["--no-isolation"] }
-before-build = "n=0; until python -m pip install --no-cache-dir 'scikit-build-core>=1.0.3,<2' 'cmake>=3.21' 'ninja>=1.5' 'nanobind-backend>=1.0' 'pyyggdrasil>=0.13.0,<0.14' 'pypddl>=1.14.0,<1.15' 'pybrokkr>=0.3.0,<0.4'; do n=$((n+1)); [ $n -ge 30 ] && exit 1; echo 'provider wheels not on the index yet; retrying in 60s'; sleep 60; done"
+before-build = "n=0; until python -m pip install --no-cache-dir 'scikit-build-core>=1.0.3,<2' 'cmake>=3.21' 'ninja>=1.5' 'nanobind-backend>=1.0' 'pyyggdrasil>=0.14.0,<0.15' 'pypddl>=1.15.0,<1.16' 'pybrokkr>=0.3.1,<0.4'; do n=$((n+1)); [ $n -ge 30 ] && exit 1; echo 'provider wheels not on the index yet; retrying in 60s'; sleep 60; done"
 
 [tool.cibuildwheel.linux]
 repair-wheel-command = "python -m pyurd.repair --providers pypddl,pyyggdrasil,pyurd_native --dest-dir {dest_dir} {wheel}"
