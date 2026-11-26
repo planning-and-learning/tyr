@@ -227,6 +227,14 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::PackedLabeledNode<Ki
                                                                                              fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.unpack()); }
 
+fmt::format_context::iterator fmt::formatter<::tyr::planning::TemporalWords>::format(const ::tyr::planning::TemporalWords& value,
+                                                                                     fmt::format_context& ctx) const
+{
+    auto parts = ::tyr::planning::TemporalParts();
+    ::tyr::planning::unpack_temporal(std::span<const std::uint64_t>(value.words.data(), value.words.size()), parts);
+    return fmt::format_to(ctx.out(), "{}", parts);
+}
+
 fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBitWords>::format(const ::tyr::planning::StateBitWords& value,
                                                                                      fmt::format_context& ctx) const
 {

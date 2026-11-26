@@ -42,7 +42,7 @@ template<TaskKind T, FactKind F, typename C>
 void bind_numeric_effect_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<NumericEffect<T, F>, C>>(m);
-    ygg::bind_insert<NumericEffect<T, F>>(repository);
+    python::bind_insert<NumericEffect<T, F>>(repository);
     urd::python::bind_builder<NumericEffect<T, F>, C>(m);
 }
 }  // namespace

@@ -25,6 +25,13 @@
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_view.hpp"
+#include "tyr/planning/pick_data.hpp"
+#include "tyr/planning/joint_outcome_data.hpp"
+#include "tyr/planning/joint_distribution_data.hpp"
+#include "tyr/planning/joint_distributions_data.hpp"
+#include "tyr/planning/outcome_node_data.hpp"
+#include "tyr/planning/distribution_data.hpp"
+#include "tyr/planning/successor_data.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <atomic>
@@ -92,15 +99,50 @@ public:
     /// The kind of record it holds: a repository nesting it resolves states here (ygg::formalism::Nests).
     using SymbolTypes = boost::mp11::mp_list<State<Kind>>;
     /// The keys it resolves itself: its states' and their storages' (each its pool's handle).
-    using KeyTypes = boost::mp11::mp_list<urd::index<State<Kind>>, urd::key<FactStorage<Kind>>, urd::key<AtomStorage<Kind>>, urd::key<NumericStorage<Kind>>>;
+    using KeyTypes = boost::mp11::mp_list<urd::index<State<Kind>>,
+                                          urd::key<FactStorage<Kind>>,
+                                          urd::key<AtomStorage<Kind>>,
+                                          urd::key<NumericStorage<Kind>>,
+                                          urd::key<TemporalStorage<Kind>>,
+                                          urd::key<Successor<Kind>>,
+                                          urd::key<Distribution<Kind>>,
+                                          urd::key<OutcomeNode<Kind>>,
+                                          urd::key<JointDistributions<Kind>>,
+                                          urd::key<JointDistribution<Kind>>,
+                                          urd::key<JointOutcome<Kind>>,
+                                          urd::key<Pick<Kind>>>;
 
-    /// Its own parts' stores and the keys each resolves (ygg::formalism::HeldPart<StateRepository, P>): its states, and the
-    /// pools of their fluent facts, derived atoms and numeric values.
-    using PartStores = boost::mp11::mp_list<PackedStates, StoragePool<FactStorage<Kind>>, StoragePool<AtomStorage<Kind>>, StoragePool<NumericStorage<Kind>>>;
+    /// The records of the transitions between its states, each kind in a store of its own (a successor and its parts, and
+    /// the distributions it is built from): what a successor generator's builders of them are read through.
+    template<typename T>
+    using TransitionRecords = urd::Store<urd::pool<urd::data<T>, urd::index<T>>, urd::stable_refs>;
+
+    /// Its own parts' stores and the keys each resolves (ygg::formalism::HeldPart<StateRepository, P>): its states, the
+    /// pools of their fluent facts, derived atoms, numeric values and temporals, and the records of transitions.
+    using PartStores = boost::mp11::mp_list<PackedStates,
+                                            StoragePool<FactStorage<Kind>>,
+                                            StoragePool<AtomStorage<Kind>>,
+                                            StoragePool<NumericStorage<Kind>>,
+                                            StoragePool<TemporalStorage<Kind>>,
+                                            TransitionRecords<Successor<Kind>>,
+                                            TransitionRecords<Distribution<Kind>>,
+                                            TransitionRecords<OutcomeNode<Kind>>,
+                                            TransitionRecords<JointDistributions<Kind>>,
+                                            TransitionRecords<JointDistribution<Kind>>,
+                                            TransitionRecords<JointOutcome<Kind>>,
+                                            TransitionRecords<Pick<Kind>>>;
     using PartKeys = boost::mp11::mp_list<boost::mp11::mp_list<urd::key<State<Kind>>>,
                                           boost::mp11::mp_list<urd::key<FactStorage<Kind>>>,
                                           boost::mp11::mp_list<urd::key<AtomStorage<Kind>>>,
-                                          boost::mp11::mp_list<urd::key<NumericStorage<Kind>>>>;
+                                          boost::mp11::mp_list<urd::key<NumericStorage<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<TemporalStorage<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<Successor<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<Distribution<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<OutcomeNode<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<JointDistributions<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<JointDistribution<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<JointOutcome<Kind>>>,
+                                          boost::mp11::mp_list<urd::key<Pick<Kind>>>>;
 
     /// Part P of its own, read (Writable false) or written into.
     template<bool Writable, std::size_t P>
@@ -108,7 +150,7 @@ public:
 
     /// Its own parts (ygg::formalism::key_parts).
     template<bool Writable>
-    using OwnParts = std::tuple<Part<Writable, 0>, Part<Writable, 1>, Part<Writable, 2>, Part<Writable, 3>>;
+    using OwnParts = std::tuple<Part<Writable, 0>, Part<Writable, 1>, Part<Writable, 2>, Part<Writable, 3>, Part<Writable, 4>, Part<Writable, 5>, Part<Writable, 6>, Part<Writable, 7>, Part<Writable, 8>, Part<Writable, 9>, Part<Writable, 10>, Part<Writable, 11>>;
 
     /// No layer below it: its workers share its states instead.
     [[nodiscard]] const StateRepository* parent() const noexcept { return nullptr; }
@@ -206,9 +248,11 @@ YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 0, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 1, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 2, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 3, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 4, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 0, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 1, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 2, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 3, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 4, 1)
 
 #endif

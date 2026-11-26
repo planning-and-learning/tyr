@@ -78,6 +78,7 @@ add_library(
     datalog/lifted/scheduler.cpp
 
     planning/formatter.cpp
+    planning/state_storage/temporal.cpp
     planning/state_storage/numeric.cpp
     planning/ground/state_storage.cpp
 

@@ -63,7 +63,8 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                                         "auxiliary_fterm_value",
                                                         "goal",
                                                         "metric",
-                                                        "axioms" }));
+                                                        "axioms",
+                                                        "timed_literals" }));
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::TaskView<GroundTag>>(),
               (urd::Store<urd::sequence<std::string>> { "name",
                                                         "domain",
@@ -78,6 +79,7 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                                         "goal",
                                                         "metric",
                                                         "axioms",
+                                                        "timed_literals",
                                                         "fluent_variables",
                                                         "fluent_facts",
                                                         "ground_actions",

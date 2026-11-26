@@ -7,11 +7,14 @@
 from pytyr._pytyr.planning import (
     CostMode as CostMode,
     DistHashMode as DistHashMode,
+    OpenAction as OpenAction,
     ParallelSearchMode as ParallelSearchMode,
     ProgressStatistics as ProgressStatistics,
     SearchBudget as SearchBudget,
     SearchStatus as SearchStatus,
     Statistics as Statistics,
+    Transition as Transition,
+    TransitionKind as TransitionKind,
     WorkerIndex as WorkerIndex,
 )
 from pytyr.planning import (

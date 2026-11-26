@@ -130,6 +130,30 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
 }
 
 template<TaskKind Kind>
+void bind_outcome_node(nb::module_& m, const std::string& name)
+{
+    using namespace nb::literals;
+    using T = OutcomeNode<Kind>;
+
+    auto cls = nb::class_<T>(m, name.c_str())  //
+                   .def(nb::init<Node<Kind>, ygg::float_t>(), "node"_a, "probability"_a, nb::keep_alive<1, 2>())
+                   .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
+                   .def_ro("probability", &T::probability)
+                   .def_ro("failed", &T::failed);
+}
+
+/// A successor with outcomes as Python owns it: its label and its distributions, each a list of outcome nodes (the C++
+/// spans borrow the generator's pooled storage, which its next call reuses).
+template<TaskKind Kind>
+std::pair<Transition<>, std::vector<std::vector<OutcomeNode<Kind>>>> own(const Successor<Kind>& successor)
+{
+    auto distributions = std::vector<std::vector<OutcomeNode<Kind>>> {};
+    for (const auto& distribution : successor.distributions)
+        distributions.emplace_back(distribution.outcomes.begin(), distribution.outcomes.end());
+    return { successor.label, std::move(distributions) };
+}
+
+template<TaskKind Kind>
 void bind_packed_labeled_node(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
@@ -280,6 +304,59 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("ground_action", &T::ground_action, "binding"_a);
+
+    cls.def(
+           "get_successor",
+           [](T& self, const Node<Kind>& node, formalism::ActionRowView binding, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return own(self.get_successor(node, binding, state_repository, axiom_evaluator)); },
+           "node"_a,
+           "binding"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           nb::keep_alive<0, 4>(),
+           R"doc(
+The successor of a node by an action binding with every outcome of its oneof and probabilistic effects: (label,
+distributions), the adversary picking a distribution (a list of OutcomeNode) and chance an outcome from it. A
+deterministic action has one distribution of one outcome; an action whose effects conflict in some outcome has none.
+           )doc")
+        .def(
+            "get_end_successor",
+            [](T& self, const Node<Kind>& node, std::uint32_t open, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+            { return own(self.get_end_successor(node, open, state_repository, axiom_evaluator)); },
+            "node"_a,
+            "open"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            nb::keep_alive<0, 4>(),
+            R"doc(
+The successor of ending the open durative action at position `open` among the node's:
+(label, distributions) as get_successor, its label a Transition of kind END; no
+distributions if its end condition does not hold or it cannot be scheduled.
+            )doc")
+        .def(
+            "for_each_successor",
+            [](T& self,
+               const Node<Kind>& node,
+               nb::handle state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator,
+               const nb::typed<nb::callable, bool(std::pair<Transition<>, std::vector<std::vector<OutcomeNode<Kind>>>>)>& callback)
+            {
+                using Owned = std::pair<Transition<>, std::vector<std::vector<OutcomeNode<Kind>>>>;
+                return for_each_retaining<Kind, Owned>(state_repository,
+                                                       callback,
+                                                       [&](auto& repository, const auto& emit)
+                                                       {
+                                                           return self.for_each_successor(node,
+                                                                                          repository,
+                                                                                          axiom_evaluator,
+                                                                                          [&](const Successor<Kind>& successor)
+                                                                                          { return emit(own(successor)); });
+                                                       });
+            },
+            "node"_a,
+            "state_repository"_a,
+            "axiom_evaluator"_a,
+            "callback"_a);
 
     cls.def(
            "get_successor_node",
@@ -695,15 +772,19 @@ void bind_kind_definitions(nb::module_& m)
     urd::python::bind_index<FactStorage<Kind>>(m);
     urd::python::bind_index<AtomStorage<Kind>>(m);
     urd::python::bind_index<NumericStorage<Kind>>(m);
+    urd::python::bind_index<TemporalStorage<Kind>>(m);
     urd::python::bind_data<FactStorage<Kind>>(m);
     urd::python::bind_data<AtomStorage<Kind>>(m);
     urd::python::bind_data<NumericStorage<Kind>>(m);
+    urd::python::bind_data<TemporalStorage<Kind>>(m);
     urd::python::bind_builder<FactStorage<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_builder<AtomStorage<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_builder<NumericStorage<Kind>, StateRepository<Kind>>(m);
+    urd::python::bind_builder<TemporalStorage<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_view<FactStorageView<Kind>>(m);
     urd::python::bind_view<AtomStorageView<Kind>>(m);
     urd::python::bind_view<NumericStorageView<Kind>>(m);
+    urd::python::bind_view<TemporalStorageView<Kind>>(m);
     urd::python::bind_index<State<Kind>>(m);
     urd::python::bind_data<State<Kind>>(m);
     urd::python::bind_builder<State<Kind>, StateRepository<Kind>>(m);
@@ -713,6 +794,7 @@ void bind_kind_definitions(nb::module_& m)
     bind_node<Kind>(m, "Node");
     bind_packed_node<Kind>(m, "PackedNode");
     bind_labeled_node<Kind>(m, "LabeledNode");
+    bind_outcome_node<Kind>(m, "OutcomeNode");
     bind_packed_labeled_node<Kind>(m, "PackedLabeledNode");
     bind_plan<Kind>(m, "Plan");
     bind_packed_plan<Kind>(m, "PackedPlan");

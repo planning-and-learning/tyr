@@ -34,6 +34,7 @@
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -52,6 +53,8 @@
 
 #include <algorithm>
 #include <optional>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
@@ -226,8 +229,13 @@ void translate_action_to_ground_rules(formalism::ActionView<LiftedTag> action,
 
     urd::append(program.rules, applicability_rule);
 
-    for (const auto cond_eff : action.get_effects())
+    // Every flat effect the action may apply, those of every outcome of its choices too (reachability over all outcomes),
+    // each once: outcomes may share an effect.
+    auto seen = urd::Store<urd::set<formalism::ConditionalEffectView<LiftedTag>>> {};
+    const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> cond_eff)
     {
+        if (!seen.insert(cond_eff).second)
+            return;
         auto effect_predicate = std::optional<formalism::PredicateView<formalism::DerivedTag>> {};
         // An effect without variables and condition fires with its action.
         if (!cond_eff.get_variables().empty() || !cond_eff.get_condition().empty())
@@ -239,12 +247,13 @@ void translate_action_to_ground_rules(formalism::ActionView<LiftedTag> action,
             urd::append(program.derived_predicates, *effect_predicate);
         }
         if (!effect_predicate && std::ranges::none_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
-            continue;
+            return;
 
         urd::append(program.rules, create_ground_cond_effect_rule(action, cond_eff, effect_predicate, context).first);
         if (effect_predicate)
             effect_to_predicate.emplace(std::pair(action, cond_eff), *effect_predicate);
-    }
+    };
+    formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
 }
 
 void translate_axiom_to_delete_free_axiom_rules(formalism::AxiomView<LiftedTag> axiom,

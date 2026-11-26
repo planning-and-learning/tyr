@@ -38,14 +38,14 @@ void bind_axiom(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_index<Axiom<LiftedTag>>(m);
     urd::python::bind_data<Axiom<LiftedTag>>(m);
     urd::python::bind_view<AxiomView<LiftedTag>>(m);
-    ygg::bind_insert<Axiom<LiftedTag>>(repository);
+    python::bind_insert<Axiom<LiftedTag>>(repository);
     urd::python::bind_builder<Axiom<LiftedTag>, Repository>(m);
 
     urd::python::bind_index<Axiom<GroundTag>>(m);
 
     urd::python::bind_data<Axiom<GroundTag>>(m);
     urd::python::bind_view<AxiomView<GroundTag>>(m);
-    ygg::bind_insert<Axiom<GroundTag>>(repository);
+    python::bind_insert<Axiom<GroundTag>>(repository);
     urd::python::bind_builder<Axiom<GroundTag>, Repository>(m);
 }
 

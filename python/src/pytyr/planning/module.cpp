@@ -29,6 +29,7 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/search_budget.hpp"
 
 #include <cstdint>
@@ -41,6 +42,27 @@
 
 namespace tyr::planning
 {
+namespace
+{
+/// What a transition does, and its label (the same classes for both kinds of task).
+void bind_transition(nb::module_& m)
+{
+    nb::enum_<TransitionKind>(m, "TransitionKind")
+        .value("APPLY", TransitionKind::APPLY)
+        .value("START", TransitionKind::START)
+        .value("END", TransitionKind::END)
+        .value("TIMED_LITERAL", TransitionKind::TIMED_LITERAL);
+    nb::class_<OpenAction>(m, "OpenAction")
+        .def_ro("action", &OpenAction::action)
+        .def_ro("start", &OpenAction::start)
+        .def_ro("min_duration", &OpenAction::min_duration)
+        .def_ro("max_duration", &OpenAction::max_duration);
+    nb::class_<Transition<>>(m, "Transition")
+        .def_ro("kind", &Transition<>::kind)
+        .def_ro("binding", &Transition<>::binding, nb::rv_policy::reference_internal)
+        .def_ro("open", &Transition<>::open);
+}
+}  // namespace
 
 /**
  * bind_module_definitions
@@ -83,6 +105,8 @@ void bind_module_definitions(nb::module_& m)
     nb::enum_<astar_eager::ParallelSearchMode>(m, "ParallelSearchMode")
         .value("SYNCHRONOUS", astar_eager::ParallelSearchMode::SYNCHRONOUS)
         .value("ASYNCHRONOUS", astar_eager::ParallelSearchMode::ASYNCHRONOUS);
+
+    bind_transition(m);
 
     auto ground_module = m.def_submodule("ground");
     bind_ground_module_definitions(ground_module);

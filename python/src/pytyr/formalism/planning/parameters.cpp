@@ -34,7 +34,7 @@ namespace tyr::formalism
 void bind_parameters(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<ParametersView>(m);
-    ygg::bind_insert<Parameters>(repository);
+    python::bind_insert<Parameters>(repository);
     urd::python::bind_builder<Parameters, Repository>(m);
 }
 

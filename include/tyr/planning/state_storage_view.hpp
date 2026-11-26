@@ -26,6 +26,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -186,6 +187,18 @@ public:
 
     static constexpr auto functions() noexcept
     { return urd::Functions<urd::function<"get", &view_mixin::get, urd::arg<"index">>, urd::function<"fterm_values", &view_mixin::fterm_values>> {}; }
+};
+
+/// A state's temporal part (a view of its builder): its open durative actions, frontier roles, timed initial literals
+/// that happened and temporal network (temporal_parts.hpp).
+template<::tyr::TaskKind Kind, typename V>
+struct urd::view_mixin<::tyr::planning::TemporalStorage<Kind>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
+public:
+    [[nodiscard]] decltype(auto) get_parts() const noexcept { return self().template member<&urd::record_of<V>::parts>(); }
 };
 
 #endif

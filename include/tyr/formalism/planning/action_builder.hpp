@@ -23,7 +23,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/choice_effect_builder.hpp"
 #include "tyr/formalism/planning/conditional_effect_builder.hpp"
+#include "tyr/formalism/planning/temporal_part_builder.hpp"
 #include "tyr/formalism/variable_builder.hpp"
 
 #include <urd/elements/builder.hpp>
@@ -48,6 +50,8 @@ struct builder<::tyr::formalism::Action<::tyr::LiftedTag>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>>, C> effects;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>>>, C> choices;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::TemporalPart<::tyr::LiftedTag>>>, C> temporal_part;
 
     static constexpr auto fields() noexcept
     {
@@ -56,11 +60,21 @@ struct builder<::tyr::formalism::Action<::tyr::LiftedTag>, C>
                            urd::field<"original_arity", &builder::original_arity>,
                            urd::field<"variables", &builder::variables>,
                            urd::field<"condition", &builder::condition>,
-                           urd::field<"effects", &builder::effects>> {};
+                           urd::field<"effects", &builder::effects>,
+                           urd::field<"choices", &builder::choices>,
+                           urd::field<"temporal_part", &builder::temporal_part>> {};
     }
 
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::original_name, &builder::variables, &builder::original_arity, &builder::condition, &builder::effects> {}; }
+    {
+        return urd::Members<&builder::original_name,
+                            &builder::variables,
+                            &builder::original_arity,
+                            &builder::condition,
+                            &builder::effects,
+                            &builder::choices,
+                            &builder::temporal_part> {};
+    }
 };
 
 /// The builder of Action: its record's members, each in its built form (urd::built_t).
@@ -71,11 +85,20 @@ struct builder<::tyr::formalism::Action<::tyr::GroundTag>, C>
     urd::built_t<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>, C> row;
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> condition;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>>, C> effects;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ChoiceEffect<::tyr::GroundTag>>>, C> choices;
+    urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::TemporalPart<::tyr::GroundTag>>>, C> temporal_part;
 
     static constexpr auto fields() noexcept
-    { return urd::Fields<urd::field<"row", &builder::row>, urd::field<"condition", &builder::condition>, urd::field<"effects", &builder::effects>> {}; }
+    {
+        return urd::Fields<urd::field<"row", &builder::row>,
+                           urd::field<"condition", &builder::condition>,
+                           urd::field<"effects", &builder::effects>,
+                           urd::field<"choices", &builder::choices>,
+                           urd::field<"temporal_part", &builder::temporal_part>> {};
+    }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::row, &builder::condition, &builder::effects> {}; }
+    static constexpr auto identifying_members() noexcept
+    { return urd::Members<&builder::row, &builder::condition, &builder::effects, &builder::choices, &builder::temporal_part> {}; }
 };
 
 }  // namespace urd

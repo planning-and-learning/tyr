@@ -40,7 +40,7 @@ void bind_rule_body(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_index<RuleBody<GroundTag>>(m);
     urd::python::bind_data<RuleBody<GroundTag>>(m);
     urd::python::bind_view<RuleBodyView<::tyr::GroundTag>>(m);
-    ygg::bind_insert<RuleBody<GroundTag>>(repository);
+    python::bind_insert<RuleBody<GroundTag>>(repository);
     urd::python::bind_builder<RuleBody<GroundTag>, Repository>(m);
 }
 

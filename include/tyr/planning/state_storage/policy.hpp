@@ -22,6 +22,7 @@
 // TYR_STATE_STORAGE_POLICY_HEADER), and only those: a state's storage keys are that policy's handles
 // (urd::key_value_of, state_storage.hpp).
 #include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/temporal.hpp"
 
 #include TYR_STATE_STORAGE_POLICY_HEADER
 

@@ -33,6 +33,7 @@
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -126,8 +127,13 @@ void translate_action_to_delete_free_rules(formalism::ActionView<GroundTag> acti
 {
     // One rule per conditional effect, its body the action's precondition and the effect's condition: no intermediate
     // applicability atom, so an applicable action fires once per effect.
-    for (const auto cond_eff : action.get_effects())
+    // Every effect the action may apply, those of every outcome of its choices too (all outcomes relaxed), each once: outcomes
+    // may share an effect.
+    auto seen = urd::Store<urd::set<formalism::ConditionalEffectView<GroundTag>>> {};
+    const auto visit_effect = [&](formalism::ConditionalEffectView<GroundTag> cond_eff)
     {
+        if (!seen.insert(cond_eff).second)
+            return;
         const auto body = create_delete_free_effect_condition(action.get_condition(), cond_eff.get_condition(), context);
 
         auto heads = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>> {};
@@ -141,7 +147,8 @@ void translate_action_to_delete_free_rules(formalism::ActionView<GroundTag> acti
                 urd::append(program.rules, rule);
             rule_to_action[rule.index()].push_back(action);
         }
-    }
+    };
+    formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
 }
 
 formalism::ProgramView<GroundTag>

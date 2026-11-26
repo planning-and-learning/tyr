@@ -37,7 +37,7 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_index<Domain>(m);
     urd::python::bind_data<Domain>(m);
     urd::python::bind_view<DomainView>(m);
-    ygg::bind_insert<Domain>(repository);
+    python::bind_insert<Domain>(repository);
     urd::python::bind_builder<Domain, Repository>(m);
 }
 

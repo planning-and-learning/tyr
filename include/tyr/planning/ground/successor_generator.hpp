@@ -21,7 +21,9 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/successor_builder.hpp"
 #include "tyr/planning/successor_generator.hpp"
+#include "tyr/planning/successor_view.hpp"
 
 #include <functional>
 #include <memory>
@@ -146,6 +148,42 @@ public:
                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
     BuilderNode get_successor_node(const Source& node, formalism::ActionView<GroundTag> action, Builder& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
     [[nodiscard]] formalism::ActionView<GroundTag> ground_action(formalism::ActionRowView binding) const;
+
+    // Successors with outcomes, over happenings: applying an instantaneous action, starting a durative one, or ending an
+    // open one; their times stay flexible within the state's temporal network. An action with oneof or probabilistic effects
+    // has several outcomes, a deterministic one a distribution of one. Outcome states are registered in `storage`. A
+    // successor is a builder checked out of this generator's pools, held by its handle, which gives it back when it goes:
+    // it must not outlive the generator. A transition
+    // whose effects conflict in some joint outcome, or whose outcomes all violate a running over-all condition, has no
+    // distributions (it is not applicable).
+    SuccessorHandle<GroundTag>
+    get_successor(const Source& node, formalism::ActionRowView binding, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    /// Calls `callback` with the successor of each applicable happening (the action bindings', the open actions' ends, then the next timed initial literals);
+    /// true iff enumeration was exhausted.
+    bool for_each_successor(const Source& node,
+                            StateRepository<GroundTag>& storage,
+                            AxiomEvaluator<GroundTag>& axiom_evaluator,
+                            const std::function<bool(const SuccessorView<GroundTag>&)>& callback);
+    SuccessorHandle<GroundTag>
+    get_successor(const Source& node, formalism::ActionView<GroundTag> action, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    /// The successor of ending the open durative action at position `open` among the node's (none if its end condition
+    /// does not hold, or it cannot be scheduled).
+    SuccessorHandle<GroundTag>
+    get_end_successor(const Source& node, std::uint32_t open, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    /// The successor of the next timed initial literals (none once all happened, or if they cannot be scheduled).
+    SuccessorHandle<GroundTag> get_timed_literal_successor(const Source& node, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
+
+    // Like the above, with the outcome states written into state builders checked out of this generator's pools and closed
+    // under the axioms, not registered: each held by the successor (its outcome's state a built child).
+    SuccessorHandle<GroundTag>
+    get_successor(const Source& node, formalism::ActionRowView binding, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    SuccessorHandle<GroundTag>
+    get_successor(const Source& node, formalism::ActionView<GroundTag> action, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    SuccessorHandle<GroundTag> get_end_successor(const Source& node, std::uint32_t open, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    SuccessorHandle<GroundTag> get_timed_literal_successor(const Source& node, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    bool for_each_successor(const Source& node,
+                            AxiomEvaluator<GroundTag>& axiom_evaluator,
+                            const std::function<bool(const SuccessorView<GroundTag>&)>& callback);
 
     Bindings get_applicable_action_bindings(const Source& node);
     void get_applicable_action_bindings(const Source& node, Bindings& out_bindings);

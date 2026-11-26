@@ -29,7 +29,7 @@
 namespace tyr::planning
 {
 
-/// What applicability reads of a state: its task, its storages (its fluent facts, derived atoms and numeric values, each
+/// What applicability reads of a state: its task, its storages (its fluent facts, derived atoms, numeric values and agenda, each
 /// a view through its state repository) and an auxiliary value. The state must outlive the context.
 template<TaskKind Kind>
 class StateContext
@@ -39,7 +39,7 @@ public:
     template<typename V>
         requires requires(const V& state) { state.get_fact_storage(); }
     StateContext(const Task<Kind>& task, const V& state, ygg::float_t auxiliary_value) :
-        StateContext(task, state.get_fact_storage(), state.get_atom_storage(), state.get_numeric_storage(), auxiliary_value)
+        StateContext(task, state.get_fact_storage(), state.get_atom_storage(), state.get_numeric_storage(), state.get_temporal_storage(), auxiliary_value)
     {
     }
 
@@ -49,6 +49,7 @@ public:
                      FactStorageView<Kind>(&state.fact_storage, &repository),
                      AtomStorageView<Kind>(&state.atom_storage, &repository),
                      NumericStorageView<Kind>(&state.numeric_storage, &repository),
+                     TemporalStorageView<Kind>(&state.temporal_storage, &repository),
                      auxiliary_value)
     {
     }
@@ -61,6 +62,9 @@ public:
 
     [[nodiscard]] const NumericStorageView<Kind>& numeric_storage() const noexcept { return m_numeric_storage; }
 
+    /// Its running durative actions' ends.
+    [[nodiscard]] const TemporalStorageView<Kind>& temporal_storage() const noexcept { return m_temporal_storage; }
+
     [[nodiscard]] ygg::float_t auxiliary_value() const noexcept { return m_auxiliary_value; }
 
     [[nodiscard]] ygg::float_t& auxiliary_value() noexcept { return m_auxiliary_value; }
@@ -70,11 +74,13 @@ private:
                  FactStorageView<Kind> fact_storage,
                  AtomStorageView<Kind> atom_storage,
                  NumericStorageView<Kind> numeric_storage,
+                 TemporalStorageView<Kind> temporal_storage,
                  ygg::float_t auxiliary_value) :
         m_task(&task),
         m_fact_storage(fact_storage),
         m_atom_storage(atom_storage),
         m_numeric_storage(numeric_storage),
+        m_temporal_storage(temporal_storage),
         m_auxiliary_value(auxiliary_value)
     {
     }
@@ -83,6 +89,7 @@ private:
     FactStorageView<Kind> m_fact_storage;
     AtomStorageView<Kind> m_atom_storage;
     NumericStorageView<Kind> m_numeric_storage;
+    TemporalStorageView<Kind> m_temporal_storage;
     ygg::float_t m_auxiliary_value;
 };
 

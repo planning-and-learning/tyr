@@ -41,7 +41,7 @@ template<TaskKind T, FactKind F, typename C>
 void bind_literal_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<Literal<T, F>, C>>(m);
-    ygg::bind_insert<Literal<T, F>>(repository);
+    python::bind_insert<Literal<T, F>>(repository);
     urd::python::bind_builder<Literal<T, F>, C>(m);
 }
 }  // namespace

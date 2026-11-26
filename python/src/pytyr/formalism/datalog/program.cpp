@@ -39,7 +39,7 @@ template<TaskKind T>
 void bind_program_kind(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<ProgramView<T>>(m);
-    ygg::bind_insert<Program<T>>(repository);
+    python::bind_insert<Program<T>>(repository);
     urd::python::bind_builder<Program<T>, Repository>(m);
 }
 }  // namespace

@@ -23,7 +23,9 @@
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
+#include "tyr/formalism/planning/choice_effect_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/temporal_part_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <concepts>
@@ -67,6 +69,11 @@ public:
     auto get_condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
 
     auto get_effects() const noexcept { return self().template member<&urd::record_of<V>::effects>(); }
+
+    auto get_choices() const noexcept { return self().template member<&urd::record_of<V>::choices>(); }
+
+    /// The duration, over-all and end parts of a durative action; none for an instantaneous one.
+    auto get_temporal_part() const noexcept { return self().template member<&urd::record_of<V>::temporal_part>(); }
 
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>

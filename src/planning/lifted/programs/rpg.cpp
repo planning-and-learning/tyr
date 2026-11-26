@@ -37,6 +37,7 @@
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -55,6 +56,8 @@
 
 #include <algorithm>
 #include <optional>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/formalism/row_view.hpp>
 
@@ -132,8 +135,13 @@ void translate_action_to_rpg_rules(formalism::ActionView<LiftedTag> action,
                                    formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                                    RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
 {
-    for (const auto cond_eff : action.get_effects())
+    // Every effect the action may apply, those of every outcome of its choices too (all outcomes relaxed), each once: outcomes
+    // may share an effect.
+    auto seen = urd::Store<urd::set<formalism::ConditionalEffectView<LiftedTag>>> {};
+    const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> cond_eff)
     {
+        if (!seen.insert(cond_eff).second)
+            return;
         if (std::ranges::any_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
         {
             const auto rule = create_rpg_cond_effect_rule(action, cond_eff, context).first;
@@ -141,7 +149,8 @@ void translate_action_to_rpg_rules(formalism::ActionView<LiftedTag> action,
             urd::append(program.rules, rule);
             rule_to_action[rule.index()].push_back(action);
         }
-    }
+    };
+    formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
 }
 
 auto create_rpg_program(formalism::TaskView<LiftedTag> task, RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action, formalism::Repository& destination)

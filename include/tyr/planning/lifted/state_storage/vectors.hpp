@@ -46,12 +46,18 @@ struct StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>
     using FloatVectorSet = urd::
         Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
+    /// Temporal parts, packed into words, stored whole (temporal.hpp).
+    using TemporalSet =
+        urd::Store<urd::pool<urd::Store<urd::sequence<std::uint64_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+
     explicit StateStorageContext(const Task<LiftedTag>&) noexcept {}
 
     UintVectorSet uint_vectors;
     FloatVectorSet float_vectors;
+    TemporalSet temporals;
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(uint_vectors) + urd::memory_usage(float_vectors); }
+    [[nodiscard]] size_t memory_usage() const noexcept
+    { return urd::memory_usage(uint_vectors) + urd::memory_usage(float_vectors) + urd::memory_usage(temporals); }
 };
 
 /// A bitset of a lifted state (S: its fluent facts or derived atoms) as the vector of its true positions.

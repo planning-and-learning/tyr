@@ -22,9 +22,12 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <concepts>
+#include <cstdint>
 #include <memory>
 #include <string_view>
+#include <urd/elements/builder.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/handle.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
@@ -78,6 +81,15 @@ struct NumericStorage
     static constexpr bool state_storage = true;
 };
 
+/// A state's agenda: the ends of its running durative actions (temporal planning; empty otherwise).
+template<TaskKind Kind>
+struct TemporalStorage
+{
+    static constexpr std::string_view name = "TemporalStorage";
+    /// A state's storage: stored in a pool of its state repository (StateStorageKind).
+    static constexpr bool state_storage = true;
+};
+
 /// A state's storage S packed: a key, its handle in the pool of its component repository (state_storage.hpp).
 template<TaskKind Kind>
 using TaskPtr = std::shared_ptr<Task<Kind>>;
@@ -95,6 +107,69 @@ template<TaskKind Kind>
 struct State
 {
     static constexpr std::string_view name = "State";
+};
+
+/// What a transition (a happening) does: apply an instantaneous action, start a durative action, end an open one, or
+/// apply the next timed initial literals.
+enum class TransitionKind : std::uint8_t
+{
+    APPLY,
+    START,
+    END,
+    TIMED_LITERAL,
+};
+
+/// The tags of a successor and its parts, records read through the state repository of their task (successor_data.hpp):
+/// a transition's label, an outcome (a successor state, its metric, its probability and whether it fails), a
+/// distribution over outcomes, and a successor (a label and the distributions an adversary picks from).
+struct Transition
+{
+    static constexpr std::string_view name = "Transition";
+};
+
+template<TaskKind Kind>
+struct OutcomeNode
+{
+    static constexpr std::string_view name = "OutcomeNode";
+};
+
+template<TaskKind Kind>
+struct Distribution
+{
+    static constexpr std::string_view name = "Distribution";
+};
+
+template<TaskKind Kind>
+struct Successor
+{
+    static constexpr std::string_view name = "Successor";
+};
+
+/// The tags of the set of distributions a transition draws from while it is built (pick_data.hpp,
+/// joint_outcome_data.hpp, joint_distribution_data.hpp, joint_distributions_data.hpp): an outcome nature may pick, a joint
+/// outcome (the outcomes picked on its way), a distribution over joint outcomes, and a set of such distributions.
+template<TaskKind Kind>
+struct Pick
+{
+    static constexpr std::string_view name = "Pick";
+};
+
+template<TaskKind Kind>
+struct JointOutcome
+{
+    static constexpr std::string_view name = "JointOutcome";
+};
+
+template<TaskKind Kind>
+struct JointDistribution
+{
+    static constexpr std::string_view name = "JointDistribution";
+};
+
+template<TaskKind Kind>
+struct JointDistributions
+{
+    static constexpr std::string_view name = "JointDistributions";
 };
 
 template<TaskKind Kind>
@@ -127,6 +202,16 @@ template<TaskKind Kind>
 using AtomStorageView = urd::borrowed_view<AtomStorage<Kind>, StateRepository<Kind>, urd::builder<AtomStorage<Kind>, StateRepository<Kind>>>;
 template<TaskKind Kind>
 using NumericStorageView = urd::borrowed_view<NumericStorage<Kind>, StateRepository<Kind>, urd::builder<NumericStorage<Kind>, StateRepository<Kind>>>;
+template<TaskKind Kind>
+using TemporalStorageView = urd::borrowed_view<TemporalStorage<Kind>, StateRepository<Kind>, urd::builder<TemporalStorage<Kind>, StateRepository<Kind>>>;
+/// A successor being built or handed out (a pooled builder of the successor generator), borrowed, read through the state
+/// repository of its task; its outcomes' states are registered (their keys) or built (pooled state builders).
+template<TaskKind Kind>
+using SuccessorView = urd::borrowed_view<Successor<Kind>, StateRepository<Kind>, urd::builder<Successor<Kind>, StateRepository<Kind>>>;
+/// A successor handed out by a successor generator: its pooled builder, held by its handle, which gives it back to the
+/// generator's pools when it goes.
+template<TaskKind Kind>
+using SuccessorHandle = urd::handle<urd::builder<Successor<Kind>, StateRepository<Kind>>>;
 /// A registered state, packed: the view of its record's index, through its repository, which must outlive it (a
 /// PackedNode keeps it alive; unpack() gives its StateView).
 template<TaskKind Kind>

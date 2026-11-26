@@ -80,6 +80,17 @@ using ConditionalEffectViewList = urd::Store<urd::sequence<urd::index_view<Condi
 template<TaskKind T>
 using ConjunctiveEffectView = urd::index_view<ConjunctiveEffect<T>, Repository>;
 
+template<TaskKind T>
+using OutcomeView = urd::index_view<Outcome<T>, Repository>;
+
+template<TaskKind T>
+using ChoiceEffectView = urd::index_view<ChoiceEffect<T>, Repository>;
+
+template<TaskKind T>
+using TemporalPartView = urd::index_view<TemporalPart<T>, Repository>;
+
+using TimedLiteralView = urd::index_view<TimedLiteral, Repository>;
+
 using DomainView = urd::index_view<Domain, Repository>;
 
 template<FactKind T>

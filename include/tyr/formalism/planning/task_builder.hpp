@@ -62,6 +62,7 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::Metric>>, C> metric;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> axioms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>>, C> timed_literals;
 
     static constexpr auto fields() noexcept
     {
@@ -76,7 +77,8 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
                            urd::field<"auxiliary_fterm_value", &builder::auxiliary_fterm_value>,
                            urd::field<"goal", &builder::goal>,
                            urd::field<"metric", &builder::metric>,
-                           urd::field<"axioms", &builder::axioms>> {};
+                           urd::field<"axioms", &builder::axioms>,
+                           urd::field<"timed_literals", &builder::timed_literals>> {};
     }
 
     static constexpr auto identifying_members() noexcept
@@ -92,7 +94,8 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
                             &builder::auxiliary_fterm_value,
                             &builder::goal,
                             &builder::metric,
-                            &builder::axioms> {};
+                            &builder::axioms,
+                            &builder::timed_literals> {};
     }
 };
 
@@ -115,6 +118,7 @@ struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>, C> goal;
     urd::built_t<urd::flat_optional<urd::index<::tyr::formalism::Metric>>, C> metric;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>>, C> axioms;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>>, C> timed_literals;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>>, C> fluent_variables;
     urd::built_t<urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>, C> fluent_facts;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::GroundTag>>>, C> ground_actions;
@@ -135,6 +139,7 @@ struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
                            urd::field<"goal", &builder::goal>,
                            urd::field<"metric", &builder::metric>,
                            urd::field<"axioms", &builder::axioms>,
+                           urd::field<"timed_literals", &builder::timed_literals>,
                            urd::field<"fluent_variables", &builder::fluent_variables>,
                            urd::field<"fluent_facts", &builder::fluent_facts>,
                            urd::field<"ground_actions", &builder::ground_actions>,

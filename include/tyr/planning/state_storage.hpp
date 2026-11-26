@@ -24,10 +24,13 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage/config.hpp"
 #include "tyr/planning/task.hpp"
+#include "tyr/planning/temporal_parts.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <concepts>
 #include <cstddef>
+#include <fmt/format.h>
 #include <limits>
 #include <ranges>
 #include <span>
@@ -41,6 +44,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/elements/view.hpp>
+#include <urd/format.hpp>
 #include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
@@ -49,6 +53,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 
 namespace tyr::planning
 {
@@ -105,7 +110,7 @@ struct StateBitWords
     static constexpr auto cista_members() noexcept { return urd::Members<&StateBitWords::words> {}; }
 };
 
-/// Whether S is a state's storage (its fluent facts, derived atoms or numeric values), stored in a pool of its state
+/// Whether S is a state's storage (its fluent facts, derived atoms, numeric values or agenda), stored in a pool of its state
 /// repository under the pool's handle.
 template<typename S>
 concept StateStorageKind = S::state_storage;
@@ -177,6 +182,16 @@ struct built_form<::tyr::planning::StateBitWords, C>
     { into.assign_words(std::span<const word_t>(bits.words.data(), bits.words.size())); }
 };
 
+/// A state's temporal part is built as its parts, the words a record holds read into them (in place: buffers kept).
+template<typename C>
+struct built_form<::tyr::planning::TemporalWords, C>
+{
+    using type = ::tyr::planning::TemporalParts;
+
+    static void assign(const ::tyr::planning::TemporalWords& packed, type& into)
+    { ::tyr::planning::unpack_temporal(std::span<const std::uint64_t>(packed.words.data(), packed.words.size()), into); }
+};
+
 /// A state's derived atoms being built: their bits (its record holds their words, state_data.hpp).
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::AtomStorage<Kind>, C>
@@ -242,6 +257,36 @@ struct builder<::tyr::planning::NumericStorage<Kind>, C>
     {
         return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">, urd::arg<"value">>,
                               urd::function<"clear", &builder::clear>,
+                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
+                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+    }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+};
+
+/// A state's temporal part being built: its parts, unpacked (its record holds their words, state_data.hpp).
+template<::tyr::TaskKind Kind, typename C>
+struct builder<::tyr::planning::TemporalStorage<Kind>, C>
+{
+    urd::key<::tyr::planning::TemporalStorage<Kind>> index;
+    urd::built_t<::tyr::planning::TemporalWords, C> parts;
+
+    void clear() { parts.clear(); }
+
+    /// Takes the parts of a view of a builder of its kind (another state's).
+    void assign(const urd::borrowed_view<::tyr::planning::TemporalStorage<Kind>, C, builder>& storage) { parts = storage.get_parts(); }
+
+    void swap(builder& other) noexcept
+    {
+        std::swap(index, other.index);
+        std::swap(parts, other.parts);
+    }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"parts", &builder::parts>> {}; }
+
+    static constexpr auto functions() noexcept
+    {
+        return urd::Functions<urd::function<"clear", &builder::clear>,
                               urd::function<"assign", &builder::assign, urd::arg<"storage">>,
                               urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
     }

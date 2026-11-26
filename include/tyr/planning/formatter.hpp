@@ -111,6 +111,13 @@ struct formatter<::tyr::planning::StateBitWords, char> : tyr::formalism::detail:
     fmt::format_context::iterator format(const ::tyr::planning::StateBitWords& value, fmt::format_context& ctx) const;
 };
 
+/// A state's temporal part, as a record holds it: unpacked and written as its parts are.
+template<>
+struct formatter<::tyr::planning::TemporalWords, char> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const ::tyr::planning::TemporalWords& value, fmt::format_context& ctx) const;
+};
+
 /// A state, registered or being built: its atoms, facts and numeric values (and its index, where it has one).
 template<::tyr::TaskKind Kind>
 struct formatter<::tyr::planning::StateView<Kind>, char> : tyr::formalism::detail::without_format_spec

@@ -125,6 +125,7 @@ struct StateRepository<Kind>::Impl
             fact_repository(storage->context),
             atom_repository(storage->context),
             numeric_repository(storage->context),
+            temporal_repository(storage->context),
             state_builder_pool()
         {
         }
@@ -133,7 +134,16 @@ struct StateRepository<Kind>::Impl
         StoragePool<FactStorage<Kind>> fact_repository;
         StoragePool<AtomStorage<Kind>> atom_repository;
         StoragePool<NumericStorage<Kind>> numeric_repository;
+        StoragePool<TemporalStorage<Kind>> temporal_repository;
         urd::Store<urd::slots<urd::builder<State<Kind>, StateRepository<Kind>>>, urd::concurrent> state_builder_pool;
+        /// The records of transitions (a worker's own: read through it, never shared).
+        typename StateRepository<Kind>::template TransitionRecords<Successor<Kind>> successors;
+        typename StateRepository<Kind>::template TransitionRecords<Distribution<Kind>> distributions;
+        typename StateRepository<Kind>::template TransitionRecords<OutcomeNode<Kind>> outcome_nodes;
+        typename StateRepository<Kind>::template TransitionRecords<JointDistributions<Kind>> joint_distribution_sets;
+        typename StateRepository<Kind>::template TransitionRecords<JointDistribution<Kind>> joint_distributions;
+        typename StateRepository<Kind>::template TransitionRecords<JointOutcome<Kind>> joint_outcomes;
+        typename StateRepository<Kind>::template TransitionRecords<Pick<Kind>> picks;
 
         /// The fluent facts of `state`, stored as `delta` to `parent` if given: their key.
         urd::key<FactStorage<Kind>>
@@ -163,6 +173,10 @@ struct StateRepository<Kind>::Impl
                                                            numeric_repository.insert(unpacked));
         }
 
+        /// The agenda of `state`: its key (stored whole: every advance shifts all its offsets).
+        urd::key<TemporalStorage<Kind>> insert_temporal(urd::builder<State<Kind>, StateRepository<Kind>>& state)
+        { return urd::key<TemporalStorage<Kind>>(temporal_repository.insert(state.temporal_storage)); }
+
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
         /// Its record found, or inserted, by `repository`'s keyed find and insert (its states' part, this storage's pool).
         template<typename ExtendState>
@@ -184,8 +198,8 @@ struct StateRepository<Kind>::Impl
             }
 #endif
             const auto* parent = parent_state ? &*repository[parent_state->pack().index()] : nullptr;
-            // Identified by its fluent facts and numeric values: its derived atoms are computed only for a new state.
-            auto record = urd::data<State<Kind>>(insert_fluents(state, parent, delta), {}, insert_numeric(state, parent, delta));
+            // Identified by its fluent facts, numeric values and agenda: its derived atoms are computed only for a new state.
+            auto record = urd::data<State<Kind>>(insert_fluents(state, parent, delta), {}, insert_numeric(state, parent, delta), insert_temporal(state));
             auto stored = repository.find(record);
 
             if (!stored)
@@ -244,7 +258,15 @@ auto StateRepository<Kind>::own_parts() const -> OwnParts<false>
     return { { *this, evaluator.storage->packed_states },
              { *this, evaluator.fact_repository },
              { *this, evaluator.atom_repository },
-             { *this, evaluator.numeric_repository } };
+             { *this, evaluator.numeric_repository },
+             { *this, evaluator.temporal_repository },
+             { *this, evaluator.successors },
+             { *this, evaluator.distributions },
+             { *this, evaluator.outcome_nodes },
+             { *this, evaluator.joint_distribution_sets },
+             { *this, evaluator.joint_distributions },
+             { *this, evaluator.joint_outcomes },
+             { *this, evaluator.picks } };
 }
 
 template<TaskKind Kind>
@@ -254,7 +276,15 @@ auto StateRepository<Kind>::own_parts() -> OwnParts<true>
     return { { *this, evaluator.storage->packed_states },
              { *this, evaluator.fact_repository },
              { *this, evaluator.atom_repository },
-             { *this, evaluator.numeric_repository } };
+             { *this, evaluator.numeric_repository },
+             { *this, evaluator.temporal_repository },
+             { *this, evaluator.successors },
+             { *this, evaluator.distributions },
+             { *this, evaluator.outcome_nodes },
+             { *this, evaluator.joint_distribution_sets },
+             { *this, evaluator.joint_distributions },
+             { *this, evaluator.joint_outcomes },
+             { *this, evaluator.picks } };
 }
 
 template<TaskKind Kind>
@@ -305,6 +335,7 @@ void StateRepository<Kind>::unpack_storages(const urd::data<State<Kind>>& packed
     evaluator.fact_repository.unpack(packed.fact_storage.value, state.fact_storage);
     evaluator.atom_repository.unpack(packed.atom_storage.value, state.atom_storage);
     evaluator.numeric_repository.unpack(packed.numeric_storage.value, state.numeric_storage);
+    evaluator.temporal_repository.unpack(packed.temporal_storage.value, state.temporal_storage);
 }
 
 template<TaskKind Kind>
@@ -460,7 +491,9 @@ YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 0, 1)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 1, 1)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 2, 1)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 3, 1)
+YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 4, 1)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 0, 1)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 1, 1)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 2, 1)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 3, 1)
+YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 4, 1)

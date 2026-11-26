@@ -278,6 +278,33 @@ struct ConjunctiveEffect
     static constexpr std::string_view name = urd::joined_name<"ConjunctiveEffect", T::name>;
 };
 
+/// One outcome of a choice of nature: the flat conditional effects that happen when nature picks it.
+template<TaskKind T>
+struct Outcome
+{
+    static constexpr std::string_view name = urd::joined_name<"Outcome", T::name>;
+};
+
+/// A choice of nature under its forall variables and when condition: a oneof (nondeterministic) or a probabilistic effect.
+template<TaskKind T>
+struct ChoiceEffect
+{
+    static constexpr std::string_view name = urd::joined_name<"ChoiceEffect", T::name>;
+};
+
+/// A timed initial literal (PDDL 2.2): a ground fluent literal at a time.
+struct TimedLiteral
+{
+    static constexpr std::string_view name = "TimedLiteral";
+};
+
+/// What makes an action durative: its duration, over-all condition, end condition, end effects and end choices.
+template<TaskKind T>
+struct TemporalPart
+{
+    static constexpr std::string_view name = urd::joined_name<"TemporalPart", T::name>;
+};
+
 template<TaskKind T>
 struct Action
 {
@@ -380,6 +407,13 @@ using ControlTypes = boost::mp11::mp_list<ConditionalEffect<LiftedTag>,
                                           ConditionalEffect<GroundTag>,
                                           ConjunctiveEffect<LiftedTag>,
                                           ConjunctiveEffect<GroundTag>,
+                                          Outcome<LiftedTag>,
+                                          Outcome<GroundTag>,
+                                          ChoiceEffect<LiftedTag>,
+                                          ChoiceEffect<GroundTag>,
+                                          TemporalPart<LiftedTag>,
+                                          TemporalPart<GroundTag>,
+                                          TimedLiteral,
                                           Action<LiftedTag>,
                                           Action<GroundTag>,
                                           Axiom<LiftedTag>,

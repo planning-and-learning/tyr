@@ -73,6 +73,88 @@ struct Overloaded : Fs...
 {
     using Fs::operator()...;
 };
+
+/// Calls `f(at_end, lower, upper, e)` for each duration constraint of a durative action: (op ?duration e) or
+/// (op e ?duration), conjoined, possibly timed (at end: evaluated when the action ends; otherwise when it starts); = bounds
+/// both ways. PDDL's duration comparisons are <=, >= and =; a strict one bounds like its non-strict one (the open and the
+/// closed interval differ by no time a plan's epsilon-separated happenings can tell).
+template<typename F>
+void for_each_duration_bound(loki::formalism::DurativeActionView action, const F& f)
+{
+    using NumericConstraint = loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>;
+    using Duration = loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>>;
+    using Comparator = loki::formalism::BinaryComparator;
+    std::function<void(loki::formalism::ConditionView, bool)> visit = [&](loki::formalism::ConditionView condition, bool at_end)
+    {
+        std::visit(
+            [&]<typename C>(const C& part)
+            {
+                if constexpr (std::is_same_v<C, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
+                {
+                    for (const auto nested : part.get_conditions())
+                        visit(nested, at_end);
+                }
+                else if constexpr (std::is_same_v<C, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
+                {
+                    visit(part.get_condition(), part.get_time() == loki::formalism::TimeSpecifier::End);
+                }
+                else if constexpr (std::is_same_v<C, NumericConstraint>)
+                {
+                    const auto left = std::holds_alternative<Duration>(part.get_left());
+                    if (!left && !std::holds_alternative<Duration>(part.get_right()))
+                        throw std::invalid_argument("A duration constraint that does not compare ?duration.");
+                    const auto bound = left ? part.get_right() : part.get_left();
+                    // The comparison as ?duration op bound.
+                    auto comparator = part.get_comparator();
+                    if (!left)
+                        comparator = comparator == Comparator::Le ? Comparator::Ge :
+                                     comparator == Comparator::Lt ? Comparator::Gt :
+                                     comparator == Comparator::Ge ? Comparator::Le :
+                                     comparator == Comparator::Gt ? Comparator::Lt :
+                                                                    comparator;
+                    switch (comparator)
+                    {
+                        case Comparator::Eq:
+                            f(at_end, true, true, bound);
+                            break;
+                        case Comparator::Ge:
+                        case Comparator::Gt:
+                            f(at_end, true, false, bound);
+                            break;
+                        case Comparator::Le:
+                        case Comparator::Lt:
+                            f(at_end, false, true, bound);
+                            break;
+                        case Comparator::Ne:
+                            throw std::invalid_argument("A duration constraint (!= ?duration e) is no PDDL duration constraint.");
+                    }
+                }
+                else
+                {
+                    throw std::invalid_argument("A duration constraint that is no comparison of ?duration.");
+                }
+            },
+            condition);
+    };
+    if (action.get_duration().has_value())
+        visit(action.get_duration().value(), false);
+}
+
+/// Whether every timed part of the condition is timed at `time`.
+bool timed_only_at(loki::formalism::ConditionView condition, loki::formalism::TimeSpecifier time)
+{
+    return std::visit(
+        [&]<typename ConditionT>(const ConditionT& part)
+        {
+            if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
+                return std::ranges::all_of(part.get_conditions(), [&](const auto nested) { return timed_only_at(nested, time); });
+            else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
+                return part.get_time() == time;
+            else
+                return true;
+        },
+        condition);
+}
 }
 
 /**
@@ -134,6 +216,36 @@ void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_exp
     prepare(function_expression.get_terms());
 }
 
+void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> /*function_expression*/)
+{ throw std::invalid_argument("tyr does not support ?duration yet."); }
+
+FunctionExpression<LiftedTag>
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> /*element*/,
+                                      Builder& /*builder*/,
+                                      Repository& /*context*/)
+{ throw std::invalid_argument("tyr does not support ?duration yet."); }
+
+FunctionExpression<GroundTag>
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> /*element*/,
+                                        Builder& /*builder*/,
+                                        Repository& /*context*/)
+{ throw std::invalid_argument("tyr does not support ?duration yet."); }
+
+void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::IsViolatedTag>> /*function_expression*/)
+{ throw std::invalid_argument("tyr does not support is-violated yet."); }
+
+FunctionExpression<LiftedTag>
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::IsViolatedTag>> /*element*/,
+                                      Builder& /*builder*/,
+                                      Repository& /*context*/)
+{ throw std::invalid_argument("tyr does not support is-violated yet."); }
+
+FunctionExpression<GroundTag>
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::IsViolatedTag>> /*element*/,
+                                        Builder& /*builder*/,
+                                        Repository& /*context*/)
+{ throw std::invalid_argument("tyr does not support is-violated yet."); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionExpressionView function_expression)
 {
     std::visit([&](auto&& arg) { return this->prepare(arg); }, function_expression);
@@ -158,9 +270,13 @@ void LokiToTyrTranslator::prepare(loki::formalism::ConditionView condition)
                 prepare(part.get_left());
                 prepare(part.get_right());
             }
+            else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
+            {
+                prepare(part.get_condition());
+            }
             else
             {
-                throw std::logic_error("Expected conjunctive condition.");
+                throw std::invalid_argument("tyr supports only conjunctive conditions of literals and numeric constraints (no preferences yet).");
             }
         },
         condition);
@@ -199,9 +315,23 @@ void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
                     m_effect_function_skeletons.insert(part.get_function().get_function().get_name().str());
                     prepare(part.get_expression());
                 }
+                else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::OneOfTag>>>)
+                {
+                    for (const auto& alternative : part.get_effects())
+                        prepare_effect(alternative);
+                }
+                else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::ProbabilisticTag>>>)
+                {
+                    for (const auto& alternative : part.get_alternatives())
+                        prepare_effect(alternative.get_effect());
+                }
+                else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::TimedTag>>>)
+                {
+                    prepare_effect(part.get_effect());
+                }
                 else
                 {
-                    throw std::logic_error("Expected simple effect.");
+                    throw std::invalid_argument("tyr supports only literal, numeric, forall, when, oneof, probabilistic and timed effects.");
                 }
             },
             current);
@@ -215,6 +345,16 @@ void LokiToTyrTranslator::prepare(loki::formalism::ActionView action)
     prepare(action.get_parameters());
     prepare(action.get_precondition());
     prepare(action.get_effect());
+}
+
+void LokiToTyrTranslator::prepare(loki::formalism::DurativeActionView action)
+{
+    prepare(action.get_parameters());
+    for_each_duration_bound(action, [&](bool, bool, bool, loki::formalism::FunctionExpressionView bound) { prepare(bound); });
+    if (action.get_condition().has_value())
+        prepare(action.get_condition().value());
+    if (action.get_effect().has_value())
+        prepare(action.get_effect().value());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::AxiomView axiom)
@@ -232,21 +372,35 @@ void LokiToTyrTranslator::prepare(loki::formalism::MetricView metric) { prepare(
 
 void LokiToTyrTranslator::prepare(loki::formalism::DomainView domain)
 {
+    // What tyr does not support yet is rejected, not dropped: planned without it, a task would get wrong plans.
+    if (domain.get_constraints())
+        throw std::invalid_argument("tyr does not support domain constraints yet.");
+    m_temporal = !domain.get_durative_actions().empty();
     prepare(domain.get_requirements());
     prepare(domain.get_types());
     prepare(domain.get_constants());
     prepare(domain.get_predicates());
     prepare(domain.get_functions());
     prepare(domain.get_actions());
+    prepare(domain.get_durative_actions());
     prepare(domain.get_axioms());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::TaskView problem)
 {
+    // What tyr does not support yet is rejected, not dropped: planned without it, a task would get wrong plans.
+    if (!problem.get_initial_effects().empty())
+        throw std::invalid_argument("tyr does not support probabilistic initial states yet.");
+    if (problem.get_goal_reward())
+        throw std::invalid_argument("tyr does not support a goal reward yet.");
+    if (problem.get_constraints())
+        throw std::invalid_argument("tyr does not support task constraints yet.");
     prepare(problem.get_domain());
     prepare(problem.get_requirements());
     prepare(problem.get_objects());
     prepare(problem.get_initial_literals());
+    for (const auto timed_literal : problem.get_timed_initial_literals())
+        prepare(timed_literal.get_literal());
     prepare(problem.get_initial_function_values());
     prepare(problem.get_goal());
     prepare(problem.get_metric());
@@ -286,7 +440,8 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
         return context.insert(*function, builder).first;
     };
 
-    if (element.get_name() == "total-cost")
+    // The metric's accumulator: an action's cost (total-cost), or the time elapsed (total-time, of a temporal domain).
+    if (element.get_name() == "total-cost" || (m_temporal && element.get_name() == "total-time"))
         return build_function(AuxiliaryTag {});
     else if (m_effect_function_skeletons.contains(element.get_name().str()))
         return build_function(FluentTag {});
@@ -314,6 +469,7 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
         return context.insert(*predicate, builder).first;
     };
 
+    // A predicate an effect (or a timed initial literal: make_fluent) changes is fluent.
     if (m_fluent_predicates.count(element.get_name().str()) && !m_derived_predicates.count(element.get_name().str()))
         return build_predicate(FluentTag {});
     else if (m_derived_predicates.count(element.get_name().str()))
@@ -551,63 +707,43 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
                    literal_view_variant);
     };
 
-    return std::visit(
-        [&]<typename ConditionT>(const ConditionT& condition) -> urd::index<ConjunctiveCondition<LiftedTag>>
-        {
-            if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
+    // The literals and numeric constraints of a conjunction (nested ones too); of a durative action's timed parts, those
+    // at the time point being translated.
+    std::function<void(loki::formalism::ConditionView)> add = [&](loki::formalism::ConditionView condition)
+    {
+        std::visit(
+            [&]<typename ConditionT>(const ConditionT& part)
             {
-                for (const auto& part : condition.get_conditions())
+                if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
                 {
-                    std::visit(
-                        [&]<typename SubConditionT>(const SubConditionT& subcondition)
-                        {
-                            if constexpr (std::is_same_v<SubConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
-                            {
-                                const auto literal_view_variant = translate_lifted(subcondition.get_literal(), builder, context);
-
-                                insert_literal(literal_view_variant);
-                            }
-                            else if constexpr (std::is_same_v<SubConditionT,
-                                                              loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
-                            {
-                                const auto numeric_constraint = translate_lifted(subcondition, builder, context);
-
-                                urd::build_member(conj_condition->numeric_constraints.emplace_back(), numeric_constraint, context);
-                            }
-                            else
-                            {
-                                // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *part) << std::endl;
-                                throw std::logic_error("Unexpected condition.");
-                            }
-                        },
-                        part);
+                    for (const auto& nested : part.get_conditions())
+                        add(nested);
                 }
+                else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
+                {
+                    insert_literal(translate_lifted(part.get_literal(), builder, context));
+                }
+                else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
+                {
+                    urd::build_member(conj_condition->numeric_constraints.emplace_back(), translate_lifted(part, builder, context), context);
+                }
+                else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
+                {
+                    if (!m_time)
+                        throw std::invalid_argument("A timed condition outside a durative action.");
+                    if (part.get_time() == *m_time)
+                        add(part.get_condition());
+                }
+                else
+                {
+                    throw std::logic_error("Unexpected condition.");
+                }
+            },
+            condition);
+    };
+    add(element);
 
-                return context.insert(*conj_condition, builder).first.index();
-            }
-            else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
-            {
-                const auto literal_view_variant = translate_lifted(condition.get_literal(), builder, context);
-
-                insert_literal(literal_view_variant);
-
-                return context.insert(*conj_condition, builder).first.index();
-            }
-            else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
-            {
-                const auto numeric_constraint = translate_lifted(condition, builder, context);
-
-                urd::build_member(conj_condition->numeric_constraints.emplace_back(), numeric_constraint, context);
-
-                return context.insert(*conj_condition, builder).first.index();
-            }
-            else
-            {
-                // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *part) << std::endl;
-                throw std::logic_error("Unexpected condition.");
-            }
-        },
-        element);
+    return context.insert(*conj_condition, builder).first.index();
 }
 
 NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>> element,
@@ -661,7 +797,8 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                                            const urd::flat_vector<urd::index<Variable>>& parameters,
                                            Builder& builder,
                                            Repository& context,
-                                           urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>& output)
+                                           urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>& output,
+                                           const ChoiceScope& scope)
 {
     using ConditionalEffectData = urd::Store<urd::map<urd::index<ConjunctiveCondition<LiftedTag>>,
                                                       std::tuple<urd::flat_vector<urd::index<Variable>>,
@@ -669,6 +806,83 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                                                                  urd::flat_vector<urd::index<NumericEffect<LiftedTag, FluentTag>>>,
                                                                  urd::flat_optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>>,
                                              urd::sorted>;
+
+    /// The conjunction of `parts` over `variables` (each part over a prefix of them).
+    const auto conjunction = [&](const std::vector<urd::index<ConjunctiveCondition<LiftedTag>>>& parts, const urd::flat_vector<urd::index<Variable>>& variables)
+    {
+        auto condition = checkout<ConjunctiveCondition<LiftedTag>>(builder);
+        for (const auto variable : variables)
+            condition->variables.emplace_back(variable);
+        for (const auto part_index : parts)
+        {
+            const auto part = context.view(part_index);
+            for (const auto literal : part.template get_literals<StaticTag>())
+                condition->static_literals.emplace_back(literal.index());
+            for (const auto literal : part.template get_literals<FluentTag>())
+                condition->fluent_literals.emplace_back(literal.index());
+            for (const auto literal : part.template get_literals<DerivedTag>())
+                condition->derived_literals.emplace_back(literal.index());
+            for (const auto constraint : part.get_numeric_constraints())
+                condition->numeric_constraints.emplace_back(constraint.index());
+        }
+        return context.insert(*condition, builder).first.index();
+    };
+
+    /// Translates a choice of nature (its alternatives' effects, their probabilities if given) under the forall variables
+    /// and when condition in scope. Each alternative is translated as an effect nested in the choice (its choices too,
+    /// recursively: loki's normal form flattens only nests of one kind), then its effects are scoped into the choice: an
+    /// effect's variables are those of the choices it is nested in and its own (the action's are bound already), its
+    /// condition theirs and its own, so that each is a flat conditional effect of the action on its own.
+    const auto translate_choice = [&](const auto& alternatives,
+                                      const urd::flat_vector<urd::index<Variable>>& choice_variables,
+                                      urd::index<ConjunctiveCondition<LiftedTag>> choice_condition,
+                                      const urd::flat_vector<ygg::float_t>& probabilities)
+    {
+        auto variables = parameters;
+        variables.insert(variables.end(), choice_variables.begin(), choice_variables.end());
+        auto conditions = scope.conditions;
+        conditions.push_back(choice_condition);
+
+        auto outcomes = urd::flat_vector<urd::index<Outcome<LiftedTag>>>();
+        for (const auto alternative : alternatives)
+        {
+            auto effects = urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>();
+            auto nested_choices = urd::flat_vector<urd::index<ChoiceEffect<LiftedTag>>>();
+            translate_lifted(alternative, variables, builder, context, effects, ChoiceScope { scope.action_arity, conditions, &nested_choices });
+
+            auto outcome = checkout<Outcome<LiftedTag>>(builder);
+            for (const auto effect_index : effects)
+            {
+                const auto effect = context.view(effect_index);
+
+                auto effect_variables = variables;
+                for (const auto variable : effect.get_variables())
+                    effect_variables.push_back(variable.index());
+                auto parts = conditions;
+                parts.push_back(effect.get_condition().index());
+
+                auto scoped = checkout<ConditionalEffect<LiftedTag>>(builder);
+                for (std::size_t i = scope.action_arity; i < effect_variables.size(); ++i)
+                    scoped->variables.emplace_back(effect_variables[i]);
+                urd::build_member(scoped->condition, conjunction(parts, effect_variables), context);
+                urd::build_member(scoped->effect, effect.get_effect().index(), context);
+                outcome->effects.emplace_back(context.insert(*scoped, builder).first.index());
+            }
+            for (const auto nested_choice : nested_choices)
+                outcome->choices.emplace_back(nested_choice);
+            outcomes.push_back(context.insert(*outcome, builder).first.index());
+        }
+
+        auto choice = checkout<ChoiceEffect<LiftedTag>>(builder);
+        for (std::size_t i = scope.action_arity; i < variables.size(); ++i)
+            choice->variables.emplace_back(variables[i]);
+        urd::build_member(choice->condition, conjunction(conditions, variables), context);
+        for (const auto outcome : outcomes)
+            choice->outcomes.emplace_back(outcome);
+        for (const auto probability : probabilities)
+            choice->probabilities.push_back(probability);
+        scope.choices->push_back(context.insert(*choice, builder).first.index());
+    };
 
     const auto translate_effect_func = [&](loki::formalism::EffectView effect, ConditionalEffectData& ref_conditional_effect_data)
     {
@@ -689,6 +903,33 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                 }
             },
             tmp_effect);
+
+        // Of a durative action, the part under a forall is timed itself, or a when whose effect is: only the parts at the
+        // time point being translated (a when's condition at the time of its effect: one timed otherwise would have to be
+        // remembered until then).
+        using TimedEffect = loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::TimedTag>>;
+        using WhenEffect = loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::WhenTag>>;
+        if (const auto* timed = std::get_if<TimedEffect>(&tmp_effect))
+        {
+            if (!m_time)
+                throw std::invalid_argument("A timed effect outside a durative action.");
+            if (timed->get_time() != *m_time)
+                return;
+            tmp_effect = timed->get_effect();
+        }
+        if (const auto* when = std::get_if<WhenEffect>(&tmp_effect))
+        {
+            const auto when_effect = when->get_effect();
+            if (const auto* timed = std::get_if<TimedEffect>(&when_effect))
+            {
+                if (!m_time)
+                    throw std::invalid_argument("A timed effect outside a durative action.");
+                if (timed->get_time() != *m_time)
+                    return;
+                if (!timed_only_at(when->get_condition(), timed->get_time()))
+                    throw std::invalid_argument("tyr does not support a conditional effect whose condition is timed differently from its effect.");
+            }
+        }
 
         ///---------- Push parameters and parse scope -------------
         m_param_map.push_parameters(universal_parameters);
@@ -717,23 +958,42 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                 },
                 tmp_effect);
 
-            // Fetch container to store the effects
-            auto& effect_data = ref_conditional_effect_data[conjunctive_condition];
-            auto& stored_universal = std::get<0>(effect_data);
-            if (stored_universal.empty())
-                stored_universal = universal_parameters;
-            else
-                assert(stored_universal.size() == universal_parameters.size() && "Same guard but different forall-scope.");
-            auto& data_fluent_literals = std::get<1>(effect_data);
-            auto& data_fluent_numeric_effects = std::get<2>(effect_data);
-            auto& data_auxiliary_numeric_effect = std::get<3>(effect_data);
+            // Fetch container to store the deterministic effects of this condition (a choice has its own).
+            const auto effect_data = [&]() -> auto&
+            {
+                auto& data = ref_conditional_effect_data[conjunctive_condition];
+                auto& stored_universal = std::get<0>(data);
+                if (stored_universal.empty())
+                    stored_universal = universal_parameters;
+                else
+                    assert(stored_universal.size() == universal_parameters.size() && "Same guard but different forall-scope.");
+                return data;
+            };
 
             /* 3. Parse effect part */
+            if (const auto* timed = std::get_if<TimedEffect>(&tmp_effect))
+                tmp_effect = timed->get_effect();
             std::visit(
                 [&]<typename SubEffectT>(const SubEffectT& subeffect)
                 {
-                    if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::LiteralTag>>>)
+                    if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::OneOfTag>>>)
                     {
+                        translate_choice(subeffect.get_effects(), universal_parameters, conjunctive_condition, urd::flat_vector<ygg::float_t>());
+                    }
+                    else if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::ProbabilisticTag>>>)
+                    {
+                        auto alternatives = std::vector<loki::formalism::EffectView>();
+                        auto probabilities = urd::flat_vector<ygg::float_t>();
+                        for (const auto alternative : subeffect.get_alternatives())
+                        {
+                            alternatives.push_back(alternative.get_effect());
+                            probabilities.push_back(alternative.get_probability());
+                        }
+                        translate_choice(alternatives, universal_parameters, conjunctive_condition, probabilities);
+                    }
+                    else if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::LiteralTag>>>)
+                    {
+                        auto& data_fluent_literals = std::get<1>(effect_data());
                         const auto literal_view_variant = translate_lifted(subeffect.get_literal(), builder, context);
 
                         std::visit(Overloaded { [](LiteralView<LiftedTag, StaticTag>) { throw std::logic_error("Effect literal cannot be Static!"); },
@@ -743,6 +1003,8 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     }
                     else if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>>>)
                     {
+                        auto& data_fluent_numeric_effects = std::get<2>(effect_data());
+                        auto& data_auxiliary_numeric_effect = std::get<3>(effect_data());
                         const auto numeric_effect_view_variant = translate_lifted(subeffect, builder, context);
 
                         std::visit(Overloaded { [&](NumericEffectView<LiftedTag, FluentTag> numeric_effect)
@@ -765,25 +1027,29 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
         m_param_map.pop_parameters(universal_parameters);
     };
 
-    /* Parse the effect */
+    /* Parse the effect: its conjuncts (nested ones too); of a durative action's timed parts, those at the time point being
+       translated. */
     auto conditional_effect_data = ConditionalEffectData {};
-    // Parse conjunctive part
-    std::visit(
-        [&]<typename EffectT>(const EffectT& effect)
+    std::function<void(loki::formalism::EffectView)> translate_part = [&](loki::formalism::EffectView effect)
+    {
+        if (const auto* conjunction = std::get_if<loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::AndTag>>>(&effect))
         {
-            if constexpr (std::is_same_v<EffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::AndTag>>>)
-            {
-                for (const auto& nested_effect : effect.get_effects())
-                {
-                    translate_effect_func(nested_effect, conditional_effect_data);
-                }
-            }
-            else
-            {
-                translate_effect_func(element, conditional_effect_data);
-            }
-        },
-        element);
+            for (const auto& nested_effect : conjunction->get_effects())
+                translate_part(nested_effect);
+        }
+        else if (const auto* timed = std::get_if<loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::TimedTag>>>(&effect))
+        {
+            if (!m_time)
+                throw std::invalid_argument("A timed effect outside a durative action.");
+            if (timed->get_time() == *m_time)
+                translate_part(timed->get_effect());
+        }
+        else
+        {
+            translate_effect_func(effect, conditional_effect_data);
+        }
+    };
+    translate_part(element);
 
     /* Instantiate conditional effects. */
     for (const auto& [cond_conjunctive_condition, value] : conditional_effect_data)
@@ -842,9 +1108,88 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
         if (element.get_effect().has_value())
         {
             auto effects = urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>();
-            translate_lifted(element.get_effect().value(), variables, builder, context, effects);
+            auto choices = urd::flat_vector<urd::index<ChoiceEffect<LiftedTag>>>();
+            translate_lifted(element.get_effect().value(), variables, builder, context, effects, ChoiceScope { variables.size(), {}, &choices });
             urd::build_member(action->effects, effects, context);
+            urd::build_member(action->choices, choices, context);
         }
+    }
+    ///---------- Pop parameters -------------
+    m_param_map.pop_parameters(variables);
+
+    return context.insert(*action, builder).first.index();
+}
+
+urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::DurativeActionView element, Builder& builder, Repository& context)
+{
+    auto action = checkout<Action<LiftedTag>>(builder);
+    action->original_arity = element.get_original_arity();
+    action->name = std::string(element.get_name());
+    action->original_name = std::string(element.get_original_name());
+
+    auto variables = urd::flat_vector<urd::index<Variable>>();
+    translate_common(element.get_parameters(), builder, context, variables);
+    urd::build_member(action->variables, variables, context);
+
+    // The condition at `time` (empty without one).
+    const auto condition_at = [&](loki::formalism::TimeSpecifier time)
+    {
+        m_time = time;
+        auto result = urd::index<ConjunctiveCondition<LiftedTag>>();
+        if (element.get_condition().has_value())
+        {
+            result = translate_lifted(element.get_condition().value(), variables, builder, context);
+        }
+        else
+        {
+            auto empty = checkout<ConjunctiveCondition<LiftedTag>>(builder);
+            result = context.insert(*empty, builder).first.index();
+        }
+        m_time.reset();
+        return result;
+    };
+    // The effects and choices at `time`.
+    const auto effects_at = [&](loki::formalism::TimeSpecifier time, auto& effects, auto& choices)
+    {
+        m_time = time;
+        if (element.get_effect().has_value())
+            translate_lifted(element.get_effect().value(), variables, builder, context, effects, ChoiceScope { variables.size(), {}, &choices });
+        m_time.reset();
+    };
+
+    ///---------- Push parameters and parse scope -------------
+    m_param_map.push_parameters(variables);
+    {
+        // Its start: the action's own condition, effects and choices.
+        urd::build_member(action->condition, condition_at(loki::formalism::TimeSpecifier::Start), context);
+        auto start_effects = urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>();
+        auto start_choices = urd::flat_vector<urd::index<ChoiceEffect<LiftedTag>>>();
+        effects_at(loki::formalism::TimeSpecifier::Start, start_effects, start_choices);
+        urd::build_member(action->effects, start_effects, context);
+        urd::build_member(action->choices, start_choices, context);
+
+        // Its duration, over-all condition and end.
+        auto temporal_part = checkout<TemporalPart<LiftedTag>>(builder);
+        for_each_duration_bound(
+            element,
+            [&](bool at_end, bool lower, bool upper, loki::formalism::FunctionExpressionView bound)
+            {
+                const auto expression = translate_lifted(bound, builder, context);
+                if (lower)
+                    urd::build_member((at_end ? temporal_part->end_min_durations : temporal_part->min_durations).emplace_back(), expression, context);
+                if (upper)
+                    urd::build_member((at_end ? temporal_part->end_max_durations : temporal_part->max_durations).emplace_back(), expression, context);
+            });
+        urd::build_member(temporal_part->over_all, condition_at(loki::formalism::TimeSpecifier::OverAll), context);
+        urd::build_member(temporal_part->end_condition, condition_at(loki::formalism::TimeSpecifier::End), context);
+        auto end_effects = urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>();
+        auto end_choices = urd::flat_vector<urd::index<ChoiceEffect<LiftedTag>>>();
+        effects_at(loki::formalism::TimeSpecifier::End, end_effects, end_choices);
+        urd::build_member(temporal_part->end_effects, end_effects, context);
+        urd::build_member(temporal_part->end_choices, end_choices, context);
+        urd::build_member(action->temporal_part,
+                          urd::flat_optional<urd::index<TemporalPart<LiftedTag>>>(context.insert(*temporal_part, builder).first.index()),
+                          context);
     }
     ///---------- Pop parameters -------------
     m_param_map.pop_parameters(variables);
@@ -1221,13 +1566,15 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
                                 [&](FunctionView<FluentTag> f) { urd::append(domain->fluent_functions, f); },
                                 [&](FunctionView<AuxiliaryTag> f)
                                 {
-                                    assert(!domain->auxiliary_function);
+                                    if (domain->auxiliary_function)
+                                        throw std::invalid_argument("tyr does not support total-cost in a temporal domain yet (total-time accumulates there).");
                                     urd::store(domain->auxiliary_function, f);
                                 } },
                    translate_common(function, builder, *context));
 
     /* Structures section */
     translate_lifted(element.get_actions(), builder, *context, domain->actions);
+    translate_lifted(element.get_durative_actions(), builder, *context, domain->actions);
     translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
 
     return PlanningDomain(context->insert(*domain, builder).first, context, std::move(path));
@@ -1297,6 +1644,23 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
                                     urd::store(task->auxiliary_fterm_value, v);
                                 } },
                    translate_grounded(fterm_value, builder, *task_context));
+
+    /* Timed initial literals section: by time. */
+    {
+        auto timed_literals = std::vector<std::pair<double, urd::index<Literal<GroundTag, FluentTag>>>>();
+        for (const auto timed_literal : element.get_timed_initial_literals())
+            std::visit(Overloaded { [&](LiteralView<GroundTag, FluentTag> literal) { timed_literals.emplace_back(timed_literal.get_time(), literal.index()); },
+                                    [](auto) { throw std::invalid_argument("A timed initial literal of a static or derived predicate."); } },
+                       translate_grounded(timed_literal.get_literal(), builder, *task_context));
+        std::ranges::stable_sort(timed_literals, {}, [](const auto& timed_literal) { return timed_literal.first; });
+        for (const auto& [time, literal] : timed_literals)
+        {
+            auto record = checkout<TimedLiteral>(builder);
+            record->time = time;
+            urd::build_member(record->literal, literal, *task_context);
+            urd::append(task->timed_literals, task_context->insert(*record, builder).first);
+        }
+    }
 
     /* Goal section */
 

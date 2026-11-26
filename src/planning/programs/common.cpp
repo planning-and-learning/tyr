@@ -191,6 +191,10 @@ void translate_task_symbols(formalism::TaskView<Kind> task, urd::builder<formali
         urd::append(program.static_atoms, atom);
     for (const auto atom : task.template get_atoms<formalism::FluentTag>())
         urd::append(program.fluent_atoms, atom);
+    // An atom a timed initial literal adds becomes true at its time, whatever the plan does: reachable as an initial one.
+    for (const auto timed_literal : task.get_timed_literals())
+        if (timed_literal.get_literal().get_polarity())
+            urd::append(program.fluent_atoms, timed_literal.get_literal().get_atom());
 
     for (const auto fterm_value : task.template get_fterm_values<formalism::StaticTag>())
         urd::append(program.static_fterm_values, fterm_value);

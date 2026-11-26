@@ -29,10 +29,13 @@
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
+#include <cstdint>
 #include <fmt/base.h>
 #include <fmt/format.h>
 #include <memory>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <string_view>
 #include <tuple>
 #include <type_traits>

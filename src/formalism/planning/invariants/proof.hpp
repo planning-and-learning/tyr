@@ -21,6 +21,8 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 
@@ -38,18 +40,21 @@ namespace tyr::formalism::invariant
 bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invariant, Repository>& inv);
 
 /// Whether the add effect's atom can be added without some delete effect of the action deleting an atom of the same
-/// instance of the candidate.
+/// instance of the candidate. The add effect is at `path` in the action; a delete balances it only if it happens whenever
+/// the add does: its path is a prefix of the add's (nature picks one outcome per choice, a delete in another one may not
+/// happen).
 bool is_add_effect_unbalanced(ActionView<LiftedTag> op,
                               ConditionalEffectView<LiftedTag> effect,
+                              OutcomePath path,
                               const urd::data<Atom<LiftedTag, FluentTag>>& add_atom,
                               const urd::builder<Invariant, Repository>& inv);
 
-/// The add effect that threatens a candidate: its action, its conditional effect, and its literal (in the effect's
-/// literal list), each by position.
+/// The add effect that threatens a candidate: its action (by position), its conditional effect (one of the action's or of an
+/// outcome of its choices), and its literal (by position in the effect's literal list).
 struct Threat
 {
     std::size_t op_index;
-    std::size_t effect_index;
+    ConditionalEffectView<LiftedTag> effect;
     std::size_t add_index;
 };
 

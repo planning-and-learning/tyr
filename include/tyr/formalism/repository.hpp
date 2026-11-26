@@ -68,6 +68,9 @@
 #include "tyr/formalism/planning/axiom_builder.hpp"
 #include "tyr/formalism/planning/axiom_data.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/choice_effect_builder.hpp"
+#include "tyr/formalism/planning/choice_effect_data.hpp"
+#include "tyr/formalism/planning/choice_effect_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_builder.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -89,9 +92,18 @@
 #include "tyr/formalism/planning/metric_builder.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/outcome_builder.hpp"
+#include "tyr/formalism/planning/outcome_data.hpp"
+#include "tyr/formalism/planning/outcome_view.hpp"
 #include "tyr/formalism/planning/task_builder.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/temporal_part_builder.hpp"
+#include "tyr/formalism/planning/temporal_part_data.hpp"
+#include "tyr/formalism/planning/temporal_part_view.hpp"
+#include "tyr/formalism/planning/timed_literal_builder.hpp"
+#include "tyr/formalism/planning/timed_literal_data.hpp"
+#include "tyr/formalism/planning/timed_literal_view.hpp"
 #include "tyr/formalism/predicate_builder.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -129,6 +141,6 @@ using ygg::formalism::checkout;
 // Its reads, finds and inserts instantiated once, in src/formalism/repository*.cpp (brokkr's include rule I7): a file
 // that reads records through the repository completes none of its stores. Its builder's members need no declaration
 // here: their definitions (yggdrasil/formalism/builder_impl.hpp) are seen only by the sources that instantiate them.
-YGG_FORMALISM_REPOSITORY(extern, tyr::formalism::Repository, 63, 9)
+YGG_FORMALISM_REPOSITORY(extern, tyr::formalism::Repository, 70, 9)
 
 #endif

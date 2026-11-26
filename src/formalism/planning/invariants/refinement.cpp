@@ -24,6 +24,7 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -197,8 +198,7 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
     auto result = std::vector<urd::builder<Invariant, Repository>>();
 
     const auto op = ops[threat.op_index];
-    const auto effect = op.get_effects()[static_cast<std::ptrdiff_t>(threat.effect_index)];
-    const auto add_literal = effect.get_effect().get_literals()[static_cast<std::ptrdiff_t>(threat.add_index)];
+    const auto add_literal = threat.effect.get_effect().get_literals()[static_cast<std::ptrdiff_t>(threat.add_index)];
     assert(add_literal.get_polarity());
     const auto& add_atom = *add_literal.get_atom().context()[add_literal.get_atom().index()];
 
@@ -206,7 +206,7 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
     if (part == nullptr)
         return result;
 
-    for (const auto conj_effect : op.get_effects())
+    const auto visit_effect = [&](ConditionalEffectView<LiftedTag> conj_effect)
     {
         for (const auto literal : conj_effect.get_effect().get_literals())
         {
@@ -240,7 +240,8 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
                 result.push_back(std::move(refined));
             }
         }
-    }
+    };
+    formalism::for_each_effect(op, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
 
     return result;
 }

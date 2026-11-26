@@ -21,6 +21,7 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariant_builder.hpp"
 #include "tyr/formalism/unification/apply_substitution.hpp"
@@ -101,10 +102,28 @@ make_effect_alpha_renaming(ConditionalEffectView<LiftedTag> effect, std::size_t 
     return sigma;
 }
 
+/// Whether effects at `first` and `second` never happen together: their paths part at one choice (equal steps up to a
+/// step with the same choice and another outcome).
+bool in_other_outcomes(OutcomePath first, OutcomePath second)
+{
+    for (std::size_t i = 0; i < first.size() && i < second.size(); ++i)
+    {
+        if (first[i] == second[i])
+            continue;
+        return first[i].choice == second[i].choice;
+    }
+    return false;
+}
+
+/// Whether an effect at `path` happens whenever one at `other` does: its path is a prefix of the other's (every outcome
+/// it depends on is one the other depends on).
+bool happens_with(OutcomePath path, OutcomePath other) { return path.size() <= other.size() && std::ranges::equal(path, other.first(path.size())); }
+
 /// An atom an effect adds or deletes, with its effect.
 struct EffectAtomRef
 {
     ConditionalEffectView<LiftedTag> effect;
+    std::vector<OutcomeStep> path;  ///< where the effect is in the action (empty: one of the action's own effects)
     urd::data<Atom<LiftedTag, FluentTag>> atom;
 };
 
@@ -113,7 +132,7 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(ActionView<LiftedTag> o
 {
     auto result = std::vector<EffectAtomRef>();
 
-    for (const auto effect : op.get_effects())
+    const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect, OutcomePath path)
     {
         for (const auto literal : effect.get_effect().get_literals())
         {
@@ -122,9 +141,10 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(ActionView<LiftedTag> o
 
             auto atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
             if (has_predicate(inv, atom.predicate))
-                result.push_back(EffectAtomRef { effect, std::move(atom) });
+                result.push_back(EffectAtomRef { effect, std::vector<OutcomeStep>(path.begin(), path.end()), std::move(atom) });
         }
-    }
+    };
+    for_each_effect(op, visit_effect);
 
     return result;
 }
@@ -132,8 +152,8 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(ActionView<LiftedTag> o
 std::size_t max_num_effect_variables(ActionView<LiftedTag> op)
 {
     std::size_t result = 0;
-    for (const auto effect : op.get_effects())
-        result = std::max(result, static_cast<std::size_t>(effect.get_arity()));
+    const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect) { result = std::max(result, static_cast<std::size_t>(effect.get_arity())); };
+    formalism::for_each_effect(op, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
     return result;
 }
 
@@ -282,6 +302,10 @@ bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invarian
             const auto& eff1 = add_effects[i];
             const auto& eff2 = add_effects[j];
 
+            // Nature picks one outcome of a choice: effects of two outcomes of it never happen together.
+            if (in_other_outcomes(eff1.path, eff2.path))
+                continue;
+
             const auto lhs_sigma = make_effect_alpha_renaming(eff1.effect, num_op_variables, fresh_base_lhs);
             const auto rhs_sigma = make_effect_alpha_renaming(eff2.effect, num_op_variables, fresh_base_rhs);
 
@@ -318,6 +342,7 @@ bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invarian
 
 bool is_add_effect_unbalanced(ActionView<LiftedTag> op,
                               ConditionalEffectView<LiftedTag> add_effect,
+                              OutcomePath path,
                               const urd::data<Atom<LiftedTag, FluentTag>>& add_atom,
                               const urd::builder<Invariant, Repository>& inv)
 {
@@ -341,7 +366,7 @@ bool is_add_effect_unbalanced(ActionView<LiftedTag> op,
     for (const auto& del_ref : del_effects)
     {
         const auto* del_pattern = find_part(inv, del_ref.atom.predicate);
-        if (del_pattern == nullptr)
+        if (del_pattern == nullptr || !happens_with(del_ref.path, path))
             continue;
 
         const auto sigma = make_effect_alpha_renaming(del_ref.effect, num_op_variables, fresh_base);
@@ -375,13 +400,11 @@ ProofResult prove_invariant(const urd::builder<Invariant, Repository>& inv, cons
         if (is_operator_too_heavy(op, inv))
             return { ProofStatus::TooHeavy, std::nullopt };
 
-        const auto effects = op.get_effects();
-        for (std::size_t effect_index = 0; effect_index < effects.size(); ++effect_index)
+        auto threat = std::optional<Threat> {};
+        const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect, OutcomePath path)
         {
-            const auto effect = effects[static_cast<std::ptrdiff_t>(effect_index)];
             const auto literals = effect.get_effect().get_literals();
-
-            for (std::size_t literal_index = 0; literal_index < literals.size(); ++literal_index)
+            for (std::size_t literal_index = 0; literal_index < literals.size() && !threat; ++literal_index)
             {
                 const auto literal = literals[static_cast<std::ptrdiff_t>(literal_index)];
                 if (!literal.get_polarity())
@@ -391,10 +414,13 @@ ProofResult prove_invariant(const urd::builder<Invariant, Repository>& inv, cons
                 if (!has_predicate(inv, add_atom.predicate))
                     continue;
 
-                if (is_add_effect_unbalanced(op, effect, add_atom, inv))
-                    return { ProofStatus::UnbalancedAddEffect, Threat { op_index, effect_index, literal_index } };
+                if (is_add_effect_unbalanced(op, effect, path, add_atom, inv))
+                    threat = Threat { op_index, effect, literal_index };
             }
-        }
+        };
+        for_each_effect(op, visit_effect);
+        if (threat)
+            return { ProofStatus::UnbalancedAddEffect, threat };
     }
 
     return { ProofStatus::Proven, std::nullopt };

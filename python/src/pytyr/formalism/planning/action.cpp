@@ -38,14 +38,14 @@ void bind_action(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_index<Action<LiftedTag>>(m);
     urd::python::bind_data<Action<LiftedTag>>(m);
     urd::python::bind_view<ActionView<LiftedTag>>(m);
-    ygg::bind_insert<Action<LiftedTag>>(repository);
+    python::bind_insert<Action<LiftedTag>>(repository);
     urd::python::bind_builder<Action<LiftedTag>, Repository>(m);
 
     urd::python::bind_index<Action<GroundTag>>(m);
 
     urd::python::bind_data<Action<GroundTag>>(m);
     urd::python::bind_view<ActionView<GroundTag>>(m);
-    ygg::bind_insert<Action<GroundTag>>(repository);
+    python::bind_insert<Action<GroundTag>>(repository);
     urd::python::bind_builder<Action<GroundTag>, Repository>(m);
 }
 

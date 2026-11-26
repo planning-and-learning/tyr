@@ -32,9 +32,9 @@
 
 // The counts the sources' ranges cover: the symbols (repository_symbols_*.cpp), the relations (a Schema and its row
 // families, here) and the builder's types (repository_symbols_*.cpp).
-constexpr auto symbol_count = std::size_t { 63 };
+constexpr auto symbol_count = std::size_t { 70 };
 constexpr auto relation_count = std::size_t { 9 };
-constexpr auto builder_type_count = std::size_t { 72 };
+constexpr auto builder_type_count = std::size_t { 79 };
 static_assert(boost::mp11::mp_size<tyr::formalism::Repository::SymbolTypes>::value == symbol_count);
 static_assert(boost::mp11::mp_size<tyr::formalism::Repository::RelationTypes>::value == relation_count);
 static_assert(boost::mp11::mp_size<tyr::formalism::Builder::Types>::value == builder_type_count);

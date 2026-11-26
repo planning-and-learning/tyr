@@ -24,6 +24,7 @@ from pytyr._pytyr.planning.lifted import (
     LMCutHeuristic as LMCutHeuristic,
     MaxRPGHeuristic as MaxRPGHeuristic,
     Node as Node,
+    OutcomeNode as OutcomeNode,
     PackedLabeledNode as PackedLabeledNode,
     PackedNode as PackedNode,
     PackedPlan as PackedPlan,

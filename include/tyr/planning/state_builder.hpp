@@ -81,6 +81,7 @@ struct builder<::tyr::planning::State<Kind>, C>
     urd::built_t<urd::key<::tyr::planning::FactStorage<Kind>>, C> fact_storage;
     urd::built_t<urd::key<::tyr::planning::AtomStorage<Kind>>, C> atom_storage;
     urd::built_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage;
+    urd::built_t<urd::key<::tyr::planning::TemporalStorage<Kind>>, C> temporal_storage;
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -114,16 +115,18 @@ struct builder<::tyr::planning::State<Kind>, C>
     {
         fact_storage.clear();
         numeric_storage.clear();
+        temporal_storage.clear();
     }
 
     void clear_extended_part() { atom_storage.clear(); }
 
-    /// Takes a state's facts and numeric values (a view of it: registered, or another builder's).
+    /// Takes a state's facts, numeric values and agenda (a view of it: registered, or another builder's).
     template<typename V>
     void assign_unextended_part(const V& state)
     {
         fact_storage.assign(state.get_fact_storage());
         numeric_storage.assign(state.get_numeric_storage());
+        temporal_storage.assign(state.get_temporal_storage());
     }
 
     /// Takes a registered state whole: its storages and its index.
@@ -147,6 +150,7 @@ struct builder<::tyr::planning::State<Kind>, C>
         fact_storage.swap(other.fact_storage);
         atom_storage.swap(other.atom_storage);
         numeric_storage.swap(other.numeric_storage);
+        temporal_storage.swap(other.temporal_storage);
     }
 
     void resize_fluent_facts(size_t size)
@@ -157,10 +161,12 @@ struct builder<::tyr::planning::State<Kind>, C>
     {
         return urd::Fields<urd::field<"fact_storage", &builder::fact_storage>,
                            urd::field<"atom_storage", &builder::atom_storage>,
-                           urd::field<"numeric_storage", &builder::numeric_storage>> {};
+                           urd::field<"numeric_storage", &builder::numeric_storage>,
+                           urd::field<"temporal_storage", &builder::temporal_storage>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::fact_storage, &builder::numeric_storage> {}; }
+    static constexpr auto identifying_members() noexcept
+    { return urd::Members<&builder::fact_storage, &builder::numeric_storage, &builder::temporal_storage> {}; }
 
     static constexpr auto functions() noexcept
     {

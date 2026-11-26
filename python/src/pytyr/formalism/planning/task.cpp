@@ -39,7 +39,7 @@ template<TaskKind T>
 void bind_task_kind(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<TaskView<T>>(m);
-    ygg::bind_insert<Task<T>>(repository);
+    python::bind_insert<Task<T>>(repository);
     urd::python::bind_builder<Task<T>, Repository>(m);
 }
 }  // namespace

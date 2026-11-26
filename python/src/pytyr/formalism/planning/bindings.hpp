@@ -50,6 +50,7 @@ void bind_axiom(nb::module_& m, RepositoryBinding& repository);
 void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository);
+void bind_choice_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_metric(nb::module_& m, RepositoryBinding& repository);
 void bind_domain(nb::module_& m, RepositoryBinding& repository);
 void bind_task(nb::module_& m, RepositoryBinding& repository);

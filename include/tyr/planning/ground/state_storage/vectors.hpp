@@ -49,15 +49,20 @@ struct StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>
     using FloatVectorSet = urd::
         Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
+    /// Temporal parts, packed into words, stored whole (temporal.hpp).
+    using TemporalSet =
+        urd::Store<urd::pool<urd::Store<urd::sequence<std::uint64_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+
     explicit StateStorageContext(const Task<GroundTag>& task) : layout(task) {}
 
     StateLayout<GroundTag> layout;
     ArraySet fluent_array_set;
     ArraySet derived_array_set;
     FloatVectorSet float_vectors;
+    TemporalSet temporals;
 
     [[nodiscard]] size_t memory_usage() const noexcept
-    { return urd::memory_usage(fluent_array_set) + urd::memory_usage(derived_array_set) + urd::memory_usage(float_vectors); }
+    { return urd::memory_usage(fluent_array_set) + urd::memory_usage(derived_array_set) + urd::memory_usage(float_vectors) + urd::memory_usage(temporals); }
 };
 
 template<typename... Tags, bool ThreadSafe>

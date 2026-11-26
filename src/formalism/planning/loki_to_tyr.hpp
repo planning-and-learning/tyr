@@ -25,6 +25,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <iterator>
 #include <loki/formalism/conditions.hpp>
@@ -49,6 +50,7 @@
 #include <urd/tags.hpp>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace tyr::formalism
 {
@@ -124,11 +126,15 @@ private:
     void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> function_expression);
     void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression);
     void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression);
+    /// Not supported yet, rejected: without these, the variant's converting constructor would make them recurse.
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> function_expression);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::IsViolatedTag>> function_expression);
     void prepare(loki::formalism::FunctionTermView function_expression);
     void prepare(loki::formalism::FunctionExpressionView function_expression);
     void prepare(loki::formalism::ConditionView condition);
     void prepare(loki::formalism::EffectView effect);
     void prepare(loki::formalism::ActionView action);
+    void prepare(loki::formalism::DurativeActionView action);
     void prepare(loki::formalism::AxiomView axiom);
     void prepare(loki::formalism::DomainView domain);
     void prepare(loki::formalism::InitialFunctionValueView function_value);
@@ -155,6 +161,11 @@ private:
     };
 
     ParameterIndexMapping m_param_map;
+    /// The time point of a durative action being translated (its start, over all, its end): conditions and effects
+    /// timed at it are translated, others skipped; none outside a durative action, where a timed part is rejected.
+    std::optional<loki::formalism::TimeSpecifier> m_time;
+    /// Whether the domain has durative actions: then total-time is the time elapsed, its metric's accumulator.
+    bool m_temporal = false;
 
     template<std::ranges::input_range Range, typename Output>
     void translate_common(const Range& input, Builder& builder, Repository& context, Output& output)
@@ -209,6 +220,12 @@ private:
     FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
                                                    Builder& builder,
                                                    Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> element,
+                                                   Builder& builder,
+                                                   Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::IsViolatedTag>> element,
+                                                   Builder& builder,
+                                                   Repository& context);
 
     FunctionExpression<LiftedTag> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
@@ -225,13 +242,30 @@ private:
     NumericEffectViewVariant
     translate_lifted(loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>> element, Builder& builder, Repository& context);
 
+    /// Where an effect is translated: its action's arity (the leading `parameters` are the action's, the others are the
+    /// variables of the choices it is nested in), the conditions of those choices, and where its choices go.
+    struct ChoiceScope
+    {
+        std::size_t action_arity;
+        std::vector<urd::index<ConjunctiveCondition<LiftedTag>>> conditions;
+        urd::flat_vector<urd::index<ChoiceEffect<LiftedTag>>>* choices;
+    };
+
+    /// Translates an effect over `parameters` into flat conditional effects (`output`) and choices of nature
+    /// (`scope.choices`), each self-contained: its variables are those of the choices it is nested in and its own, its
+    /// condition theirs and its own.
     void translate_lifted(loki::formalism::EffectView element,
                           const urd::flat_vector<urd::index<Variable>>& parameters,
                           Builder& builder,
                           Repository& context,
-                          urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>& output);
+                          urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>& output,
+                          const ChoiceScope& scope);
 
     urd::index<Action<LiftedTag>> translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context);
+
+    /// A durative action as an action with a temporal part: its condition, effects and choices those at its start; its
+    /// duration, over-all condition, end condition, end effects and end choices in its temporal part.
+    urd::index<Action<LiftedTag>> translate_lifted(loki::formalism::DurativeActionView element, Builder& builder, Repository& context);
 
     urd::index<Axiom<LiftedTag>> translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context);
 
@@ -273,6 +307,12 @@ private:
     FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
                                                      Builder& builder,
                                                      Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> element,
+                                                     Builder& builder,
+                                                     Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::IsViolatedTag>> element,
+                                                     Builder& builder,
+                                                     Repository& context);
 
     FunctionExpression<GroundTag> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
@@ -292,6 +332,10 @@ private:
 
 public:
     LokiToTyrTranslator() = default;
+
+    /// Treats the predicate as fluent although no effect changes it (a timed initial literal of a task does), before
+    /// translating a domain.
+    void make_fluent(const std::string& predicate) { m_fluent_predicates.insert(predicate); }
 
     PlanningDomain translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path = std::nullopt);
 

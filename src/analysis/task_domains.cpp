@@ -44,6 +44,7 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_data.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
@@ -249,7 +250,7 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             for (const auto op : action.get_condition().get_numeric_constraints())
                 apply_policy(op, insert_policy);
 
-            for (const auto c_effect : action.get_effects())
+            const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> c_effect)
             {
                 for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
                     apply_policy(literal.get_atom(), insert_policy);
@@ -259,7 +260,8 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
 
                 for (const auto op : c_effect.get_condition().get_numeric_constraints())
                     apply_policy(op, insert_policy);
-            }
+            };
+            formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
         }
 
         for (const auto axiom : task.get_domain().get_axioms())
@@ -316,7 +318,7 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
         auto effect_domains = TmpConditionalEffectDomainMap {};
         effect_domains.reserve(action.get_effects().size());
 
-        for (const auto c_effect : action.get_effects())
+        const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> c_effect)
         {
             auto c_parameter_domains = parameter_domains;
             c_parameter_domains.resize(action.get_variables().size() + c_effect.get_variables().size());
@@ -350,7 +352,8 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
                                        TmpConjunctiveConditionDomain { c_effect.get_condition().index(), c_parameter_domains },
                                        TmpConjunctiveEffectDomain { c_effect.get_effect().index(), c_parameter_domains },
                                    });
-        }
+        };
+        formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
 
         action_domain_sets.emplace(action.index(),
                                    TmpActionDomain {
@@ -442,7 +445,7 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
         for (const auto op : action.get_condition().get_numeric_constraints())
             apply_policy(op, lift_policy);
 
-        for (const auto c_effect : action.get_effects())
+        const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> c_effect)
         {
             auto& c_effect_domain = action_domain.effect_domains.at(c_effect.index());
             auto& c_parameter_domains = c_effect_domain.condition_domain.payload;
@@ -469,7 +472,8 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
 
             // Keep effect payload aligned with condition payload, as in the original approximation.
             c_effect_domain.effect_domain.payload = c_effect_domain.condition_domain.payload;
-        }
+        };
+        formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
     }
 
     for (const auto axiom : task.get_domain().get_axioms())

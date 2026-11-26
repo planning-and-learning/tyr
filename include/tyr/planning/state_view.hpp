@@ -87,6 +87,8 @@ public:
 
     [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
 
+    [[nodiscard]] decltype(auto) get_temporal_storage() const noexcept { return self().template member<&urd::record_of<V>::temporal_storage>(); }
+
     [[nodiscard]] const auto& get_formalism_repository() const noexcept { return self().context().get_task()->get_repository(); }
 
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
@@ -290,6 +292,8 @@ public:
 
     [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
 
+    [[nodiscard]] decltype(auto) get_temporal_storage() const noexcept { return self().template member<&urd::record_of<V>::temporal_storage>(); }
+
     [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const
     {
         if constexpr (std::same_as<V, ::tyr::planning::PackedStateView<Kind>>)
@@ -309,6 +313,7 @@ template<typename V>
 concept StateReadable = requires(const V& state) {
     state.get_fact_storage();
     state.get_numeric_storage();
+    state.get_temporal_storage();
 };
 
 /// A state's storages, hashed and compared by what they hold (facts: a ground state's values per variable, a lifted
@@ -332,7 +337,15 @@ template<TaskKind Kind>
 bool equal_numerics(const NumericStorageView<Kind>& lhs, const NumericStorageView<Kind>& rhs)
 { return urd::EqualTo<> {}(lhs.get_values(), rhs.get_values()); }
 
-/// The hash of a state's unextended content (its facts and numeric values, not its derived atoms), by what its storages
+template<TaskKind Kind>
+void hash_combine_temporal(ygg::hash_t& result, const TemporalStorageView<Kind>& temporal)
+{ urd::hash_combine(result, temporal.get_parts()); }
+
+template<TaskKind Kind>
+bool equal_temporals(const TemporalStorageView<Kind>& lhs, const TemporalStorageView<Kind>& rhs)
+{ return lhs.get_parts() == rhs.get_parts(); }
+
+/// The hash of a state's unextended content (its facts, numeric values and agenda, not its derived atoms), by what its storages
 /// hold: the same state hashes alike whichever repository it is read through (the workers').
 template<StateReadable V>
 ygg::hash_t hash_unextended(const V& state)
@@ -340,13 +353,17 @@ ygg::hash_t hash_unextended(const V& state)
     auto result = ygg::hash_t { 0 };
     hash_combine_facts(result, state.get_fact_storage());
     hash_combine_numerics(result, state.get_numeric_storage());
+    hash_combine_temporal(result, state.get_temporal_storage());
     return result;
 }
 
 /// Whether two states have equal unextended content (hash_unextended), whichever repositories they are read through.
 template<StateReadable V, StateReadable W>
 bool equal_unextended(const V& lhs, const W& rhs)
-{ return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage()) && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage()); }
+{
+    return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage()) && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage())
+           && equal_temporals(lhs.get_temporal_storage(), rhs.get_temporal_storage());
+}
 
 /// A state is serialized by what it holds, not by its storages: its fluent atoms, its derived atoms and its fluent
 /// function values (pyyggdrasil.serialization).

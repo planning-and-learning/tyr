@@ -7,14 +7,35 @@
 
 #include "pytyr/module.hpp"
 
+#include <nanobind/nanobind.h>
+#include <tyr/formalism/declarations.hpp>
 #include <tyr/formalism/repository.hpp>
 #include <urd/python/conversion_instantiations.hpp>
+#include <yggdrasil/formalism/builder.hpp>
 
 namespace tyr::python
 {
 using FormalismKinds = tyr::formalism::Repository::SymbolTypes;
+
+/// Binds repository.insert(data) and repository.insert(builder) -> (view, created). Data is canonicalized in place and
+/// interned (no copy); a builder is interned with its children, built ones first, through scratch records of a builder
+/// storage of its own.
+template<typename T>
+void bind_insert(nanobind::class_<tyr::formalism::Repository>& repository)
+{
+    using tyr::formalism::Repository;
+    repository.def("insert", [](Repository& self, urd::data<T>& data) { return self.insert(data); }, nanobind::arg("data"));
+    repository.def(
+        "insert",
+        [](Repository& self, const urd::builder<T, Repository>& built)
+        {
+            auto storage = tyr::formalism::Builder {};
+            return self.insert(built, storage);
+        },
+        nanobind::arg("builder"));
+}
 }
 
-URD_PYTHON_CONVERSIONS(extern, tyr::formalism::Repository, tyr::python::FormalismKinds, 63)
+URD_PYTHON_CONVERSIONS(extern, tyr::formalism::Repository, tyr::python::FormalismKinds, 70)
 
 #endif

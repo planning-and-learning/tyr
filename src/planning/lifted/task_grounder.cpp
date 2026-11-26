@@ -411,8 +411,22 @@ std::optional<formalism::ActionView<GroundTag>> ground_pruned(formalism::ActionV
                                     if (ground_cond_effect_or_nullopt.has_value())
                                         urd::append(action->effects, *ground_cond_effect_or_nullopt);
                                 });
+    const auto ground_condition = [&](formalism::ConjunctiveConditionView<LiftedTag> condition)
+    { return ground_pruned(condition, fluent_atoms, derived_atoms, static_state, context, fdr_context); };
+    const auto ground_effect = [&](formalism::ConditionalEffectView<LiftedTag> effect)
+    { return ground_pruned(effect, fluent_atoms, derived_atoms, static_state, context, fdr_context); };
+    formalism::ground_choices(element.get_choices(), context, for_each_effect_binding, ground_condition, ground_effect, action->choices);
 
-    if (action->effects.empty())
+    // A durative action whose over-all or end condition no reachable atoms satisfy can never end.
+    if (const auto temporal_part = element.get_temporal_part(); temporal_part.has_value())
+    {
+        const auto ground_part = formalism::ground_temporal_part(*temporal_part, context, for_each_effect_binding, ground_condition, ground_effect);
+        if (!ground_part)
+            return std::nullopt;
+        urd::store(action->temporal_part, *ground_part);
+    }
+
+    if (action->effects.empty() && action->choices.empty() && !action->temporal_part)
         return std::nullopt;
 
     // Canonicalize and Serialize
@@ -599,7 +613,13 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto fdr_context = std::shared_ptr<formalism::FDRContext> { nullptr };
 
-    if (options.disable_invariant_synthesis)
+    // ponytail: invariants are synthesized for instantaneous actions only: a delete at a durative action's start does not
+    // balance an add at its end (another action may add in between). Its tasks get a binary variable per atom; synthesize
+    // over start and end snap actions to get their mutex groups back.
+    const auto durative =
+        std::ranges::any_of(planning_domain.get_domain().get_actions(), [](const auto action) { return action.get_temporal_part().has_value(); });
+    // Likewise a timed initial literal makes atoms true whatever an invariant's balance.
+    if (options.disable_invariant_synthesis || durative || !task.get_timed_literals().empty())
     {
         fdr_context = std::make_shared<formalism::FDRContext>(fluent_atoms, repository);
     }
@@ -636,6 +656,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         urd::store(ground_task->metric, urd::copy(task.get_metric().value(), *repository, builder));
     for (const auto axiom : task.get_axioms())
         urd::append(ground_task->axioms, urd::copy(axiom, *repository, builder));
+    for (const auto timed_literal : task.get_timed_literals())
+        urd::append(ground_task->timed_literals, urd::copy(timed_literal, *repository, builder));
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context->get_variables())

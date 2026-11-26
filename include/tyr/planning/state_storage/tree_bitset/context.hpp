@@ -45,13 +45,18 @@ struct StateStorageContext<Kind, TreeBitset, ThreadSafe>
     /// Rows are the unpacked StateBits themselves, so that they go in and are read back by their words.
     using BitsetSet = urd::Store<urd::pool<StateBits>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
+    /// Temporal parts, packed into words, stored whole (temporal.hpp).
+    using TemporalSet =
+        urd::Store<urd::pool<urd::Store<urd::sequence<std::uint64_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+
     explicit StateStorageContext(const Task<Kind>& task) : layout(task) {}
 
     StateLayout<Kind> layout;
     FloatVectorSet float_vectors;
     BitsetSet bitsets;
+    TemporalSet temporals;
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(float_vectors) + urd::memory_usage(bitsets); }
+    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(float_vectors) + urd::memory_usage(bitsets) + urd::memory_usage(temporals); }
 };
 
 }

@@ -55,6 +55,7 @@ add_gtest(
     "formalism/planning/formatter.cpp"
     "formalism/planning/function_term.cpp"
     "formalism/planning/metric.cpp"
+    "formalism/planning/parser.cpp"
     "formalism/planning/task.cpp"
 )
 
@@ -93,6 +94,10 @@ target_include_directories(planning_state_routing PRIVATE ${PROJECT_SOURCE_DIR}/
 add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")
 target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::json)
 add_gtest(planning_invariant_order "planning/lifted/invariant_order.cpp")
+add_gtest(planning_task_grounder "planning/lifted/task_grounder.cpp")
+add_gtest(planning_outcome_successors "planning/outcome_successors.cpp")
+add_gtest(planning_temporal_successors "planning/temporal_successors.cpp")
+add_gtest(planning_temporal_network "planning/temporal_network.cpp")
 add_gtest(formalism_unification "formalism/unification.cpp")
 add_gtest(formalism_numeric_expression_utils "formalism/numeric_expression_utils.cpp")
 add_gtest(algorithms_kckp "algorithms/kckp/kckp.cpp")

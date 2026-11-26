@@ -77,6 +77,9 @@ public:
 
     auto get_axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
 
+    /// Timed initial literals (PDDL 2.2), by time.
+    auto get_timed_literals() const noexcept { return self().template member<&urd::record_of<V>::timed_literals>(); }
+
     auto get_fluent_variables() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::fluent_variables>(); }

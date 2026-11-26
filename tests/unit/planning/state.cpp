@@ -227,26 +227,32 @@ void expect_packed_state_identity()
     using FactKey = urd::key<tyr::planning::FactStorage<Kind>>;
     using AtomKey = urd::key<tyr::planning::AtomStorage<Kind>>;
     using NumericKey = urd::key<tyr::planning::NumericStorage<Kind>>;
+    using AgendaKey = urd::key<tyr::planning::TemporalStorage<Kind>>;
     using FactHandle = typename FactKey::value_type;
     using AtomHandle = typename AtomKey::value_type;
     using NumericHandle = typename NumericKey::value_type;
+    using AgendaHandle = typename AgendaKey::value_type;
     auto facts = FactKey {};
     auto derived = AtomKey {};
     auto numeric = NumericKey {};
-    const auto base = Data(facts, derived, numeric);
+    const auto agenda = AgendaKey {};
+    const auto base = Data(facts, derived, numeric, agenda);
     const auto hash = urd::Hash<Data> {};
     derived = AtomKey(AtomHandle(1, 0));
-    const auto extended = Data(facts, derived, numeric);
+    const auto extended = Data(facts, derived, numeric, agenda);
     EXPECT_NE(base.atom_storage, extended.atom_storage);
     EXPECT_EQ(base, extended);
     EXPECT_EQ(hash(base), hash(extended));
 
     facts = FactKey(FactHandle(1, 0));
-    const auto changed_facts = Data(facts, derived, numeric);
+    const auto changed_facts = Data(facts, derived, numeric, agenda);
     EXPECT_NE(base, changed_facts);
     numeric = NumericKey(NumericHandle(1, 0));
-    const auto changed_numeric = Data(base.fact_storage, derived, numeric);
+    const auto changed_numeric = Data(base.fact_storage, derived, numeric, agenda);
     EXPECT_NE(base, changed_numeric);
+    // A state's agenda (its running durative actions) identifies it too.
+    const auto changed_agenda = Data(base.fact_storage, derived, base.numeric_storage, AgendaKey(AgendaHandle(1)));
+    EXPECT_NE(base, changed_agenda);
 }
 
 template<TaskKind Kind>

@@ -43,7 +43,7 @@ template<TaskKind T, typename O, typename C>
 void bind_binary_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<BinaryOperator<T, O>, C>>(m);
-    ygg::bind_insert<BinaryOperator<T, O>>(repository);
+    python::bind_insert<BinaryOperator<T, O>>(repository);
     urd::python::bind_builder<BinaryOperator<T, O>, C>(m);
 }
 

@@ -43,7 +43,7 @@ template<TaskKind T, typename C>
 void bind_unary_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<UnaryOperator<T, ArithmeticOperatorKind>, C>>(m);
-    ygg::bind_insert<UnaryOperator<T, ArithmeticOperatorKind>>(repository);
+    python::bind_insert<UnaryOperator<T, ArithmeticOperatorKind>>(repository);
     urd::python::bind_builder<UnaryOperator<T, ArithmeticOperatorKind>, C>(m);
 }
 

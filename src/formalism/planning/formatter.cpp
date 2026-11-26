@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <string>
 #include <string_view>
 #include <urd/format.hpp>
 #include <utility>
@@ -70,6 +71,60 @@ fmt::formatter<urd::index_view<tf::ConjunctiveEffect<T>, tf::Repository>>::forma
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
+fmt::formatter<urd::index_view<tf::Outcome<T>, tf::Repository>>::format(const urd::index_view<tf::Outcome<T>, tf::Repository>& value,
+                                                                        fmt::format_context& context) const
+{
+    auto out = fmt::format_to(context.out(), "(and");
+    for (const auto effect : value.get_effects())
+        out = fmt::format_to(out, " {}", effect);
+    for (const auto choice : value.get_choices())
+        out = fmt::format_to(out, " {}", choice);
+    return fmt::format_to(out, ")");
+}
+
+template<tyr::TaskKind T>
+fmt::format_context::iterator
+fmt::formatter<urd::index_view<tf::ChoiceEffect<T>, tf::Repository>>::format(const urd::index_view<tf::ChoiceEffect<T>, tf::Repository>& value,
+                                                                             fmt::format_context& context) const
+{
+    const auto outcomes = value.get_outcomes();
+    const auto probabilities = value.get_probabilities();
+    auto choice = fmt::format("({}", probabilities.empty() ? "oneof" : "probabilistic");
+    for (std::size_t i = 0; i < outcomes.size(); ++i)
+    {
+        if (!probabilities.empty())
+            choice += fmt::format(" {}", probabilities[static_cast<std::ptrdiff_t>(i)]);
+        choice += fmt::format(" {}", outcomes[static_cast<std::ptrdiff_t>(i)]);
+    }
+    choice += ")";
+
+    // Without variables of its own, a choice needs no forall; without a condition, no when.
+    const auto condition = value.get_condition();
+    auto unconditional = condition.get_static_literals().empty() && condition.get_derived_literals().empty() && condition.get_numeric_constraints().empty();
+    if constexpr (std::same_as<T, LiftedTag>)
+        unconditional = unconditional && condition.get_fluent_literals().empty();
+    else
+        unconditional = unconditional && condition.get_positive_facts().empty() && condition.get_negative_facts().empty();
+
+    auto out = context.out();
+    auto quantified = false;
+    if constexpr (std::same_as<T, LiftedTag>)
+    {
+        quantified = !value.get_variables().empty();
+        if (quantified)
+            out = fmt::format_to(out, "(forall ({}) ", fmt::join(value.get_variables(), " "));
+    }
+    if (unconditional)
+        out = fmt::format_to(out, "{}", choice);
+    else
+        out = fmt::format_to(out, "(when {} {})", condition, choice);
+    if (quantified)
+        out = fmt::format_to(out, ")");
+    return out;
+}
+
+template<tyr::TaskKind T>
+fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::ConditionalEffect<T>, tf::Repository>>::format(const urd::index_view<tf::ConditionalEffect<T>, tf::Repository>& value,
                                                                                   fmt::format_context& context) const
 {
@@ -103,6 +158,29 @@ fmt::formatter<urd::index_view<tf::ConditionalEffect<T>, tf::Repository>>::forma
     return out;
 }
 
+namespace
+{
+/// An action's effect: its effects and its choices, in an and unless there is exactly one.
+template<tyr::TaskKind T>
+fmt::format_context::iterator format_action_effect(fmt::format_context::iterator out, const urd::index_view<tf::Action<T>, tf::Repository>& value)
+{
+    const auto effects = value.get_effects();
+    const auto choices = value.get_choices();
+    if (effects.size() + choices.size() == 1)
+    {
+        if (effects.empty())
+            return fmt::format_to(out, "{}", choices[0]);
+        return fmt::format_to(out, "{}", effects[0]);
+    }
+    out = fmt::format_to(out, "(and");
+    for (const auto effect : effects)
+        out = fmt::format_to(out, " {}", effect);
+    for (const auto choice : choices)
+        out = fmt::format_to(out, " {}", choice);
+    return fmt::format_to(out, ")");
+}
+}
+
 template<tyr::TaskKind T>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::Action<T>, tf::Repository>>::format(const urd::index_view<tf::Action<T>, tf::Repository>& value,
@@ -116,10 +194,7 @@ fmt::formatter<urd::index_view<tf::Action<T>, tf::Repository>>::format(const urd
                              value.get_name(),
                              fmt::join(value.get_variables(), " "),
                              value.get_condition());
-        if (value.get_effects().size() == 1)
-            out = fmt::format_to(out, "{}", value.get_effects()[0]);
-        else
-            out = fmt::format_to(out, "(and {})", fmt::join(value.get_effects(), " "));
+        out = format_action_effect(out, value);
     }
     else
     {
@@ -129,10 +204,26 @@ fmt::formatter<urd::index_view<tf::Action<T>, tf::Repository>>::format(const urd
         for (auto object : row.template resolve<tf::Object>())
             out = fmt::format_to(out, "-{}", object.get_name());
         out = fmt::format_to(out, " :parameters () :precondition {} :effect ", value.get_condition());
-        if (value.get_effects().size() == 1)
-            out = fmt::format_to(out, "{}", value.get_effects()[0]);
-        else
-            out = fmt::format_to(out, "(and {})", fmt::join(value.get_effects(), " "));
+        out = format_action_effect(out, value);
+    }
+    // A durative action's duration, over-all condition and end (its condition and effects above are those at its start).
+    if (const auto temporal_part = value.get_temporal_part(); temporal_part.has_value())
+    {
+        out = fmt::format_to(out, " :duration (and");
+        for (const auto bound : temporal_part->get_min_durations())
+            out = fmt::format_to(out, " (>= ?duration {})", bound);
+        for (const auto bound : temporal_part->get_max_durations())
+            out = fmt::format_to(out, " (<= ?duration {})", bound);
+        for (const auto bound : temporal_part->get_end_min_durations())
+            out = fmt::format_to(out, " (at end (>= ?duration {}))", bound);
+        for (const auto bound : temporal_part->get_end_max_durations())
+            out = fmt::format_to(out, " (at end (<= ?duration {}))", bound);
+        out = fmt::format_to(out, ") :over-all {} :end-condition {} :end-effect (and", temporal_part->get_over_all(), temporal_part->get_end_condition());
+        for (const auto effect : temporal_part->get_end_effects())
+            out = fmt::format_to(out, " {}", effect);
+        for (const auto choice : temporal_part->get_end_choices())
+            out = fmt::format_to(out, " {}", choice);
+        out = fmt::format_to(out, ")");
     }
     return fmt::format_to(out, ")");
 }
@@ -338,6 +429,10 @@ fmt::formatter<std::pair<tf::ActionView<GroundTag>, tf::PlanFormatting>>::format
 // Each family's formatter, once for each record of the family the repository stores.
 template struct fmt::formatter<urd::index_view<tf::ConjunctiveEffect<LiftedTag>, tf::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::ConjunctiveEffect<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Outcome<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::Outcome<GroundTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ChoiceEffect<LiftedTag>, tf::Repository>>;
+template struct fmt::formatter<urd::index_view<tf::ChoiceEffect<GroundTag>, tf::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::ConditionalEffect<LiftedTag>, tf::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::ConditionalEffect<GroundTag>, tf::Repository>>;
 template struct fmt::formatter<urd::index_view<tf::Action<LiftedTag>, tf::Repository>>;

@@ -50,6 +50,7 @@ void bind_planning_formalism(nb::module_& m)
     bind_conjunctive_condition(m, repository);
     bind_numeric_effect(m, repository);
     bind_conjunctive_effect(m, repository);
+    bind_choice_effect(m, repository);
     bind_conditional_effect(m, repository);
     bind_action(m, repository);
     bind_axiom(m, repository);

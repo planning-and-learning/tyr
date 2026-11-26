@@ -43,7 +43,7 @@ template<TaskKind T, typename C>
 void bind_multi_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<MultiOperator<T, ArithmeticOperatorKind>, C>>(m);
-    ygg::bind_insert<MultiOperator<T, ArithmeticOperatorKind>>(repository);
+    python::bind_insert<MultiOperator<T, ArithmeticOperatorKind>>(repository);
     urd::python::bind_builder<MultiOperator<T, ArithmeticOperatorKind>, C>(m);
 }
 

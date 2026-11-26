@@ -150,8 +150,36 @@ struct data<::tyr::planning::NumericStorage<Kind>>
     [[nodiscard]] urd::key<::tyr::planning::NumericStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::NumericStorage<Kind>>(index); }
 };
 
+/// A state's temporal part (empty without durative actions or timed initial literals): its open durative actions, the
+/// roles of its frontier timepoints, the timed initial literals that happened, and the temporal network over its frontier,
+/// packed (temporal_parts.hpp). Its pool names them by its handle.
+template<::tyr::TaskKind Kind>
+struct data<::tyr::planning::TemporalStorage<Kind>>
+{
+    urd::key<::tyr::planning::TemporalStorage<Kind>> index;
+    ::tyr::planning::TemporalWords parts;
+
+    data() = default;
+
+    explicit data(::tyr::planning::TemporalWords parts_) : index(), parts(std::move(parts_)) {}
+
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"parts", &data::parts>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::parts> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::TemporalStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::TemporalStorage<Kind>>(index); }
+};
+
 /// A state as its repository stores it: its index and the keys of its storages (each a handle in its pool, by the storage
-/// policy). It is identified by its fluent facts and numeric values, by which the repository deduplicates
+/// policy). It is identified by its fluent facts, numeric values and agenda, by which the repository deduplicates
 /// states; its derived atoms follow from them. Its builder holds the storages being built (state_builder.hpp).
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::State<Kind>>
@@ -160,16 +188,19 @@ struct data<::tyr::planning::State<Kind>>
     urd::key<::tyr::planning::FactStorage<Kind>> fact_storage;
     urd::key<::tyr::planning::AtomStorage<Kind>> atom_storage;
     urd::key<::tyr::planning::NumericStorage<Kind>> numeric_storage;
+    urd::key<::tyr::planning::TemporalStorage<Kind>> temporal_storage;
 
     data() = default;
 
     data(urd::key<::tyr::planning::FactStorage<Kind>> fact_storage_,
          urd::key<::tyr::planning::AtomStorage<Kind>> atom_storage_,
-         urd::key<::tyr::planning::NumericStorage<Kind>> numeric_storage_) :
+         urd::key<::tyr::planning::NumericStorage<Kind>> numeric_storage_,
+         urd::key<::tyr::planning::TemporalStorage<Kind>> temporal_storage_) :
         index(),
         fact_storage(fact_storage_),
         atom_storage(atom_storage_),
-        numeric_storage(numeric_storage_)
+        numeric_storage(numeric_storage_),
+        temporal_storage(temporal_storage_)
     {
     }
 
@@ -183,12 +214,14 @@ struct data<::tyr::planning::State<Kind>>
     {
         return urd::Fields<urd::field<"fact_storage", &data::fact_storage>,
                            urd::field<"atom_storage", &data::atom_storage>,
-                           urd::field<"numeric_storage", &data::numeric_storage>> {};
+                           urd::field<"numeric_storage", &data::numeric_storage>,
+                           urd::field<"temporal_storage", &data::temporal_storage>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact_storage, &data::numeric_storage> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact_storage, &data::numeric_storage, &data::temporal_storage> {}; }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
+    static constexpr auto cista_members() noexcept
+    { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage, &data::temporal_storage> {}; }
 
     [[nodiscard]] urd::key<::tyr::planning::State<Kind>> key() const noexcept { return urd::key<::tyr::planning::State<Kind>>(index); }
 };

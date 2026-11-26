@@ -37,6 +37,7 @@
 #include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_effects.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -54,6 +55,8 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
@@ -102,12 +105,13 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
         urd::append(rule->derived_heads, create_applicability_atom(action, context).first);
         urd::append(program->rules, repository.insert(*rule, builder).first);
 
-        // A rule per conditional effect with variables or a condition: its atoms are the bindings for which the effect fires.
-        for (const auto cond_eff : action.get_effects())
+        // A rule per conditional effect with variables or a condition, those of every outcome of the action's choices too, each
+        // once: its atoms are the bindings for which the effect fires.
+        const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> cond_eff)
         {
             // An effect without variables and condition fires with its action.
-            if (cond_eff.get_variables().empty() && cond_eff.get_condition().empty())
-                continue;
+            if ((cond_eff.get_variables().empty() && cond_eff.get_condition().empty()) || effect_to_predicate.contains(std::pair(action, cond_eff)))
+                return;
             const auto condition = cond_eff.get_condition();
 
             auto effect_predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(builder);
@@ -138,7 +142,8 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
 
             urd::append(program->rules, repository.insert(*effect_rule, builder).first);
             effect_to_predicate.emplace(std::pair(action, cond_eff), new_effect_predicate);
-        }
+        };
+        formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
     }
 
     return repository.insert(*program, builder).first;
@@ -169,9 +174,13 @@ auto create_action_datalog_program(const formalism::PlanningTask<LiftedTag>& pla
     {
         schema->rules.clear();
         urd::append(schema->rules, repository->view(rule_of.at(predicate)));
-        for (const auto effect : action.get_effects())
-            if (const auto it = effect_to_predicate.find(std::pair(action, effect)); it != effect_to_predicate.end())
+        auto seen = urd::Store<urd::set<formalism::PredicateView<formalism::DerivedTag>>> {};
+        const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> effect)
+        {
+            if (const auto it = effect_to_predicate.find(std::pair(action, effect)); it != effect_to_predicate.end() && seen.insert(it->second).second)
                 urd::append(schema->rules, repository->view(rule_of.at(it->second)));
+        };
+        formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
         schema_programs.try_emplace(action, repository->insert(*schema, builder).first);
     }
     return datalog::Program<LiftedTag>(program, std::move(repository));

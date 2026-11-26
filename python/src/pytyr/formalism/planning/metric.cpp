@@ -37,7 +37,7 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_index<Metric>(m);
     urd::python::bind_data<Metric>(m);
     urd::python::bind_view<MetricView>(m);
-    ygg::bind_insert<Metric>(repository);
+    python::bind_insert<Metric>(repository);
     urd::python::bind_builder<Metric, Repository>(m);
 }
 

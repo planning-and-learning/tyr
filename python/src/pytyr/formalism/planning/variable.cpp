@@ -34,7 +34,7 @@ namespace tyr::formalism
 void bind_variable(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_view<VariableView>(m);
-    ygg::bind_insert<Variable>(repository);
+    python::bind_insert<Variable>(repository);
     urd::python::bind_builder<Variable, Repository>(m);
 }
 

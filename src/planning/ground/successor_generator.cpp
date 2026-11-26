@@ -18,6 +18,8 @@
 #include "tyr/planning/ground/successor_generator.hpp"
 
 #include "../metric.hpp"
+#include "../outcome_distributions.hpp"
+#include "../temporal_transitions.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -66,6 +68,7 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
@@ -105,6 +108,8 @@ void validate_storage(const TaskPtr<GroundTag>&, const Source& node, const Build
 }
 
 void validate_storage(const TaskPtr<GroundTag>&, const Source&, const SuccessorBuilders<GroundTag>&) {}
+
+void validate_storage(const TaskPtr<GroundTag>&, const Source&, const OutcomeStorage<GroundTag>&) {}
 
 /// The storage of a list's next successor: the repository, or a builder appended to the list.
 StateRepository<GroundTag>& next_storage(StateRepository<GroundTag>& storage) { return storage; }
@@ -160,6 +165,11 @@ struct SuccessorGenerator<GroundTag>::Impl
         formalism::ActionViewList<GroundTag> applicable_actions;
         ActionExecutor executor;
         StateDelta successor_delta;
+        GroundOutcomeDistributions outcome_distributions;
+        Happening happening;
+        TemporalStepper stepper;
+        bool scheduled = true;
+        OutcomeStorage<GroundTag> outcome_builders;
         urd::data<ygg::Row<formalism::Action<LiftedTag>>> checked_binding;
     };
 
@@ -235,6 +245,12 @@ struct SuccessorGenerator<GroundTag>::Impl
     /// The core: writes the successor of `node` by `action` into `out_state`, without axiom closure.
     ygg::float_t generate(const Source& node, formalism::ActionView<GroundTag> action, Builder& out_state, StateDelta& out_delta)
     {
+        if (action.get_temporal_part().has_value())
+            throw std::invalid_argument(
+                "SuccessorGenerator: a durative action happens at its start and its end, within a temporal network: use get_successor or for_each_successor.");
+        if (!action.get_choices().empty())
+            throw std::invalid_argument(
+                "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: use get_successor or for_each_successor.");
         const auto state_context = node.state();
         return evaluator.executor.apply_action_unregistered(state_context, action, out_state, out_delta);
     }
@@ -904,3 +920,297 @@ template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_a
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, formalism::ActionRowBuilderView binding);
 
 }
+
+namespace tyr::planning
+{
+namespace
+{
+using GroundStateBuilder = urd::builder<State<GroundTag>, StateRepository<GroundTag>>;
+
+/// The reads of the choices (their conditions and their outcomes' effects' conditions, nested ones too).
+template<typename Choices>
+void add_choice_reads(Choices choices, Happening& happening)
+{
+    for (const auto choice : choices)
+    {
+        add_reads(choice.get_condition(), happening.reads, happening.numeric_reads);
+        for (const auto outcome : choice.get_outcomes())
+        {
+            for (const auto effect : outcome.get_effects())
+                add_reads(effect.get_condition(), happening.reads, happening.numeric_reads);
+            add_choice_reads(outcome.get_choices(), happening);
+        }
+    }
+}
+
+/// The reads of effects (their conditions: evaluated, whether they fire or not).
+template<typename Effects>
+void add_effect_reads(Effects effects, Happening& happening)
+{
+    for (const auto effect : effects)
+        add_reads(effect.get_condition(), happening.reads, happening.numeric_reads);
+}
+
+/// Whether every open durative action's over-all condition holds in the outcome's state.
+template<typename Generator, StateViewConcept<GroundTag> State>
+bool over_all_holds(Generator& generator, const Node<GroundTag, State>& outcome)
+{
+    const auto& task = *outcome.get_state().context().get_task();
+    const auto context = StateContext<GroundTag>(task, outcome.get_state(), ygg::float_t { 0 });
+    return std::ranges::all_of(context.temporal_storage().get_parts().open,
+                               [&](const OpenAction& open)
+                               {
+                                   const auto action = generator.ground_action(urd::resolve(open.action, *task.get_repository()));
+                                   return is_applicable(running_temporal_part(action).get_over_all(), context);
+                               });
+}
+
+/// The successor of `node` by the happening labeled `label`: each joint outcome of `set` applies `effects` and its picks,
+/// then adds the happening to the temporal parts (`happening`'s reads given, its writes the effects fired), its outcome
+/// filled by `make(apply, outcome, valid)`; failed where the temporal network becomes inconsistent or an open over-all
+/// condition does not hold. Under (minimize (total-time)), the metric is the makespan.
+template<typename Generator, typename Impl, typename Make>
+SuccessorHandle<GroundTag> ground_transition(Generator& generator,
+                                             Impl& impl,
+                                             const SourceNode<GroundTag>& node,
+                                             const urd::data<Transition>& label,
+                                             std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                             OutcomeRange set,
+                                             const TemporalStepper::Kind& temporal,
+                                             Make make)
+{
+    auto& evaluator = impl.evaluator;
+    const auto time_metric = minimizes_total_time(node.get_task());
+    return generate_successor<GroundTag>(
+        evaluator.outcome_builders,
+        label,
+        evaluator.outcome_distributions,
+        set,
+        [&](std::span<const formalism::OutcomeView<GroundTag>> picks) { return evaluator.executor.is_applicable_if_fires(effects, picks, node.state()); },
+        [&](std::span<const formalism::OutcomeView<GroundTag>> picks, auto& outcome)
+        {
+            return make(
+                [&](GroundStateBuilder& state)
+                {
+                    const auto auxiliary_value = evaluator.executor.apply_effects_unregistered(node.state(), effects, picks, state, evaluator.successor_delta);
+                    auto& happening = evaluator.happening;
+                    happening.writes.clear();
+                    happening.numeric_writes.clear();
+                    evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
+                    auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
+                    evaluator.scheduled = evaluator.stepper.add(state.temporal_storage.parts, happening, temporal, makespan);
+                    return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
+                },
+                outcome,
+                [&](const auto& successor) { return evaluator.scheduled && over_all_holds(generator, successor); });
+        });
+}
+
+/// The successor of applying the instantaneous `action`, or of starting the durative `action` (none if its duration is not
+/// a nonnegative number).
+template<typename Generator, typename Impl, typename Make>
+SuccessorHandle<GroundTag>
+action_transition(Generator& generator, Impl& impl, const SourceNode<GroundTag>& node, formalism::ActionView<GroundTag> action, Make make)
+{
+    auto& distributions = impl.evaluator.outcome_distributions;
+    auto& happening = impl.evaluator.happening;
+    distributions.clear();
+    happening.clear();
+    add_reads(action.get_condition(), happening.reads, happening.numeric_reads);
+    add_effect_reads(action.get_effects(), happening);
+    add_choice_reads(action.get_choices(), happening);
+    const auto effects = std::array { action.get_effects() };
+    const auto row = action.get_row();
+    auto temporal = TemporalStepper::Kind {};
+    auto label = urd::data<Transition>(TransitionKind::APPLY, urd::flat_optional<ActionRowKey>(row.index()), 0);
+
+    if (const auto temporal_part = action.get_temporal_part(); temporal_part.has_value())
+    {
+        label.kind = TransitionKind::START;
+        const auto [min_duration, max_duration] = duration_bounds(temporal_part->get_min_durations(), temporal_part->get_max_durations(), node.state());
+        if (!(min_duration <= max_duration))
+            return empty_successor(impl.evaluator.outcome_builders, label);
+        temporal = TemporalStepper::Kind { TransitionKind::START, 0, row.index(), min_duration, max_duration, 0 };
+        add_reads(temporal_part->get_over_all(), happening.over_all, happening.numeric_over_all);
+    }
+    const auto set = build_ground_choices(distributions, action.get_choices(), node.state());
+    return ground_transition(generator, impl, node, label, effects, set, temporal, make);
+}
+
+/// The successor of ending the open durative action at position `open` (none if its end condition does not hold): its end
+/// effects and choices apply, and it reads its over-all condition up to here.
+template<typename Generator, typename Impl, typename Make>
+SuccessorHandle<GroundTag> end_transition(Generator& generator, Impl& impl, const SourceNode<GroundTag>& node, std::uint32_t open, Make make)
+{
+    const auto& task = node.get_task();
+    const auto row = urd::resolve(node.state().temporal_storage().get_parts().open[open].action, *task.get_repository());
+    const auto label = urd::data<Transition>(TransitionKind::END, urd::flat_optional<ActionRowKey>(row.index()), open);
+    const auto temporal_part = running_temporal_part(generator.ground_action(row));
+    if (!is_applicable(temporal_part.get_end_condition(), node.state()))
+        return empty_successor(impl.evaluator.outcome_builders, label);
+
+    auto& distributions = impl.evaluator.outcome_distributions;
+    auto& happening = impl.evaluator.happening;
+    distributions.clear();
+    happening.clear();
+    add_reads(temporal_part.get_end_condition(), happening.reads, happening.numeric_reads);
+    add_reads(temporal_part.get_over_all(), happening.reads, happening.numeric_reads);
+    add_effect_reads(temporal_part.get_end_effects(), happening);
+    add_choice_reads(temporal_part.get_end_choices(), happening);
+    const auto effects = std::array { temporal_part.get_end_effects() };
+    const auto set = build_ground_choices(distributions, temporal_part.get_end_choices(), node.state());
+    const auto [end_min, end_max] = duration_bounds(temporal_part.get_end_min_durations(), temporal_part.get_end_max_durations(), node.state());
+    if (!(end_min <= end_max))
+        return empty_successor(impl.evaluator.outcome_builders, label);
+    const auto temporal = TemporalStepper::Kind { TransitionKind::END, open, {}, 0, 0, 0, 0, end_min, end_max };
+    return ground_transition(generator, impl, node, label, effects, set, temporal, make);
+}
+
+/// Fills an outcome by registering the applied state (as a delta to `node`'s state where it is registered).
+template<typename Generator, typename Impl>
+auto registering(Generator& generator,
+                 Impl& impl,
+                 const SourceNode<GroundTag>& node,
+                 StateRepository<GroundTag>& storage,
+                 AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    return [&generator, &impl, &node, &storage, &axiom_evaluator](auto apply, auto& outcome, auto valid)
+    {
+        auto& delta = impl.evaluator.successor_delta;
+        return register_outcome(storage,
+                                outcome,
+                                apply,
+                                [&](std::shared_ptr<GroundStateBuilder> state, ygg::float_t auxiliary_value)
+                                {
+                                    if (const auto* parent = node.registered())
+                                        return generator.finalize_successor_state(storage, axiom_evaluator, std::move(state), auxiliary_value, *parent, delta);
+                                    return generator.finalize_successor_state(storage, axiom_evaluator, std::move(state), auxiliary_value);
+                                },
+                                valid);
+    };
+}
+
+/// Fills an outcome by writing the applied state into a state builder checked out of `builders`, closed under the axioms.
+inline auto building(const SourceNode<GroundTag>& node, AxiomEvaluator<GroundTag>& axiom_evaluator, OutcomeStorage<GroundTag>& builders)
+{
+    return [&node, &axiom_evaluator, &builders](auto apply, auto& outcome, auto valid)
+    { return build_outcome(node, axiom_evaluator, builders, outcome, apply, valid); };
+}
+}
+
+SuccessorHandle<GroundTag> SuccessorGenerator<GroundTag>::get_successor(const Source& node,
+                                                                  formalism::ActionView<GroundTag> action,
+                                                                  StateRepository<GroundTag>& storage,
+                                                                  AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    m_impl->validate(node, storage, axiom_evaluator);
+    return action_transition(*this, *m_impl, node, action, registering(*this, *m_impl, node, storage, axiom_evaluator));
+}
+
+SuccessorHandle<GroundTag> SuccessorGenerator<GroundTag>::get_successor(const Source& node,
+                                                                  formalism::ActionRowView binding,
+                                                                  StateRepository<GroundTag>& storage,
+                                                                  AxiomEvaluator<GroundTag>& axiom_evaluator)
+{ return get_successor(node, ground_action(binding), storage, axiom_evaluator); }
+
+SuccessorHandle<GroundTag> SuccessorGenerator<GroundTag>::get_end_successor(const Source& node,
+                                                                      std::uint32_t open,
+                                                                      StateRepository<GroundTag>& storage,
+                                                                      AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    m_impl->validate(node, storage, axiom_evaluator);
+    return end_transition(*this, *m_impl, node, open, registering(*this, *m_impl, node, storage, axiom_evaluator));
+}
+
+bool SuccessorGenerator<GroundTag>::for_each_successor(const Source& node,
+                                                       StateRepository<GroundTag>& storage,
+                                                       AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                       const std::function<bool(const SuccessorView<GroundTag>&)>& callback)
+{
+    auto& tree = m_impl->prepare(node, std::nullopt, storage, axiom_evaluator);
+    const auto exhausted = m_impl->for_each_applicable_action(node,
+                                                              tree,
+                                                              [&](const auto action)
+                                                              {
+                                                                  const auto successor = get_successor(node, action, storage, axiom_evaluator);
+                                                                  return successor->distributions.empty() || callback(urd::resolve(*successor, storage));
+                                                              });
+    if (!exhausted)
+        return false;
+    const auto open_count = static_cast<std::uint32_t>(node.state().temporal_storage().get_parts().open.size());
+    for (std::uint32_t open = 0; open < open_count; ++open)
+    {
+        const auto ending = get_end_successor(node, open, storage, axiom_evaluator);
+        if (!ending->distributions.empty() && !callback(urd::resolve(*ending, storage)))
+            return false;
+    }
+    const auto timed = get_timed_literal_successor(node, storage, axiom_evaluator);
+    return timed->distributions.empty() || callback(urd::resolve(*timed, storage));
+}
+
+SuccessorHandle<GroundTag>
+SuccessorGenerator<GroundTag>::get_successor(const Source& node, formalism::ActionView<GroundTag> action, AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    m_impl->validate(node, m_impl->evaluator.outcome_builders, axiom_evaluator);
+    return action_transition(*this, *m_impl, node, action, building(node, axiom_evaluator, m_impl->evaluator.outcome_builders));
+}
+
+SuccessorHandle<GroundTag>
+SuccessorGenerator<GroundTag>::get_successor(const Source& node, formalism::ActionRowView binding, AxiomEvaluator<GroundTag>& axiom_evaluator)
+{ return get_successor(node, ground_action(binding), axiom_evaluator); }
+
+SuccessorHandle<GroundTag>
+SuccessorGenerator<GroundTag>::get_end_successor(const Source& node, std::uint32_t open, AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    m_impl->validate(node, m_impl->evaluator.outcome_builders, axiom_evaluator);
+    return end_transition(*this, *m_impl, node, open, building(node, axiom_evaluator, m_impl->evaluator.outcome_builders));
+}
+
+bool SuccessorGenerator<GroundTag>::for_each_successor(const Source& node,
+                                                       AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                       const std::function<bool(const SuccessorView<GroundTag>&)>& callback)
+{
+    auto& tree = m_impl->prepare(node, std::nullopt, m_impl->evaluator.outcome_builders, axiom_evaluator);
+    const auto exhausted = m_impl->for_each_applicable_action(node,
+                                                              tree,
+                                                              [&](const auto action)
+                                                              {
+                                                                  const auto successor = get_successor(node, action, axiom_evaluator);
+                                                                  return successor->distributions.empty() || callback(urd::resolve(*successor, node.get_state_repository()));
+                                                              });
+    if (!exhausted)
+        return false;
+    const auto open_count = static_cast<std::uint32_t>(node.state().temporal_storage().get_parts().open.size());
+    for (std::uint32_t open = 0; open < open_count; ++open)
+    {
+        const auto ending = get_end_successor(node, open, axiom_evaluator);
+        if (!ending->distributions.empty() && !callback(urd::resolve(*ending, node.get_state_repository())))
+            return false;
+    }
+    const auto timed = get_timed_literal_successor(node, axiom_evaluator);
+    return timed->distributions.empty() || callback(urd::resolve(*timed, node.get_state_repository()));
+}
+
+SuccessorHandle<GroundTag>
+SuccessorGenerator<GroundTag>::get_timed_literal_successor(const Source& node, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    m_impl->validate(node, storage, axiom_evaluator);
+    return timed_literal_transition(m_impl->evaluator,
+                                    node,
+                                    registering(*this, *m_impl, node, storage, axiom_evaluator),
+                                    [&](const auto& outcome) { return over_all_holds(*this, outcome); });
+}
+
+SuccessorHandle<GroundTag> SuccessorGenerator<GroundTag>::get_timed_literal_successor(const Source& node,
+                                                                                                             AxiomEvaluator<GroundTag>& axiom_evaluator)
+{
+    m_impl->validate(node, m_impl->evaluator.outcome_builders, axiom_evaluator);
+    return timed_literal_transition(m_impl->evaluator,
+                                    node,
+                                    building(node, axiom_evaluator, m_impl->evaluator.outcome_builders),
+                                    [&](const auto& outcome) { return over_all_holds(*this, outcome); });
+}
+}
+
+// The pools successors are handed out of (yggdrasil/formalism/builder_instantiations.hpp).
+YGG_FORMALISM_BUILDER(, tyr::planning::OutcomeStorage<tyr::GroundTag>, 2)

@@ -43,7 +43,7 @@ void bind_atom_view(nb::module_& m, nb::class_<C>& repository)
 {
     using V = urd::index_view<Atom<T, F>, C>;
     urd::python::bind_view<V>(m);
-    ygg::bind_insert<Atom<T, F>>(repository);
+    python::bind_insert<Atom<T, F>>(repository);
     urd::python::bind_builder<Atom<T, F>, C>(m);
 }
 }  // namespace

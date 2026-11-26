@@ -44,7 +44,7 @@ void bind_function_term_view(nb::module_& m, nb::class_<C>& repository)
 {
     using V = urd::index_view<FunctionTerm<T, F>, C>;
     urd::python::bind_view<V>(m);
-    ygg::bind_insert<FunctionTerm<T, F>>(repository);
+    python::bind_insert<FunctionTerm<T, F>>(repository);
     urd::python::bind_builder<FunctionTerm<T, F>, C>(m);
 }
 

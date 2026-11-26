@@ -42,7 +42,7 @@ template<TaskKind T, typename C>
 void bind_conjunctive_condition_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<ConjunctiveCondition<T>, C>>(m);
-    ygg::bind_insert<ConjunctiveCondition<T>>(repository);
+    python::bind_insert<ConjunctiveCondition<T>>(repository);
     urd::python::bind_builder<ConjunctiveCondition<T>, C>(m);
 }
 }  // namespace

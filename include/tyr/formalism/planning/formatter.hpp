@@ -51,6 +51,23 @@ struct fmt::formatter<urd::index_view<tyr::formalism::ConjunctiveEffect<T>, tyr:
                                          fmt::format_context& context) const;
 };
 
+/// An outcome of a choice of nature: (and effects... choices...), its effects as conditional effects, then its nested choices.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::Outcome<T>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Outcome<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A choice of nature: (forall (variables) (when condition (oneof outcomes...))), or (probabilistic p outcome...) where it
+/// has probabilities, without the forall or the when it does not need.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::ChoiceEffect<T>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::ChoiceEffect<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
 /// A conditional effect: (forall (variables) (when condition effect)), without the forall or the when it does not need.
 template<tyr::TaskKind T>
 struct fmt::formatter<urd::index_view<tyr::formalism::ConditionalEffect<T>, tyr::formalism::Repository>> : tyr::formalism::detail::without_format_spec

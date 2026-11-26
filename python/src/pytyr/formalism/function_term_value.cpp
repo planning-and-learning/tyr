@@ -41,7 +41,7 @@ template<FactKind F, typename C>
 void bind_function_term_value_view(nb::module_& m, nb::class_<C>& repository)
 {
     urd::python::bind_view<urd::index_view<FunctionTermValue<GroundTag, F>, C>>(m);
-    ygg::bind_insert<FunctionTermValue<GroundTag, F>>(repository);
+    python::bind_insert<FunctionTermValue<GroundTag, F>>(repository);
     urd::python::bind_builder<FunctionTermValue<GroundTag, F>, C>(m);
 }
 

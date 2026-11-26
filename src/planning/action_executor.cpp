@@ -36,6 +36,7 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/outcome_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -61,6 +62,8 @@
 #include "tyr/planning/state_delta.hpp"
 
 #include <algorithm>
+#include <array>
+#include <span>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
 #include <vector>
@@ -72,15 +75,15 @@ namespace tyr::planning
 namespace
 {
 
-template<TaskKind Kind>
-void process_effects(formalism::ActionView<GroundTag> action,
+template<TaskKind Kind, typename Effects>
+void process_effects(Effects effects,
                      urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                      StateContext<Kind>& state_context,
                      urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
                      urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
                      urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
 {
-    for (const auto cond_effect : action.get_effects())
+    for (const auto cond_effect : effects)
     {
         if (is_applicable(cond_effect.get_condition(), state_context))
         {
@@ -188,6 +191,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     successor_state_builder.fact_storage.assign(state_context.fact_storage());
     successor_state_builder.numeric_storage.assign(state_context.numeric_storage());
+    successor_state_builder.temporal_storage.assign(state_context.temporal_storage());
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
@@ -241,8 +245,105 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>&
                                           m_numeric_writes,
                                           delta,
                                           [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
-                                          { process_effects(action, out_state, tmp_state_context, del_effects, add_effects, numeric_writes); });
+                                          { process_effects(action.get_effects(), out_state, tmp_state_context, del_effects, add_effects, numeric_writes); });
 }
+
+template<TaskKind Kind>
+ygg::float_t ActionExecutor::apply_effects_unregistered(const StateContext<Kind>& state_context,
+                                                        std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                                        std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                        urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
+                                                        StateDelta& delta)
+{
+    return apply_action_unregistered_impl(state_context,
+                                          successor_state_builder,
+                                          m_del_effects,
+                                          m_add_effects,
+                                          m_numeric_writes,
+                                          delta,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
+                                          {
+                                              for (const auto list : effects)
+                                                  process_effects(list, out_state, tmp_state_context, del_effects, add_effects, numeric_writes);
+                                              for (const auto pick : picks)
+                                                  process_effects(pick.get_effects(), out_state, tmp_state_context, del_effects, add_effects, numeric_writes);
+                                          });
+}
+
+template<TaskKind Kind>
+ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
+                                                       formalism::ActionView<GroundTag> action,
+                                                       std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                       urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
+                                                       StateDelta& delta)
+{
+    const auto effects = std::array { action.get_effects() };
+    return apply_effects_unregistered(state_context,
+                                      std::span<const formalism::ConditionalEffectListView<GroundTag>>(effects),
+                                      picks,
+                                      successor_state_builder,
+                                      delta);
+}
+
+template<TaskKind Kind>
+bool ActionExecutor::is_applicable_if_fires(std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                            std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                            const StateContext<Kind>& state)
+{
+    // The families accumulate over all effects that fire.
+    m_effect_families.clear();
+    for (const auto list : effects)
+        for (const auto cond_effect : list)
+            if (!tyr::planning::is_applicable_if_fires(cond_effect, state, m_effect_families))
+                return false;
+    for (const auto pick : picks)
+        for (const auto cond_effect : pick.get_effects())
+            if (!tyr::planning::is_applicable_if_fires(cond_effect, state, m_effect_families))
+                return false;
+    return true;
+}
+
+template<TaskKind Kind>
+bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action,
+                                            std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                            const StateContext<Kind>& state)
+{
+    const auto effects = std::array { action.get_effects() };
+    return is_applicable_if_fires(std::span<const formalism::ConditionalEffectListView<GroundTag>>(effects), picks, state);
+}
+
+template ygg::float_t ActionExecutor::apply_effects_unregistered(const StateContext<LiftedTag>& state_context,
+                                                                 std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                                                 std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                                 urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
+                                                                 StateDelta& delta);
+template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
+                                                                formalism::ActionView<GroundTag> action,
+                                                                std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                                urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
+                                                                StateDelta& delta);
+template bool ActionExecutor::is_applicable_if_fires(std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                                     std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                     const StateContext<LiftedTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action,
+                                                     std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                     const StateContext<LiftedTag>& state);
+template ygg::float_t ActionExecutor::apply_effects_unregistered(const StateContext<GroundTag>& state_context,
+                                                                 std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                                                 std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                                 urd::builder<State<GroundTag>, StateRepository<GroundTag>>& successor_state_builder,
+                                                                 StateDelta& delta);
+template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<GroundTag>& state_context,
+                                                                formalism::ActionView<GroundTag> action,
+                                                                std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                                urd::builder<State<GroundTag>, StateRepository<GroundTag>>& successor_state_builder,
+                                                                StateDelta& delta);
+template bool ActionExecutor::is_applicable_if_fires(std::span<const formalism::ConditionalEffectListView<GroundTag>> effects,
+                                                     std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                     const StateContext<GroundTag>& state);
+template bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action,
+                                                     std::span<const formalism::OutcomeView<GroundTag>> picks,
+                                                     const StateContext<GroundTag>& state);
 
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                                                 formalism::ActionView<GroundTag> action,
@@ -305,6 +406,107 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                                                                   add_effects,
                                                                                                   numeric_writes);
                                                                           });
+                                          });
+}
+
+namespace
+{
+/// Puts `objects` into the grounder's binding.
+void set_binding(formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder, std::span<const urd::index<formalism::Object>> objects)
+{
+    auto& binding = grounder.binding();
+    binding.clear();
+    for (const auto object : objects)
+        binding.push_back(object);
+}
+
+/// Calls `apply(effect)` for each completed binding of `effects` (each in its action binding) and of the picked outcomes'
+/// effects that extends the pick's binding.
+template<typename Apply>
+void for_each_bound_effect(std::span<const LiftedEffects> effects,
+                           std::span<const LiftedOutcomePick> picks,
+                           formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
+                           ActionExecutor::ForEachActionEffectBinding for_each_effect_binding,
+                           Apply apply)
+{
+    for (const auto& part : effects)
+    {
+        set_binding(grounder, part.binding);
+        for (const auto cond_effect : part.effects)
+            for_each_effect_binding(part.action, cond_effect, [&] { apply(cond_effect); });
+    }
+    for (const auto& pick : picks)
+    {
+        set_binding(grounder, pick.binding.first(pick.action.get_arity()));
+        for (const auto cond_effect : pick.outcome.get_effects())
+            for_each_effect_binding(pick.action,
+                                    cond_effect,
+                                    [&]
+                                    {
+                                        const auto& binding = grounder.binding();
+                                        if (std::ranges::equal(std::span(binding.data(), pick.binding.size()), pick.binding))
+                                            apply(cond_effect);
+                                    });
+    }
+}
+}
+
+bool ActionExecutor::is_applicable_if_fires(std::span<const LiftedEffects> effects,
+                                            std::span<const LiftedOutcomePick> picks,
+                                            const StateContext<LiftedTag>& state_context,
+                                            formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
+                                            const formalism::FDRContext& fdr,
+                                            ForEachActionEffectBinding for_each_effect_binding)
+{
+    auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
+    m_effect_families.clear();
+    auto applicable = true;
+    for_each_bound_effect(effects,
+                          picks,
+                          grounder,
+                          for_each_effect_binding,
+                          [&](formalism::ConditionalEffectView<LiftedTag> cond_effect)
+                          {
+                              if (applicable && !tyr::planning::is_applicable(cond_effect.get_effect(), applicability_context, m_effect_families))
+                                  applicable = false;
+                          });
+    return applicable;
+}
+
+ygg::float_t ActionExecutor::apply_effects_unregistered(const StateContext<LiftedTag>& state_context,
+                                                        std::span<const LiftedEffects> effects,
+                                                        std::span<const LiftedOutcomePick> picks,
+                                                        formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
+                                                        formalism::FDRContext& fdr,
+                                                        ForEachActionEffectBinding for_each_effect_binding,
+                                                        urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
+                                                        StateDelta& delta)
+{
+    return apply_action_unregistered_impl(state_context,
+                                          successor_state_builder,
+                                          m_del_effects,
+                                          m_add_effects,
+                                          m_numeric_writes,
+                                          delta,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
+                                          {
+                                              auto applicability_context = ApplicabilityContext { tmp_state_context, grounder, fdr };
+                                              for_each_bound_effect(effects,
+                                                                    picks,
+                                                                    grounder,
+                                                                    for_each_effect_binding,
+                                                                    [&](formalism::ConditionalEffectView<LiftedTag> cond_effect)
+                                                                    {
+                                                                        apply_lifted_effect(cond_effect,
+                                                                                            out_state,
+                                                                                            tmp_state_context,
+                                                                                            applicability_context,
+                                                                                            grounder,
+                                                                                            fdr,
+                                                                                            del_effects,
+                                                                                            add_effects,
+                                                                                            numeric_writes);
+                                                                    });
                                           });
 }
 

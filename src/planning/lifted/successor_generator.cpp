@@ -18,7 +18,10 @@
 #include "tyr/planning/lifted/successor_generator.hpp"
 
 #include "../metric.hpp"
+#include "../outcome_distributions.hpp"
+#include "../temporal_transitions.hpp"
 #include "effect_atom_index.hpp"
+#include "lifted_outcomes.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/kckp/static_extensions.hpp"
@@ -57,6 +60,7 @@
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/builder_instantiations.hpp>
 
 namespace tyr::planning
 {
@@ -101,6 +105,8 @@ void validate_storage(const TaskPtr<LiftedTag>&, const Source& node, const Build
 }
 
 void validate_storage(const TaskPtr<LiftedTag>&, const Source&, const SuccessorBuilders<LiftedTag>&) {}
+
+void validate_storage(const TaskPtr<LiftedTag>&, const Source&, const OutcomeStorage<LiftedTag>&) {}
 
 /// The storage of a list's next successor: the repository, or a builder appended to the list.
 StateRepository<LiftedTag>& next_storage(StateRepository<LiftedTag>& storage) { return storage; }
@@ -171,6 +177,18 @@ struct SuccessorGenerator<LiftedTag>::Impl
         EffectAtomIndex effect_atom_index;
         ActionExecutor executor;
         StateDelta successor_delta;
+        LiftedOutcomeDistributions outcome_distributions;
+        LiftedOutcomeBuilder outcome_builder;
+        urd::Store<urd::sequence<LiftedOutcomePick>> outcome_picks;
+        urd::Store<urd::sequence<LiftedEffects>> lifted_effects;
+        Happening happening;
+        TemporalStepper stepper;
+        bool scheduled = true;
+        /// The objects of the action bindings a transition applies (ranges in it: spans are taken once it is complete).
+        urd::Store<urd::sequence<urd::index<formalism::Object>>> transition_objects;
+        urd::Store<urd::sequence<OutcomeRange>> transition_bindings;
+        urd::Store<urd::sequence<urd::index<formalism::Object>>> static_objects;
+        OutcomeStorage<LiftedTag> outcome_builders;
 
         /// The facts the workspace holds. A state builder's contents can change, so its facts hold only while enumerating.
         struct Facts
@@ -506,6 +524,12 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node,
         formalism::GroundingContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = node.state();
     const auto action = action_of(binding, *definition->task->get_repository());
+    if (action.get_temporal_part().has_value())
+        throw std::invalid_argument(
+            "SuccessorGenerator: a durative action happens at its start and its end, within a temporal network: use get_successor or for_each_successor.");
+    if (!action.get_choices().empty())
+        throw std::invalid_argument(
+            "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: use get_successor or for_each_successor.");
 
     require_action_facts(node, action);
     const auto auxiliary_value = evaluator.executor.apply_action_unregistered(
@@ -1212,3 +1236,445 @@ template ActionBindingResult SuccessorGenerator<LiftedTag>::try_get_applicable_a
 template ActionBindingResult SuccessorGenerator<LiftedTag>::try_get_applicable_action_binding(const Source& node, formalism::ActionRowBuilderView binding);
 
 }
+
+namespace tyr::planning
+{
+namespace
+{
+using LiftedStateBuilder = urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>;
+
+/// Puts the objects of an action binding into the context's binding.
+inline void set_binding(urd::flat_vector<urd::index<formalism::Object>>& binding, formalism::ActionRowView row)
+{
+    binding.clear();
+    for (const auto object : row.get<urd::index<formalism::Object>>())
+        binding.push_back(object);
+}
+
+/// The FDR variables and fluent function terms a lifted condition reads in the context's binding (its atoms grounded; a
+/// derived literal: every variable).
+template<typename Vars, typename Terms>
+void add_lifted_reads(formalism::ConjunctiveConditionView<LiftedTag> condition,
+                      formalism::GroundingContext<formalism::Builder, formalism::Repository>& grounder,
+                      formalism::FDRContext& fdr,
+                      Vars& variables,
+                      Terms& terms)
+{
+    for (const auto literal : condition.template get_literals<formalism::FluentTag>())
+        variables.push_back(static_cast<std::uint32_t>(fdr.get_fact(formalism::ground(literal.get_atom(), grounder).first).get_variable().index().value));
+    if (!condition.template get_literals<formalism::DerivedTag>().empty())
+        variables.push_back(every_variable);
+    for (const auto constraint : condition.get_numeric_constraints())
+    {
+        add_fluent_terms(formalism::ground(constraint.get_lhs(), grounder), terms);
+        add_fluent_terms(formalism::ground(constraint.get_rhs(), grounder), terms);
+    }
+}
+
+/// The lifted transitions' shared tools: the binding, the FDR context, and the bindings of an action's effect for which
+/// its static condition holds (its static extensions, without the state: a running action's start condition need not
+/// hold any more, so the state's effect atoms do not report its end effects).
+template<typename Impl>
+struct LiftedTools
+{
+    Impl* impl;
+    formalism::GroundingContext<formalism::Builder, formalism::Repository> grounder;
+    formalism::FDRContext* fdr;
+
+    explicit LiftedTools(Impl& impl_) :
+        impl(&impl_),
+        grounder(impl_.evaluator.workspace.planning_builder, *impl_.definition->task->get_repository(), impl_.evaluator.workspace.binding),
+        fdr(impl_.definition->task->get_fdr_context().get())
+    {
+    }
+
+    /// Calls `apply` with each static extension of the effect in the grounder's binding (it holds the action binding before
+    /// and after); an effect without variables and condition fires once.
+    template<typename Apply>
+    void for_each_static_binding(formalism::ActionView<LiftedTag> action, formalism::ConditionalEffectView<LiftedTag> effect, const Apply& apply)
+    {
+        const auto& mapping = impl->definition->action_program.get_conditional_effect_to_predicate_mapping();
+        const auto it = mapping.find(std::pair(action, effect));
+        if (it == mapping.end())
+        {
+            apply();
+            return;
+        }
+        const auto& rules = impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules;
+        const auto schema_rules = impl->get_schema_evaluator(action).program.get_rules();
+        const auto rule =
+            *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.get_derived_heads().front().get_predicate() == it->second; });
+        auto& binding = grounder.binding();
+        const auto action_arity = binding.size();
+        auto& evaluator = impl->evaluator;
+        evaluator.static_objects.clear();
+        for (const auto object : binding)
+            evaluator.static_objects.push_back(object);
+        const auto& rule_workspace = rules[static_cast<ygg::uint_t>(rule.index().value)];
+        if (!rule_workspace)
+            throw std::logic_error("LiftedTools::for_each_static_binding: the effect's rule has no workspace.");
+        datalog::for_each_static_extension(*rule_workspace,
+                                           std::span<const urd::index<formalism::Object>>(evaluator.static_objects),
+                                           evaluator.static_extension_workspace,
+                                           [&](auto extension)
+                                           {
+                                               binding.resize(action_arity);
+                                               binding.insert(binding.end(), extension.begin(), extension.end());
+                                               apply();
+                                           });
+        binding.resize(action_arity);
+    }
+
+    /// The reads of effects (their conditions, for each binding of their variables: evaluated, whether they fire or not).
+    template<typename Effects>
+    void add_effect_reads(formalism::ActionView<LiftedTag> action, Effects effects, Happening& happening)
+    {
+        for (const auto effect : effects)
+            for_each_static_binding(action,
+                                    effect,
+                                    [&] { add_lifted_reads(effect.get_condition(), grounder, *fdr, happening.reads, happening.numeric_reads); });
+    }
+
+    /// The reads of choices: their outcomes' effects' conditions (which include the choices'), nested ones too.
+    template<typename Choices>
+    void add_choice_reads(formalism::ActionView<LiftedTag> action, Choices choices, Happening& happening)
+    {
+        for (const auto choice : choices)
+            for (const auto outcome : choice.get_outcomes())
+            {
+                add_effect_reads(action, outcome.get_effects(), happening);
+                add_choice_reads(action, outcome.get_choices(), happening);
+            }
+    }
+};
+
+/// Whether every open durative action's over-all condition holds in the outcome's state (each read lifted, under its
+/// binding).
+template<typename Impl, StateViewConcept<LiftedTag> State>
+bool lifted_over_all_holds(Impl& impl, const Node<LiftedTag, State>& outcome)
+{
+    const auto& task = *outcome.get_state().context().get_task();
+    const auto context = StateContext<LiftedTag>(task, outcome.get_state(), ygg::float_t { 0 });
+    auto grounder = formalism::GroundingContext { impl.evaluator.workspace.planning_builder, *task.get_repository(), impl.evaluator.workspace.binding };
+    const auto applicability_context = ApplicabilityContext { context, grounder, *task.get_fdr_context() };
+    return std::ranges::all_of(context.temporal_storage().get_parts().open,
+                               [&](const OpenAction& open)
+                               {
+                                   const auto row = urd::resolve(open.action, *task.get_repository());
+                                   set_binding(grounder.binding(), row);
+                                   return is_applicable(running_temporal_part(row.get_relation()).get_over_all(), applicability_context);
+                               });
+}
+
+/// The successor of `node` by the happening labeled `label`: each joint outcome of `set` applies `effects` (each in its
+/// action binding) and its picks, then adds the happening to the temporal parts (`happening`'s reads given, its writes
+/// the effects fired), its outcome filled by `make(apply, outcome, valid)`; failed where the temporal network becomes inconsistent or an
+/// open over-all condition does not hold. Effect bindings are those `for_each_effect_binding` reports. Under (minimize
+/// (total-time)), the metric is the makespan.
+template<typename Impl, typename ForEachEffectBinding, typename Make>
+SuccessorHandle<LiftedTag> lifted_transition(Impl& impl,
+                                             const SourceNode<LiftedTag>& node,
+                                             const urd::data<Transition>& label,
+                                             std::span<const LiftedEffects> effects,
+                                             OutcomeRange set,
+                                             ForEachEffectBinding& for_each_effect_binding,
+                                              const TemporalStepper::Kind& temporal,
+                                              Make make)
+{
+    auto& evaluator = impl.evaluator;
+    auto& fdr = *impl.definition->task->get_fdr_context();
+    auto grounder = formalism::GroundingContext { evaluator.workspace.planning_builder, *impl.definition->task->get_repository(), evaluator.workspace.binding };
+    const auto time_metric = minimizes_total_time(node.get_task());
+    const auto views = [&](std::span<const LiftedPick> picks)
+    {
+        evaluator.outcome_picks.clear();
+        for (const auto& pick : picks)
+            evaluator.outcome_picks.push_back(LiftedOutcomePick { pick.action, pick.outcome, evaluator.outcome_builder.binding(pick.binding) });
+        return std::span<const LiftedOutcomePick>(evaluator.outcome_picks);
+    };
+    return generate_successor<LiftedTag>(
+        evaluator.outcome_builders,
+        label,
+        evaluator.outcome_distributions,
+        set,
+        [&](std::span<const LiftedPick> picks)
+        { return evaluator.executor.is_applicable_if_fires(effects, views(picks), node.state(), grounder, fdr, for_each_effect_binding); },
+        [&](std::span<const LiftedPick> picks, auto& outcome)
+        {
+            const auto picked = views(picks);
+            return make(
+                [&](LiftedStateBuilder& state)
+                {
+                    const auto auxiliary_value = evaluator.executor.apply_effects_unregistered(node.state(),
+                                                                                               effects,
+                                                                                               picked,
+                                                                                               grounder,
+                                                                                               fdr,
+                                                                                               for_each_effect_binding,
+                                                                                               state,
+                                                                                               evaluator.successor_delta);
+                    auto& happening = evaluator.happening;
+                    happening.writes.clear();
+                    happening.numeric_writes.clear();
+                    evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
+                    auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
+                    evaluator.scheduled = evaluator.stepper.add(state.temporal_storage.parts, happening, temporal, makespan);
+                    return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
+                },
+                outcome,
+                [&](const auto& successor) { return evaluator.scheduled && lifted_over_all_holds(impl, successor); });
+        });
+}
+
+/// The successor of applying the instantaneous action binding, or of starting the durative one (none if its duration is
+/// not a nonnegative number), without grounding the action: its effect bindings and its choices' instances are those the
+/// state's effect atoms report.
+template<typename Impl, typename Make>
+SuccessorHandle<LiftedTag> lifted_action_transition(Impl& impl, const SourceNode<LiftedTag>& node, formalism::ActionRowView binding, Make make)
+{
+    auto& evaluator = impl.evaluator;
+    const auto action = binding.get_relation();
+    auto tools = LiftedTools<Impl>(impl);
+    auto& grounder = tools.grounder;
+    set_binding(grounder.binding(), binding);
+    impl.require_action_facts(node, action);
+
+    evaluator.transition_objects.clear();
+    for (const auto object : grounder.binding())
+        evaluator.transition_objects.push_back(object);
+    const auto objects = std::span<const urd::index<formalism::Object>>(evaluator.transition_objects);
+
+    auto for_each_effect_binding = [&](formalism::ActionView<LiftedTag> effect_action, formalism::ConditionalEffectView<LiftedTag> effect, auto apply)
+    { evaluator.effect_atom_index.for_each_effect_binding(effect_action, effect, grounder.binding(), apply); };
+    auto for_each_own_effect_binding = [&](formalism::ConditionalEffectView<LiftedTag> effect, auto apply) { for_each_effect_binding(action, effect, apply); };
+
+    auto& happening = evaluator.happening;
+    happening.clear();
+    add_lifted_reads(action.get_condition(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
+    tools.add_effect_reads(action, action.get_effects(), happening);
+    tools.add_choice_reads(action, action.get_choices(), happening);
+
+    auto label = urd::data<Transition>(TransitionKind::APPLY, urd::flat_optional<ActionRowKey>(binding.index()), 0);
+    auto temporal = TemporalStepper::Kind {};
+    auto applicable = true;
+    if (const auto temporal_part = action.get_temporal_part(); temporal_part.has_value())
+    {
+        label.kind = TransitionKind::START;
+        const auto [min_duration, max_duration] = duration_bounds(temporal_part->get_min_durations(),
+                                                                  temporal_part->get_max_durations(),
+                                                                  ApplicabilityContext { node.state(), grounder, *tools.fdr });
+        applicable = min_duration <= max_duration;
+        temporal = TemporalStepper::Kind { TransitionKind::START, 0, binding.index(), min_duration, max_duration, 0 };
+        add_lifted_reads(temporal_part->get_over_all(), grounder, *tools.fdr, happening.over_all, happening.numeric_over_all);
+    }
+
+    auto result = SuccessorHandle<LiftedTag> {};
+    if (!applicable)
+        result = empty_successor(evaluator.outcome_builders, label);
+    else
+    {
+        evaluator.outcome_distributions.clear();
+        evaluator.outcome_builder.clear();
+        const auto set =
+            evaluator.outcome_builder.build(evaluator.outcome_distributions, action, action.get_choices(), grounder.binding(), for_each_own_effect_binding);
+        const auto effects = std::array { LiftedEffects { action, action.get_effects(), objects } };
+        result = lifted_transition(impl, node, label, std::span<const LiftedEffects>(effects), set, for_each_effect_binding, temporal, make);
+    }
+    impl.end_single_binding_work(node);
+    return result;
+}
+
+/// The successor of ending the open durative action at position `open` (none if its end condition does not hold): its end
+/// effects and choices apply for the bindings of their variables whose conditions hold, and it reads its over-all
+/// condition up to here.
+template<typename Impl, typename Make>
+SuccessorHandle<LiftedTag> lifted_end_transition(Impl& impl, const SourceNode<LiftedTag>& node, std::uint32_t open, Make make)
+{
+    auto& evaluator = impl.evaluator;
+    auto tools = LiftedTools<Impl>(impl);
+    auto& grounder = tools.grounder;
+    const auto row = urd::resolve(node.state().temporal_storage().get_parts().open[open].action, *impl.definition->task->get_repository());
+    const auto action = row.get_relation();
+    const auto label = urd::data<Transition>(TransitionKind::END, urd::flat_optional<ActionRowKey>(row.index()), open);
+    set_binding(grounder.binding(), row);
+    const auto applicability_context = ApplicabilityContext { node.state(), grounder, *tools.fdr };
+    const auto temporal_part = running_temporal_part(action);
+    if (!is_applicable(temporal_part.get_end_condition(), applicability_context))
+        return empty_successor(evaluator.outcome_builders, label);
+
+    evaluator.transition_objects.clear();
+    for (const auto object : grounder.binding())
+        evaluator.transition_objects.push_back(object);
+    const auto objects = std::span<const urd::index<formalism::Object>>(evaluator.transition_objects);
+
+    auto for_each_effect_binding = [&](formalism::ActionView<LiftedTag> effect_action, formalism::ConditionalEffectView<LiftedTag> effect, auto apply)
+    {
+        tools.for_each_static_binding(effect_action,
+                                      effect,
+                                      [&]
+                                      {
+                                          if (is_applicable(effect.get_condition(), applicability_context))
+                                              apply();
+                                      });
+    };
+    auto for_each_own_effect_binding = [&](formalism::ConditionalEffectView<LiftedTag> effect, auto apply) { for_each_effect_binding(action, effect, apply); };
+
+    auto& happening = evaluator.happening;
+    happening.clear();
+    add_lifted_reads(temporal_part.get_end_condition(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
+    add_lifted_reads(temporal_part.get_over_all(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
+    tools.add_effect_reads(action, temporal_part.get_end_effects(), happening);
+    tools.add_choice_reads(action, temporal_part.get_end_choices(), happening);
+
+    evaluator.outcome_distributions.clear();
+    evaluator.outcome_builder.clear();
+    const auto set = evaluator.outcome_builder.build(evaluator.outcome_distributions,
+                                                     action,
+                                                     temporal_part.get_end_choices(),
+                                                     grounder.binding(),
+                                                     for_each_own_effect_binding);
+    const auto effects = std::array { LiftedEffects { action, temporal_part.get_end_effects(), objects } };
+    const auto [end_min, end_max] = duration_bounds(temporal_part.get_end_min_durations(), temporal_part.get_end_max_durations(), applicability_context);
+    if (!(end_min <= end_max))
+        return empty_successor(evaluator.outcome_builders, label);
+    const auto temporal = TemporalStepper::Kind { TransitionKind::END, open, {}, 0, 0, 0, 0, end_min, end_max };
+    return lifted_transition(impl, node, label, std::span<const LiftedEffects>(effects), set, for_each_effect_binding, temporal, make);
+}
+
+/// Fills an outcome by registering the applied state (as a delta to `node`'s state where it is registered).
+template<typename Generator, typename Impl>
+auto registering(Generator& generator,
+                 Impl& impl,
+                 const SourceNode<LiftedTag>& node,
+                 StateRepository<LiftedTag>& storage,
+                 AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    return [&generator, &impl, &node, &storage, &axiom_evaluator](auto apply, auto& outcome, auto valid)
+    {
+        auto& delta = impl.evaluator.successor_delta;
+        return register_outcome(storage,
+                                outcome,
+                                apply,
+                                [&](std::shared_ptr<LiftedStateBuilder> state, ygg::float_t auxiliary_value)
+                                {
+                                    if (const auto* parent = node.registered())
+                                        return generator.finalize_successor_state(storage, axiom_evaluator, std::move(state), auxiliary_value, *parent, delta);
+                                    return generator.finalize_successor_state(storage, axiom_evaluator, std::move(state), auxiliary_value);
+                                },
+                                valid);
+    };
+}
+
+/// Fills an outcome by writing the applied state into a state builder checked out of `builders`, closed under the axioms.
+inline auto building(const SourceNode<LiftedTag>& node, AxiomEvaluator<LiftedTag>& axiom_evaluator, OutcomeStorage<LiftedTag>& builders)
+{
+    return [&node, &axiom_evaluator, &builders](auto apply, auto& outcome, auto valid)
+    { return build_outcome(node, axiom_evaluator, builders, outcome, apply, valid); };
+}
+}
+
+SuccessorHandle<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor(const Source& node,
+                                                                  formalism::ActionRowView binding,
+                                                                  StateRepository<LiftedTag>& storage,
+                                                                  AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    m_impl->validate(node, storage, axiom_evaluator);
+    return lifted_action_transition(*m_impl, node, binding, registering(*this, *m_impl, node, storage, axiom_evaluator));
+}
+
+SuccessorHandle<LiftedTag> SuccessorGenerator<LiftedTag>::get_end_successor(const Source& node,
+                                                                      std::uint32_t open,
+                                                                      StateRepository<LiftedTag>& storage,
+                                                                      AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    m_impl->validate(node, storage, axiom_evaluator);
+    return lifted_end_transition(*m_impl, node, open, registering(*this, *m_impl, node, storage, axiom_evaluator));
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_successor(const Source& node,
+                                                       StateRepository<LiftedTag>& storage,
+                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                       const std::function<bool(const SuccessorView<LiftedTag>&)>& callback)
+{
+    const auto exhausted = for_each_applicable_action_binding(node,
+                                                              [&](formalism::ActionRowView binding)
+                                                              {
+                                                                  const auto successor = get_successor(node, binding, storage, axiom_evaluator);
+                                                                  return successor->distributions.empty() || callback(urd::resolve(*successor, storage));
+                                                              });
+    if (!exhausted)
+        return false;
+    const auto open_count = static_cast<std::uint32_t>(node.state().temporal_storage().get_parts().open.size());
+    for (std::uint32_t open = 0; open < open_count; ++open)
+    {
+        const auto ending = get_end_successor(node, open, storage, axiom_evaluator);
+        if (!ending->distributions.empty() && !callback(urd::resolve(*ending, storage)))
+            return false;
+    }
+    const auto timed = get_timed_literal_successor(node, storage, axiom_evaluator);
+    return timed->distributions.empty() || callback(urd::resolve(*timed, storage));
+}
+
+SuccessorHandle<LiftedTag>
+SuccessorGenerator<LiftedTag>::get_successor(const Source& node, formalism::ActionRowView binding, AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto& builders = m_impl->evaluator.outcome_builders;
+    m_impl->validate(node, builders, axiom_evaluator);
+    return lifted_action_transition(*m_impl, node, binding, building(node, axiom_evaluator, builders));
+}
+
+SuccessorHandle<LiftedTag>
+SuccessorGenerator<LiftedTag>::get_end_successor(const Source& node, std::uint32_t open, AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto& builders = m_impl->evaluator.outcome_builders;
+    m_impl->validate(node, builders, axiom_evaluator);
+    return lifted_end_transition(*m_impl, node, open, building(node, axiom_evaluator, builders));
+}
+
+bool SuccessorGenerator<LiftedTag>::for_each_successor(const Source& node,
+                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                       const std::function<bool(const SuccessorView<LiftedTag>&)>& callback)
+{
+    const auto exhausted = for_each_applicable_action_binding(node,
+                                                              [&](formalism::ActionRowView binding)
+                                                              {
+                                                                  const auto successor = get_successor(node, binding, axiom_evaluator);
+                                                                  return successor->distributions.empty() || callback(urd::resolve(*successor, node.get_state_repository()));
+                                                              });
+    if (!exhausted)
+        return false;
+    const auto open_count = static_cast<std::uint32_t>(node.state().temporal_storage().get_parts().open.size());
+    for (std::uint32_t open = 0; open < open_count; ++open)
+    {
+        const auto ending = get_end_successor(node, open, axiom_evaluator);
+        if (!ending->distributions.empty() && !callback(urd::resolve(*ending, node.get_state_repository())))
+            return false;
+    }
+    const auto timed = get_timed_literal_successor(node, axiom_evaluator);
+    return timed->distributions.empty() || callback(urd::resolve(*timed, node.get_state_repository()));
+}
+
+SuccessorHandle<LiftedTag>
+SuccessorGenerator<LiftedTag>::get_timed_literal_successor(const Source& node, StateRepository<LiftedTag>& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    m_impl->validate(node, storage, axiom_evaluator);
+    return timed_literal_transition(m_impl->evaluator,
+                                    node,
+                                    registering(*this, *m_impl, node, storage, axiom_evaluator),
+                                    [&](const auto& outcome) { return lifted_over_all_holds(*m_impl, outcome); });
+}
+
+SuccessorHandle<LiftedTag> SuccessorGenerator<LiftedTag>::get_timed_literal_successor(const Source& node,
+                                                                                                             AxiomEvaluator<LiftedTag>& axiom_evaluator)
+{
+    auto& builders = m_impl->evaluator.outcome_builders;
+    m_impl->validate(node, builders, axiom_evaluator);
+    return timed_literal_transition(m_impl->evaluator,
+                                    node,
+                                    building(node, axiom_evaluator, builders),
+                                    [&](const auto& outcome) { return lifted_over_all_holds(*m_impl, outcome); });
+}
+}
+
+// The pools successors are handed out of (yggdrasil/formalism/builder_instantiations.hpp).
+YGG_FORMALISM_BUILDER(, tyr::planning::OutcomeStorage<tyr::LiftedTag>, 2)

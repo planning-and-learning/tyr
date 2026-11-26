@@ -24,5 +24,5 @@
 #include <yggdrasil/formalism/repository_impl.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
 
-YGG_FORMALISM_PART_KEYS(, tyr::formalism::Repository, 0, 42, 63)
-YGG_FORMALISM_BUILDER_TYPES(, tyr::formalism::Builder, 48, 72)
+YGG_FORMALISM_PART_KEYS(, tyr::formalism::Repository, 0, 42, 70)
+YGG_FORMALISM_BUILDER_TYPES(, tyr::formalism::Builder, 48, 79)

@@ -48,6 +48,8 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal;
     urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms;
+    /// Timed initial literals (PDDL 2.2), by time.
+    urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>> timed_literals;
 
     data() = default;
 
@@ -62,7 +64,8 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
          urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal_,
          urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric_,
-         urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_) :
+         urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_,
+         urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>> timed_literals_) :
         index(),
         name(std::move(name_)),
         domain(domain_),
@@ -75,7 +78,8 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
         auxiliary_fterm_value(std::move(auxiliary_fterm_value_)),
         goal(goal_),
         metric(std::move(metric_)),
-        axioms(std::move(axioms_))
+        axioms(std::move(axioms_)),
+        timed_literals(std::move(timed_literals_))
     {
     }
 
@@ -98,7 +102,8 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
                            urd::field<"auxiliary_fterm_value", &data::auxiliary_fterm_value>,
                            urd::field<"goal", &data::goal>,
                            urd::field<"metric", &data::metric>,
-                           urd::field<"axioms", &data::axioms>> {};
+                           urd::field<"axioms", &data::axioms>,
+                           urd::field<"timed_literals", &data::timed_literals>> {};
     }
 
     static constexpr auto identifying_members() noexcept
@@ -114,7 +119,8 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
                             &data::auxiliary_fterm_value,
                             &data::goal,
                             &data::metric,
-                            &data::axioms> {};
+                            &data::axioms,
+                            &data::timed_literals> {};
     }
 
     static constexpr auto cista_members() noexcept
@@ -131,7 +137,8 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
                             &data::auxiliary_fterm_value,
                             &data::goal,
                             &data::metric,
-                            &data::axioms> {};
+                            &data::axioms,
+                            &data::timed_literals> {};
     }
 
     [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::LiftedTag>>(index); }
@@ -154,6 +161,8 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
     urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal;
     urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms;
+    /// Timed initial literals (PDDL 2.2), by time.
+    urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>> timed_literals;
 
     /// FDR-related
     urd::flat_vector<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables;
@@ -176,6 +185,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
          urd::index<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> goal_,
          urd::flat_optional<urd::index<::tyr::formalism::Metric>> metric_,
          urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_,
+         urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>> timed_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables_,
          urd::flat_vector<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts_,
          urd::flat_vector<urd::index<::tyr::formalism::Action<::tyr::GroundTag>>> ground_actions_,
@@ -194,6 +204,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
         goal(goal_),
         metric(std::move(metric_)),
         axioms(std::move(axioms_)),
+        timed_literals(std::move(timed_literals_)),
         fluent_variables(std::move(fluent_variables_)),
         fluent_facts(std::move(fluent_facts_)),
         ground_actions(std::move(ground_actions_)),
@@ -222,6 +233,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
                            urd::field<"goal", &data::goal>,
                            urd::field<"metric", &data::metric>,
                            urd::field<"axioms", &data::axioms>,
+                           urd::field<"timed_literals", &data::timed_literals>,
                            urd::field<"fluent_variables", &data::fluent_variables>,
                            urd::field<"fluent_facts", &data::fluent_facts>,
                            urd::field<"ground_actions", &data::ground_actions>,
@@ -246,6 +258,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
                             &data::goal,
                             &data::metric,
                             &data::axioms,
+                            &data::timed_literals,
                             &data::fluent_variables,
                             &data::fluent_facts,
                             &data::ground_actions,
