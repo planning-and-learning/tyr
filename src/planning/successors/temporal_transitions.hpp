@@ -406,7 +406,7 @@ void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>&
                     apply_timed_literals(timed_literals, begin, end, state, state_context, fdr, happening);
                     compute_state_delta(state_context, StateContext<Kind> { node.context(), state, ygg::float_t { 0 } }, evaluator.successor_delta);
                     auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
-                    evaluator.scheduled = evaluator.stepper.add(urd::built(state.temporal_storage).parts, happening, temporal, makespan);
+                    evaluator.scheduled = evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,

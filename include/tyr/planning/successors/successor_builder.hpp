@@ -26,18 +26,19 @@
 
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
+#include <vector>
 
 namespace urd
 {
-/// The builder of a successor: its label, a child (interned, or a builder from the repository's pool: its binding
-/// interned, or a row built: a borrowed binding copied), and
-/// its distributions, each a child (interned, or a builder from the repository's pool), their outcome states built (state builders of the node's repository) or registered.
+/// The builder of a successor: its label, a builder held in place (its binding interned, or a row built: a borrowed
+/// binding copied), and its distributions, each held built (urd::built_child: a builder from the repository's pool),
+/// their outcome states state builders of the node's repository, registered or not.
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::Successor<Kind>, C>
 {
     urd::key<::tyr::planning::Successor<Kind>> index;
-    urd::built_t<urd::index<::tyr::planning::Transition>, C> label;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::planning::Distribution<Kind>>>, C> distributions;
+    urd::builder<::tyr::planning::Transition, C> label;
+    std::vector<urd::built_child<::tyr::planning::Distribution<Kind>, C>> distributions;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &builder::label>, urd::field<"distributions", &builder::distributions>> {}; }
 

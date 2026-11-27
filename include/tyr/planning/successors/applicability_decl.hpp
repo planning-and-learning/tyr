@@ -43,10 +43,10 @@ public:
         requires requires(const V& state) { state.get_fact_storage(); }
     StateContext(const Task<Kind>& task, const V& state, ygg::float_t auxiliary_value) :
         StateContext(task,
-                     urd::built_view(state.get_fact_storage()),
-                     urd::built_view(state.get_atom_storage()),
-                     urd::built_view(state.get_numeric_storage()),
-                     urd::built_view(state.get_temporal_storage()),
+                     state.get_fact_storage(),
+                     state.get_atom_storage(),
+                     state.get_numeric_storage(),
+                     state.get_temporal_storage(),
                      auxiliary_value)
     {
     }
@@ -54,10 +54,10 @@ public:
     /// From a state being built (its builder), its storages built (urd::built), read through its state repository.
     StateContext(const StateRepository<Kind>& repository, const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value) :
         StateContext(*repository.get_task(),
-                     FactStorageBuilderView<Kind>(&urd::built(state.fact_storage), &repository),
-                     AtomStorageBuilderView<Kind>(&urd::built(state.atom_storage), &repository),
-                     NumericStorageBuilderView<Kind>(&urd::built(state.numeric_storage), &repository),
-                     TemporalStorageBuilderView<Kind>(&urd::built(state.temporal_storage), &repository),
+                     FactStorageBuilderView<Kind>(&*state.fact_storage, &repository),
+                     AtomStorageBuilderView<Kind>(&*state.atom_storage, &repository),
+                     NumericStorageBuilderView<Kind>(&*state.numeric_storage, &repository),
+                     TemporalStorageBuilderView<Kind>(&*state.temporal_storage, &repository),
                      auxiliary_value)
     {
     }

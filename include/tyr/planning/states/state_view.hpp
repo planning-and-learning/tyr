@@ -85,14 +85,6 @@ struct urd::view_mixin<urd::builder<::tyr::planning::State<Kind>, ::tyr::plannin
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-    // Its storages as it reads them: built (urd::built_view; a storage held as a key or a record is unpacked by its
-    // repository first).
-    [[nodiscard]] auto facts() const { return urd::built_view(get_fact_storage()); }
-
-    [[nodiscard]] auto atoms() const { return urd::built_view(get_atom_storage()); }
-
-    [[nodiscard]] auto numerics() const { return urd::built_view(get_numeric_storage()); }
-
 public:
     [[nodiscard]] decltype(auto) get_fact_storage() const noexcept { return self().template member<&urd::record_of<V>::fact_storage>(); }
 
@@ -111,13 +103,13 @@ public:
     { return self().context().get_task()->get_static_state().get(index); }
 
     [[nodiscard]] ::tyr::formalism::FDRValue value(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    { return facts().get(index); }
+    { return get_fact_storage().get(index); }
 
     [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-    { return numerics().get(index); }
+    { return get_numeric_storage().get(index); }
 
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-    { return atoms().test(index); }
+    { return get_atom_storage().test(index); }
 
     [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.index()); }
 
@@ -138,7 +130,7 @@ public:
     [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
     /// Its fluent facts, as its fact storage holds them.
-    [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return facts().facts(); }
+    [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return get_fact_storage().facts(); }
 
     /// The indices of its atoms of kind F: static ones its task's, fluent ones those of its facts, derived ones its atom storage's.
     template<::tyr::formalism::FactKind F>
@@ -147,9 +139,9 @@ public:
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return self().context().get_task()->get_static_state().get_atoms();
         else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return facts().fluent_atoms();
+            return get_fact_storage().fluent_atoms();
         else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
-            return atoms().atoms();
+            return get_atom_storage().atoms();
         else
             static_assert(false);
     }
@@ -161,7 +153,7 @@ public:
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return self().context().get_task()->get_static_state().get_fterm_index_values();
         else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return numerics().fterm_values();
+            return get_numeric_storage().fterm_values();
         else
             static_assert(false);
     }
@@ -364,9 +356,9 @@ template<StateReadable V>
 ygg::hash_t hash_unextended(const V& state)
 {
     auto result = ygg::hash_t { 0 };
-    hash_combine_facts(result, urd::built_view(state.get_fact_storage()));
-    hash_combine_numerics(result, urd::built_view(state.get_numeric_storage()));
-    hash_combine_temporal(result, urd::built_view(state.get_temporal_storage()));
+    hash_combine_facts(result, state.get_fact_storage());
+    hash_combine_numerics(result, state.get_numeric_storage());
+    hash_combine_temporal(result, state.get_temporal_storage());
     return result;
 }
 
@@ -374,9 +366,9 @@ ygg::hash_t hash_unextended(const V& state)
 template<StateReadable V, StateReadable W>
 bool equal_unextended(const V& lhs, const W& rhs)
 {
-    return equal_facts(urd::built_view(lhs.get_fact_storage()), urd::built_view(rhs.get_fact_storage()))
-           && equal_numerics(urd::built_view(lhs.get_numeric_storage()), urd::built_view(rhs.get_numeric_storage()))
-           && equal_temporals(urd::built_view(lhs.get_temporal_storage()), urd::built_view(rhs.get_temporal_storage()));
+    return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage())
+           && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage())
+           && equal_temporals(lhs.get_temporal_storage(), rhs.get_temporal_storage());
 }
 
 }

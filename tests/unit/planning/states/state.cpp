@@ -210,25 +210,25 @@ void expect_state_builder_identity()
     using Builder = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>;
     auto base = Builder {};
     if constexpr (std::same_as<Kind, GroundTag>)
-        urd::builder_of(base.fact_storage).values = { 1, 0 };
+        base.fact_storage->values = { 1, 0 };
     else
-        urd::builder_of(base.fact_storage).indices.insert(0);
-    urd::builder_of(base.numeric_storage).values = { 3.0 };
+        base.fact_storage->indices.insert(0);
+    base.numeric_storage->values = { 3.0 };
     auto other = urd::clone(base);
     base.set(urd::index<tyr::planning::State<Kind>>(0));
     other.set(urd::index<tyr::planning::State<Kind>>(1));
     for (const auto bit : { 0U, 1U, 2U })
-        urd::builder_of(other.atom_storage).indices.insert(bit);
+        other.atom_storage->indices.insert(bit);
     EXPECT_TRUE(urd::EqualTo<Builder> {}(base, other));
     EXPECT_EQ(urd::Hash<Builder> {}(base), urd::Hash<Builder> {}(other));
 
     if constexpr (std::same_as<Kind, GroundTag>)
-        urd::builder_of(other.fact_storage).values.front() = 0;
+        other.fact_storage->values.front() = 0;
     else
-        urd::builder_of(other.fact_storage).indices.erase(0);
+        other.fact_storage->indices.erase(0);
     EXPECT_FALSE(urd::EqualTo<Builder> {}(base, other));
     other = urd::clone(base);
-    urd::builder_of(other.numeric_storage).values.front() = 4.0;
+    other.numeric_storage->values.front() = 4.0;
     EXPECT_FALSE(urd::EqualTo<Builder> {}(base, other));
 }
 
@@ -244,9 +244,9 @@ void expect_state_builder_lifecycle(const tyr::planning::TaskPtr<Kind>& task)
     auto target = Builder {};
     // A builder mutates; its storages are read through their views, through a state repository of its task.
     const auto repository = tyr::planning::StateRepository<Kind>::create(task);
-    const auto facts = [&](const Builder& state) { return urd::resolve(urd::built(state.fact_storage), *repository); };
-    const auto atoms = [&](const Builder& state) { return urd::resolve(urd::built(state.atom_storage), *repository); };
-    const auto numerics = [&](const Builder& state) { return urd::resolve(urd::built(state.numeric_storage), *repository); };
+    const auto facts = [&](const Builder& state) { return urd::resolve(*state.fact_storage, *repository); };
+    const auto atoms = [&](const Builder& state) { return urd::resolve(*state.atom_storage, *repository); };
+    const auto numerics = [&](const Builder& state) { return urd::resolve(*state.numeric_storage, *repository); };
     if constexpr (std::same_as<Kind, GroundTag>)
     {
         source.resize_fluent_facts(1);
@@ -263,8 +263,8 @@ void expect_state_builder_lifecycle(const tyr::planning::TaskPtr<Kind>& task)
     source.set(Numeric(1), std::numeric_limits<ygg::float_t>::quiet_NaN());
     EXPECT_TRUE(std::isnan(numerics(source).get(Numeric(1))));
 
-    urd::builder_of(target.fact_storage).assign(facts(source));
-    urd::builder_of(target.numeric_storage).assign(numerics(source));
+    target.fact_storage->assign(facts(source));
+    target.numeric_storage->assign(numerics(source));
     EXPECT_EQ(target.index, urd::index<tyr::planning::State<Kind>>(8));
     EXPECT_EQ(facts(target).get(variable), tyr::formalism::FDRValue(1));
     EXPECT_EQ(numerics(target).get(Numeric(2)), 3);
@@ -288,21 +288,21 @@ void expect_state_builder_lifecycle(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_FALSE(atoms(target).test(Atom(1)));
 
     source.clear_extended_part();
-    EXPECT_TRUE(urd::builder_of(source.atom_storage).indices.empty());
+    EXPECT_TRUE(source.atom_storage->indices.empty());
     EXPECT_EQ(source.index, urd::index<tyr::planning::State<Kind>>(8));
     EXPECT_EQ(facts(source).get(variable), tyr::formalism::FDRValue(1));
     EXPECT_EQ(numerics(source).get(Numeric(2)), 3);
     target.clear_unextended_part();
     EXPECT_TRUE(std::ranges::empty(facts(target).facts()));
-    EXPECT_TRUE(urd::builder_of(target.numeric_storage).values.empty());
+    EXPECT_TRUE(target.numeric_storage->values.empty());
     EXPECT_EQ(target.index, urd::index<tyr::planning::State<Kind>>(7));
     EXPECT_TRUE(atoms(target).test(Atom(0)));
 
     target.clear();
     EXPECT_TRUE(target.index.is_none());
     EXPECT_TRUE(std::ranges::empty(facts(target).facts()));
-    EXPECT_TRUE(urd::builder_of(target.atom_storage).indices.empty());
-    EXPECT_TRUE(urd::builder_of(target.numeric_storage).values.empty());
+    EXPECT_TRUE(target.atom_storage->indices.empty());
+    EXPECT_TRUE(target.numeric_storage->values.empty());
 }
 
 template<typename V>
@@ -354,8 +354,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_NE(formatted_node.find("metric=3"), std::string::npos);
     EXPECT_EQ(formatted_node.find("index = "), std::string::npos);
     EXPECT_NE(fmt::format("{}", labeled).find(label.get_relation().get_name().str()), std::string::npos);
-    EXPECT_EQ(&urd::built_view(state.get_numeric_storage()).get_values(), &urd::builder_of(owned->numeric_storage).values);
-    EXPECT_EQ(&urd::built_view(state.get_numeric_storage()).get_values(), &urd::builder_of(owned->numeric_storage).values);
+    EXPECT_EQ(&state.get_numeric_storage().get_values(), &owned->numeric_storage->values);
+    EXPECT_EQ(&state.get_numeric_storage().get_values(), &owned->numeric_storage->values);
     EXPECT_EQ(&state.context(), &registered.context());
     EXPECT_EQ(&*state.context().get_task(), &*registered.context().get_task());
     EXPECT_EQ(state.get_formalism_repository(), registered.get_formalism_repository());
@@ -380,9 +380,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         if constexpr (!std::same_as<F, formalism::StaticTag>)
         {
             if constexpr (std::same_as<F, formalism::FluentTag>)
-                EXPECT_TRUE(std::ranges::equal(urd::resolve(urd::builder_of(owned->fact_storage), registered.context()).fluent_atoms(), indices));
+                EXPECT_TRUE(std::ranges::equal(urd::resolve(*owned->fact_storage, registered.context()).fluent_atoms(), indices));
             else
-                EXPECT_TRUE(std::ranges::equal(urd::resolve(urd::builder_of(owned->atom_storage), registered.context()).atoms(), indices));
+                EXPECT_TRUE(std::ranges::equal(urd::resolve(*owned->atom_storage, registered.context()).atoms(), indices));
         }
         for (const auto atom : registered.template get_atoms<F>())
         {
@@ -455,7 +455,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
 
     auto moved = std::move(owned);
     EXPECT_FALSE(owned);
-    EXPECT_EQ(&urd::built_view(state.get_numeric_storage()).get_values(), &urd::builder_of(moved->numeric_storage).values);
+    EXPECT_EQ(&state.get_numeric_storage().get_values(), &moved->numeric_storage->values);
     auto numeric = registered.template get_fterm_values<::tyr::formalism::FluentTag>();
     ASSERT_NE(numeric.begin(), numeric.end());
     const auto [fterm, value] = *numeric.begin();
@@ -465,12 +465,12 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_EQ(::tyr::planning::num_states(registered.context()), num_states);
     if constexpr (std::same_as<Kind, GroundTag>)
     {
-        auto& values = urd::builder_of(moved->fact_storage).values;
+        auto& values = moved->fact_storage->values;
         std::ranges::fill(values, static_cast<ygg::uint_t>(0));
     }
     else
-        urd::builder_of(moved->fact_storage).indices.clear();
-    EXPECT_TRUE(std::ranges::empty(urd::resolve(urd::builder_of(moved->fact_storage), registered.context()).fluent_atoms()));
+        moved->fact_storage->indices.clear();
+    EXPECT_TRUE(std::ranges::empty(urd::resolve(*moved->fact_storage, registered.context()).fluent_atoms()));
     for (const auto atom : registered.template get_atoms<formalism::FluentTag>())
     {
         auto filtered = state.get_atoms(atom.get_predicate());
@@ -531,11 +531,11 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         const auto packed = [&]
         {
             const auto state = ::tyr::planning::share(*temporary_repository, ::tyr::planning::get_initial_state(*temporary_repository, *axioms));
-            released_builder = &urd::built_view(state.get_numeric_storage()).get_values();
+            released_builder = &state.get_numeric_storage().get_values();
             return state.pack();
         }();
         auto recycled_builder = ::tyr::planning::get_state_builder(packed.context());
-        EXPECT_EQ(&urd::builder_of(recycled_builder->numeric_storage).values, released_builder);
+        EXPECT_EQ(&recycled_builder->numeric_storage->values, released_builder);
         recycled_builder = {};
         EXPECT_EQ(packed.unpack().pack(), packed);
         EXPECT_EQ(::tyr::planning::num_states(packed.context()), 1);
@@ -582,7 +582,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
 
         auto builder = ::tyr::planning::get_state_builder(*repository);
         builder->assign_unextended_part(state);
-        const auto derived = urd::resolve(urd::builder_of(builder->atom_storage), *repository).atoms();
+        const auto derived = urd::resolve(*builder->atom_storage, *repository).atoms();
         EXPECT_EQ(derived.begin(), derived.end());
         ::tyr::planning::register_state(*repository, *axioms, *builder);
         const auto duplicate = ::tyr::planning::share(*repository, std::move(builder));
@@ -597,8 +597,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         EXPECT_EQ(derived_names(unpacked_held), derived_names(state));
 
         // Its storages' keys read as its storages, unpacked from their pools, through the repository.
-        EXPECT_EQ(repository->view(held.atom_storage).get_indices(), urd::built_view(state.get_atom_storage()).get_indices());
-        EXPECT_EQ(repository->view(held.numeric_storage).get_values(), urd::built_view(state.get_numeric_storage()).get_values());
+        EXPECT_EQ(repository->view(held.atom_storage).get_indices(), state.get_atom_storage().get_indices());
+        EXPECT_EQ(repository->view(held.numeric_storage).get_values(), state.get_numeric_storage().get_values());
     };
     expect_duplicate(tyr::tests::built_state(cheap->get_node()));
 
@@ -734,7 +734,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         ASSERT_EQ(labeled.size(), 2);
         ASSERT_EQ(labeled.size(), expected.size());
         ASSERT_EQ(nodes.size(), expected.size());
-        EXPECT_NE(&urd::built_view(tyr::tests::built_state(labeled[0].get_node()).get_numeric_storage()).get_values(), &urd::built_view(tyr::tests::built_state(labeled[1].get_node()).get_numeric_storage()).get_values());
+        EXPECT_NE(&tyr::tests::built_state(labeled[0].get_node()).get_numeric_storage().get_values(), &tyr::tests::built_state(labeled[1].get_node()).get_numeric_storage().get_values());
         for (size_t i = 0; i < expected.size(); ++i)
         {
             EXPECT_EQ(labeled[i].get_label(), expected[i].get_label());
@@ -912,15 +912,15 @@ TEST(TyrPlanningStateTest, GroundBuilderRetainsNonbinaryFactsAndDerivedAtoms)
     const auto variable = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(1);
     const auto derived = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(64);
     builder.resize_fluent_facts(2);
-    EXPECT_EQ(tyr::formalism::FDRValue(urd::builder_of(builder.fact_storage).values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue::none());
-    EXPECT_FALSE(urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage->values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue::none());
+    EXPECT_FALSE(builder.atom_storage->indices.contains(static_cast<ygg::uint_t>(derived.value)));
     builder.set(urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>(variable, tyr::formalism::FDRValue(37)));
     builder.set(derived);
-    EXPECT_EQ(tyr::formalism::FDRValue(urd::builder_of(builder.fact_storage).values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue(37));
-    EXPECT_TRUE(urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage->values[static_cast<ygg::uint_t>(variable.value)]), tyr::formalism::FDRValue(37));
+    EXPECT_TRUE(builder.atom_storage->indices.contains(static_cast<ygg::uint_t>(derived.value)));
     EXPECT_FALSE(
-        urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)).value)));
-    EXPECT_EQ(urd::builder_of(builder.atom_storage).indices.size(), 1);
+        builder.atom_storage->indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)).value)));
+    EXPECT_EQ(builder.atom_storage->indices.size(), 1);
 }
 
 TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
@@ -930,24 +930,24 @@ TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
     const auto low = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(1);
     const auto high = urd::index<tyr::formalism::FDRVariable<formalism::FluentTag>>(130);
     const auto derived = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(130);
-    EXPECT_EQ(tyr::formalism::FDRValue(urd::builder_of(builder.fact_storage).indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
-    EXPECT_FALSE(urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage->indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
+    EXPECT_FALSE(builder.atom_storage->indices.contains(static_cast<ygg::uint_t>(derived.value)));
     builder.set(Fact(high, tyr::formalism::FDRValue::none()));
-    EXPECT_TRUE(urd::builder_of(builder.fact_storage).indices.empty());
+    EXPECT_TRUE(builder.fact_storage->indices.empty());
     builder.set(Fact(low, tyr::formalism::FDRValue(1)));
     builder.set(Fact(high, tyr::formalism::FDRValue(1)));
     builder.set(derived);
-    EXPECT_EQ(tyr::formalism::FDRValue(urd::builder_of(builder.fact_storage).indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue(1));
-    EXPECT_TRUE(urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage->indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue(1));
+    EXPECT_TRUE(builder.atom_storage->indices.contains(static_cast<ygg::uint_t>(derived.value)));
     EXPECT_FALSE(
-        urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)).value)));
+        builder.atom_storage->indices.contains(static_cast<ygg::uint_t>((urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)).value)));
     builder.set(Fact(high, tyr::formalism::FDRValue::none()));
-    EXPECT_EQ(tyr::formalism::FDRValue(urd::builder_of(builder.fact_storage).indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
-    EXPECT_EQ(tyr::formalism::FDRValue(urd::builder_of(builder.fact_storage).indices.contains(static_cast<ygg::uint_t>(low.value))), tyr::formalism::FDRValue(1));
-    EXPECT_EQ(urd::builder_of(builder.fact_storage).indices.size(), 1);
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage->indices.contains(static_cast<ygg::uint_t>(high.value))), tyr::formalism::FDRValue::none());
+    EXPECT_EQ(tyr::formalism::FDRValue(builder.fact_storage->indices.contains(static_cast<ygg::uint_t>(low.value))), tyr::formalism::FDRValue(1));
+    EXPECT_EQ(builder.fact_storage->indices.size(), 1);
     builder.set(Fact(low, tyr::formalism::FDRValue::none()));
-    EXPECT_TRUE(urd::builder_of(builder.fact_storage).indices.empty());
-    EXPECT_TRUE(urd::builder_of(builder.atom_storage).indices.contains(static_cast<ygg::uint_t>(derived.value)));
+    EXPECT_TRUE(builder.fact_storage->indices.empty());
+    EXPECT_TRUE(builder.atom_storage->indices.contains(static_cast<ygg::uint_t>(derived.value)));
 }
 
 TEST(TyrPlanningStateTest, DuplicateStatesRetainClosuresAndIndependentTransitionCosts)

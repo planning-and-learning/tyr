@@ -51,7 +51,7 @@ namespace tyr::tests
 /// repository's node).
 template<TaskKind Kind, typename C, typename R>
 planning::StateBuilderView<Kind> built_state(const urd::borrowed_view<planning::Node<Kind>, C, R>& node)
-{ return urd::built_view(node.get_state()); }
+{ return node.get_state(); }
 
 /// Successors closed under the axioms in builders of `repository`'s pool, not registered (extend_successor).
 template<TaskKind Kind>

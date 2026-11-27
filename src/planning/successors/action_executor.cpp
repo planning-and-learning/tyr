@@ -195,15 +195,15 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
     auto tmp_state_context = state_context;
 
     // The successor's unextended part is its parent's with the effects; its derived atoms are its axioms' to compute.
-    urd::builder_of(successor_state_builder.fact_storage).assign(state_context.fact_storage());
-    urd::builder_of(successor_state_builder.numeric_storage).assign(state_context.numeric_storage());
-    urd::builder_of(successor_state_builder.temporal_storage).assign(state_context.temporal_storage());
+    successor_state_builder.fact_storage->assign(state_context.fact_storage());
+    successor_state_builder.numeric_storage->assign(state_context.numeric_storage());
+    successor_state_builder.temporal_storage->assign(state_context.temporal_storage());
     successor_state_builder.clear_extended_part();
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
     const auto& repository = state_context.fact_storage().context();
-    const auto successor_facts = FactStorageBuilderView<Kind>(&urd::built(successor_state_builder.fact_storage), &repository);
+    const auto successor_facts = FactStorageBuilderView<Kind>(&*successor_state_builder.fact_storage, &repository);
     for (const auto fact : del_effects)
         if (successor_facts.get(fact.variable) == fact.value)
             successor_state_builder.set(urd::data<formalism::FDRFact<formalism::FluentTag>> { fact.variable, formalism::FDRValue::none() });

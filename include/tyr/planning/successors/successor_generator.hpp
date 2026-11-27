@@ -48,7 +48,7 @@ struct ActionBindingResult
 /// node's built one (urd::built_view: a generator works on built states).
 template<TaskKind Kind>
 StateContext<Kind> state_context_of(const NodeBuilderView<Kind>& node)
-{ return StateContext<Kind>(*node.context().get_task(), urd::built_view(node.get_state()), node.get_metric()); }
+{ return StateContext<Kind>(*node.context().get_task(), node.get_state(), node.get_metric()); }
 
 /// Whether a node's state is registered: it has its key (a registered source lets its repository store a registered
 /// successor as a delta to it).

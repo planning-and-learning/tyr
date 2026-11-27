@@ -166,7 +166,7 @@ auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 {
     // Derived atoms lie within the stored row, so the blocks that differ are written there.
     const auto parent = hint.template parent_key<AtomStorage<GroundTag>>().value;
-    const auto from = urd::built_view(hint.parent_state->get_atom_storage()).get_indices().significant_words();
+    const auto from = hint.parent_state->get_atom_storage().get_indices().significant_words();
     const auto to = unpacked.indices.significant_words();
     m_writes.clear();
     for (std::size_t i = 0; i < m_buffer.size(); ++i)

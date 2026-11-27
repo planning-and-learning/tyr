@@ -546,9 +546,9 @@ public:
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
-        auto prepared = m_state_policy.prepare_target(engine, sender, urd::built_view(source.get_state()), std::move(target), delta, metric, engine.num_workers());
+        auto prepared = m_state_policy.prepare_target(engine, sender, source.get_state(), std::move(target), delta, metric, engine.num_workers());
         const auto is_goal =
-            sender.goal_strategy->is_dynamic_goal_satisfied(urd::built_view(engine.start_node().get_state()), urd::built_view(urd::resolve(prepared.node, *sender.state_repository).get_state()));
+            sender.goal_strategy->is_dynamic_goal_satisfied(engine.start_node().get_state(), urd::resolve(prepared.node, *sender.state_repository).get_state());
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
         prepared.node.metric = g_value;

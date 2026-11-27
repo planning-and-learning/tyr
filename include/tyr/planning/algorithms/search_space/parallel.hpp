@@ -137,7 +137,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
                     const auto successor =
                         register_successor(repository, source_worker.axiom_evaluator(), std::move(state), auxiliary_value, source_view, delta);
                     const auto g_value = compute_successor_g_value(source_search_node.g_value, successor.metric, action_cost_mode);
-                    if (g_value != target_search_node.g_value || !equal_unextended(urd::built_view(urd::resolve(successor, repository).get_state()), target_view))
+                    if (g_value != target_search_node.g_value || !equal_unextended(urd::resolve(successor, repository).get_state(), target_view))
                         return true;
                     labels.push_back(intern_action_binding(generator, builder, binding));
                     found = true;

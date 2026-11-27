@@ -35,9 +35,9 @@ static_assert(requires(const Data& data, const tyr::planning::StateBuilderView<t
     data.atom_storage;
     data.numeric_storage;
     building.get_fluent_fact_index_values();
-    urd::built_view(building.get_fact_storage()).fluent_atoms();
-    urd::built_view(building.get_atom_storage()).atoms();
-    urd::built_view(building.get_numeric_storage()).fterm_values();
+    building.get_fact_storage().fluent_atoms();
+    building.get_atom_storage().atoms();
+    building.get_numeric_storage().fterm_values();
     view.pack().index();
     view.template get_atom_indices<::tyr::formalism::StaticTag>();
     view.get_fluent_fact_index_values();
@@ -59,13 +59,13 @@ TEST(TyrPlanningLiftedStateTest, ClearResetsRegistrationWithoutReallocatingVecto
 {
     auto builder = Builder {};
     builder.set(Index(7));
-    urd::builder_of(builder.numeric_storage).values.resize(64);
-    const auto numeric_capacity = urd::builder_of(builder.numeric_storage).values.capacity();
+    builder.numeric_storage->values.resize(64);
+    const auto numeric_capacity = builder.numeric_storage->values.capacity();
 
     builder.clear();
 
     EXPECT_TRUE(builder.index.is_none());
-    EXPECT_EQ(urd::builder_of(builder.numeric_storage).values.capacity(), numeric_capacity);
+    EXPECT_EQ(builder.numeric_storage->values.capacity(), numeric_capacity);
 }
 
 TEST(TyrPlanningLiftedStateTest, BuilderRegistrationRetainsClosureAndReusesOwnedBuffers)
@@ -90,20 +90,20 @@ TEST(TyrPlanningLiftedStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     const auto borrowed = urd::resolve(source, *source_repository);
     auto target = tyr::planning::StateRepository<tyr::LiftedTag>::create(task);
     auto warm = ::tyr::planning::get_state_builder(*target);
-    urd::builder_of(warm->numeric_storage).values.reserve(64);
+    warm->numeric_storage->values.reserve(64);
     const auto slot = warm.get();
-    const auto buffer = std::ranges::data(urd::builder_of(warm->numeric_storage).values);
-    const auto capacity = urd::builder_of(warm->numeric_storage).values.capacity();
+    const auto buffer = std::ranges::data(warm->numeric_storage->values);
+    const auto capacity = warm->numeric_storage->values.capacity();
     warm = {};
 
     const auto retained = ::tyr::planning::share(*target, ::tyr::planning::register_extended_state(*target, borrowed));
-    EXPECT_EQ(&urd::built_view(retained.get_numeric_storage()).get_values(), &urd::builder_of(slot->numeric_storage).values);
-    EXPECT_EQ(std::ranges::data(urd::built_view(retained.get_numeric_storage()).get_values()), buffer);
-    EXPECT_EQ(urd::built_view(retained.get_numeric_storage()).get_values().capacity(), capacity);
+    EXPECT_EQ(&retained.get_numeric_storage().get_values(), &slot->numeric_storage->values);
+    EXPECT_EQ(std::ranges::data(retained.get_numeric_storage().get_values()), buffer);
+    EXPECT_EQ(retained.get_numeric_storage().get_values().capacity(), capacity);
     EXPECT_TRUE(source.index.is_none());
     EXPECT_TRUE(std::ranges::equal(borrowed.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
-    EXPECT_TRUE(std::ranges::equal(urd::built_view(borrowed.get_atom_storage()).atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
-    EXPECT_TRUE(std::ranges::equal(urd::built_view(borrowed.get_numeric_storage()).fterm_values(), initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(borrowed.get_atom_storage().atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(borrowed.get_numeric_storage().fterm_values(), initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
     EXPECT_EQ(::tyr::planning::share(*target, ::tyr::planning::register_extended_state(*target, borrowed)), retained);
     EXPECT_EQ(::tyr::planning::num_states(*target), 1);
     auto foreign = tyr::planning::StateRepository<tyr::LiftedTag>::create(make_task());

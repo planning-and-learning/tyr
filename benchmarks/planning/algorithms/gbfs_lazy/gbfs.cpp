@@ -101,7 +101,7 @@ try
         auto options = tyr::planning::gbfs_lazy::Options<Kind>();
         const auto initial_node = tyr::planning::get_initial_node(*state_repository, *axiom_evaluator);
         options.start_node = tyr::planning::OwnedNodeRecordView<Kind>(initial_node.pack(), state_repository.get());
-        initial_h_value = heuristic->evaluate(urd::built_view(initial_node.get_state()));
+        initial_h_value = heuristic->evaluate(initial_node.get_state());
 
         auto result = tyr::planning::SearchResult<Kind>();
         {

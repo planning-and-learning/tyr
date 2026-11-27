@@ -69,7 +69,7 @@ ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const V& state) const noexcep
 
     auto result = static_cast<ygg::hash_t>(m_seed);
     for (const auto& feature : m_features)
-        if (urd::built_view(state.get_fact_storage()).get(feature.fact.variable) == feature.fact.value)
+        if (state.get_fact_storage().get(feature.fact.variable) == feature.fact.value)
             urd::hash_combine(result, feature.atom);
     return result;
 }

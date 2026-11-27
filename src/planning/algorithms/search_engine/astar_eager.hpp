@@ -216,8 +216,8 @@ public:
                                       EvaluateHeuristic&& evaluate_heuristic,
                                       EmitTransition emit_transition)
     {
-        const auto source_state = urd::built_view(source_node.get_state());
-        const auto successor_state = urd::built_view(successor_node.get_state());
+        const auto source_state = source_node.get_state();
+        const auto successor_state = successor_node.get_state();
         const auto g_value = successor_node.get_metric();
 
         if (g_value >= successor_search_node.g_value)

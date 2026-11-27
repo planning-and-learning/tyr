@@ -463,7 +463,7 @@ void ground_transition(Generator& generator,
                     happening.numeric_writes.clear();
                     evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
                     auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
-                    evaluator.scheduled = !impl.definition->temporal || evaluator.stepper.add(urd::built(state.temporal_storage).parts, happening, temporal, makespan);
+                    evaluator.scheduled = !impl.definition->temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,

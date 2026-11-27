@@ -188,7 +188,7 @@ public:
 
     template<typename Engine, typename WorkerData>
     static bool is_generated_goal(Engine& engine, WorkerData& worker, const RoutedSuccessorT<Engine>&, const StateBuilderView<Kind>& state)
-    { return worker.goal_strategy->is_dynamic_goal_satisfied(urd::built_view(engine.start_node().get_state()), state); }
+    { return worker.goal_strategy->is_dynamic_goal_satisfied(engine.start_node().get_state(), state); }
 
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)

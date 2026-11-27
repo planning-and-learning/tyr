@@ -244,9 +244,9 @@ void expect_schema_queries_match_filtered_successors()
                                                         static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::OwnedNodeBuilderView<Kind>>);
                                                         if (successor_storage)
                                                         {
-                                                            EXPECT_EQ(&urd::built_view(tyr::tests::built_state(successor).get_numeric_storage()).get_values(), successor_storage);
+                                                            EXPECT_EQ(&tyr::tests::built_state(successor).get_numeric_storage().get_values(), successor_storage);
                                                         }
-                                                        successor_storage = &urd::built_view(tyr::tests::built_state(successor).get_numeric_storage()).get_values();
+                                                        successor_storage = &tyr::tests::built_state(successor).get_numeric_storage().get_values();
                                                         if constexpr (Building)
                                                         {
                                                             auto copy = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>();
@@ -278,7 +278,7 @@ void expect_schema_queries_match_filtered_successors()
     if constexpr (!Building)
     {
         const auto recycled_builder = ::tyr::planning::get_state_builder(*state_repository);
-        EXPECT_EQ(&urd::builder_of(recycled_builder->numeric_storage).values, successor_storage);
+        EXPECT_EQ(&recycled_builder->numeric_storage->values, successor_storage);
     }
     const auto all_successors = tyr::tests::get_labeled_successor_nodes(*source, registered_initial, {}, *state_repository, *axiom_evaluator);
     const auto num_states = ::tyr::planning::num_states(*state_repository);
@@ -297,7 +297,7 @@ void expect_schema_queries_match_filtered_successors()
         const auto actual_view = urd::resolve(*actual, *state_repository);
         const auto expected_view = urd::resolve(*expected, *state_repository);
         EXPECT_TRUE(std::ranges::equal(actual_view.get_fluent_fact_index_values(), expected_view.get_fluent_fact_index_values()));
-        EXPECT_TRUE(std::ranges::equal(urd::built_view(actual_view.get_numeric_storage()).fterm_values(), urd::built_view(expected_view.get_numeric_storage()).fterm_values()));
+        EXPECT_TRUE(std::ranges::equal(actual_view.get_numeric_storage().fterm_values(), expected_view.get_numeric_storage().fterm_values()));
         EXPECT_EQ(::tyr::planning::num_states(*state_repository), num_states);
         EXPECT_TRUE(owned->index.is_none());
     }

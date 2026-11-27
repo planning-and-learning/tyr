@@ -95,7 +95,7 @@ NodeBuilder<Kind> register_successor(StateRepository<Kind>& repository,
 {
     const auto metric = evaluate_successor_metric(repository, *state, auxiliary_value);
     if (is_registered(node))
-        ::tyr::planning::register_state(repository, axiom_evaluator, *state, urd::built_view(node.get_state()), delta);
+        ::tyr::planning::register_state(repository, axiom_evaluator, *state, node.get_state(), delta);
     else
         ::tyr::planning::register_state(repository, axiom_evaluator, *state);
     return node_of<Kind>(std::move(state), metric);
@@ -116,14 +116,10 @@ NodeBuilder<Kind> extend_successor(StateBuilderHandle<Kind> state,
 template<TaskKind Kind>
 void register_outcomes(StateRepository<Kind>& repository, SuccessorBuilder<Kind>& successor)
 {
-    // Its parts being built (an interned one's outcome states are registered already).
     for (auto& distribution : successor.distributions)
-        if (auto* built_distribution = std::get_if<urd::built_child<Distribution<Kind>, StateRepository<Kind>>>(&distribution))
-            for (auto& outcome : (**built_distribution).outcomes)
-                if (auto* built_outcome = std::get_if<urd::built_child<OutcomeNode<Kind>, StateRepository<Kind>>>(&outcome))
-                    if (!(**built_outcome).failed)
-                        if (auto* state = std::get_if<urd::built_child<State<Kind>, StateRepository<Kind>>>(&(**built_outcome).node.state))
-                            ::tyr::planning::register_extended_state(repository, **state);
+        for (auto& outcome : distribution->outcomes)
+            if (!outcome->failed)
+                ::tyr::planning::register_extended_state(repository, *outcome->node.state);
 }
 
 template<TaskKind Kind>
@@ -221,11 +217,11 @@ bool for_each_successor(SuccessorGenerator<Kind>& generator,
 template<TaskKind Kind>
 void intern_label(StateRepository<Kind>& repository, formalism::Builder& builder, SuccessorBuilder<Kind>& successor)
 {
-    // A label being built, with a binding of its own (an interned label's binding is interned).
-    auto* label = std::get_if<urd::built_child<Transition, StateRepository<Kind>>>(&successor.label);
-    if (label == nullptr || !(**label).binding.has_value() || (**label).binding->index() == 0)
+    // A label with a binding of its own (one not interned yet).
+    auto& label = successor.label;
+    if (!label.binding.has_value() || label.binding->index() == 0)
         return;
-    auto& binding = *(**label).binding;
+    auto& binding = *label.binding;
     auto scratch = builder.template scratch<ygg::Row<formalism::Action<LiftedTag>>>();
     binding.template emplace<0>(repository.get_task()->get_repository()->insert(urd::child_record(binding, *scratch)).first.index());
 }

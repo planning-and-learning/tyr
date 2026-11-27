@@ -131,8 +131,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     first_numeric->set(numeric_index, first_value);
     second_numeric->set(numeric_index, second_value);
     EXPECT_EQ(dist_hash.hash(urd::resolve(*first_numeric, *repository)), dist_hash.hash(urd::resolve(*second_numeric, *repository)));
-    EXPECT_EQ(urd::resolve(urd::builder_of(first_numeric->numeric_storage), *repository).get(numeric_index), first_value);
-    EXPECT_EQ(urd::resolve(urd::builder_of(second_numeric->numeric_storage), *repository).get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
+    EXPECT_EQ(urd::resolve(*first_numeric->numeric_storage, *repository).get(numeric_index), first_value);
+    EXPECT_EQ(urd::resolve(*second_numeric->numeric_storage, *repository).get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
     second_numeric->set(numeric_index, ygg::float_t { 2 });
     EXPECT_NE(dist_hash.hash(urd::resolve(*first_numeric, *repository)), dist_hash.hash(urd::resolve(*second_numeric, *repository)));
 
@@ -146,7 +146,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::FDRValue { 1 }));
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue { 1 }));
         trailing_zero_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::FDRValue::none()));
-        EXPECT_EQ(urd::resolve(urd::builder_of(trailing_zero_facts->fact_storage), *repository).get(low_variable), tyr::formalism::FDRValue { 1 });
+        EXPECT_EQ(urd::resolve(*trailing_zero_facts->fact_storage, *repository).get(low_variable), tyr::formalism::FDRValue { 1 });
         EXPECT_EQ(dist_hash.hash(urd::resolve(*canonical_facts, *repository)), dist_hash.hash(urd::resolve(*trailing_zero_facts, *repository)));
 
         auto owners = urd::Store<urd::set<ygg::uint_t>> {};

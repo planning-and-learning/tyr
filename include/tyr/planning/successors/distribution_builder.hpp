@@ -25,15 +25,16 @@
 
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
+#include <vector>
 
 namespace urd
 {
-/// The builder of a distribution: its outcomes, each a child (interned, or a builder from the repository's pool).
+/// The builder of a distribution: its outcomes, each held built (urd::built_child: a builder from the repository's pool).
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::Distribution<Kind>, C>
 {
     urd::key<::tyr::planning::Distribution<Kind>> index;
-    urd::built_t<urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<Kind>>>, C> outcomes;
+    std::vector<urd::built_child<::tyr::planning::OutcomeNode<Kind>, C>> outcomes;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"outcomes", &builder::outcomes>> {}; }
 

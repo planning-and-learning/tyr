@@ -74,40 +74,37 @@
 namespace urd
 {
 
-/// A state's builder: its record's members (state_data.hpp), each storage a child (urd::child: interned, its key; built,
-/// its builder; or a record of its own), of the state's context C (its state repository, or a repository nesting it),
-/// through which they read the task's facts. A repository's state builder holds its storages built, from the
-/// repository's pools (StateRepository::get_state_builder), which they go back to with it, their buffers kept. A new
-/// builder's storages are empty children (urd::child: its none key), built as it is written or cleared (an empty
-/// storage of its own); one held as a key or a record is not written in place: its repository unpacks it first
-/// (StateRepository::unpack). A state being created has no index until it is registered; a registered state's pooled builder
-/// (StateBuilderView) holds its index. It compares by its contents (the fluent facts and numeric values), as the repository
-/// deduplicates states.
+/// A state's builder: its record's members (state_data.hpp), each storage held only built (urd::built_child: its
+/// builder's handle, never null: made with the builder, cleared in place with it, its buffers kept), of the state's
+/// context C (its state repository, or a repository nesting it), through which they read the task's facts. A
+/// repository's state builders are pooled (StateRepository::get_state_builder). A state being created has no index
+/// until it is registered; a registered state's pooled builder (StateBuilderView) holds its index. It compares by its
+/// contents (the fluent facts and numeric values), as the repository deduplicates states.
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::State<Kind>, C>
 {
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.
     urd::key<::tyr::planning::State<Kind>> index;
-    urd::built_t<urd::key<::tyr::planning::FactStorage<Kind>>, C> fact_storage;
-    urd::built_t<urd::key<::tyr::planning::AtomStorage<Kind>>, C> atom_storage;
-    urd::built_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage;
-    urd::built_t<urd::key<::tyr::planning::TemporalStorage<Kind>>, C> temporal_storage;
+    urd::built_child<::tyr::planning::FactStorage<Kind>, C> fact_storage = urd::make_owned<urd::builder<::tyr::planning::FactStorage<Kind>, C>>();
+    urd::built_child<::tyr::planning::AtomStorage<Kind>, C> atom_storage = urd::make_owned<urd::builder<::tyr::planning::AtomStorage<Kind>, C>>();
+    urd::built_child<::tyr::planning::NumericStorage<Kind>, C> numeric_storage = urd::make_owned<urd::builder<::tyr::planning::NumericStorage<Kind>, C>>();
+    urd::built_child<::tyr::planning::TemporalStorage<Kind>, C> temporal_storage = urd::make_owned<urd::builder<::tyr::planning::TemporalStorage<Kind>, C>>();
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { index = state; }
 
-    void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact) { written(fact_storage).set(fact); }
+    void set(urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> fact) { fact_storage->set(fact); }
 
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
-    { written(numeric_storage).set(fterm, value); }
+    { numeric_storage->set(fterm, value); }
 
     /// The value of `fterm` its numeric storage holds built (NaN where it has none).
     [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
-    { return urd::built(numeric_storage).get(fterm); }
+    { return numeric_storage->get(fterm); }
 
-    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { written(atom_storage).set(atom); }
+    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { atom_storage->set(atom); }
 
     /// A fact's view (borrowed or computed): its fact set.
     template<typename V>
@@ -128,20 +125,20 @@ struct builder<::tyr::planning::State<Kind>, C>
 
     void clear_unextended_part()
     {
-        urd::builder_of(fact_storage).clear();
-        urd::builder_of(numeric_storage).clear();
-        urd::builder_of(temporal_storage).clear();
+        fact_storage->clear();
+        numeric_storage->clear();
+        temporal_storage->clear();
     }
 
-    void clear_extended_part() { urd::builder_of(atom_storage).clear(); }
+    void clear_extended_part() { atom_storage->clear(); }
 
     /// Takes a state's facts, numeric values and agenda (a view of it: registered, or another builder's).
     template<typename V>
     void assign_unextended_part(const V& state)
     {
-        urd::builder_of(fact_storage).assign(urd::built_view(state.get_fact_storage()));
-        urd::builder_of(numeric_storage).assign(urd::built_view(state.get_numeric_storage()));
-        urd::builder_of(temporal_storage).assign(urd::built_view(state.get_temporal_storage()));
+        fact_storage->assign(state.get_fact_storage());
+        numeric_storage->assign(state.get_numeric_storage());
+        temporal_storage->assign(state.get_temporal_storage());
     }
 
     /// Takes a state whole: its storages and its index (none for a state being built).
@@ -163,7 +160,7 @@ struct builder<::tyr::planning::State<Kind>, C>
 
     void resize_fluent_facts(size_t size)
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { written(fact_storage).resize(size); }
+    { fact_storage->resize(size); }
 
     static constexpr auto fields() noexcept
     {
@@ -209,28 +206,12 @@ struct builder<::tyr::planning::State<Kind>, C>
     }
 
 private:
-    /// A storage to write in place: the builder it holds built; an empty one (its none key: no storage yet) an empty
-    /// builder of its own (urd::builder_of). One held as its key or a record is its repository's to unpack first.
-    template<typename S>
-    static urd::builder<S, C>& written(urd::child<S, C>& storage)
-    {
-        if (const auto* interned = std::get_if<urd::interned_child<S, C>>(&storage))
-        {
-            if (*interned != urd::key<S> {})
-                throw std::logic_error("urd::builder<State>: a storage held as its key is unpacked by its repository before it is written.");
-            return urd::builder_of(storage);
-        }
-        if (std::holds_alternative<urd::held_child<S, C>>(storage))
-            throw std::logic_error("urd::builder<State>: a storage held as a record is unpacked by its repository before it is written.");
-        return urd::built(storage);
-    }
-
     /// The storages of a state's view.
     template<typename V>
     void assign_storages(const V& state)
     {
         assign_unextended_part(state);
-        urd::builder_of(atom_storage).assign(urd::built_view(state.get_atom_storage()));
+        atom_storage->assign(state.get_atom_storage());
     }
 };
 

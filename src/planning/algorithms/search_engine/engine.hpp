@@ -300,7 +300,7 @@ private:
         if (!root_worker.goal_strategy->is_static_goal_satisfied(*m_task))
             return stop(SearchStatus::UNSOLVABLE);
 
-        const auto start_node_state = urd::built_view(start_node().get_state());
+        const auto start_node_state = start_node().get_state();
         if (root_worker.goal_strategy->is_dynamic_goal_satisfied(start_node_state, start_node_state))
         {
             m_result.plan.emplace(PlanBuilder<Kind> { get_node(*m_start_node_repository, start_node().pack()), {} }, m_start_node_repository);
@@ -359,7 +359,7 @@ private:
         }
     }
 
-    std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, urd::built_view(start_node().get_state())); }
+    std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, start_node().get_state()); }
 
     /// The start node, its state registered in the caller's repository.
     [[nodiscard]] NodeBuilderView<Kind> start_node() const noexcept { return NodeBuilderView<Kind>(&m_start_node, m_start_node_repository); }
@@ -442,7 +442,7 @@ private:
     accept_successor(WorkerData& worker, const NodeBuilderView<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
     {
         const auto successor_node = NodeBuilderView<Kind>(&routed_successor.node, worker.state_repository.get());
-        const auto successor_state = urd::built_view(successor_node.get_state());
+        const auto successor_state = successor_node.get_state();
         auto& successor_search_node = worker.get_search_node(successor_state.pack().index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;

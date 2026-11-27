@@ -29,12 +29,12 @@
 
 namespace urd
 {
-/// The builder of a search node: its state as a child (urd::child: interned, its key; built, its builder held by its
-/// handle, registered or not; or a record of its own), and its metric.
+/// The builder of a search node: its state held only built (urd::built_child: its builder's handle, registered or not,
+/// never null; read as the builder's view, no form to dispatch on), and its metric.
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::Node<Kind>, C>
 {
-    urd::built_t<urd::key<::tyr::planning::State<Kind>>, C> state;
+    urd::built_child<::tyr::planning::State<Kind>, C> state = urd::make_owned<urd::builder<::tyr::planning::State<Kind>, C>>();
     urd::built_t<ygg::float_t, C> metric;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"state", &builder::state>, urd::field<"metric", &builder::metric>> {}; }

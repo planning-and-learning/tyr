@@ -255,25 +255,15 @@ template class StateRepository<LiftedTag>;
 
 namespace
 {
-/// A storage of a state interned through `repository`'s generic insert_built: its key where it holds one; its builder,
-/// or its record built, inserted by its pool, as a difference to the parent's where `hint` gives one.
+/// A storage of a state (held built) interned through `repository`'s generic insert_built, as a difference to the
+/// parent's where `hint` gives one.
 template<typename S, TaskKind Kind>
-urd::key<S> intern_storage(StateRepository<Kind>& repository, const urd::child<S, StateRepository<Kind>>& storage, const SuccessorHint<Kind>* hint)
+urd::key<S> intern_storage(StateRepository<Kind>& repository, const urd::built_child<S, StateRepository<Kind>>& storage, const SuccessorHint<Kind>* hint)
 {
-    if (const auto* interned = std::get_if<urd::interned_child<S, StateRepository<Kind>>>(&storage))
-        return *interned;
-    const auto insert = [&](const urd::builder<S, StateRepository<Kind>>& built) -> urd::key<S>
-    {
-        if constexpr (requires { repository.insert_built(built, *hint); })
-            if (hint != nullptr)
-                return repository.insert_built(built, *hint).first.index();
-        return repository.insert_built(built).first.index();
-    };
-    if (const auto* built = std::get_if<urd::built_child<S, StateRepository<Kind>>>(&storage))
-        return insert(**built);
-    auto rebuilt = ygg::formalism::checkout<S>(repository.builders());
-    urd::built_form<urd::data<S>, StateRepository<Kind>>::assign(*std::get<urd::held_child<S, StateRepository<Kind>>>(storage), *rebuilt);
-    return insert(*rebuilt);
+    if constexpr (requires { repository.insert_built(*storage, *hint); })
+        if (hint != nullptr)
+            return repository.insert_built(*storage, *hint).first.index();
+    return repository.insert_built(*storage).first.index();
 }
 
 /// Registers `state` by `repository`'s generic find and insert: its identifying storages interned (as differences to the
@@ -302,7 +292,7 @@ void register_by_identity(StateRepository<Kind>& repository,
         }
         stored = inserted_view;
     }
-    repository.unpack_built(repository[stored->index()]->atom_storage, ygg::formalism::builder_of(state.atom_storage, repository.builders()));
+    repository.unpack_built(repository[stored->index()]->atom_storage, *state.atom_storage);
     state.set(stored->index());
 }
 
@@ -319,10 +309,6 @@ StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& reposito
 {
     auto& builders = repository.builders();
     auto state = ygg::formalism::checkout<State<Kind>>(builders);
-    ygg::formalism::builder_of(state->fact_storage, builders);
-    ygg::formalism::builder_of(state->atom_storage, builders);
-    ygg::formalism::builder_of(state->numeric_storage, builders);
-    ygg::formalism::builder_of(state->temporal_storage, builders);
     prepare_builder(*repository.get_task(), *state);
     return state;
 }
@@ -417,10 +403,10 @@ template<TaskKind Kind>
 StateBuilderHandle<Kind> unpack(const StateRepository<Kind>& repository, const urd::data<State<Kind>>& packed)
 {
     auto state = get_state_builder(repository);
-    repository.unpack_built(packed.fact_storage, urd::builder_of(state->fact_storage));
-    repository.unpack_built(packed.atom_storage, urd::builder_of(state->atom_storage));
-    repository.unpack_built(packed.numeric_storage, urd::builder_of(state->numeric_storage));
-    repository.unpack_built(packed.temporal_storage, urd::builder_of(state->temporal_storage));
+    repository.unpack_built(packed.fact_storage, *state->fact_storage);
+    repository.unpack_built(packed.atom_storage, *state->atom_storage);
+    repository.unpack_built(packed.numeric_storage, *state->numeric_storage);
+    repository.unpack_built(packed.temporal_storage, *state->temporal_storage);
     return state;
 }
 

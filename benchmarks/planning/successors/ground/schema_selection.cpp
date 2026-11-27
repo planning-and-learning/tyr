@@ -140,7 +140,7 @@ try
     auto repository = tyr::planning::StateRepository<GroundTag>::create(task);
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = tyr::planning::get_initial_node(*repository, *evaluator);
-    const auto context = tyr::planning::StateContext<GroundTag>(*task, urd::built_view(node.get_state()), node.get_metric());
+    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state(), node.get_metric());
     auto applicable = tyr::formalism::ActionViewList<GroundTag> {};
     auto scratch = tyr::formalism::ActionViewList<GroundTag> {};
     auto expected = tyr::formalism::ActionViewList<GroundTag> {};

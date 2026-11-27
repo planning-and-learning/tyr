@@ -801,7 +801,7 @@ void lifted_transition(Impl& impl,
                     happening.numeric_writes.clear();
                     evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
                     auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
-                    evaluator.scheduled = !impl.definition->temporal || evaluator.stepper.add(urd::built(state.temporal_storage).parts, happening, temporal, makespan);
+                    evaluator.scheduled = !impl.definition->temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,
@@ -835,7 +835,7 @@ bool can_end(const Impl& impl, formalism::TemporalPartView<LiftedTag> part, cons
 template<formalism::ActionRowViewConcept Binding>
 void build_label_binding(SuccessorBuilder<LiftedTag>& out, const StateRepository<LiftedTag>& repository, Binding binding)
 {
-    auto& label = urd::builder_of(out.label);
+    auto& label = out.label;
     auto& row = ygg::formalism::builder_of(label.binding.has_value() ? *label.binding : label.binding.emplace(), repository.builders());
     urd::store(row.relation, action_of(binding));
     row.values.clear();

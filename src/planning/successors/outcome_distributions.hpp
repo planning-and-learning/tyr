@@ -262,29 +262,24 @@ GroundOutcomeDistributions::Set build_ground_choices(GroundOutcomeDistributions&
     return result;
 }
 
-/// Whether two outcomes are the same: equal metrics and equal states (built, read through `repository`: equal content, as
-/// the search compares states, whatever their builders' representations; registered: equal keys).
+/// Whether two outcomes are the same: equal metrics and equal states (read through `repository`: equal content, as the
+/// search compares states, whatever their builders' representations).
 template<TaskKind Kind>
 bool same_outcome(const StateRepository<Kind>& repository,
                   const urd::builder<OutcomeNode<Kind>, StateRepository<Kind>>& lhs,
                   const urd::builder<OutcomeNode<Kind>, StateRepository<Kind>>& rhs)
 {
-    using Built = urd::built_child<State<Kind>, StateRepository<Kind>>;
-    if (lhs.node.metric != rhs.node.metric || lhs.node.state.index() != rhs.node.state.index())
-        return false;
-    if (std::holds_alternative<Built>(lhs.node.state))
-        return equal_unextended(urd::resolve(urd::built(lhs.node.state), repository), urd::resolve(urd::built(rhs.node.state), repository));
-    return std::get<urd::interned_child<State<Kind>, StateRepository<Kind>>>(lhs.node.state)
-           == std::get<urd::interned_child<State<Kind>, StateRepository<Kind>>>(rhs.node.state);
+    return lhs.node.metric == rhs.node.metric
+           && equal_unextended(urd::resolve(*lhs.node.state, repository), urd::resolve(*rhs.node.state, repository));
 }
 
-/// Starts the successor labeled `label` in `out`, a builder of `repository`'s: its label a builder from the repository's
-/// pool, no distributions yet (the transition is not applicable unless some are added). Its earlier distributions go
+/// Starts the successor labeled `label` in `out`, a builder of `repository`'s: its label written in place, no
+/// distributions yet (the transition is not applicable unless some are added). Its earlier distributions go
 /// back to their pool.
 template<TaskKind Kind>
 void start_successor(SuccessorBuilder<Kind>& out, const StateRepository<Kind>& repository, const urd::data<Transition>& label)
 {
-    urd::built_form<urd::data<Transition>, StateRepository<Kind>>::assign(label, ygg::formalism::builder_of(out.label, repository.builders()));
+    urd::built_form<urd::data<Transition>, StateRepository<Kind>>::assign(label, out.label);
     out.distributions.clear();
 }
 
@@ -312,21 +307,21 @@ void generate_successor(SuccessorBuilder<Kind>& out,
     auto any_valid = false;
     for (const auto distribution : distributions.distributions(set))
     {
-        auto& outcomes = ygg::formalism::builder_of(out.distributions.emplace_back(), repository.builders()).outcomes;
+        auto& outcomes = out.distributions.emplace_back(ygg::formalism::checkout<Distribution<Kind>>(repository.builders()))->outcomes;
         outcomes.clear();
         for (const auto& joint : distributions.joints(distribution))
         {
-            auto& outcome = ygg::formalism::builder_of(outcomes.emplace_back(), repository.builders());
+            auto& outcome = *outcomes.emplace_back(ygg::formalism::checkout<OutcomeNode<Kind>>(repository.builders()));
             const auto valid = make(distributions.picks(joint), outcome);
             any_valid = any_valid || valid;
             outcome.probability = joint.probability;
             outcome.failed = !valid;
             const auto earlier = std::span(outcomes).first(outcomes.size() - 1);
             const auto equal =
-                std::ranges::find_if(earlier, [&](auto& existing) { return same_outcome<Kind>(repository, urd::builder_of(existing), outcome); });
+                std::ranges::find_if(earlier, [&](auto& existing) { return same_outcome<Kind>(repository, *existing, outcome); });
             if (equal != earlier.end())
             {
-                urd::builder_of(*equal).probability += joint.probability;
+                (*equal)->probability += joint.probability;
                 outcomes.pop_back();
             }
         }
@@ -386,7 +381,7 @@ bool build_outcome(const NodeBuilderView<Kind>& node,
     const auto metric = evaluate_successor_metric(repository, *state, auxiliary_value);
     axiom_evaluator.compute_extended_state(*state, repository);
     const auto result = valid(urd::resolve(*state, repository));
-    outcome.node.state.template emplace<urd::built_child<State<Kind>, StateRepository<Kind>>>(std::move(state));
+    outcome.node.state = std::move(state);
     outcome.node.metric = metric;
     return result;
 }
