@@ -24,19 +24,22 @@
 
 #include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 
 namespace urd
 {
-/// The outcomes chance draws from, their probabilities summing to 1: one distribution an adversary may pick.
+/// The outcomes chance draws from, their probabilities summing to 1: one distribution an adversary may pick. Stored in
+/// the state repository, each once; its outcomes there too (their indices).
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::Distribution<Kind>>
 {
-    urd::flat_vector<urd::data<::tyr::planning::OutcomeNode<Kind>>> outcomes;
+    urd::key<::tyr::planning::Distribution<Kind>> index;
+    urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<Kind>>> outcomes;
 
     data() = default;
 
-    explicit data(urd::flat_vector<urd::data<::tyr::planning::OutcomeNode<Kind>>> outcomes_) : outcomes(std::move(outcomes_)) {}
+    explicit data(urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<Kind>>> outcomes_) : index(), outcomes(std::move(outcomes_)) {}
 
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
@@ -48,7 +51,9 @@ struct data<::tyr::planning::Distribution<Kind>>
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::outcomes> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::outcomes> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::Distribution<Kind>> key() const noexcept { return index; }
 };
 }
 

@@ -308,9 +308,9 @@ public:
     [[nodiscard]] ::tyr::planning::SharedStateBuilderView<Kind> unpack() const
     {
         if constexpr (std::same_as<V, ::tyr::planning::StateView<Kind>>)
-            return self().context().share(self().context().get_registered_state(self().index()));
+            return ::tyr::planning::share(self().context(), ::tyr::planning::get_registered_state(self().context(), self().index()));
         else
-            return self().context().share(self().context().unpack(urd::detail::view_access::record(self())));
+            return ::tyr::planning::share(self().context(), ::tyr::planning::unpack(self().context(), urd::detail::view_access::record(self())));
     }
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"unpack", &view_mixin::unpack>> {}; }

@@ -116,9 +116,12 @@ std::pair<std::vector<std::vector<Label>>, std::optional<std::size_t>> explore(c
                                           {
                                               labels.push_back(label_of(urd::resolve(std::as_const(successor), std::as_const(*state_repository))));
                                               for (auto& distribution : successor.distributions)
-                                                  for (auto& outcome : distribution.outcomes)
+                                                  for (auto& child : urd::builder_of(distribution).outcomes)
+                                                  {
+                                                      auto& outcome = urd::builder_of(child);
                                                       if (!outcome.failed && seen.insert(view_of(outcome.node, *state_repository).pack().state).second)
                                                           next.push_back(std::move(outcome.node));
+                                                  }
                                               return true;
                                           });
         std::ranges::sort(labels);
@@ -190,7 +193,7 @@ std::optional<planning::NodeBuilder<Kind>> step(planning::SuccessorGenerator<Kin
                                   [&](planning::SuccessorBuilder<Kind>& successor)
                                   {
                                       if (matches(label_of(urd::resolve(std::as_const(successor), std::as_const(repository)))))
-                                          result = std::move(successor.distributions.front().outcomes.front().node);
+                                          result = std::move(urd::builder_of(urd::builder_of(successor.distributions.front()).outcomes.front()).node);
                                       return !result;
                                   });
     return result;

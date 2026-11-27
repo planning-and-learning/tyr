@@ -34,6 +34,7 @@ namespace urd
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::OutcomeNode<Kind>, C>
 {
+    urd::key<::tyr::planning::OutcomeNode<Kind>> index;
     urd::built_t<urd::data<::tyr::planning::Node<Kind>>, C> node;
     urd::built_t<ygg::float_t, C> probability = 1;
     urd::built_t<bool, C> failed = false;

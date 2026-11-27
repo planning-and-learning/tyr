@@ -81,7 +81,7 @@ public:
         m_dist_hash.initialize(start_state);
         const auto owner = m_dist_hash.owner(start_state, engine.num_workers());
         auto& worker = engine.get_worker(owner);
-        return { owner, materialize_state(start_state, *worker.state_repository, *worker.axiom_evaluator) };
+        return { owner, register_extended_state(*worker.state_repository, start_state) };
     }
 
     template<typename Engine, typename WorkerData>
@@ -99,13 +99,13 @@ public:
         auto& repository = *sender.registration_repositories[owner_index];
         if (owner != sender.index)
         {
-            auto receiver_target = repository.get_state_builder();
+            auto receiver_target = ::tyr::planning::get_state_builder(repository);
             using std::swap;
             receiver_target->swap(*target);
             target = std::move(receiver_target);
         }
 
-        repository.register_state(*sender.axiom_evaluator, *target, parent, delta);
+        ::tyr::planning::register_state(repository, *sender.axiom_evaluator, *target, parent, delta);
         assert(repository.shares_storage_with(*engine.get_worker(owner).state_repository));
         return PreparedTarget { owner, NodeBuilder<Kind> { std::move(target), metric } };
     }
@@ -148,7 +148,7 @@ public:
     static std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state(Engine& engine, const StateBuilderView<Kind>& start_state)
     {
         const auto start_owner = SharedStatePolicy::owner(start_state.pack().index(), engine.num_workers());
-        return { start_owner, start_state.context().get_registered_state(start_state.pack().index()) };
+        return { start_owner, ::tyr::planning::get_registered_state(start_state.context(), start_state.pack().index()) };
     }
 
     static urd::index<Worker> owner(urd::index<State<Kind>> state, size_t num_workers) noexcept
@@ -166,7 +166,7 @@ public:
                                          ygg::float_t metric,
                                          size_t num_workers)
     {
-        worker.state_repository->register_state(*worker.axiom_evaluator, *target, parent, delta);
+        ::tyr::planning::register_state(*worker.state_repository, *worker.axiom_evaluator, *target, parent, delta);
         const auto state_owner = owner(target->index, num_workers);
         return PreparedTarget { state_owner, NodeBuilder<Kind> { std::move(target), metric } };
     }
@@ -190,7 +190,7 @@ public:
     static void snapshot_worker_state_statistics(Engine& engine)
     {
         const auto& repository = *engine.get_worker(urd::index<Worker>(0)).state_repository;
-        const auto num_states = repository.num_states();
+        const auto num_states = ::tyr::planning::num_states(repository);
         const auto memory_usage = repository.memory_usage();
         for (size_t i = 0; i < engine.num_workers(); ++i)
         {

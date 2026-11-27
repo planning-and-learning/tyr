@@ -227,7 +227,7 @@ void expect_schema_queries_match_filtered_successors()
                                      right.template get_fterm_index_values<formalism::FluentTag>());
     };
     const auto num_action_bindings = count_action_bindings(task);
-    const auto states_before_streaming = state_repository->num_states();
+    const auto states_before_streaming = ::tyr::planning::num_states(*state_repository);
     auto packed_nodes = tyr::tests::OwnedNodeRecordViewList<Kind> {};
     auto streamed_states =
         urd::Store<urd::sequence<std::pair<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>, ygg::float_t>>> {};
@@ -262,7 +262,7 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(count_action_bindings(task), num_action_bindings);
     if constexpr (Building)
     {
-        EXPECT_EQ(state_repository->num_states(), states_before_streaming);
+        EXPECT_EQ(::tyr::planning::num_states(*state_repository), states_before_streaming);
     }
     const auto expected_packed = tyr::tests::get_packed_successor_nodes(*source, initial_node, {}, *state_repository, *axiom_evaluator);
     if constexpr (Building)
@@ -277,14 +277,14 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(count_action_bindings(task), num_action_bindings);
     if constexpr (!Building)
     {
-        const auto recycled_builder = state_repository->get_state_builder();
+        const auto recycled_builder = ::tyr::planning::get_state_builder(*state_repository);
         EXPECT_EQ(&urd::builder_of(recycled_builder->numeric_storage).values, successor_storage);
     }
     const auto all_successors = tyr::tests::get_labeled_successor_nodes(*source, registered_initial, {}, *state_repository, *axiom_evaluator);
-    const auto num_states = state_repository->num_states();
+    const auto num_states = ::tyr::planning::num_states(*state_repository);
     const auto all_bindings = tyr::tests::get_applicable_action_bindings(*source, initial_node, {});
     EXPECT_EQ(all_bindings, tyr::tests::get_applicable_action_bindings(*source, registered_initial, {}));
-    EXPECT_EQ(state_repository->num_states(), num_states);
+    EXPECT_EQ(::tyr::planning::num_states(*state_repository), num_states);
     for (const auto binding : all_bindings)
     {
         auto expected = pool.make_unique();
@@ -298,7 +298,7 @@ void expect_schema_queries_match_filtered_successors()
         const auto expected_view = urd::resolve(*expected, *state_repository);
         EXPECT_TRUE(std::ranges::equal(actual_view.get_fluent_fact_index_values(), expected_view.get_fluent_fact_index_values()));
         EXPECT_TRUE(std::ranges::equal(urd::built_view(actual_view.get_numeric_storage()).fterm_values(), urd::built_view(expected_view.get_numeric_storage()).fterm_values()));
-        EXPECT_EQ(state_repository->num_states(), num_states);
+        EXPECT_EQ(::tyr::planning::num_states(*state_repository), num_states);
         EXPECT_TRUE(owned->index.is_none());
     }
     const auto same_successor = [&](const auto& lhs, const auto& rhs)

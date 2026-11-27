@@ -29,13 +29,15 @@
 
 namespace urd
 {
-/// The builder of a successor: its label's builder (its binding interned, or a row built: a borrowed binding copied) and
-/// its distributions' builders, their outcome states built (state builders of the node's repository) or registered.
+/// The builder of a successor: its label, a child (interned, or a builder from the repository's pool: its binding
+/// interned, or a row built: a borrowed binding copied), and
+/// its distributions, each a child (interned, or a builder from the repository's pool), their outcome states built (state builders of the node's repository) or registered.
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::Successor<Kind>, C>
 {
-    urd::built_t<urd::data<::tyr::planning::Transition>, C> label;
-    urd::built_t<urd::flat_vector<urd::data<::tyr::planning::Distribution<Kind>>>, C> distributions;
+    urd::key<::tyr::planning::Successor<Kind>> index;
+    urd::built_t<urd::index<::tyr::planning::Transition>, C> label;
+    urd::built_t<urd::flat_vector<urd::index<::tyr::planning::Distribution<Kind>>>, C> distributions;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &builder::label>, urd::field<"distributions", &builder::distributions>> {}; }
 

@@ -238,10 +238,6 @@ private:
 
 namespace tyr::planning
 {
-/// A state builder held by its handle, from its repository's pool (StateRepository::get_state_builder), to which it goes
-/// back with the handle: what a successor is written into, and what a node holds its state as.
-template<TaskKind Kind>
-using StateBuilderHandle = urd::handle<urd::builder<State<Kind>, StateRepository<Kind>>>;
 }
 
 #endif

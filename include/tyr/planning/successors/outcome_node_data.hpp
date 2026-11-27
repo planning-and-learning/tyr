@@ -34,13 +34,14 @@ namespace urd
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::OutcomeNode<Kind>>
 {
+    urd::key<::tyr::planning::OutcomeNode<Kind>> index;
     urd::data<::tyr::planning::Node<Kind>> node;
     ygg::float_t probability = 1;
     bool failed = false;
 
     data() = default;
 
-    data(urd::data<::tyr::planning::Node<Kind>> node_, ygg::float_t probability_, bool failed_) : node(node_), probability(probability_), failed(failed_) {}
+    data(urd::data<::tyr::planning::Node<Kind>> node_, ygg::float_t probability_, bool failed_) : index(), node(node_), probability(probability_), failed(failed_) {}
 
     static constexpr bool copyable() noexcept
     {
@@ -55,7 +56,9 @@ struct data<::tyr::planning::OutcomeNode<Kind>>
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::node, &data::probability, &data::failed> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::node, &data::probability, &data::failed> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::OutcomeNode<Kind>> key() const noexcept { return index; }
 };
 }
 

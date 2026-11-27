@@ -763,7 +763,7 @@ void expect_parallel_goal_workers_receive_caller_seed(const tyr::planning::TaskP
         auto foreign = make_search_context(task);
         const auto foreign_start = tyr::tests::owned_initial_node(*foreign.repository, *foreign.axiom_evaluator);
         const auto normalized_start =
-            caller.repository->share(tyr::planning::materialize_state(tyr::tests::built_state(foreign_start), *caller.repository, *caller.axiom_evaluator));
+            ::tyr::planning::share(*caller.repository, tyr::planning::register_extended_state(*caller.repository, tyr::tests::built_state(foreign_start)));
         ASSERT_NE(normalized_start.pack(), tyr::tests::built_state(foreign_start).pack());
 
         auto goal_strategy = std::make_shared<SeedRecordingGoalStrategy<Kind>>(*task, normalized_start.pack());
@@ -847,7 +847,7 @@ void expect_foreign_start_handling(const tyr::planning::TaskPtr<Kind>& task, con
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
     auto options = tyr::planning::astar_eager::Options<Kind> {};
     const auto foreign_start = tyr::tests::owned_initial_node(*foreign.repository, *foreign.axiom_evaluator);
-    EXPECT_THROW(tyr::planning::materialize_state(tyr::tests::built_state(foreign_start), *caller.repository, *caller.axiom_evaluator), std::invalid_argument);
+    EXPECT_THROW(tyr::planning::register_extended_state(*caller.repository, tyr::tests::built_state(foreign_start)), std::invalid_argument);
     EXPECT_THROW(tyr::tests::owned_initial_node(*foreign.repository, *caller.axiom_evaluator), std::invalid_argument);
     EXPECT_THROW(tyr::tests::get_applicable_action_bindings(*caller.successor_generator, foreign_start, {}), std::invalid_argument);
     options.start_node = tyr::tests::packed<Kind>(foreign_start);

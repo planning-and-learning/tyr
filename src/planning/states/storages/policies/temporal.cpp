@@ -72,15 +72,16 @@ StateComponentRepository<TemporalStorage<Kind>, Tag, ThreadSafe>::StateComponent
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto StateComponentRepository<TemporalStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Handle
+auto StateComponentRepository<TemporalStorage<Kind>, Tag, ThreadSafe>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
     m_words.clear();
     pack_temporal(unpacked.parts, m_words);
-    return m_temporals->insert(m_words).first;
+    const auto [handle, inserted] = m_temporals->insert(m_words);
+    return { Key(handle), inserted };
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-void StateComponentRepository<TemporalStorage<Kind>, Tag, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+void StateComponentRepository<TemporalStorage<Kind>, Tag, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked) const
 {
     m_words.resize(m_temporals->row_size(packed));
     m_temporals->copy(packed, m_words);

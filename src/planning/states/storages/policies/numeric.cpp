@@ -15,13 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/states/storages/policies/numeric.hpp"
 
-#include "tyr/planning/states/storages/numeric_storage_builder.hpp"
-#include "tyr/planning/states/storages/temporal_storage_builder.hpp"
-#include "tyr/planning/states/storages/numeric_storage_data.hpp"
 #include "tyr/planning/states/state_data.hpp"
+#include "tyr/planning/states/storages/numeric_storage_builder.hpp"
+#include "tyr/planning/states/storages/numeric_storage_data.hpp"
+#include "tyr/planning/states/storages/policies/numeric.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/states/storages/temporal_storage_builder.hpp"
+#include "tyr/planning/states/successor_hint.hpp"
 
 #include <urd/elements/equal_to.hpp>
 
@@ -35,46 +36,53 @@ StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::StateComponentR
 
 namespace
 {
+/// A builder's values, each canonical, into `canonical` (its buffer reused).
 template<TaskKind Kind>
-void canonicalize(urd::builder<NumericStorage<Kind>, StateRepository<Kind>>& unpacked)
+void canonicalize(const urd::builder<NumericStorage<Kind>, StateRepository<Kind>>& unpacked, std::vector<ygg::float_t>& canonical)
 {
-    for (auto& value : unpacked.values)
-        value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
+    canonical.clear();
+    for (const auto value : unpacked.values)
+        canonical.push_back(ygg::FloatTolerance<ygg::float_t>::canonicalize(value));
 }
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Handle
+auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
-    canonicalize(unpacked);
-    return m_float_vectors->insert(unpacked.values).first;
+    canonicalize(unpacked, m_canonical);
+    const auto [handle, inserted] = m_float_vectors->insert(m_canonical);
+    return { Key(handle), inserted };
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked,
-                                                                             const Handle& parent,
-                                                                             std::span<const StateDelta::NumericChange> changes) -> Handle
+auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert_built(const Unpacked& unpacked, const SuccessorHint<Kind>& hint)
+    -> std::pair<Key, bool>
 {
-    canonicalize(unpacked);
+    canonicalize(unpacked, m_canonical);
+    const auto parent = hint.template parent_key<NumericStorage<Kind>>().value;
 
     // Value vectors grow with the highest function term set, so a successor may be longer than its parent,
     // and a write delta cannot grow a stored vector.
-    const auto& values = unpacked.values;
+    const auto& values = m_canonical;
     if (values.size() != m_float_vectors->row_size(parent))
-        return m_float_vectors->insert(values).first;
+    {
+        const auto [handle, inserted] = m_float_vectors->insert(values);
+        return { Key(handle), inserted };
+    }
 
     m_writes.clear();
-    for (const auto& change : changes)
+    for (const auto& change : hint.delta->numerics)
     {
         const auto position = static_cast<ygg::uint_t>(change.fterm.value);
         m_writes.push_back(urd::Write<ygg::float_t> { position, values[position] });
     }
 
-    return m_float_vectors->insert(parent, m_writes).first;
+    const auto [handle, inserted] = m_float_vectors->insert(parent, m_writes);
+    return { Key(handle), inserted };
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-void StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+void StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked) const
 {
     unpacked.values.resize(m_float_vectors->row_size(packed));
     m_float_vectors->copy(packed, unpacked.values);

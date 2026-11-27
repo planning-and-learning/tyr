@@ -65,6 +65,8 @@ tyr::planning::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, yg
 void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& benchmark_case)
 try
 {
+    // The scratch rows bindings are interned through, reused across iterations.
+    auto builder = tyr::formalism::Builder {};
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = create_task(benchmark_case, *execution_context);
     auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
@@ -75,7 +77,7 @@ try
 
     for ([[maybe_unused]] auto _ : state)
     {
-        tyr::benchmarks::labeled_successors(*successor_generator, initial_node, {}, *state_repository, *axiom_evaluator, successors);
+        tyr::benchmarks::labeled_successors(*successor_generator, builder, initial_node, {}, *state_repository, *axiom_evaluator, successors);
         benchmark::DoNotOptimize(successors);
         benchmark::DoNotOptimize(successors.size());
     }
@@ -90,6 +92,8 @@ catch (const std::exception& error)
 void benchmark_interned_action_bindings(benchmark::State& state, const BenchmarkCase& benchmark_case)
 try
 {
+    // The scratch rows bindings are interned through, reused across iterations.
+    auto builder = tyr::formalism::Builder {};
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = create_task(benchmark_case, *execution_context);
     auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
@@ -100,7 +104,7 @@ try
 
     for ([[maybe_unused]] auto _ : state)
     {
-        tyr::benchmarks::interned_bindings(*successor_generator, initial_node, {}, bindings);
+        tyr::benchmarks::interned_bindings(*successor_generator, builder, initial_node, {}, bindings);
         benchmark::DoNotOptimize(bindings);
         benchmark::DoNotOptimize(bindings.size());
     }

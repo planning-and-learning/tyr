@@ -71,7 +71,7 @@ public:
 
     template<typename Engine>
     static std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state(Engine&, const StateBuilderView<Kind>& start_state)
-    { return { urd::index<Worker>(0), start_state.context().get_registered_state(start_state.pack().index()) }; }
+    { return { urd::index<Worker>(0), ::tyr::planning::get_registered_state(start_state.context(), start_state.pack().index()) }; }
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value = value; }
 

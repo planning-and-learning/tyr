@@ -23,6 +23,7 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 #include <yggdrasil/formalism/declarations.hpp>
 
@@ -32,7 +33,7 @@ namespace tyr::planning::detail
 template<TaskKind Kind>
 void snapshot_state_repository_statistics(const StateRepository<Kind>& repository, Statistics& statistics)
 {
-    statistics.set_num_registered_states(repository.num_states());
+    statistics.set_num_registered_states(::tyr::planning::num_states(repository));
     statistics.set_state_storage_memory_usage(repository.memory_usage());
 }
 

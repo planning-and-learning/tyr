@@ -88,18 +88,18 @@ void bind_state_repository(nb::module_& m, const std::string& name)
         .def("layer", &T::layer)
         .def(
             "get_initial_state",
-            [](T& self, AxiomEvaluator<Kind>& axiom_evaluator) { return self.share(self.get_initial_state(axiom_evaluator)); },
+            [](T& self, AxiomEvaluator<Kind>& axiom_evaluator) { return ::tyr::planning::share(self, ::tyr::planning::get_initial_state(self, axiom_evaluator)); },
             "axiom_evaluator"_a)
         .def(
             "get_state_builder",
-            [](const T& self) { return urd::clone(*self.get_state_builder()); },
+            [](const T& self) { return urd::clone(*::tyr::planning::get_state_builder(self)); },
             "A builder of a state of this repository, emptied: what a successor is written into.")
         .def(
             "get_registered_state",
-            [](const T& self, urd::index<State<Kind>> state_index) { return self.share(self.get_registered_state(state_index)); },
+            [](const T& self, urd::index<State<Kind>> state_index) { return ::tyr::planning::share(self, ::tyr::planning::get_registered_state(self, state_index)); },
             "state_index"_a)
         .def("is_concurrent", &T::is_concurrent)
-        .def("num_states", &T::num_states)
+        .def("num_states", [](const T& self) { return ::tyr::planning::num_states(self); })
         .def("memory_usage", &T::memory_usage)
         .def(
             "create_state",
@@ -107,7 +107,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
                AxiomEvaluator<Kind>& axiom_evaluator,
                const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>& fluent_facts,
                const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values)
-            { return self.share(self.create_state(axiom_evaluator, fluent_facts, fterm_values)); },
+            { return ::tyr::planning::share(self, ::tyr::planning::create_state(self, axiom_evaluator, fluent_facts, fterm_values)); },
             "axiom_evaluator"_a,
             "fluent_facts"_a,
             "fterm_values"_a)
@@ -117,7 +117,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
                AxiomEvaluator<Kind>& axiom_evaluator,
                const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>& fluent_facts,
                const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values)
-            { return self.share(self.create_state(axiom_evaluator, fluent_facts, fterm_values)); },
+            { return ::tyr::planning::share(self, ::tyr::planning::create_state(self, axiom_evaluator, fluent_facts, fterm_values)); },
             "axiom_evaluator"_a,
             "fluent_facts"_a,
             "fterm_values"_a)
@@ -127,7 +127,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
                AxiomEvaluator<Kind>& axiom_evaluator,
                const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>& fluent_facts,
                const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values)
-            { return self.share(self.create_state(axiom_evaluator, fluent_facts, fterm_values)); },
+            { return ::tyr::planning::share(self, ::tyr::planning::create_state(self, axiom_evaluator, fluent_facts, fterm_values)); },
             "axiom_evaluator"_a,
             "fluent_facts"_a,
             "fterm_values"_a);

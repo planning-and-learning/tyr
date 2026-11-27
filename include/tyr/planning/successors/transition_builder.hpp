@@ -36,6 +36,7 @@ namespace urd
 template<typename C>
 struct builder<::tyr::planning::Transition, C>
 {
+    urd::key<::tyr::planning::Transition> index;
     urd::built_t<::tyr::planning::TransitionKind, C> kind;
     urd::built_t<urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>>, C> binding;
     urd::built_t<std::uint32_t, C> open;

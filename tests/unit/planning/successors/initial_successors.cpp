@@ -17,8 +17,8 @@
 
 // The successors of each test task's initial node, ground and lifted, against the fixture
 // (tests/support/generators/planning/successors/generate_initial_successors.py): each successor's label and
-// distributions, each outcome's probability, failure, metric and state, in the generator's form and order. A task tyr
-// does not parse yet fails to parse with the fixture's reason.
+// distributions, each outcome's probability, failure, metric and state, in the generator's form and order; and that
+// expanding it again once warm allocates nothing. A task tyr does not parse yet fails to parse with the fixture's reason.
 
 #include "planning/parser.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -51,6 +51,7 @@
 #include <utility>
 #include <vector>
 #include <urd/elements/view.hpp>
+#include <urd/testing/allocations.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
@@ -245,6 +246,30 @@ std::vector<Successor> initial_successors(const planning::TaskPtr<Kind>& task, c
     return sorted(std::move(result));
 }
 
+/// Expanding the initial node again, once its builders have grown, allocates and frees nothing: its successors are written
+/// into the repository's reused builders and none is kept.
+template<TaskKind Kind>
+void expect_no_allocations_after_warmup(const planning::TaskPtr<Kind>& task, const ygg::ExecutionContextPtr& execution_context)
+{
+    if constexpr (!urd::testing::counts_allocations)
+        return;
+    auto repository = planning::StateRepository<Kind>::create(task);
+    auto axiom_evaluator = planning::AxiomEvaluator<Kind>(task, execution_context);
+    auto generator = planning::SuccessorGenerator<Kind>(task, execution_context);
+    const auto initial = planning::get_initial_node(*repository, axiom_evaluator);
+    const auto visit = [](planning::SuccessorBuilder<Kind>& /*successor*/) { return true; };
+    const auto expand = [&] { return planning::for_each_successor(generator, initial, axiom_evaluator, visit); };
+    ASSERT_TRUE(expand());
+    ASSERT_TRUE(expand());
+    {
+        const auto counted = urd::testing::Counted();
+        static_cast<void>(expand());
+    }
+    const auto counts = urd::testing::counts();
+    EXPECT_EQ(counts.allocations, 0);
+    EXPECT_EQ(counts.deallocations, 0);
+}
+
 class InitialSuccessorsTest : public ::testing::TestWithParam<InitialSuccessorsCase>
 {
 };
@@ -269,9 +294,17 @@ TEST_P(InitialSuccessorsTest, SuccessorsMatchFixtureGroundAndLifted)
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto lifted = planning::Task<LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
     EXPECT_EQ(initial_successors<LiftedTag>(lifted, execution_context), test_case.successors) << "lifted";
+    {
+        SCOPED_TRACE("lifted");
+        expect_no_allocations_after_warmup<LiftedTag>(lifted, execution_context);
+    }
     const auto ground = lifted->instantiate_ground_task(*execution_context).task;
     ASSERT_TRUE(ground);
     EXPECT_EQ(initial_successors<GroundTag>(ground, execution_context), test_case.successors) << "ground";
+    {
+        SCOPED_TRACE("ground");
+        expect_no_allocations_after_warmup<GroundTag>(ground, execution_context);
+    }
 }
 
 INSTANTIATE_TEST_SUITE_P(TyrPlanningInitialSuccessors,

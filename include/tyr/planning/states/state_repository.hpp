@@ -25,6 +25,10 @@
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/state_view.hpp"
+#include "tyr/planning/successors/distribution_data.hpp"
+#include "tyr/planning/successors/outcome_node_data.hpp"
+#include "tyr/planning/successors/successor_data.hpp"
+#include "tyr/planning/successors/transition_data.hpp"
 #include "tyr/planning/tasks/task.hpp"
 
 #include <atomic>
@@ -48,6 +52,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/keyed.hpp>
 #include <yggdrasil/formalism/nested.hpp>
 #include <yggdrasil/formalism/part_instantiations.hpp>
@@ -55,6 +60,33 @@
 
 namespace tyr::planning
 {
+
+/// The builder types read through a state repository (yggdrasil's NamesList): a successor and its parts (a distribution,
+/// an outcome, a transition's label, an action binding's row), a state and its storages. Each before the parts it holds:
+/// a builder that went back to its pool holds its parts until it is checked out again, and a storage's pools are
+/// destroyed in type order (ygg::Family), so the pools of its parts outlive its own.
+template<TaskKind Kind>
+struct StateRepositoryBuilderTypes :
+    ygg::formalism::Builders<Successor<Kind>,
+                             Distribution<Kind>,
+                             OutcomeNode<Kind>,
+                             Transition,
+                             ygg::Row<formalism::Action<LiftedTag>>,
+                             State<Kind>,
+                             FactStorage<Kind>,
+                             AtomStorage<Kind>,
+                             NumericStorage<Kind>,
+                             TemporalStorage<Kind>>
+{
+};
+
+/// The pools of a state repository's builders and scratch records, interned into it.
+template<TaskKind Kind>
+using StateRepositoryBuilderStorage = ygg::formalism::BasicBuilderStorage<StateRepository<Kind>, StateRepositoryBuilderTypes<Kind>>;
+
+/// The stores of records of kinds Ts that workers share (yggdrasil's SymbolStores, thread-safe).
+template<typename... Ts>
+using ConcurrentSymbolStores = ygg::formalism::SymbolStores<true, Ts...>;
 
 /// Always owned by a StateRepositoryPtr (create): the states it hands out keep it alive. A keyed repository
 /// (ygg::formalism::KeyedRepository) of its own parts, each a store shared by its workers: its states' records, and the
@@ -78,8 +110,10 @@ private:
     explicit StateRepository(const TaskPtr<Kind>& task, bool concurrent);
 
 public:
-    /// The states' records, each once (references stay valid; thread-safe, so that workers share it).
-    using StateRecordStore = urd::Store<urd::pool<urd::data<State<Kind>>, urd::index<State<Kind>>>, urd::stable_refs, urd::layered, urd::concurrent>;
+    /// The kinds of record it stores, each once: its states, and successors and their parts.
+    using SymbolTypes = boost::mp11::mp_list<State<Kind>, Transition, OutcomeNode<Kind>, Distribution<Kind>, Successor<Kind>>;
+    /// Their stores, one per kind (thread-safe, so that workers share them).
+    using Symbols = boost::mp11::mp_apply<ConcurrentSymbolStores, SymbolTypes>;
 
     /// A repository of `task`'s states, shared (its states keep it alive); with `concurrent`, one whose workers
     /// (make_worker) share canonical state storage.
@@ -91,26 +125,23 @@ public:
     StateRepository(StateRepository&&) = delete;
     StateRepository& operator=(StateRepository&&) = delete;
 
-    /// The task's initial state, registered.
-    StateBuilderHandle<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
+    /// The keys of its records (a repository nesting it resolves them here: ygg::formalism::Nests).
+    using SymbolKeys = boost::mp11::mp_transform<urd::key, SymbolTypes>;
+    /// The keys it resolves itself: its records', and its states' storages' (each its pool's handle).
+    using KeyTypes = boost::mp11::mp_append<SymbolKeys,
+                                            boost::mp11::mp_list<urd::key<FactStorage<Kind>>,
+                                                                 urd::key<AtomStorage<Kind>>,
+                                                                 urd::key<NumericStorage<Kind>>,
+                                                                 urd::key<TemporalStorage<Kind>>>>;
 
-    /// The kind of record it holds: a repository nesting it resolves states here (ygg::formalism::Nests).
-    using SymbolTypes = boost::mp11::mp_list<State<Kind>>;
-    /// The keys it resolves itself: its states' and their storages' (each its pool's handle).
-    using KeyTypes = boost::mp11::mp_list<urd::index<State<Kind>>,
-                                          urd::key<FactStorage<Kind>>,
-                                          urd::key<AtomStorage<Kind>>,
-                                          urd::key<NumericStorage<Kind>>,
-                                          urd::key<TemporalStorage<Kind>>>;
-
-    /// Its own parts' stores and the keys each resolves (ygg::formalism::HeldPart<StateRepository, P>): its states, and the
-    /// pools of their fluent facts, derived atoms, numeric values and temporal parts.
-    using PartStores = boost::mp11::mp_list<StateRecordStore,
+    /// Its own parts' stores and the keys each resolves (ygg::formalism::HeldPart<StateRepository, P>): its records,
+    /// and the pools of its states' fluent facts, derived atoms, numeric values and temporal parts.
+    using PartStores = boost::mp11::mp_list<Symbols,
                                             StoragePool<FactStorage<Kind>>,
                                             StoragePool<AtomStorage<Kind>>,
                                             StoragePool<NumericStorage<Kind>>,
                                             StoragePool<TemporalStorage<Kind>>>;
-    using PartKeys = boost::mp11::mp_list<boost::mp11::mp_list<urd::key<State<Kind>>>,
+    using PartKeys = boost::mp11::mp_list<SymbolKeys,
                                           boost::mp11::mp_list<urd::key<FactStorage<Kind>>>,
                                           boost::mp11::mp_list<urd::key<AtomStorage<Kind>>>,
                                           boost::mp11::mp_list<urd::key<NumericStorage<Kind>>>,
@@ -127,50 +158,15 @@ public:
     /// No layer below it: its workers share its states instead.
     [[nodiscard]] const StateRepository* parent() const noexcept { return nullptr; }
 
-    /// A registered state unpacked into a builder of this repository's pool (its index set).
-    StateBuilderHandle<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
-
-    /// A state record unpacked, its storages read from this repository's: a registered one's (get_registered_state, its
-    /// index set) or a record held outside it, packed here but not registered (no index).
-    StateBuilderHandle<Kind> unpack(const urd::data<State<Kind>>& packed) const;
-
-    StateBuilderHandle<Kind>
-    create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                 const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>& fluent_facts,
-                 const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values);
-    /// The facts as views: borrowed (stored facts, FDRFactView) or owned (a state's, computed on the fly).
-    template<typename FactView>
-        requires std::same_as<typename FactView::value_type, formalism::FDRFact<formalism::FluentTag>>
-    StateBuilderHandle<Kind> create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                                          const urd::Store<urd::sequence<FactView>>& fluent_facts,
-                                          const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
-
-    /// A builder of this repository's pool, emptied: what a successor is written into. It goes back to the pool with its
-    /// handle, which the repository must outlive.
-    StateBuilderHandle<Kind> get_state_builder() const;
-
-    /// Registers `state`, a builder of this repository, in place: closed under the axioms if it is new (else its derived
-    /// atoms read from the stored state), its index set.
-    void register_state(AxiomEvaluator<Kind>& axiom_evaluator, urd::builder<State<Kind>, StateRepository<Kind>>& state);
-    /// Like register_state, but `delta` must be the exact changes from `parent` to `state`, as produced when generating a successor.
-    /// If both share storage, state component repositories may insert `state` as `delta` to `parent`.
-    void register_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                        urd::builder<State<Kind>, StateRepository<Kind>>& state,
-                        const StateBuilderView<Kind>& parent,
-                        const StateDelta& delta);
-    /// Registers `state`, which already contains its axiom closure, in place.
-    void register_extended_state(urd::builder<State<Kind>, StateRepository<Kind>>& state);
-    /// Copies an already extended state of this task into a builder of this repository and registers it; the source is
-    /// read only.
-    StateBuilderHandle<Kind> register_extended_state(const StateBuilderView<Kind>& source);
-
-    /// A state held by its handle, shared: released with its last copy, keeping this repository alive meanwhile (a state
-    /// held where nothing else keeps its repository, as in Python).
-    [[nodiscard]] SharedStateBuilderView<Kind> share(StateBuilderHandle<Kind> state) const;
+    /// This worker's builder storage: builders checked out of it (ygg::formalism::checkout, ygg::formalism::builder_of)
+    /// are emptied, their buffers kept, so a state or successor written into reused ones allocates nothing once they have
+    /// grown; its scratch records intern them (insert(builder, storage)). The repository must outlive its handles.
+    StateRepositoryBuilderStorage<Kind>& builders() const;
 
     [[nodiscard]] StateRepositoryPtr<Kind> make_worker() const;
 
-    /// All repositories sharing this storage must be quiescent while inspecting memory usage.
+    /// All repositories sharing this storage must be quiescent while inspecting memory usage. Its own, as the storage
+    /// pools' shared sets are not reached through their parts (KeyedRepository::memory_usage<T>).
     [[nodiscard]] size_t memory_usage() const noexcept;
 
     const TaskPtr<Kind>& get_task() const noexcept;
@@ -181,7 +177,6 @@ public:
     /// The repository's number, as urd's views ask of a context: the identity of the storage that owns the states,
     /// shared by all workers of a cohort.
     [[nodiscard]] std::size_t layer() const noexcept;
-    [[nodiscard]] size_t num_states() const noexcept;
 
 private:
     friend class ygg::formalism::KeyedRepository<StateRepository>;
@@ -190,48 +185,89 @@ private:
     [[nodiscard]] OwnParts<false> own_parts() const;
     [[nodiscard]] OwnParts<true> own_parts();
 
-    /// A state record's storages, read from this repository's, into a builder.
-    void unpack_storages(const urd::data<State<Kind>>& packed, urd::builder<State<Kind>, StateRepository<Kind>>& state) const;
-
     std::unique_ptr<Impl> m_impl;
 };
 
 extern template class StateRepository<GroundTag>;
 extern template class StateRepository<LiftedTag>;
 
-/// A state of `source`'s task as a registered state of `target`: unpacked from `target` where it shares its storage, else
-/// copied into it and registered.
+/// A state builder of `repository`'s storage, its storages' builders checked out with it, emptied for its task: what a
+/// state is written into. It goes back with its handle, which the repository must outlive.
+template<TaskKind Kind>
+StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& repository);
+
+/// Registers `state`, a builder of `repository`, in place, by the repository's generic find and insert: its identifying
+/// storages interned, its record found; closed under the axioms (`axiom_evaluator`) only where it is new (else its
+/// derived atoms read from the stored state); its index set.
+template<TaskKind Kind>
+void register_state(StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator, urd::builder<State<Kind>, StateRepository<Kind>>& state);
+
+/// Like register_state, `delta` the exact changes from `parent` to `state` (as generating a successor gives them): where
+/// both share storage, each storage pool stores `state`'s as a difference to `parent`'s (a SuccessorHint).
+template<TaskKind Kind>
+void register_state(StateRepository<Kind>& repository,
+                    AxiomEvaluator<Kind>& axiom_evaluator,
+                    urd::builder<State<Kind>, StateRepository<Kind>>& state,
+                    const StateBuilderView<Kind>& parent,
+                    const StateDelta& delta);
+
+/// Registers `state`, which already holds its axiom closure, in place.
+template<TaskKind Kind>
+void register_extended_state(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state);
+
+/// An already extended state of `repository`'s task, copied into a builder of it and registered; the source is read only.
+template<TaskKind Kind>
+StateBuilderHandle<Kind> register_extended_state(StateRepository<Kind>& repository, const StateBuilderView<Kind>& source);
+
+/// The task's initial state, registered.
+template<TaskKind Kind>
+StateBuilderHandle<Kind> get_initial_state(StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator);
+
+/// A state of the given fluent facts and function term values, registered.
 template<TaskKind Kind>
 StateBuilderHandle<Kind>
-materialize_state(const std::type_identity_t<StateBuilderView<Kind>>& source, StateRepository<Kind>& target, AxiomEvaluator<Kind>& axiom_evaluator)
-{
-    if (source.context().get_task() != target.get_task())
-        throw std::invalid_argument("materialize_state(...): source state belongs to a different task.");
-    if (axiom_evaluator.get_task() != target.get_task())
-        throw std::invalid_argument("materialize_state(...): axiom evaluator belongs to a different task.");
-    if (source.context().shares_storage_with(target) && !source.pack().index().is_none())
-        return target.get_registered_state(source.pack().index());
+create_state(StateRepository<Kind>& repository,
+             AxiomEvaluator<Kind>& axiom_evaluator,
+             const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>& fluent_facts,
+             const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values);
 
-    auto builder = target.get_state_builder();
-    builder->assign_unextended_part(source);
-    target.register_state(axiom_evaluator, *builder);
-    return builder;
-}
+/// The facts as views: borrowed (stored facts, FDRFactView) or owned (a state's, computed on the fly).
+template<TaskKind Kind, typename FactView>
+    requires std::same_as<typename FactView::value_type, formalism::FDRFact<formalism::FluentTag>>
+StateBuilderHandle<Kind> create_state(StateRepository<Kind>& repository,
+                                      AxiomEvaluator<Kind>& axiom_evaluator,
+                                      const urd::Store<urd::sequence<FactView>>& fluent_facts,
+                                      const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
 
-extern template StateBuilderHandle<GroundTag>
-materialize_state(const StateBuilderView<GroundTag>& source, StateRepository<GroundTag>& target, AxiomEvaluator<GroundTag>& axiom_evaluator);
-extern template StateBuilderHandle<LiftedTag>
-materialize_state(const StateBuilderView<LiftedTag>& source, StateRepository<LiftedTag>& target, AxiomEvaluator<LiftedTag>& axiom_evaluator);
+/// A state record unpacked into a state builder, its storages read through `repository`'s generic unpack_built: a
+/// registered one's (its index not set here) or one held outside, packed in its storage but not registered.
+template<TaskKind Kind>
+StateBuilderHandle<Kind> unpack(const StateRepository<Kind>& repository, const urd::data<State<Kind>>& packed);
+
+/// A registered state unpacked into a state builder (its index set).
+template<TaskKind Kind>
+StateBuilderHandle<Kind> get_registered_state(const StateRepository<Kind>& repository, urd::index<State<Kind>> state_index);
+
+/// The number of states `repository`'s storage holds (its generic size of State<Kind>).
+template<TaskKind Kind>
+[[nodiscard]] std::size_t num_states(const StateRepository<Kind>& repository)
+{ return repository.template size<State<Kind>>(); }
+
+/// A state held by its handle, shared: released with its last copy, keeping `repository` alive meanwhile (a state held
+/// where nothing else keeps its repository, as in Python).
+template<TaskKind Kind>
+[[nodiscard]] SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, StateBuilderHandle<Kind> state);
+
 }
 
 // The keyed members of the repositories' parts (their states and their storages' pools), instantiated once, in
 // src/planning/state_repository.cpp (brokkr's include rule I7).
-YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 0, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 0, 5)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 1, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 2, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 3, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 4, 1)
-YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 0, 1)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 0, 5)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 1, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 2, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 3, 1)

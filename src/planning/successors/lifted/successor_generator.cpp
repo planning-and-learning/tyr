@@ -58,6 +58,7 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -131,7 +132,16 @@ struct SuccessorGenerator<LiftedTag>::Impl
         urd::flat_vector<urd::index<formalism::Object>> checked_objects;
         datalog::ProgramWorkspace<LiftedTag> workspace;
         urd::Store<urd::map<formalism::ActionView<LiftedTag>, SchemaEvaluator>> schema_evaluators;
-        datalog::StaticExtensionWorkspace static_extension_workspace;
+        /// The scratch of the static extensions of each effect rule (by its index), each kept prepared for its rule's
+        /// static consistency graph: rules of different graphs sharing one would rebuild it on every switch.
+        std::vector<datalog::StaticExtensionWorkspace> static_extension_workspaces;
+
+        datalog::StaticExtensionWorkspace& static_extension_workspace(std::size_t rule)
+        {
+            if (rule >= static_extension_workspaces.size())
+                static_extension_workspaces.resize(rule + 1);
+            return static_extension_workspaces[rule];
+        }
         /// The effect atoms of the facts, grouped by action binding.
         EffectAtomIndex effect_atom_index;
         ActionExecutor executor;
@@ -298,7 +308,7 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     scratch_action_binding(formalism::checkout<ygg::Row<formalism::Action<LiftedTag>>>(scratch_builder)),
     action_binding_to_ground_action(),
     workspace(definition.action_program.get_datalog_program()),
-    static_extension_workspace(),
+    static_extension_workspaces(),
     effect_atom_index(definition.action_program.get_predicate_to_action_mapping(),
                       definition.action_program.get_conditional_effect_to_predicate_mapping(),
                       workspace.facts.fact_sets.get<formalism::DerivedTag>(),
@@ -583,7 +593,7 @@ formalism::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fo
                                           [&](auto schema_rule) { return schema_rule.get_derived_heads().front().get_predicate() == it->second; });
                 datalog::for_each_static_extension(*rules[static_cast<ygg::uint_t>(rule.index().value)],
                                                    std::span<const urd::index<formalism::Object>>(objects.data(), objects.size()),
-                                                   m_impl->evaluator.static_extension_workspace,
+                                                   m_impl->evaluator.static_extension_workspace(rule.index().value),
                                                    [&](auto extension)
                                                    {
                                                        grounder_context.binding().resize(objects.size());
@@ -687,7 +697,7 @@ struct LiftedTools
             throw std::logic_error("LiftedTools::for_each_static_binding: the effect's rule has no workspace.");
         datalog::for_each_static_extension(*rule_workspace,
                                            std::span<const urd::index<formalism::Object>>(evaluator.static_objects),
-                                           evaluator.static_extension_workspace,
+                                           evaluator.static_extension_workspace(rule.index().value),
                                            [&](auto extension)
                                            {
                                                binding.resize(action_arity);
@@ -821,12 +831,13 @@ bool can_end(const Impl& impl, formalism::TemporalPartView<LiftedTag> part, cons
     return may_hold(part.get_over_all()) && may_hold(part.get_end_condition());
 }
 
-/// The label's binding of a borrowed action binding not interned: a row built in the label (its builder kept across
-/// successors), read through the repository the label is read through: its values are objects of any of its layers.
+/// The label's binding of a borrowed action binding not interned: a row built in the label, from the pool of `repository`
+/// (the repository the label is read through: its values are objects of any of its layers).
 template<formalism::ActionRowViewConcept Binding>
-void build_label_binding(SuccessorBuilder<LiftedTag>& out, Binding binding)
+void build_label_binding(SuccessorBuilder<LiftedTag>& out, const StateRepository<LiftedTag>& repository, Binding binding)
 {
-    auto& row = urd::builder_of(out.label.binding.has_value() ? *out.label.binding : out.label.binding.emplace());
+    auto& label = urd::builder_of(out.label);
+    auto& row = ygg::formalism::builder_of(label.binding.has_value() ? *label.binding : label.binding.emplace(), repository.builders());
     urd::store(row.relation, action_of(binding));
     row.values.clear();
     for (const auto value : binding.get_values())
@@ -888,7 +899,7 @@ void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node
     }
 
     if (!applicable)
-        start_successor(out, label);
+        start_successor(out, node.context(), label);
     else
     {
         evaluator.outcome_distributions.clear();
@@ -899,7 +910,7 @@ void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node
         lifted_transition(impl, node, label, std::span<const LiftedEffects>(effects), set, for_each_effect_binding, temporal, make, out);
     }
     if (!label.binding.has_value())
-        build_label_binding(out, binding);
+        build_label_binding(out, node.context(), binding);
     impl.end_single_binding_work(node);
 }
 
@@ -921,7 +932,7 @@ void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, s
     const auto temporal_part = running_temporal_part(action);
     if (!is_applicable(temporal_part.get_end_condition(), applicability_context))
     {
-        start_successor(out, label);
+        start_successor(out, node.context(), label);
         return;
     }
 
@@ -957,7 +968,7 @@ void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, s
     const auto [end_min, end_max] = duration_bounds(temporal_part.get_end_min_durations(), temporal_part.get_end_max_durations(), applicability_context);
     if (!(end_min <= end_max))
     {
-        start_successor(out, label);
+        start_successor(out, node.context(), label);
         return;
     }
     const auto temporal = TemporalStepper::Kind { TransitionKind::END, open, {}, 0, 0, 0, 0, end_min, end_max };
@@ -1010,8 +1021,9 @@ bool SuccessorGenerator<LiftedTag>::for_each_successor(const Source& node,
     validate_task(m_impl->definition->task, node);
     validate_task(m_impl->definition->task, axiom_evaluator);
     const auto& repository = *m_impl->definition->task->get_repository();
-    // Its own, reused across its successors: their outcome states go back to the node's repository when it returns.
-    auto successor = SuccessorBuilder<LiftedTag>();
+    // One of the node's repository's builders, reused across its successors: back to its pool when this returns.
+    auto checked_out = ygg::formalism::checkout<Successor<LiftedTag>>(node.context().builders());
+    auto& successor = *checked_out;
     const auto exhausted = m_impl->for_each_applicable_action_binding(node,
                                                                       std::nullopt,
                                                                       [&](auto& binding)

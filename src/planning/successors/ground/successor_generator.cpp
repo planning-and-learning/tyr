@@ -500,7 +500,7 @@ void action_transition(Generator& generator,
         const auto [min_duration, max_duration] = duration_bounds(temporal_part->get_min_durations(), temporal_part->get_max_durations(), state_context);
         if (!(min_duration <= max_duration))
         {
-            start_successor(out, label);
+            start_successor(out, node.context(), label);
             return;
         }
         temporal = TemporalStepper::Kind { TransitionKind::START, 0, row.index(), min_duration, max_duration, 0 };
@@ -522,7 +522,7 @@ void end_transition(Generator& generator, Impl& impl, const NodeBuilderView<Grou
     const auto temporal_part = running_temporal_part(generator.ground_action(row));
     if (!is_applicable(temporal_part.get_end_condition(), state_context))
     {
-        start_successor(out, label);
+        start_successor(out, node.context(), label);
         return;
     }
 
@@ -539,7 +539,7 @@ void end_transition(Generator& generator, Impl& impl, const NodeBuilderView<Grou
     const auto [end_min, end_max] = duration_bounds(temporal_part.get_end_min_durations(), temporal_part.get_end_max_durations(), state_context);
     if (!(end_min <= end_max))
     {
-        start_successor(out, label);
+        start_successor(out, node.context(), label);
         return;
     }
     const auto temporal = TemporalStepper::Kind { TransitionKind::END, open, {}, 0, 0, 0, 0, end_min, end_max };
@@ -591,8 +591,9 @@ bool SuccessorGenerator<GroundTag>::for_each_successor(const Source& node,
 {
     validate_task(m_impl->definition->task, node);
     validate_task(m_impl->definition->task, axiom_evaluator);
-    // Its own, reused across its successors: their outcome states go back to the node's repository when it returns.
-    auto successor = SuccessorBuilder<GroundTag>();
+    // One of the node's repository's builders, reused across its successors: back to its pool when this returns.
+    auto checked_out = ygg::formalism::checkout<Successor<GroundTag>>(node.context().builders());
+    auto& successor = *checked_out;
     const auto exhausted = m_impl->for_each_applicable_action(node,
                                                               *m_impl->evaluator.action_match_tree,
                                                               [&](const auto action)

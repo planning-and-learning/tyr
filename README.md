@@ -111,31 +111,29 @@ The C++ interface for implementing search algorithms is:
 ```cpp
 #include <tyr/tyr.hpp>
 
-// Recommended namespace aliases.
-namespace tf = tyr::formalism;
-namespace tp = tyr::planning;
+// The kind of task: lifted (tyr::GroundTag for a ground one).
 using Kind = tyr::LiftedTag;
 
 // Parse and translate a task over a domain.
-auto parser = tf::Parser("domain.pddl");
+auto parser = tyr::formalism::Parser("domain.pddl");
 // Instantiate a lifted task.
-auto task = tp::Task<Kind>::create(parser.parse_task("problem.pddl"));
+auto task = tyr::planning::Task<Kind>::create(parser.parse_task("problem.pddl"));
 
 // Instantiate a single-threaded execution environment.
 auto execution_context = ygg::ExecutionContext::create(1);
 
 // Instantiate the planning objects. A state repository is created shared (create): the states it hands out keep it
 // alive. Each has its own number, so state views from different state repositories hash and compare correctly.
-auto axiom_evaluator = tp::AxiomEvaluator<Kind>(task, execution_context);
-auto state_repository = tp::StateRepository<Kind>::create(task);
-auto successor_generator = tp::SuccessorGenerator<Kind>(task, execution_context);
+auto axiom_evaluator = tyr::planning::AxiomEvaluator<Kind>(task, execution_context);
+auto state_repository = tyr::planning::StateRepository<Kind>::create(task);
+auto successor_generator = tyr::planning::SuccessorGenerator<Kind>(task, execution_context);
 
 // The initial node: its state, registered, and its metric value, read through the state repository.
-const auto initial_node = tp::get_initial_node(*state_repository, axiom_evaluator);
+const auto initial_node = tyr::planning::get_initial_node(*state_repository, axiom_evaluator);
 
 // Simple: the successors of a node, kept. Each is a transition (its label) with distributions of outcomes, each outcome
 // a registered node with its probability. A classical action has one distribution of one outcome.
-for (const auto& successor : tp::get_successors(successor_generator, *state_repository, axiom_evaluator, initial_node))
+for (const auto& successor : tyr::planning::get_successors(successor_generator, *state_repository, axiom_evaluator, initial_node))
 {
     const auto label = successor.get_label();
     for (const auto distribution : successor.get_distributions())
@@ -149,30 +147,30 @@ for (const auto& successor : tp::get_successors(successor_generator, *state_repo
 // Expert: each successor written into a builder the callback may take, nothing interned. Keep what you need as it is,
 // register its outcome states (register_outcomes), intern its label's action binding (intern_label, through the
 // reused scratch records of a formalism builder), each optional.
-auto builder = tf::Builder {};
-auto kept_successors = std::vector<tp::SuccessorBuilder<Kind>> {};
-const auto visit = [&](tp::SuccessorBuilder<Kind>& successor)
+auto builder = tyr::formalism::Builder {};
+auto kept_successors = std::vector<tyr::planning::SuccessorBuilder<Kind>> {};
+const auto visit = [&](tyr::planning::SuccessorBuilder<Kind>& successor)
 {
-    tp::register_outcomes(*state_repository, successor);
-    tp::intern_label(*state_repository, builder, successor);
+    tyr::planning::register_outcomes(*state_repository, successor);
+    tyr::planning::intern_label(*state_repository, builder, successor);
     kept_successors.push_back(std::move(successor));
     return true;  // false stops
 };
-tp::for_each_successor(successor_generator, initial_node, axiom_evaluator, visit);
+tyr::planning::for_each_successor(successor_generator, initial_node, axiom_evaluator, visit);
 
 // Lowest level, what the search algorithms use: the applicable action bindings (borrowed), one successor state each,
 // from the state repository, with its auxiliary value (the cost term the metric reads) and its changes to the node's
 // state; registering it makes the node, interning the binding its label.
-auto labeled_successor_nodes = tp::LabeledNodeList<Kind> {};
-const auto visit_binding = [&](tp::ActionBindingView<Kind> binding)
+auto labeled_successor_nodes = tyr::planning::LabeledNodeList<Kind> {};
+const auto visit_binding = [&](tyr::planning::ActionBindingView<Kind> binding)
 {
-    auto successor_state = tp::generate_successor_state(successor_generator, *state_repository, initial_node, binding);
-    auto node = tp::register_successor(*state_repository, axiom_evaluator, initial_node, std::move(successor_state));
-    const auto label = tp::intern_action_binding(successor_generator, builder, binding);
-    labeled_successor_nodes.push_back(tp::LabeledNodeBuilder<Kind> { label.index(), std::move(node) });
+    auto successor_state = tyr::planning::generate_successor_state(successor_generator, *state_repository, initial_node, binding);
+    auto node = tyr::planning::register_successor(*state_repository, axiom_evaluator, initial_node, std::move(successor_state));
+    const auto label = tyr::planning::intern_action_binding(successor_generator, builder, binding);
+    labeled_successor_nodes.push_back(tyr::planning::LabeledNodeBuilder<Kind> { label.index(), std::move(node) });
     return true;
 };
-tp::for_each_applicable_action_binding(successor_generator, initial_node, visit_binding);
+tyr::planning::for_each_applicable_action_binding(successor_generator, initial_node, visit_binding);
 ```
 
 ## Dependencies

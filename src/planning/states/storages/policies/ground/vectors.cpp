@@ -15,14 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/states/storages/policies/ground/vectors.hpp"
 
 #include "../tree_bitset.hpp"
+#include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/states/storages/fact_storage_view.hpp"
 #include "tyr/planning/states/storages/numeric_storage_view.hpp"
+#include "tyr/planning/states/storages/policies/ground/vectors.hpp"
 #include "tyr/planning/states/storages/temporal_storage_view.hpp"
-#include "tyr/planning/states/state_data.hpp"
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/states/successor_hint.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -69,10 +71,11 @@ void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
     pack(std::span<const ygg::uint_t>(unpacked.values), m_buffer);
-    return m_array_set->insert(m_buffer).first;
+    const auto [handle, inserted] = m_array_set->insert(m_buffer);
+    return { Key(handle), inserted };
 }
 
 template<typename... Tags, bool ThreadSafe>
@@ -84,13 +87,13 @@ auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked&,
-                                                                                            const Handle& parent,
-                                                                                            std::span<const StateDelta::FluentChange> changes) -> Handle
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert_built(const Unpacked& /*unpacked*/,
+                                                                                                  const SuccessorHint<GroundTag>& hint) -> std::pair<Key, bool>
 {
     // XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
+    const auto parent = hint.template parent_key<FactStorage<GroundTag>>().value;
     m_flips.clear();
-    for (const auto& change : changes)
+    for (const auto& change : hint.delta->fluents)
     {
         const auto& info = m_layout->fluent_infos[static_cast<ygg::uint_t>(change.variable.value)];
         append_int_flips(info.begin, info.offset, info.length, static_cast<ygg::uint_t>(change.from.value ^ change.to.value), m_flips);
@@ -98,7 +101,8 @@ auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
     normalize_flips(m_flips);
     flips_to_writes(*m_array_set, parent, m_flips, m_writes);
 
-    return m_array_set->insert(parent, m_writes).first;
+    const auto [handle, inserted] = m_array_set->insert(parent, m_writes);
+    return { Key(handle), inserted };
 }
 
 template<typename... Tags, bool ThreadSafe>
@@ -114,7 +118,7 @@ void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked) const
 { read(packed, unpacked.values); }
 
 template<typename... Tags, bool ThreadSafe>
@@ -141,10 +145,11 @@ void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
     pack(unpacked.indices.significant_words(), m_buffer);
-    return m_array_set->insert(m_buffer).first;
+    const auto [handle, inserted] = m_array_set->insert(m_buffer);
+    return { Key(handle), inserted };
 }
 
 template<typename... Tags, bool ThreadSafe>
@@ -156,23 +161,24 @@ auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSa
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked,
-                                                                                            const Handle& parent,
-                                                                                            const AtomStorageBuilderView<GroundTag>& parent_atoms) -> Handle
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert_built(const Unpacked& unpacked,
+                                                                                                  const SuccessorHint<GroundTag>& hint) -> std::pair<Key, bool>
 {
     // Derived atoms lie within the stored row, so the blocks that differ are written there.
-    const auto from = parent_atoms.get_indices().significant_words();
+    const auto parent = hint.template parent_key<AtomStorage<GroundTag>>().value;
+    const auto from = urd::built_view(hint.parent_state->get_atom_storage()).get_indices().significant_words();
     const auto to = unpacked.indices.significant_words();
     m_writes.clear();
     for (std::size_t i = 0; i < m_buffer.size(); ++i)
         if (const auto block = block_of(to, i); block != block_of(from, i))
             m_writes.push_back(urd::Write<ygg::uint_t> { i, block });
 
-    return m_array_set->insert(parent, m_writes).first;
+    const auto [handle, inserted] = m_array_set->insert(parent, m_writes);
+    return { Key(handle), inserted };
 }
 
 template<typename... Tags, bool ThreadSafe>
-void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked) const
 { read(packed, unpacked.indices); }
 
 template<typename... Tags, bool ThreadSafe>

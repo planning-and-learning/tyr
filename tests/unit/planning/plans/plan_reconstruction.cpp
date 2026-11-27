@@ -561,10 +561,10 @@ tyr::planning::SharedStateBuilderView<Kind> copy_state(const std::type_identity_
                                                 tyr::planning::StateRepository<Kind>& destination,
                                                 tyr::planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
-    auto builder = destination.get_state_builder();
+    auto builder = ::tyr::planning::get_state_builder(destination);
     builder->assign_unextended_part(source);
-    destination.register_state(axiom_evaluator, *builder);
-    return destination.share(std::move(builder));
+    ::tyr::planning::register_state(destination, axiom_evaluator, *builder);
+    return ::tyr::planning::share(destination, std::move(builder));
 }
 
 template<TaskKind Kind>
@@ -610,9 +610,9 @@ void expect_action_sequence_replay(const tyr::planning::TaskPtr<Kind>& task)
             actions.push_back(applicable.front());
             node = tyr::tests::get_successor_node(*generator, node, actions.back(), *repository, *axioms);
         }
-        const auto states_before_replay = repository->num_states();
+        const auto states_before_replay = ::tyr::planning::num_states(*repository);
         plan.emplace(tyr::planning::replay_plan<Kind>(start, actions, *generator, *repository, *axioms), repository.get());
-        EXPECT_EQ(repository->num_states(), states_before_replay);
+        EXPECT_EQ(::tyr::planning::num_states(*repository), states_before_replay);
     }
     ASSERT_TRUE(plan);
     ASSERT_EQ(plan->get_length(), 2);
@@ -650,7 +650,7 @@ void expect_sequential_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
     auto& final_search_node = get_or_create_search_node(static_cast<ygg::uint_t>(tyr::tests::built_state(final_node).pack().index().value), search_nodes, default_node);
     final_search_node = SequentialSearchNode<Kind> { g_value, tyr::tests::built_state(start).pack().index() };
 
-    const auto num_states = repository->num_states();
+    const auto num_states = ::tyr::planning::num_states(*repository);
     const auto plan = tyr::planning::OwnedPlanBuilderView<Kind>(tyr::planning::PlanReconstructionPolicy<tyr::planning::SequentialSearch>::extract_total_ordered_plan(final_search_node,
                                                                                                                            final_node.pack(),
                                                                                                                            search_nodes,
@@ -661,7 +661,7 @@ void expect_sequential_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
                                                      repository.get());
 
     ASSERT_EQ(plan.get_length(), 1);
-    EXPECT_EQ(repository->num_states(), num_states);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), num_states);
     EXPECT_EQ(&plan.get_start_node().context(), repository.get());
     EXPECT_EQ(tyr::tests::built_state(plan.get_start_node()).pack().index(), tyr::tests::built_state(start).pack().index());
     EXPECT_EQ(&plan.get_labeled_succ_nodes().front().get_node().context(), repository.get());
@@ -724,7 +724,7 @@ void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
             { *first_repository_owner, *first_axiom_evaluator, *first_generator, first_search_nodes },
             { *second_repository_owner, *second_axiom_evaluator, *second_generator, second_search_nodes },
         };
-        EXPECT_EQ(caller_repository->num_states(), 0);
+        EXPECT_EQ(::tyr::planning::num_states(*caller_repository), 0);
         plan.emplace(tyr::planning::PlanReconstructionPolicy<tyr::planning::ParallelSearch>::extract_total_ordered_plan(
                          final,
                          std::span<const tyr::planning::WorkerSearchSpaceView<Kind, ParallelSearchNode<Kind>>>(workers),
@@ -732,7 +732,7 @@ void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
                          *axiom_evaluator,
                          CostMode::GENERAL),
                      caller_repository.get());
-        EXPECT_EQ(caller_repository->num_states(), 3);
+        EXPECT_EQ(::tyr::planning::num_states(*caller_repository), 3);
     }
 
     ASSERT_TRUE(plan.has_value());
@@ -776,7 +776,7 @@ void expect_parallel_lazy_gbfs(const tyr::planning::TaskPtr<Kind>& task, Reposit
     {
         const auto state = tyr::tests::built_state(node);
         EXPECT_EQ(&state.context(), repository.get());
-        EXPECT_EQ(repository->share(repository->get_registered_state(state.pack().index())).pack(), state.pack());
+        EXPECT_EQ(::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, state.pack().index())).pack(), state.pack());
     };
     expect_caller_state(result.plan.value().get_start_node());
     for (const auto& successor : result.plan.value().get_labeled_succ_nodes())
@@ -1097,11 +1097,11 @@ std::optional<uint64_t> find_weighted_astar_seed(tyr::planning::SuccessorGenerat
                                                  tyr::planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     const auto start = tyr::tests::owned_initial_node(state_repository, axiom_evaluator);
-    auto direct = std::optional<decltype(state_repository.get_state_builder())> {};
-    auto via = std::optional<decltype(state_repository.get_state_builder())> {};
+    auto direct = std::optional<decltype(::tyr::planning::get_state_builder(state_repository))> {};
+    auto via = std::optional<decltype(::tyr::planning::get_state_builder(state_repository))> {};
     for (const auto action : tyr::tests::get_applicable_action_bindings(generator, start, {}))
     {
-        auto state = state_repository.get_state_builder();
+        auto state = ::tyr::planning::get_state_builder(state_repository);
         auto delta = tyr::planning::StateDelta {};
         const auto auxiliary_value = generator.generate_successor_state(start, action, *state, delta);
         if (auxiliary_value == 100)

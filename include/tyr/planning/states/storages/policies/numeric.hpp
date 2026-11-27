@@ -77,19 +77,26 @@ public:
     [[nodiscard]] std::size_t base() const noexcept { return 0; }
 
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
-    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_writes> {}; }
+    static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_writes, &StateComponentRepository::m_canonical> {}; }
 
-    Handle insert(Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as the exact `changes` to the stored `parent`. A pool with structural sharing rebuilds only the tree paths to changed values.
-    Handle insert(Unpacked& unpacked, const Handle& parent, std::span<const StateDelta::NumericChange> changes);
+    /// Interns a successor's builder as the exact changes to its parent's (the hint). A pool with structural sharing
+    /// rebuilds only the tree paths to changed values.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked, const SuccessorHint<Kind>& hint);
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
+
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     typename Context::FloatVectorSet* m_float_vectors;
 
     urd::Store<urd::sequence<urd::Write<ygg::float_t>>> m_writes;
+    /// A builder's values, canonical (reused: no allocation once grown).
+    std::vector<ygg::float_t> m_canonical;
 };
 
 }

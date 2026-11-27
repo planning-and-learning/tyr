@@ -28,7 +28,7 @@ planning::NodeBuilder<Kind> registered_successor(planning::SuccessorGenerator<Ki
                                                  planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                                  planning::StateDelta& delta)
 {
-    auto state = repository.get_state_builder();
+    auto state = ::tyr::planning::get_state_builder(repository);
     const auto auxiliary_value = generator.generate_successor_state(node, binding, *state, delta);
     return planning::register_successor(repository, axiom_evaluator, std::move(state), auxiliary_value, node, delta);
 }
@@ -47,6 +47,7 @@ planning::NodeBuilder<Kind> registered_successor(planning::SuccessorGenerator<Ki
 /// The registered successors of the applicable bindings `filter` reports, each labeled by its binding, interned.
 template<TaskKind Kind>
 void labeled_successors(planning::SuccessorGenerator<Kind>& generator,
+                        formalism::Builder& builder,
                         const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
                         const planning::ActionBindingFilter<Kind>& filter,
                         planning::StateRepository<Kind>& repository,
@@ -60,16 +61,17 @@ void labeled_successors(planning::SuccessorGenerator<Kind>& generator,
         filter,
         [&](planning::ActionBindingView<Kind> borrowed)
         {
-            const auto binding = planning::intern_action_binding(generator, borrowed);
+            const auto binding = planning::intern_action_binding(generator, builder, borrowed);
             out_successors.push_back(
                 planning::LabeledNodeBuilder<Kind> { binding.index(), registered_successor(generator, node, binding, repository, axiom_evaluator, delta) });
             return true;
         });
 }
 
-/// The applicable bindings `filter` reports, interned.
+/// The applicable bindings `filter` reports, interned (through scratch rows of `builder`).
 template<TaskKind Kind>
 void interned_bindings(planning::SuccessorGenerator<Kind>& generator,
+                       formalism::Builder& builder,
                        const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
                        const planning::ActionBindingFilter<Kind>& filter,
                        urd::Store<urd::sequence<formalism::ActionRowView>>& out_bindings)
@@ -79,7 +81,7 @@ void interned_bindings(planning::SuccessorGenerator<Kind>& generator,
                                                  filter,
                                                  [&](planning::ActionBindingView<Kind> binding)
                                                  {
-                                                     out_bindings.push_back(planning::intern_action_binding(generator, binding));
+                                                     out_bindings.push_back(planning::intern_action_binding(generator, builder, binding));
                                                      return true;
                                                  });
 }

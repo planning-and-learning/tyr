@@ -26,8 +26,10 @@
 #include <memory>
 #include <string_view>
 #include <urd/elements/builder.hpp>
+#include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/handle.hpp>
+#include <urd/elements/index.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
@@ -169,6 +171,10 @@ class StateContext;
 
 struct StateDelta;
 
+/// A successor's parent and its changes from it, as a hint to a state repository's insert (successor_hint.hpp).
+template<TaskKind Kind>
+struct SuccessorHint;
+
 template<TaskKind Kind>
 class SuccessorGenerator;
 template<TaskKind Kind>
@@ -260,6 +266,21 @@ template<TaskKind Kind>
 class AxiomEvaluator;
 template<TaskKind Kind>
 using AxiomEvaluatorPtr = std::shared_ptr<AxiomEvaluator<Kind>>;
+
+/// A state builder held by its handle, from its repository's builder storage (get_state_builder), to which it goes back
+/// with the handle: what a successor is written into, and what a node holds its state as.
+template<TaskKind Kind>
+using StateBuilderHandle = urd::handle<urd::builder<State<Kind>, StateRepository<Kind>>>;
+
+/// The free functions over a state repository (state_repository.hpp), declared where its views read them.
+template<TaskKind Kind>
+StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& repository);
+template<TaskKind Kind>
+StateBuilderHandle<Kind> unpack(const StateRepository<Kind>& repository, const urd::data<State<Kind>>& packed);
+template<TaskKind Kind>
+StateBuilderHandle<Kind> get_registered_state(const StateRepository<Kind>& repository, urd::index<State<Kind>> state_index);
+template<TaskKind Kind>
+SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, StateBuilderHandle<Kind> state);
 
 template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class Heuristic;

@@ -108,6 +108,8 @@ template<Operation operation, bool per_schema>
 void run(benchmark::State& state, const BenchmarkCase& benchmark_case)
 try
 {
+    // The scratch rows bindings are interned through, reused across iterations.
+    auto builder = tyr::formalism::Builder {};
     auto execution_context = ygg::ExecutionContext::create(1);
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
@@ -151,7 +153,7 @@ try
         throw std::runtime_error("Global and per-schema match trees disagree.");
 
     auto all_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
-    tyr::benchmarks::interned_bindings(*generator, node, {}, all_bindings);
+    tyr::benchmarks::interned_bindings(*generator, builder, node, {}, all_bindings);
     auto schemas = task->get_task().get_domain().get_actions();
     const auto selected =
         std::ranges::find_if(schemas,
@@ -191,10 +193,10 @@ try
         else if constexpr (operation == Operation::BINDINGS)
         {
             if constexpr (per_schema)
-                tyr::benchmarks::interned_bindings(*generator, node, { .action = schema }, bindings);
+                tyr::benchmarks::interned_bindings(*generator, builder, node, { .action = schema }, bindings);
             else
             {
-                tyr::benchmarks::interned_bindings(*generator, node, {}, bindings);
+                tyr::benchmarks::interned_bindings(*generator, builder, node, {}, bindings);
                 erase_if(bindings, reject_binding);
             }
             benchmark::DoNotOptimize(bindings);
@@ -202,7 +204,7 @@ try
         }
         else if constexpr (operation == Operation::SUCCESSORS && per_schema)
         {
-            tyr::benchmarks::labeled_successors(*generator, node, { .action = schema }, *repository, *evaluator, successors);
+            tyr::benchmarks::labeled_successors(*generator, builder, node, { .action = schema }, *repository, *evaluator, successors);
             benchmark::DoNotOptimize(successors);
             benchmark::DoNotOptimize(successors.size());
         }
@@ -245,7 +247,7 @@ try
     if constexpr (operation == Operation::SUCCESSORS)
     {
         auto reference = tyr::planning::LabeledNodeList<GroundTag> {};
-        tyr::benchmarks::labeled_successors(*generator, node, {}, *repository, *evaluator, reference);
+        tyr::benchmarks::labeled_successors(*generator, builder, node, {}, *repository, *evaluator, reference);
         erase_if(reference, [&](const auto& successor) { return reject_binding(urd::resolve(successor, *repository).get_label()); });
         const auto by_label = [](const auto& lhs, const auto& rhs) { return lhs.label < rhs.label; };
         std::ranges::sort(reference, by_label);

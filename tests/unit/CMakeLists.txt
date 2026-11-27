@@ -99,6 +99,8 @@ add_gtest(planning_temporal_network "planning/states/temporal_network.cpp")
 add_gtest(planning_outcome_successors "planning/successors/outcome_successors.cpp")
 add_gtest(planning_temporal_successors "planning/successors/temporal_successors.cpp")
 add_gtest(planning_initial_successors "planning/successors/initial_successors.cpp")
+# It counts allocations: urd::count_allocations replaces operator new and delete in this executable.
+target_link_libraries(planning_initial_successors PRIVATE urd::count_allocations)
 add_gtest(formalism_unification "formalism/unification.cpp")
 add_gtest(formalism_numeric_expression_utils "formalism/numeric_expression_utils.cpp")
 add_gtest(algorithms_kckp "algorithms/kckp/kckp.cpp")

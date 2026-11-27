@@ -104,7 +104,7 @@ planning::NodeBuilder<Kind> successor_builder(planning::SuccessorGenerator<Kind>
                                               planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                               planning::StateDelta& delta)
 {
-    auto state = repository.get_state_builder();
+    auto state = ::tyr::planning::get_state_builder(repository);
     const auto auxiliary_value = generator.generate_successor_state(node, binding, *state, delta);
     return planning::register_successor(repository, axiom_evaluator, std::move(state), auxiliary_value, node, delta);
 }
@@ -117,7 +117,7 @@ planning::NodeBuilder<Kind> successor_builder(planning::SuccessorGenerator<Kind>
                                               planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                               planning::StateDelta& delta)
 {
-    auto state = storage.repository->get_state_builder();
+    auto state = ::tyr::planning::get_state_builder(*storage.repository);
     const auto auxiliary_value = generator.generate_successor_state(node, binding, *state, delta);
     return planning::extend_successor(std::move(state), auxiliary_value, node, axiom_evaluator);
 }
@@ -410,7 +410,7 @@ packed_initial_node(planning::StateRepository<Kind>& repository, planning::Axiom
 template<TaskKind Kind>
 planning::OwnedNodeBuilderView<Kind> node_of_state(const std::type_identity_t<planning::StateBuilderView<Kind>>& state, ygg::float_t metric)
 {
-    auto builder = state.context().get_state_builder();
+    auto builder = ::tyr::planning::get_state_builder(state.context());
     builder->assign(state);
     return planning::OwnedNodeBuilderView<Kind>(planning::NodeBuilder<Kind> { std::move(builder), metric }, &state.context());
 }

@@ -104,9 +104,9 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
         EXPECT_EQ(&source->get_action_program(), &nested->get_action_program());
     }
 
-    EXPECT_EQ(source_state_repository->num_states(), 0);
-    EXPECT_EQ(worker_state_repository->num_states(), 0);
-    EXPECT_EQ(nested_state_repository->num_states(), 0);
+    EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), 0);
+    EXPECT_EQ(::tyr::planning::num_states(*worker_state_repository), 0);
+    EXPECT_EQ(::tyr::planning::num_states(*nested_state_repository), 0);
 
     auto worker_initial_future =
         std::async(std::launch::async, [&] { return tyr::tests::owned_initial_node(*worker_state_repository, *worker_axiom_evaluator); });
@@ -114,12 +114,12 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
         std::async(std::launch::async, [&] { return tyr::tests::owned_initial_node(*nested_state_repository, *nested_axiom_evaluator); });
     const auto worker_initial = worker_initial_future.get();
     const auto nested_initial = nested_initial_future.get();
-    EXPECT_EQ(source_state_repository->num_states(), 0);
-    EXPECT_EQ(worker_state_repository->num_states(), 1);
-    EXPECT_EQ(nested_state_repository->num_states(), 1);
+    EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), 0);
+    EXPECT_EQ(::tyr::planning::num_states(*worker_state_repository), 1);
+    EXPECT_EQ(::tyr::planning::num_states(*nested_state_repository), 1);
 
     const auto source_initial = tyr::tests::owned_initial_node(*source_state_repository, *source_axiom_evaluator);
-    EXPECT_EQ(source_state_repository->num_states(), 1);
+    EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), 1);
     EXPECT_EQ(tyr::tests::built_state(source_initial).pack().index(), tyr::tests::built_state(worker_initial).pack().index());
     EXPECT_EQ(tyr::tests::built_state(source_initial).pack().index(), tyr::tests::built_state(nested_initial).pack().index());
     EXPECT_NE(source_initial.get_state(), worker_initial.get_state());
@@ -169,8 +169,8 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
 
     EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().get_label())), worker->ground_action(urd::interned_view(worker_successors.front().get_label())));
     EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().get_label())), nested->ground_action(urd::interned_view(nested_successors.front().get_label())));
-    EXPECT_EQ(source_state_repository->num_states(), worker_state_repository->num_states());
-    EXPECT_EQ(source_state_repository->num_states(), nested_state_repository->num_states());
+    EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), ::tyr::planning::num_states(*worker_state_repository));
+    EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), ::tyr::planning::num_states(*nested_state_repository));
 
     auto blind = tyr::planning::BlindHeuristic<Kind>::create();
     auto blind_worker = blind->make_worker(worker_context);
@@ -232,8 +232,8 @@ void expect_independent_repository_identity(const tyr::planning::TaskPtr<Kind>& 
     auto first_repository = tyr::planning::StateRepository<Kind>::create(task);
     auto second_repository = tyr::planning::StateRepository<Kind>::create(task);
 
-    const auto first_state = first_repository->share(first_repository->get_initial_state(*first_axiom_evaluator));
-    const auto second_state = second_repository->share(second_repository->get_initial_state(*second_axiom_evaluator));
+    const auto first_state = ::tyr::planning::share(*first_repository, ::tyr::planning::get_initial_state(*first_repository, *first_axiom_evaluator));
+    const auto second_state = ::tyr::planning::share(*second_repository, ::tyr::planning::get_initial_state(*second_repository, *second_axiom_evaluator));
 
     EXPECT_EQ(first_repository->get_worker_index(), 0);
     EXPECT_EQ(second_repository->get_worker_index(), 0);
@@ -246,7 +246,7 @@ void expect_independent_repository_identity(const tyr::planning::TaskPtr<Kind>& 
     states.insert(second_state);
     EXPECT_EQ(states.size(), 2);
 
-    EXPECT_EQ(first_repository->share(tyr::planning::materialize_state(second_state, *first_repository, *first_axiom_evaluator)), first_state);
+    EXPECT_EQ(::tyr::planning::share(*first_repository, tyr::planning::register_extended_state(*first_repository, second_state)), first_state);
 }
 
 template<TaskKind Kind>
@@ -297,14 +297,14 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
                                             });
     const auto first_initial = first_initial_future.get();
     const auto second_initial = second_initial_future.get();
-    ASSERT_EQ(first_repository->num_states(), 1);
-    ASSERT_EQ(second_repository->num_states(), 1);
+    ASSERT_EQ(::tyr::planning::num_states(*first_repository), 1);
+    ASSERT_EQ(::tyr::planning::num_states(*second_repository), 1);
     EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
     EXPECT_EQ(tyr::tests::built_state(first_initial).pack(), tyr::tests::built_state(second_initial).pack());
     EXPECT_EQ(urd::Hash<tyr::planning::StateView<Kind>> {}(tyr::tests::built_state(first_initial).pack()),
               urd::Hash<tyr::planning::StateView<Kind>> {}(tyr::tests::built_state(second_initial).pack()));
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
-    EXPECT_FALSE(tyr::planning::materialize_state(tyr::tests::built_state(second_initial), *source_repository, *source_axiom_evaluator)->index.is_none());
+    EXPECT_FALSE(tyr::planning::register_extended_state(*source_repository, tyr::tests::built_state(second_initial))->index.is_none());
 
     auto novelty = tyr::planning::iw::NoveltyPruningStrategy<Kind>::create(0);
     auto first_novelty_worker = novelty->make_worker(urd::index<tyr::planning::Worker>(0));
@@ -336,10 +336,10 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(tyr::tests::built_state(first_successor).pack().index(), urd::index<tyr::planning::State<Kind>>(1));
     EXPECT_EQ(first_successor.get_state(), second_successor.get_state());
     EXPECT_EQ(first_successor.get_metric(), second_successor.get_metric());
-    EXPECT_EQ(first_repository->num_states(), 2);
-    EXPECT_EQ(second_repository->num_states(), 2);
-    EXPECT_EQ(first_repository->share(first_repository->get_registered_state(tyr::tests::built_state(first_successor).pack().index())),
-              second_repository->share(second_repository->get_registered_state(tyr::tests::built_state(second_successor).pack().index())));
+    EXPECT_EQ(::tyr::planning::num_states(*first_repository), 2);
+    EXPECT_EQ(::tyr::planning::num_states(*second_repository), 2);
+    EXPECT_EQ(::tyr::planning::share(*first_repository, ::tyr::planning::get_registered_state(*first_repository, tyr::tests::built_state(first_successor).pack().index())),
+              ::tyr::planning::share(*second_repository, ::tyr::planning::get_registered_state(*second_repository, tyr::tests::built_state(second_successor).pack().index())));
 }
 }
 

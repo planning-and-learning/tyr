@@ -64,7 +64,7 @@ formalism::ActionView<LiftedTag> action_of(const Binding& binding)
     if constexpr (ReadsActionView<Binding>)
         return binding.get_relation();
     else
-        return std::get<formalism::ActionView<LiftedTag>>(binding.get_relation());
+        return urd::interned_view(binding.get_relation());
 }
 
 /// Which applicable bindings an enumeration reports: those of `action` (all actions where none is given), each condition

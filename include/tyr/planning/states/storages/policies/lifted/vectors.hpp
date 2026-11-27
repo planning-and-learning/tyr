@@ -21,8 +21,8 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/state_delta.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/tags.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <span>
 #include <type_traits>
@@ -98,15 +98,17 @@ public:
     static constexpr auto memory_members() noexcept
     { return urd::Members<&BitPositionsRepository::m_buffer, &BitPositionsRepository::m_parent, &BitPositionsRepository::m_writes> {}; }
 
-    Handle insert(const Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as writes to the stored `parent` where it has as many true positions; else in full.
-    Handle insert(const Unpacked& unpacked, const Handle& parent);
+    /// Interns a successor's builder as writes to its parent's (the hint) where it has as many true positions; else in
+    /// full. The positions to write are found by comparing with the parent's, so the changes are not needed.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked, const SuccessorHint<LiftedTag>& hint);
 
-    /// The positions to write are found by comparing with `parent`, so the changes (the third argument) are not needed.
-    Handle insert(const Unpacked& unpacked, const Handle& parent, const auto&) { return insert(unpacked, parent); }
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     /// The true positions of bits given by their words, ascending.

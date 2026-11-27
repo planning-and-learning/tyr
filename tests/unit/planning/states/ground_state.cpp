@@ -89,7 +89,7 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     ASSERT_TRUE(task);
     auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::GroundTag>>(task, execution_context);
     auto source_repository = tyr::planning::StateRepository<tyr::GroundTag>::create(task);
-    const auto initial = source_repository->share(source_repository->get_initial_state(*axioms));
+    const auto initial = ::tyr::planning::share(*source_repository, ::tyr::planning::get_initial_state(*source_repository, *axioms));
     const auto derived = initial.template get_atom_indices<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
     auto source = urd::builder<tyr::planning::State<tyr::GroundTag>, tyr::planning::StateRepository<tyr::GroundTag>>();
@@ -97,14 +97,14 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     source.set(Index {});
     const auto borrowed = urd::resolve(source, *source_repository);
     auto target = tyr::planning::StateRepository<tyr::GroundTag>::create(task);
-    auto warm = target->get_state_builder();
+    auto warm = ::tyr::planning::get_state_builder(*target);
     urd::builder_of(warm->numeric_storage).values.reserve(64);
     const auto slot = warm.get();
     const auto buffer = std::ranges::data(urd::builder_of(warm->numeric_storage).values);
     const auto capacity = urd::builder_of(warm->numeric_storage).values.capacity();
     warm = {};
 
-    const auto retained = target->share(target->register_extended_state(borrowed));
+    const auto retained = ::tyr::planning::share(*target, ::tyr::planning::register_extended_state(*target, borrowed));
     EXPECT_EQ(&urd::built_view(retained.get_numeric_storage()).get_values(), &urd::builder_of(slot->numeric_storage).values);
     EXPECT_EQ(std::ranges::data(urd::built_view(retained.get_numeric_storage()).get_values()), buffer);
     EXPECT_EQ(urd::built_view(retained.get_numeric_storage()).get_values().capacity(), capacity);
@@ -112,11 +112,11 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     EXPECT_TRUE(std::ranges::equal(borrowed.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
     EXPECT_TRUE(std::ranges::equal(urd::built_view(borrowed.get_atom_storage()).atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(std::ranges::equal(urd::built_view(borrowed.get_numeric_storage()).fterm_values(), initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
-    EXPECT_EQ(target->share(target->register_extended_state(borrowed)), retained);
-    EXPECT_EQ(target->num_states(), 1);
+    EXPECT_EQ(::tyr::planning::share(*target, ::tyr::planning::register_extended_state(*target, borrowed)), retained);
+    EXPECT_EQ(::tyr::planning::num_states(*target), 1);
     auto foreign = tyr::planning::StateRepository<tyr::GroundTag>::create(make_task());
-    EXPECT_THROW(foreign->share(foreign->register_extended_state(borrowed)), std::invalid_argument);
-    EXPECT_EQ(foreign->num_states(), 0);
+    EXPECT_THROW(::tyr::planning::share(*foreign, ::tyr::planning::register_extended_state(*foreign, borrowed)), std::invalid_argument);
+    EXPECT_EQ(::tyr::planning::num_states(*foreign), 0);
 
     source.clear();
     EXPECT_TRUE(std::ranges::equal(retained.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
@@ -136,7 +136,7 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::GroundTag>>(task, execution_context);
     auto repository = tyr::planning::StateRepository<tyr::GroundTag>::create(task);
     auto generator = std::make_shared<tyr::planning::SuccessorGenerator<tyr::GroundTag>>(task, execution_context);
-    const auto initial = repository->share(repository->get_initial_state(*axioms));
+    const auto initial = ::tyr::planning::share(*repository, ::tyr::planning::get_initial_state(*repository, *axioms));
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*generator, tyr::tests::node_of_state<tyr::GroundTag>(initial, 0), {}, *repository, *axioms);
     ASSERT_EQ(successors.size(), 1);

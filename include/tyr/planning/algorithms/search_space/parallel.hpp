@@ -116,7 +116,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
             const auto& source_worker = get_worker(trajectory[i - 1], workers);
             const auto& source_search_node = get_search_node(trajectory[i - 1], workers);
             const auto& target_search_node = get_search_node(trajectory[i], workers);
-            const auto target_state = get_worker(trajectory[i], workers).state_repository().get_registered_state(trajectory[i].state);
+            const auto target_state = ::tyr::planning::get_registered_state(get_worker(trajectory[i], workers).state_repository(), trajectory[i].state);
             const auto target_view = urd::resolve(*target_state, get_worker(trajectory[i], workers).state_repository());
 
             // The successor of the source worker's applicable binding that reproduces the transition, its binding interned
@@ -132,7 +132,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
                 {},
                 [&](ActionBindingView<Kind> binding)
                 {
-                    auto state = repository.get_state_builder();
+                    auto state = ::tyr::planning::get_state_builder(repository);
                     const auto auxiliary_value = generator.generate_successor_state(source_view, binding, *state, delta);
                     const auto successor =
                         register_successor(repository, source_worker.axiom_evaluator(), std::move(state), auxiliary_value, source_view, delta);
@@ -180,8 +180,8 @@ private:
                                              AxiomEvaluator<Kind>& caller_axiom_evaluator)
     {
         const auto& worker = get_worker(state, workers);
-        const auto source_state = worker.state_repository().get_registered_state(state.state);
-        const auto target_state = materialize_state(urd::resolve(*source_state, worker.state_repository()), caller_repository, caller_axiom_evaluator);
+        const auto source_state = ::tyr::planning::get_registered_state(worker.state_repository(), state.state);
+        const auto target_state = register_extended_state(caller_repository, urd::resolve(*source_state, worker.state_repository()));
         return urd::data<Node<Kind>>(target_state->index, get_search_node(state, workers).g_value);
     }
 };

@@ -278,12 +278,13 @@ bool same_outcome(const StateRepository<Kind>& repository,
            == std::get<urd::interned_child<State<Kind>, StateRepository<Kind>>>(rhs.node.state);
 }
 
-/// Starts the successor labeled `label` in `out`: no distributions yet (the transition is not applicable unless some are
-/// added). Its earlier distributions go, their outcome states back to their repository's pool.
+/// Starts the successor labeled `label` in `out`, a builder of `repository`'s: its label a builder from the repository's
+/// pool, no distributions yet (the transition is not applicable unless some are added). Its earlier distributions go
+/// back to their pool.
 template<TaskKind Kind>
-void start_successor(SuccessorBuilder<Kind>& out, const urd::data<Transition>& label)
+void start_successor(SuccessorBuilder<Kind>& out, const StateRepository<Kind>& repository, const urd::data<Transition>& label)
 {
-    urd::built_form<urd::data<Transition>, StateRepository<Kind>>::assign(label, out.label);
+    urd::built_form<urd::data<Transition>, StateRepository<Kind>>::assign(label, ygg::formalism::builder_of(out.label, repository.builders()));
     out.distributions.clear();
 }
 
@@ -301,7 +302,7 @@ void generate_successor(SuccessorBuilder<Kind>& out,
                         Fires fires,
                         Make make)
 {
-    start_successor(out, label);
+    start_successor(out, repository, label);
 
     for (const auto distribution : distributions.distributions(set))
         for (const auto& joint : distributions.joints(distribution))
@@ -311,19 +312,21 @@ void generate_successor(SuccessorBuilder<Kind>& out,
     auto any_valid = false;
     for (const auto distribution : distributions.distributions(set))
     {
-        auto& outcomes = out.distributions.emplace_back().outcomes;
+        auto& outcomes = ygg::formalism::builder_of(out.distributions.emplace_back(), repository.builders()).outcomes;
+        outcomes.clear();
         for (const auto& joint : distributions.joints(distribution))
         {
-            auto& outcome = outcomes.emplace_back();
+            auto& outcome = ygg::formalism::builder_of(outcomes.emplace_back(), repository.builders());
             const auto valid = make(distributions.picks(joint), outcome);
             any_valid = any_valid || valid;
             outcome.probability = joint.probability;
             outcome.failed = !valid;
             const auto earlier = std::span(outcomes).first(outcomes.size() - 1);
-            const auto equal = std::ranges::find_if(earlier, [&](const auto& existing) { return same_outcome<Kind>(repository, existing, outcome); });
+            const auto equal =
+                std::ranges::find_if(earlier, [&](auto& existing) { return same_outcome<Kind>(repository, urd::builder_of(existing), outcome); });
             if (equal != earlier.end())
             {
-                equal->probability += joint.probability;
+                urd::builder_of(*equal).probability += joint.probability;
                 outcomes.pop_back();
             }
         }
@@ -378,7 +381,7 @@ bool build_outcome(const NodeBuilderView<Kind>& node,
                    Valid valid)
 {
     const auto& repository = node.context();
-    auto state = repository.get_state_builder();
+    auto state = ::tyr::planning::get_state_builder(repository);
     const auto auxiliary_value = apply(*state);
     const auto metric = evaluate_successor_metric(repository, *state, auxiliary_value);
     axiom_evaluator.compute_extended_state(*state, repository);

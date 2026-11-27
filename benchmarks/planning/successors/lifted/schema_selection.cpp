@@ -84,6 +84,8 @@ template<Operation operation>
 void run(benchmark::State& state, const BenchmarkCase& benchmark_case)
 try
 {
+    // The scratch rows bindings are interned through, reused across iterations.
+    auto builder = tyr::formalism::Builder {};
     auto execution_context = ygg::ExecutionContext::create(1);
     auto& prepared = *benchmark_case.prepared;
     if (!prepared.task)
@@ -109,7 +111,7 @@ try
     auto repository = tyr::planning::StateRepository<LiftedTag>::create(prepared.task);
     const auto node = tyr::planning::get_initial_node(*repository, *evaluator);
     auto expected_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
-    tyr::benchmarks::interned_bindings(*generator, node, {}, expected_bindings);
+    tyr::benchmarks::interned_bindings(*generator, builder, node, {}, expected_bindings);
     const auto schemas = prepared.task->get_task().get_domain().get_actions();
     const auto selected = std::ranges::find_if(
         schemas,
@@ -143,19 +145,19 @@ try
         }
         else if constexpr (operation == Operation::SCHEMA_BINDINGS)
         {
-            tyr::benchmarks::interned_bindings(*generator, node, { .action = schema }, bindings);
+            tyr::benchmarks::interned_bindings(*generator, builder, node, { .action = schema }, bindings);
         }
         else if constexpr (operation == Operation::SCHEMA_SUCCESSORS)
         {
-            tyr::benchmarks::labeled_successors(*generator, node, { .action = schema }, *repository, *evaluator, successors);
+            tyr::benchmarks::labeled_successors(*generator, builder, node, { .action = schema }, *repository, *evaluator, successors);
         }
         else if constexpr (operation == Operation::ALL_SUCCESSORS)
         {
-            tyr::benchmarks::labeled_successors(*generator, node, {}, *repository, *evaluator, successors);
+            tyr::benchmarks::labeled_successors(*generator, builder, node, {}, *repository, *evaluator, successors);
         }
         else
         {
-            tyr::benchmarks::interned_bindings(*generator, node, {}, bindings);
+            tyr::benchmarks::interned_bindings(*generator, builder, node, {}, bindings);
             if constexpr (operation != Operation::ALL_BINDINGS)
                 erase_if(bindings, reject_binding);
             if constexpr (operation == Operation::FILTER_SUCCESSORS)
@@ -182,7 +184,7 @@ try
     if constexpr (operation == Operation::FILTER_SUCCESSORS || operation == Operation::SCHEMA_SUCCESSORS)
     {
         auto expected = tyr::planning::LabeledNodeList<LiftedTag> {};
-        tyr::benchmarks::labeled_successors(*generator, node, {}, *repository, *evaluator, expected);
+        tyr::benchmarks::labeled_successors(*generator, builder, node, {}, *repository, *evaluator, expected);
         erase_if(expected, [&](const auto& successor) { return reject_binding(urd::resolve(successor, *repository).get_label()); });
         const auto by_label = [](const auto& lhs, const auto& rhs) { return lhs.label < rhs.label; };
         std::ranges::sort(expected, by_label);

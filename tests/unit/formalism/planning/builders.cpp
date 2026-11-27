@@ -47,11 +47,8 @@ using AtomBuilder = urd::builder<f::Atom<LiftedTag, FluentTag>, Repository>;
 using LiteralBuilder = urd::builder<f::Literal<LiftedTag, FluentTag>, Repository>;
 using ParametersBuilder = urd::builder<f::Parameters, Repository>;
 
-/// The name of a child, interned or built.
-std::string name_of(const auto& child)
-{
-    return std::visit([](const auto& view) { return std::string(view.get_name()); }, child);
-}
+/// The name of a child, interned or built (its child view reads it in either form).
+std::string name_of(const auto& child) { return std::string(child.get_name()); }
 
 }  // namespace
 
@@ -83,9 +80,9 @@ TEST(TyrFormalismPlanningBuilders, ReadsBuiltAndInternedChildrenAlike)
 
     const auto view = urd::resolve(literal, repository);
     EXPECT_TRUE(view.get_polarity());
-    const auto atom_view = std::get<1>(view.get_atom());  // built
+    const auto atom_view = urd::built_view(view.get_atom());
     EXPECT_EQ(name_of(atom_view.get_predicate()), "at");
-    const auto parameters_view = std::get<1>(atom_view.get_parameters());  // built
+    const auto parameters_view = urd::built_view(atom_view.get_parameters());
     ASSERT_EQ(parameters_view.get_variables().size(), 1U);
     EXPECT_EQ(name_of(parameters_view.get_variables()[0]), "?x");
     const auto terms = atom_view.get_terms();

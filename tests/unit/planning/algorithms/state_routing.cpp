@@ -74,7 +74,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 
     const auto expected_source_index = tyr::tests::built_state(initial).pack().index();
     const auto expected_source_hash = dist_hash.hash(tyr::tests::built_state(initial));
-    auto source = std::optional<tyr::planning::SharedStateBuilderView<Kind>>(repository->share(repository->get_registered_state(expected_source_index)));
+    auto source = std::optional<tyr::planning::SharedStateBuilderView<Kind>>(::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index)));
     auto transferred_source = source;
     source.reset();
     auto source_reader = std::jthread(
@@ -90,7 +90,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto thread_release_evaluator = axiom_evaluator->make_worker(thread_release_context);
     auto thread_release_repository = repository->make_worker();
     auto thread_release_worker = generator->make_worker(thread_release_context);
-    auto thread_released_state = thread_release_repository->share(thread_release_repository->get_initial_state(*thread_release_evaluator));
+    auto thread_released_state = ::tyr::planning::share(*thread_release_repository, ::tyr::planning::get_initial_state(*thread_release_repository, *thread_release_evaluator));
     {
         auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.pack().index().is_none()); });
     }
@@ -99,8 +99,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto copy_assignment_evaluator = axiom_evaluator->make_worker(copy_assignment_context);
     auto copy_assignment_repository = repository->make_worker();
     auto copy_assignment_worker = generator->make_worker(copy_assignment_context);
-    auto copy_assigned_source = copy_assignment_repository->share(copy_assignment_repository->get_initial_state(*copy_assignment_evaluator));
-    const auto registered_source = repository->share(repository->get_registered_state(expected_source_index));
+    auto copy_assigned_source = ::tyr::planning::share(*copy_assignment_repository, ::tyr::planning::get_initial_state(*copy_assignment_repository, *copy_assignment_evaluator));
+    const auto registered_source = ::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index));
     copy_assigned_source = registered_source;
     EXPECT_EQ(&copy_assigned_source.context(), repository.get());
 
@@ -108,21 +108,21 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto move_assignment_evaluator = axiom_evaluator->make_worker(move_assignment_context);
     auto move_assignment_repository = repository->make_worker();
     auto move_assignment_worker = generator->make_worker(move_assignment_context);
-    auto move_assigned_source = move_assignment_repository->share(move_assignment_repository->get_initial_state(*move_assignment_evaluator));
-    move_assigned_source = repository->share(repository->get_registered_state(expected_source_index));
+    auto move_assigned_source = ::tyr::planning::share(*move_assignment_repository, ::tyr::planning::get_initial_state(*move_assignment_repository, *move_assignment_evaluator));
+    move_assigned_source = ::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index));
     EXPECT_EQ(&move_assigned_source.context(), repository.get());
 
     EXPECT_EQ(dist_hash.hash(tyr::tests::built_state(initial)), dist_hash.hash(tyr::tests::built_state(worker_initial)));
     EXPECT_EQ(dist_hash.owner(tyr::tests::built_state(initial), 19), dist_hash.owner(tyr::tests::built_state(worker_initial), 19));
     EXPECT_EQ(dist_hash.owner(tyr::tests::built_state(initial), 1), urd::index<tyr::planning::Worker>(0));
 
-    auto derived_only_difference = repository->get_state_builder();
+    auto derived_only_difference = ::tyr::planning::get_state_builder(*repository);
     derived_only_difference->assign_unextended_part(tyr::tests::built_state(initial));
     derived_only_difference->set(urd::index<tyr::formalism::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
     EXPECT_EQ(dist_hash.hash(urd::resolve(*derived_only_difference, *repository)), dist_hash.hash(tyr::tests::built_state(initial)));
 
-    auto first_numeric = repository->get_state_builder();
-    auto second_numeric = repository->get_state_builder();
+    auto first_numeric = ::tyr::planning::get_state_builder(*repository);
+    auto second_numeric = ::tyr::planning::get_state_builder(*repository);
     first_numeric->assign_unextended_part(tyr::tests::built_state(initial));
     second_numeric->assign_unextended_part(tyr::tests::built_state(initial));
     const auto numeric_index = urd::index<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(0);
@@ -138,8 +138,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 
     if constexpr (std::same_as<Kind, LiftedTag>)
     {
-        auto canonical_facts = repository->get_state_builder();
-        auto trailing_zero_facts = repository->get_state_builder();
+        auto canonical_facts = ::tyr::planning::get_state_builder(*repository);
+        auto trailing_zero_facts = ::tyr::planning::get_state_builder(*repository);
         const auto low_variable = urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(0);
         const auto high_variable = urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(1000);
         canonical_facts->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::FDRValue { 1 }));
@@ -152,7 +152,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         auto owners = urd::Store<urd::set<ygg::uint_t>> {};
         for (ygg::uint_t mask = 0; mask < 256; ++mask)
         {
-            auto state = repository->get_state_builder();
+            auto state = ::tyr::planning::get_state_builder(*repository);
             state->set(urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(urd::index<tyr::formalism::FDRVariable<tyr::formalism::FluentTag>>(44),
                                                                                      tyr::formalism::FDRValue { 1 }));
             for (ygg::uint_t bit = 0; bit < 8; ++bit)
@@ -168,17 +168,17 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto bindings = tyr::tests::get_applicable_action_bindings(*generator, initial, {});
     ASSERT_FALSE(bindings.empty());
     const auto action = bindings.front();
-    const auto source_states_before_generation = repository->num_states();
+    const auto source_states_before_generation = ::tyr::planning::num_states(*repository);
 
-    auto remote_state = repository->get_state_builder();
+    auto remote_state = ::tyr::planning::get_state_builder(*repository);
     auto delta = tyr::planning::StateDelta {};
     const auto remote_auxiliary_value = generator->generate_successor_state(initial, action, *remote_state, delta);
     axiom_evaluator->compute_extended_state(*remote_state, *repository);
     const auto remote_metric = tyr::planning::evaluate_successor_metric(*repository, *remote_state, remote_auxiliary_value);
     const auto remote_hash = dist_hash.hash(urd::resolve(*remote_state, *repository));
-    EXPECT_EQ(repository->num_states(), source_states_before_generation);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), source_states_before_generation);
 
-    auto local_state = repository->get_state_builder();
+    auto local_state = ::tyr::planning::get_state_builder(*repository);
     const auto local_auxiliary_value = generator->generate_successor_state(initial, action, *local_state, delta);
     const auto local_node = tyr::planning::OwnedNodeBuilderView<Kind>(
         tyr::planning::register_successor(*repository, *axiom_evaluator, std::move(local_state), local_auxiliary_value, initial, delta),
@@ -186,18 +186,18 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 
     const auto compatibility_node = tyr::tests::get_successor_node(*generator, initial, action, *repository, *axiom_evaluator);
     EXPECT_EQ(local_node, compatibility_node);
-    const auto source_states_after_local_registration = repository->num_states();
+    const auto source_states_after_local_registration = ::tyr::planning::num_states(*repository);
 
-    auto owner_state = worker_repository->get_state_builder();
+    auto owner_state = ::tyr::planning::get_state_builder(*worker_repository);
     using std::swap;
     swap(*owner_state, *remote_state);
     EXPECT_EQ(dist_hash.hash(urd::resolve(*owner_state, *worker_repository)), remote_hash);
-    worker_repository->register_extended_state(*owner_state);
+    ::tyr::planning::register_extended_state(*worker_repository, *owner_state);
     const auto owner_node = tyr::planning::OwnedNodeBuilderView<Kind>(tyr::planning::NodeBuilder<Kind> { std::move(owner_state), remote_metric }, worker_repository.get());
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
-    EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
-    EXPECT_EQ(worker_repository->num_states(), 2);
-    EXPECT_EQ(dist_hash.hash(worker_repository->share(worker_repository->get_registered_state(tyr::tests::built_state(owner_node).pack().index()))), remote_hash);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), source_states_after_local_registration);
+    EXPECT_EQ(::tyr::planning::num_states(*worker_repository), 2);
+    EXPECT_EQ(dist_hash.hash(::tyr::planning::share(*worker_repository, ::tyr::planning::get_registered_state(*worker_repository, tyr::tests::built_state(owner_node).pack().index()))), remote_hash);
 }
 
 template<TaskKind Kind>
@@ -238,12 +238,12 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(first_hash.hash(initial), second_hash.hash(initial));
     EXPECT_EQ(first_hash.owner(initial, 1), urd::index<tyr::planning::Worker>(0));
 
-    auto side_state = repository->get_state_builder();
+    auto side_state = ::tyr::planning::get_state_builder(*repository);
     side_state->assign_unextended_part(initial);
     side_state->set(task->get_fdr_context()->get_fact(side.value()));
     EXPECT_EQ(first_hash.hash(urd::resolve(*side_state, *repository)), first_hash.hash(initial));
 
-    auto landmark_state = repository->get_state_builder();
+    auto landmark_state = ::tyr::planning::get_state_builder(*repository);
     landmark_state->assign_unextended_part(initial);
     landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it));
     EXPECT_NE(first_hash.hash(urd::resolve(*landmark_state, *repository)), first_hash.hash(initial));

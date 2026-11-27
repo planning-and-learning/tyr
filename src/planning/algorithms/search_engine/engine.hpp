@@ -397,7 +397,7 @@ private:
                 if (is_stale(worker.get_search_node(entry.state).status))
                     return;
 
-                auto state = evaluate_unlocked([&] { return worker.state_repository->get_registered_state(entry.state); });
+                auto state = evaluate_unlocked([&] { return ::tyr::planning::get_registered_state(*worker.state_repository, entry.state); });
                 // Incoming successors can relax this node while its immutable state is being decoded.
                 auto& search_node = worker.get_search_node(entry.state);
                 if (!m_execution.running() || is_stale(search_node.status))
@@ -470,7 +470,7 @@ private:
     {
         if (!m_execution.running())
             return false;
-        auto successor_state = worker.state_repository->get_state_builder();
+        auto successor_state = ::tyr::planning::get_state_builder(*worker.state_repository);
         const auto auxiliary_value = worker.successor_generator->generate_successor_state(node, binding, *successor_state, worker.successor_delta);
         auto metadata = worker.search.make_successor_metadata(worker.index, node, binding);
         return m_execution.route(*this, worker, node, std::move(successor_state), worker.successor_delta, auxiliary_value, binding, std::move(metadata))

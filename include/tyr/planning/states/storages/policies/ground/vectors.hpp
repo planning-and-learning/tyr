@@ -19,12 +19,12 @@
 #define TYR_PLANNING_STATES_STORAGES_POLICIES_GROUND_VECTORS_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/storages/ground/state_layout.hpp"
 #include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/state_delta.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
+#include "tyr/planning/states/storages/ground/state_layout.hpp"
 #include "tyr/planning/states/storages/policies/tags.hpp"
 #include "tyr/planning/states/storages/policies/tree_bitset/block.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <span>
 #include <type_traits>
@@ -105,12 +105,16 @@ public:
     static constexpr auto memory_members() noexcept
     { return urd::Members<&StateComponentRepository::m_buffer, &StateComponentRepository::m_flips, &StateComponentRepository::m_writes> {}; }
 
-    Handle insert(const Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as the exact `changes` to the stored `parent`, as writes to the changed blocks.
-    Handle insert(const Unpacked& unpacked, const Handle& parent, std::span<const StateDelta::FluentChange> changes);
+    /// Interns a successor's builder as the exact changes to its parent's (the hint), as writes to the changed blocks.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked, const SuccessorHint<GroundTag>& hint);
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
+
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     /// The values, packed bitwise into `blocks` (the task's layout).
@@ -165,13 +169,17 @@ public:
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
     static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_buffer, &StateComponentRepository::m_writes> {}; }
 
-    Handle insert(const Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as writes to the blocks in which it differs from `parent_atoms` (the parent's derived atoms),
-    /// stored as `parent`.
-    Handle insert(const Unpacked& unpacked, const Handle& parent, const AtomStorageBuilderView<GroundTag>& parent_atoms);
+    /// Interns a successor's builder as writes to the blocks in which it differs from its parent's derived atoms (the
+    /// hint).
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked, const SuccessorHint<GroundTag>& hint);
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
+
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     /// The bits' words, as blocks.

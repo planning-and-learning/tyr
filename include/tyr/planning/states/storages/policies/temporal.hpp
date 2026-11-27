@@ -70,13 +70,17 @@ public:
     /// Its own memory (urd::memory_usage): its packing buffer; its pool's set is its state repository's (memory_usage()).
     static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_words> {}; }
 
-    Handle insert(Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
+
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     typename Context::TemporalSet* m_temporals;
-    urd::Store<urd::sequence<std::uint64_t>> m_words;
+    mutable urd::Store<urd::sequence<std::uint64_t>> m_words;
 };
 
 }

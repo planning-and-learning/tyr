@@ -15,9 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/states/storages/policies/lifted/vectors.hpp"
 
 #include "tyr/planning/states/state_data.hpp"
+#include "tyr/planning/states/storages/policies/lifted/vectors.hpp"
+#include "tyr/planning/states/successor_hint.hpp"
 
 #include <bit>
 #include <cstddef>
@@ -42,10 +43,11 @@ void BitPositionsRepository<U, Context>::positions(std::span<const urd::word_t> 
 }
 
 template<typename U, typename Context>
-auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked) -> Handle
+auto BitPositionsRepository<U, Context>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
     positions(unpacked.indices.significant_words(), m_buffer);
-    return m_uint_vectors->insert(m_buffer).first;
+    const auto [handle, inserted] = m_uint_vectors->insert(m_buffer);
+    return { Key(handle), inserted };
 }
 
 template<typename U, typename Context>
@@ -57,12 +59,13 @@ auto BitPositionsRepository<U, Context>::find(const urd::data<U>& record) const 
 }
 
 template<typename U, typename Context>
-auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const Handle& parent) -> Handle
+auto BitPositionsRepository<U, Context>::insert_built(const Unpacked& unpacked, const SuccessorHint<LiftedTag>& hint) -> std::pair<Key, bool>
 {
     // A write cannot grow or shrink a stored row, so only rows with as many true positions as the parent go in as writes.
+    const auto parent = hint.template parent_key<U>().value;
     const auto& bits = unpacked.indices;
     if (bits.size() != m_uint_vectors->row_size(parent))
-        return insert(unpacked);
+        return insert_built(unpacked);
 
     m_parent.resize(m_uint_vectors->row_size(parent));
     m_uint_vectors->copy(parent, m_parent);
@@ -76,11 +79,12 @@ auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const 
         ++position;
     }
 
-    return m_uint_vectors->insert(parent, m_writes).first;
+    const auto [handle, inserted] = m_uint_vectors->insert(parent, m_writes);
+    return { Key(handle), inserted };
 }
 
 template<typename U, typename Context>
-void BitPositionsRepository<U, Context>::unpack(const Handle& packed, Unpacked& unpacked)
+void BitPositionsRepository<U, Context>::unpack(const Handle& packed, Unpacked& unpacked) const
 { read(packed, unpacked.indices); }
 
 template<typename U, typename Context>

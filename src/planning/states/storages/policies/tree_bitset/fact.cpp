@@ -15,15 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/states/storages/policies/tree_bitset/fact.hpp"
 
 #include "../tree_bitset.hpp"
+#include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/storages/fact_storage_data.hpp"
 #include "tyr/planning/states/storages/ground/fact_storage_builder.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/states/storages/lifted/fact_storage_builder.hpp"
+#include "tyr/planning/states/storages/policies/tree_bitset/fact.hpp"
+#include "tyr/planning/states/successor_hint.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/states/state_data.hpp"
 
 #include <concepts>
 #include <span>
@@ -88,15 +89,19 @@ StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::StateCompon
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked) -> Handle
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
     if constexpr (std::same_as<Kind, GroundTag>)
     {
         pack_facts(m_context->layout, std::span<const ygg::uint_t>(unpacked.values), m_blocks);
-        return m_context->bitsets.insert_blocks(m_blocks).first;
+        const auto [handle, inserted] = m_context->bitsets.insert_blocks(m_blocks);
+        return { Key(handle), inserted };
     }
     else
-        return m_context->bitsets.insert(unpacked.indices).first;
+    {
+        const auto [handle, inserted] = m_context->bitsets.insert(unpacked.indices);
+        return { Key(handle), inserted };
+    }
 }
 
 template<TaskKind Kind, bool ThreadSafe>
@@ -132,20 +137,20 @@ auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::find(c
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked&,
-                                                                                 const Handle& parent,
-                                                                                 std::span<const StateDelta::FluentChange> changes) -> Handle
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert_built(const Unpacked& /*unpacked*/, const SuccessorHint<Kind>& hint)
+    -> std::pair<Key, bool>
 {
     m_flips.clear();
-    for (const auto& change : changes)
+    for (const auto& change : hint.delta->fluents)
         append_flips(m_context->layout, change, m_flips);
     normalize_flips(m_flips);
 
-    return m_context->bitsets.insert_flips(parent, m_flips);
+    const auto [handle, inserted] = m_context->bitsets.insert_flips(hint.template parent_key<FactStorage<Kind>>().value, m_flips);
+    return { Key(handle), inserted };
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-void StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Handle& packed, Unpacked& unpacked) const
 {
     if constexpr (std::same_as<Kind, GroundTag>)
         unpack_facts(m_context->bitsets, m_context->layout, packed, unpacked.values, m_blocks);

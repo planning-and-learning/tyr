@@ -95,9 +95,9 @@ NodeBuilder<Kind> register_successor(StateRepository<Kind>& repository,
 {
     const auto metric = evaluate_successor_metric(repository, *state, auxiliary_value);
     if (is_registered(node))
-        repository.register_state(axiom_evaluator, *state, urd::built_view(node.get_state()), delta);
+        ::tyr::planning::register_state(repository, axiom_evaluator, *state, urd::built_view(node.get_state()), delta);
     else
-        repository.register_state(axiom_evaluator, *state);
+        ::tyr::planning::register_state(repository, axiom_evaluator, *state);
     return node_of<Kind>(std::move(state), metric);
 }
 
@@ -116,17 +116,20 @@ NodeBuilder<Kind> extend_successor(StateBuilderHandle<Kind> state,
 template<TaskKind Kind>
 void register_outcomes(StateRepository<Kind>& repository, SuccessorBuilder<Kind>& successor)
 {
+    // Its parts being built (an interned one's outcome states are registered already).
     for (auto& distribution : successor.distributions)
-        for (auto& outcome : distribution.outcomes)
-            if (!outcome.failed)
-                if (auto* state = std::get_if<urd::built_child<State<Kind>, StateRepository<Kind>>>(&outcome.node.state))
-                    repository.register_extended_state(**state);
+        if (auto* built_distribution = std::get_if<urd::built_child<Distribution<Kind>, StateRepository<Kind>>>(&distribution))
+            for (auto& outcome : (**built_distribution).outcomes)
+                if (auto* built_outcome = std::get_if<urd::built_child<OutcomeNode<Kind>, StateRepository<Kind>>>(&outcome))
+                    if (!(**built_outcome).failed)
+                        if (auto* state = std::get_if<urd::built_child<State<Kind>, StateRepository<Kind>>>(&(**built_outcome).node.state))
+                            ::tyr::planning::register_extended_state(repository, **state);
 }
 
 template<TaskKind Kind>
 OwnedNodeBuilderView<Kind> get_initial_node(StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator)
 {
-    auto state = repository.get_initial_state(axiom_evaluator);
+    auto state = ::tyr::planning::get_initial_state(repository, axiom_evaluator);
     const auto metric = state_metric(repository, *state);
     return OwnedNodeBuilderView<Kind>(node_of<Kind>(std::move(state), metric), &repository);
 }
@@ -134,14 +137,14 @@ OwnedNodeBuilderView<Kind> get_initial_node(StateRepository<Kind>& repository, A
 template<TaskKind Kind>
 NodeBuilder<Kind> get_node(const StateRepository<Kind>& repository, urd::index<State<Kind>> state_index)
 {
-    auto state = repository.get_registered_state(state_index);
+    auto state = ::tyr::planning::get_registered_state(repository, state_index);
     const auto metric = state_metric(repository, *state);
     return node_of<Kind>(std::move(state), metric);
 }
 
 template<TaskKind Kind>
 NodeBuilder<Kind> get_node(const StateRepository<Kind>& repository, const urd::data<Node<Kind>>& node)
-{ return node_of<Kind>(repository.get_registered_state(node.state), node.metric); }
+{ return node_of<Kind>(::tyr::planning::get_registered_state(repository, node.state), node.metric); }
 
 template<TaskKind Kind>
 LabeledNodeBuilder<Kind> get_labeled_node(const StateRepository<Kind>& repository, const urd::data<LabeledNode<Kind>>& node)
@@ -167,7 +170,7 @@ PlanBuilder<Kind> replay_plan(const urd::data<Node<Kind>>& initial,
     {
         const auto& source = plan.labeled_succ_nodes.empty() ? plan.start_node : plan.labeled_succ_nodes.back().node;
         const auto source_view = urd::resolve(source, std::as_const(states));
-        auto state = states.get_state_builder();
+        auto state = ::tyr::planning::get_state_builder(states);
         const auto auxiliary_value = generator.generate_successor_state(source_view, action, *state, delta);
         auto node = register_successor(states, axioms, std::move(state), auxiliary_value, source_view, delta);
         plan.labeled_succ_nodes.push_back(LabeledNodeBuilder<Kind> { action.index(), std::move(node) });
@@ -218,9 +221,11 @@ bool for_each_successor(SuccessorGenerator<Kind>& generator,
 template<TaskKind Kind>
 void intern_label(StateRepository<Kind>& repository, formalism::Builder& builder, SuccessorBuilder<Kind>& successor)
 {
-    if (!successor.label.binding.has_value() || successor.label.binding->index() == 0)
+    // A label being built, with a binding of its own (an interned label's binding is interned).
+    auto* label = std::get_if<urd::built_child<Transition, StateRepository<Kind>>>(&successor.label);
+    if (label == nullptr || !(**label).binding.has_value() || (**label).binding->index() == 0)
         return;
-    auto& binding = *successor.label.binding;
+    auto& binding = *(**label).binding;
     auto scratch = builder.template scratch<ygg::Row<formalism::Action<LiftedTag>>>();
     binding.template emplace<0>(repository.get_task()->get_repository()->insert(urd::child_record(binding, *scratch)).first.index());
 }
@@ -239,7 +244,7 @@ SuccessorState<Kind> generate_successor_state(SuccessorGenerator<Kind>& generato
                                               Binding binding)
 {
     check_repository(repository, node);
-    auto result = SuccessorState<Kind> { repository.get_state_builder(), 0, StateDelta {} };
+    auto result = SuccessorState<Kind> { ::tyr::planning::get_state_builder(repository), 0, StateDelta {} };
     result.auxiliary_value = generator.generate_successor_state(node, binding, *result.state, result.delta);
     return result;
 }

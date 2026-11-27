@@ -367,7 +367,7 @@ void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>&
     const auto progress = state_context.temporal_storage().get_parts().til_progress;
     if (progress >= timed_literals.size())
     {
-        start_successor(out, label);
+        start_successor(out, node.context(), label);
         return;
     }
     const auto [begin, end] = next_timed_literals(timed_literals, progress);

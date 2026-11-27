@@ -80,6 +80,7 @@ void bind_transition(nb::module_& m)
         .def("latest", &TemporalNetwork::latest, nb::arg("i"), "The latest time of time point i (inf: unbounded).");
     auto parts = nb::class_<TemporalParts>(m, "TemporalParts");
     urd::python::bind_fields(parts);
+    urd::python::bind_index<Transition>(m);
     urd::python::bind_data<Transition>(m);
 }
 }  // namespace

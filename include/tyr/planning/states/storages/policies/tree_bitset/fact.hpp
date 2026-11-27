@@ -20,10 +20,10 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_delta.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/tags.hpp"
 #include "tyr/planning/states/storages/policies/tree_bitset/block.hpp"
 #include "tyr/planning/states/storages/policies/tree_bitset/context.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <concepts>
 #include <span>
@@ -81,12 +81,17 @@ public:
     static constexpr auto memory_members() noexcept
     { return urd::Members<&StateComponentRepository::m_blocks, &StateComponentRepository::m_flips, &StateComponentRepository::m_bits> {}; }
 
-    Handle insert(const Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as the exact `changes` to the stored `parent`. Only the tree paths to changed blocks are rebuilt.
-    Handle insert(const Unpacked& unpacked, const Handle& parent, std::span<const StateDelta::FluentChange> changes);
+    /// Interns a successor's builder as the exact changes to its parent's (the hint). Only the tree paths to changed
+    /// blocks are rebuilt.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked, const SuccessorHint<Kind>& hint);
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
+
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     /// A record stored: its values packed bitwise as blocks (ground), or its bits (lifted).
@@ -97,7 +102,7 @@ private:
     /// A lifted record's bits, as the dense set its pool takes (its buffer kept: the generic insert's only copy).
     StateBits m_bits;
 
-    urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
+    mutable urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
     urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;
 };
 

@@ -195,7 +195,7 @@ TEST(TyrTests, DeterministicSuccessorsRejectOutcomes)
     auto state_repository = planning::StateRepository<LiftedTag>::create(task);
     auto generator = planning::SuccessorGenerator<LiftedTag>(task, execution_context);
     const auto initial_node = planning::get_initial_node(*state_repository, *axiom_evaluator);
-    auto state = state_repository->get_state_builder();
+    auto state = ::tyr::planning::get_state_builder(*state_repository);
     auto delta = planning::StateDelta {};
     auto rejected = false;
     generator.for_each_applicable_action_binding(initial_node,

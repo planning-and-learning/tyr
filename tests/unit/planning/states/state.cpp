@@ -321,7 +321,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
                                   const std::type_identity_t<tyr::planning::StateBuilderView<Kind>>& registered,
                                   tyr::formalism::ActionRowView label)
 {
-    const auto num_states = registered.context().num_states();
+    const auto num_states = ::tyr::planning::num_states(registered.context());
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>>> {};
     auto owned = pool.make_unique();
     owned->assign(registered);
@@ -336,7 +336,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto markerless_state = StateWithoutMetadata(state);
     EXPECT_TRUE(std::ranges::equal(markerless_state.template get_atoms<formalism::FluentTag>(), state.template get_atoms<formalism::FluentTag>()));
     const auto node = tyr::tests::node_of_state<Kind>(state, 3);
-    auto labeled_state = registered.context().get_state_builder();
+    auto labeled_state = ::tyr::planning::get_state_builder(registered.context());
     labeled_state->assign(state);
     const auto labeled = tyr::planning::OwnedLabeledNodeBuilderView<Kind>(
         tyr::planning::LabeledNodeBuilder<Kind> { label.index(), tyr::planning::NodeBuilder<Kind> { std::move(labeled_state), 3 } },
@@ -463,7 +463,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     moved->set(fterm, value + 1);
     EXPECT_EQ(state.value(fterm), value + 1);
     EXPECT_EQ(registered.value(fterm), value);
-    EXPECT_EQ(registered.context().num_states(), num_states);
+    EXPECT_EQ(::tyr::planning::num_states(registered.context()), num_states);
     if constexpr (std::same_as<Kind, GroundTag>)
     {
         auto& values = urd::builder_of(moved->fact_storage).values;
@@ -494,7 +494,7 @@ void expect_generated_successor_deltas(tyr::planning::SuccessorGenerator<Kind>& 
     {
         const auto register_generated = [&](bool with_parent)
         {
-            auto builder = repository.get_state_builder();
+            auto builder = ::tyr::planning::get_state_builder(repository);
             auto delta = tyr::planning::StateDelta {};
             generator.generate_successor_state(parent, binding, *builder, delta);
             auto expected = tyr::planning::StateDelta {};
@@ -504,10 +504,10 @@ void expect_generated_successor_deltas(tyr::planning::SuccessorGenerator<Kind>& 
                 expected);
             EXPECT_EQ(delta, expected);
             if (with_parent)
-                repository.register_state(axioms, *builder, tyr::tests::built_state(parent), delta);
+                ::tyr::planning::register_state(repository, axioms, *builder, tyr::tests::built_state(parent), delta);
             else
-                repository.register_state(axioms, *builder);
-            return repository.share(std::move(builder));
+                ::tyr::planning::register_state(repository, axioms, *builder);
+            return ::tyr::planning::share(repository, std::move(builder));
         };
         const auto with_parent = register_generated(true);
         const auto without_parent = register_generated(false);
@@ -531,15 +531,15 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         auto temporary_repository = tyr::planning::StateRepository<Kind>::create(task);
         const auto packed = [&]
         {
-            const auto state = temporary_repository->share(temporary_repository->get_initial_state(*axioms));
+            const auto state = ::tyr::planning::share(*temporary_repository, ::tyr::planning::get_initial_state(*temporary_repository, *axioms));
             released_builder = &urd::built_view(state.get_numeric_storage()).get_values();
             return state.pack();
         }();
-        auto recycled_builder = packed.context().get_state_builder();
+        auto recycled_builder = ::tyr::planning::get_state_builder(packed.context());
         EXPECT_EQ(&urd::builder_of(recycled_builder->numeric_storage).values, released_builder);
         recycled_builder = {};
         EXPECT_EQ(packed.unpack().pack(), packed);
-        EXPECT_EQ(packed.context().num_states(), 1);
+        EXPECT_EQ(::tyr::planning::num_states(packed.context()), 1);
     }
 
     const auto initial = tyr::tests::owned_initial_node(*repository, *axioms);
@@ -563,7 +563,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     EXPECT_EQ(urd::interned_view(tyr::tests::unpacked(packed).get_label()), urd::interned_view(cheap->get_label()));
     EXPECT_EQ(tyr::tests::unpacked(packed).get_node(), cheap->get_node());
 
-    EXPECT_EQ(repository->num_states(), 2);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), 2);
     EXPECT_EQ(derived_names(tyr::tests::built_state(cheap->get_node())), (urd::Store<urd::sequence<std::string>> { "live" }));
     EXPECT_EQ(derived_names(tyr::tests::built_state(expensive->get_node())), derived_names(tyr::tests::built_state(cheap->get_node())));
     expect_borrowed_builder_view(task, tyr::tests::built_state(cheap->get_node()), urd::interned_view(cheap->get_label()));
@@ -581,15 +581,15 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         EXPECT_TRUE(std::ranges::equal(unpacked.template get_fterm_index_values<::tyr::formalism::FluentTag>(),
                                        state.template get_fterm_index_values<::tyr::formalism::FluentTag>()));
 
-        auto builder = repository->get_state_builder();
+        auto builder = ::tyr::planning::get_state_builder(*repository);
         builder->assign_unextended_part(state);
         const auto derived = urd::resolve(urd::builder_of(builder->atom_storage), *repository).atoms();
         EXPECT_EQ(derived.begin(), derived.end());
-        repository->register_state(*axioms, *builder);
-        const auto duplicate = repository->share(std::move(builder));
+        ::tyr::planning::register_state(*repository, *axioms, *builder);
+        const auto duplicate = ::tyr::planning::share(*repository, std::move(builder));
         EXPECT_EQ(duplicate, state);
         EXPECT_EQ(derived_names(duplicate), derived_names(state));
-        EXPECT_EQ(derived_names(repository->share(repository->get_registered_state(duplicate.pack().index()))), derived_names(state));
+        EXPECT_EQ(derived_names(::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, duplicate.pack().index()))), derived_names(state));
 
         // A copy of its record, held outside the repository (not registered), unpacks to the same state without an index.
         const auto held = *(*repository)[state.pack().index()];
@@ -619,7 +619,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         {
             const auto register_successor = [&](bool with_parent)
             {
-                auto builder = repository->get_state_builder();
+                auto builder = ::tyr::planning::get_state_builder(*repository);
                 builder->assign_unextended_part(parent);
                 change(*builder);
                 auto delta = tyr::planning::StateDelta {};
@@ -627,10 +627,10 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                                                    tyr::planning::StateContext { *repository, *builder, ygg::float_t { 0 } },
                                                    delta);
                 if (with_parent)
-                    repository->register_state(*axioms, *builder, parent, delta);
+                    ::tyr::planning::register_state(*repository, *axioms, *builder, parent, delta);
                 else
-                    repository->register_state(*axioms, *builder);
-                return repository->share(std::move(builder));
+                    ::tyr::planning::register_state(*repository, *axioms, *builder);
+                return ::tyr::planning::share(*repository, std::move(builder));
             };
             const auto with_parent = register_successor(true);
             const auto without_parent = register_successor(false);
@@ -700,7 +700,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     }();
     EXPECT_NE(tyr::tests::built_state(raised), tyr::tests::built_state(cheap->get_node()));
     EXPECT_EQ(derived_names(tyr::tests::built_state(raised)), (urd::Store<urd::sequence<std::string>> { "live", "ready" }));
-    EXPECT_EQ(repository->num_states(), 3);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), 3);
     {
         auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>>> {};
         auto owned = pool.make_unique();
@@ -786,7 +786,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                                                              return false;
                                                          }));
         EXPECT_EQ(visited, 1);
-        EXPECT_EQ(repository->num_states(), 3);
+        EXPECT_EQ(::tyr::planning::num_states(*repository), 3);
 
         expect_same_node(borrowed, cheap->get_node());
 
@@ -812,7 +812,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         EXPECT_TRUE(std::ranges::equal(generated_view.template get_fterm_index_values<::tyr::formalism::FluentTag>(),
                                        tyr::tests::built_state(raised).template get_fterm_index_values<::tyr::formalism::FluentTag>()));
         EXPECT_TRUE(owned->index.is_none());
-        EXPECT_EQ(repository->num_states(), 3);
+        EXPECT_EQ(::tyr::planning::num_states(*repository), 3);
     }
     expect_duplicate(tyr::tests::built_state(raised));
 
@@ -846,10 +846,10 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     EXPECT_NE(tyr::tests::built_state(disabled), tyr::tests::built_state(raised));
     EXPECT_NE(tyr::tests::built_state(disabled), tyr::tests::built_state(initial));
     EXPECT_TRUE(derived_names(tyr::tests::built_state(disabled)).empty());
-    EXPECT_EQ(repository->num_states(), 4);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), 4);
     expect_duplicate(tyr::tests::built_state(disabled));
     expect_duplicate(tyr::tests::built_state(cheap->get_node()));
-    EXPECT_EQ(repository->num_states(), 4);
+    EXPECT_EQ(::tyr::planning::num_states(*repository), 4);
 }
 
 /// Checks the deltas of all successors within the first layers of a breadth-first search from the initial state.

@@ -39,18 +39,25 @@ void bind_successors(nb::module_& m)
 {
     using Repository = StateRepository<Kind>;
     urd::python::bind_builder<Transition, Repository>(m);
+    urd::python::bind_view<urd::index_view<Transition, Repository>>(m);
     urd::python::bind_view<urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>>(m);
     urd::python::bind_view<urd::borrowed_view<Transition, Repository, urd::data<Transition>>>(m);
+    urd::python::bind_index<OutcomeNode<Kind>>(m);
     urd::python::bind_data<OutcomeNode<Kind>>(m);
     urd::python::bind_builder<OutcomeNode<Kind>, Repository>(m);
+    urd::python::bind_view<urd::index_view<OutcomeNode<Kind>, Repository>>(m);
     urd::python::bind_view<urd::borrowed_view<OutcomeNode<Kind>, Repository, urd::builder<OutcomeNode<Kind>, Repository>>>(m);
     urd::python::bind_view<urd::borrowed_view<OutcomeNode<Kind>, Repository, urd::data<OutcomeNode<Kind>>>>(m);
+    urd::python::bind_index<Distribution<Kind>>(m);
     urd::python::bind_data<Distribution<Kind>>(m);
     urd::python::bind_builder<Distribution<Kind>, Repository>(m);
+    urd::python::bind_view<urd::index_view<Distribution<Kind>, Repository>>(m);
     urd::python::bind_view<urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>>(m);
     urd::python::bind_view<urd::borrowed_view<Distribution<Kind>, Repository, urd::data<Distribution<Kind>>>>(m);
+    urd::python::bind_index<Successor<Kind>>(m);
     urd::python::bind_data<Successor<Kind>>(m);
     urd::python::bind_builder<Successor<Kind>, Repository>(m);
+    urd::python::bind_view<urd::index_view<Successor<Kind>, Repository>>(m);
     urd::python::bind_view<SuccessorBuilderView<Kind>>(m);
     urd::python::bind_view<OwnedSuccessorBuilderView<Kind>>(m);
     urd::python::bind_view<SuccessorRecordView<Kind>>(m);

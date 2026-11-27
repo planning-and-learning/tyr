@@ -145,7 +145,7 @@ std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<Reache
 template<TaskKind Kind>
 bool is_dynamic_goal_satisfied(GoalStrategy<Kind>& strategy, const StateBuilderView<Kind>& seed, const OwnedNodeRecordView<Kind>& node)
 {
-    const auto state = node.context().get_registered_state(node.get_state().index());
+    const auto state = ::tyr::planning::get_registered_state(node.context(), node.get_state().index());
     return strategy.is_dynamic_goal_satisfied(seed, urd::resolve(*state, node.context()));
 }
 
@@ -175,7 +175,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
     auto current_start_node = solver.normalize_start_node(options.start_node);
     const auto combined_start_node = current_start_node;
     const auto& state_repository = combined_start_node.context();
-    const auto final_goal_seed_state = state_repository.get_registered_state(combined_start_node.get_state().index());
+    const auto final_goal_seed_state = ::tyr::planning::get_registered_state(state_repository, combined_start_node.get_state().index());
     const auto final_goal_seed = urd::resolve(*final_goal_seed_state, state_repository);
 
     event_handler->on_start_search();

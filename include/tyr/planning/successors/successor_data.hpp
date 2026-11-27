@@ -25,24 +25,27 @@
 
 #include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
 #include <utility>
 
 namespace urd
 {
-/// A transition from a node: its label and the distributions over outcome nodes an adversary picks from (a oneof: one per
-/// outcome; chance: the distribution it draws from; a deterministic action: one of one outcome). Equal outcomes of a
-/// distribution (same state and metric) are merged. A transition whose outcomes all fail is not applicable: it has no
-/// distributions.
+/// A transition from a node: its label and the distributions over outcome nodes an adversary picks from (a oneof: one
+/// per outcome; chance: the distribution it draws from; a deterministic action: one of one outcome), each stored in the
+/// state repository (their indices). Equal outcomes of a distribution (same state and metric) are merged. A transition
+/// whose outcomes all fail is not applicable: it has no distributions.
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::Successor<Kind>>
 {
-    urd::data<::tyr::planning::Transition> label;
-    urd::flat_vector<urd::data<::tyr::planning::Distribution<Kind>>> distributions;
+    urd::key<::tyr::planning::Successor<Kind>> index;
+    urd::index<::tyr::planning::Transition> label;
+    urd::flat_vector<urd::index<::tyr::planning::Distribution<Kind>>> distributions;
 
     data() = default;
 
-    data(urd::data<::tyr::planning::Transition> label_, urd::flat_vector<urd::data<::tyr::planning::Distribution<Kind>>> distributions_) :
-        label(std::move(label_)),
+    data(urd::index<::tyr::planning::Transition> label_, urd::flat_vector<urd::index<::tyr::planning::Distribution<Kind>>> distributions_) :
+        index(),
+        label(label_),
         distributions(std::move(distributions_))
     {
     }
@@ -57,7 +60,9 @@ struct data<::tyr::planning::Successor<Kind>>
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::label, &data::distributions> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::label, &data::distributions> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::Successor<Kind>> key() const noexcept { return index; }
 };
 }
 

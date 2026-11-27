@@ -19,10 +19,10 @@
 #define TYR_PLANNING_STATES_STORAGES_POLICIES_TREE_BITSET_ATOM_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/tags.hpp"
 #include "tyr/planning/states/storages/policies/tree_bitset/block.hpp"
 #include "tyr/planning/states/storages/policies/tree_bitset/context.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <span>
 #include <urd/elements/flat.hpp>
@@ -82,13 +82,17 @@ public:
     /// Its own memory (urd::memory_usage): its buffers; its pool's set is its state repository's (memory_usage()).
     static constexpr auto memory_members() noexcept { return urd::Members<&StateComponentRepository::m_flips, &StateComponentRepository::m_bits> {}; }
 
-    Handle insert(const Unpacked& unpacked);
+    /// Interns a builder (urd's insert_built): its key, and whether it was stored now.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as a delta to the stored `parent`, whose derived atoms `parent_atoms` are.
-    /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both rows' words.
-    Handle insert(const Unpacked& unpacked, const Handle& parent, const AtomStorageBuilderView<Kind>& parent_atoms);
+    /// Interns a successor's builder as a delta to its parent's (the hint). Derived atoms are recomputed per state, so the
+    /// changed blocks are found by comparing both rows' words.
+    std::pair<Key, bool> insert_built(const Unpacked& unpacked, const SuccessorHint<Kind>& hint);
 
-    void unpack(const Handle& packed, Unpacked& unpacked);
+    void unpack(const Handle& packed, Unpacked& unpacked) const;
+
+    /// Reads its stored storage of a key into a builder (urd's unpack_built).
+    void unpack_built(Key key, Unpacked& unpacked) const { unpack(key.value, unpacked); }
 
 private:
     Context* m_context;

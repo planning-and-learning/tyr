@@ -52,9 +52,9 @@ NodeBuilder<Kind> normalize_start_node(Task<Kind>& task,
     if (!std::isfinite(metric))
         throw std::runtime_error("normalize_start_node(...): start node metric value is not finite.");
 
-    const auto source_state = source.get_registered_state(start_node->get_state().index());
+    const auto source_state = ::tyr::planning::get_registered_state(source, start_node->get_state().index());
     auto node = NodeBuilder<Kind>();
-    node.state = materialize_state(urd::resolve(*source_state, source), state_repository, axiom_evaluator);
+    node.state = register_extended_state(state_repository, urd::resolve(*source_state, source));
     node.metric = metric;
     return node;
 }

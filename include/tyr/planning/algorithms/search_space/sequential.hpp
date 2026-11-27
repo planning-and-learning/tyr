@@ -86,7 +86,7 @@ PlanBuilder<Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
             {},
             [&](ActionBindingView<Kind> binding)
             {
-                auto state = state_repository.get_state_builder();
+                auto state = ::tyr::planning::get_state_builder(state_repository);
                 const auto auxiliary_value = successor_generator.generate_successor_state(cur_view, binding, *state, delta);
                 auto successor = register_successor(state_repository, axiom_evaluator, std::move(state), auxiliary_value, cur_view, delta);
                 successor.metric = compute_successor_g_value(cur_view.get_metric(), successor.metric, action_cost_mode);

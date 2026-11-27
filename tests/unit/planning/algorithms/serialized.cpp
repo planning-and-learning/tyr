@@ -961,8 +961,8 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     const auto foreign_start = tyr::tests::owned_initial_node(*foreign.state_repository, *foreign.axiom_evaluator);
     ASSERT_EQ(tyr::tests::built_state(foreign_start).pack().index(), tyr::tests::built_state(initial_node).pack().index());
     ASSERT_NE(&foreign_start.context(), &initial_node.context());
-    const auto foreign_successor_state = foreign.state_repository->share(
-        tyr::planning::materialize_state(tyr::tests::built_state(successor.get_node()), *foreign.state_repository, *foreign.axiom_evaluator));
+    const auto foreign_successor_state = ::tyr::planning::share(*foreign.state_repository, 
+        tyr::planning::register_extended_state(*foreign.state_repository, tyr::tests::built_state(successor.get_node())));
     ASSERT_NE(&foreign_successor_state.context(), &successor.get_node().context());
 
     const auto first_goal = tyr::tests::node_of_state<GroundTag>(foreign_successor_state, 1);

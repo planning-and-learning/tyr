@@ -36,6 +36,7 @@ namespace urd
 template<>
 struct data<::tyr::planning::Transition>
 {
+    urd::key<::tyr::planning::Transition> index;
     ::tyr::planning::TransitionKind kind;
     urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>> binding;
     std::uint32_t open;
@@ -43,6 +44,7 @@ struct data<::tyr::planning::Transition>
     data() = default;
 
     data(::tyr::planning::TransitionKind kind_, urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>> binding_, std::uint32_t open_) :
+        index(),
         kind(kind_),
         binding(binding_),
         open(open_)
@@ -60,7 +62,9 @@ struct data<::tyr::planning::Transition>
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::kind, &data::binding, &data::open> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::kind, &data::binding, &data::open> {}; }
+
+    [[nodiscard]] urd::key<::tyr::planning::Transition> key() const noexcept { return index; }
 };
 
 }
