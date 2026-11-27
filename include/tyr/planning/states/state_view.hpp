@@ -377,34 +377,6 @@ bool equal_unextended(const V& lhs, const W& rhs)
            && equal_temporals(urd::built_view(lhs.get_temporal_storage()), urd::built_view(rhs.get_temporal_storage()));
 }
 
-/// A state is serialized by what it holds, not by its storages: its fluent atoms, its derived atoms and its fluent
-/// function values (pyyggdrasil.serialization).
-template<class Archive, TaskKind Kind>
-void describe_fields(Archive& ar, std::type_identity<StateBuilderView<Kind>> /*type*/)
-{
-    ar.field("fluent_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<formalism::FluentTag>()); });
-    ar.field("derived_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<formalism::DerivedTag>()); });
-    ar.field("fluent_fterm_values", [](const auto& value) -> decltype(auto) { return (value.template get_fterm_values<formalism::FluentTag>()); });
-}
-
-template<class Archive, TaskKind Kind>
-void describe_fields(Archive& ar, std::type_identity<SharedStateBuilderView<Kind>> /*type*/)
-{
-    ar.field("fluent_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<formalism::FluentTag>()); });
-    ar.field("derived_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<formalism::DerivedTag>()); });
-    ar.field("fluent_fterm_values", [](const auto& value) -> decltype(auto) { return (value.template get_fterm_values<formalism::FluentTag>()); });
-}
-
-/// An interned state, or a state held as a record of its own, is serialized as the state it holds, unpacked (the same row
-/// as its StateBuilderView).
-template<class Serializer, TaskKind Kind>
-SharedStateBuilderView<Kind> serialize_as(Serializer& /*serializer*/, const StateView<Kind>& value)
-{ return value.unpack(); }
-
-template<class Serializer, TaskKind Kind>
-SharedStateBuilderView<Kind> serialize_as(Serializer& /*serializer*/, const StateRecordView<Kind>& value)
-{ return value.unpack(); }
-
 }
 
 #endif

@@ -145,7 +145,11 @@ public:
         m_size = new_size;
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&TemporalNetwork::m_size, &TemporalNetwork::m_distances> {}; }
+    /// Its time points' number and their pairwise distances (the origin first), as it is identified and serialized.
+    static constexpr auto fields() noexcept
+    { return urd::Fields<urd::field<"size", &TemporalNetwork::m_size>, urd::field<"distances", &TemporalNetwork::m_distances>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
 private:
     static ygg::float_t tolerance(ygg::float_t bound) noexcept { return ygg::FloatTolerance<ygg::float_t>::tolerance(bound, 0); }

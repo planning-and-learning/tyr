@@ -105,7 +105,9 @@ struct StateBitWords
         return *this;
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&StateBitWords::words> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"words", &StateBitWords::words>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&StateBitWords::words> {}; }
 };

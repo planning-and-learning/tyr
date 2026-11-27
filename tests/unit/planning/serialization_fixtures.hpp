@@ -18,6 +18,7 @@
 #include "tyr/planning/nodes/labeled_node_view.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/states/state_view.hpp"
 #include "tyr/planning/successors/ground/successor_generator.hpp"
 #include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successors.hpp"
@@ -94,15 +95,11 @@ void check_runtime_serialization()
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.template register_table<tyr::planning::StateBuilderView<Kind>>("states", "s");
     dictionaries.template register_table<tyr::planning::NodeBuilderView<Kind>>("nodes", "n");
-    dictionaries.template register_table<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms",
-                                                                                                         "a",
-                                                                                                         urd::Store<urd::sequence<std::string>> {});
-    dictionaries.template register_table<tyr::formalism::AtomView<GroundTag, tyr::formalism::DerivedTag>>("derived",
-                                                                                                          "d",
-                                                                                                          urd::Store<urd::sequence<std::string>> {});
-    dictionaries.template register_table<tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag>>("functions",
-                                                                                                                 "f",
-                                                                                                                 urd::Store<urd::sequence<std::string>> {});
+    // A state is serialized by its fields, the references to its storages, each in a table of its own.
+    dictionaries.template register_table<tyr::planning::FactStorageBuilderView<Kind>>("fact_storages", "F");
+    dictionaries.template register_table<tyr::planning::AtomStorageBuilderView<Kind>>("atom_storages", "a");
+    dictionaries.template register_table<tyr::planning::NumericStorageBuilderView<Kind>>("numeric_storages", "v");
+    dictionaries.template register_table<tyr::planning::TemporalStorageBuilderView<Kind>>("temporal_storages", "T");
     EXPECT_TRUE(dictionaries.template table<tyr::planning::StateBuilderView<Kind>>().empty());
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].get_node()).as_string(), "n1");
@@ -117,15 +114,14 @@ void check_runtime_serialization()
     for (const auto& state : states)
     {
         const auto& row = state.as_object();
-        EXPECT_EQ(row.size(), 3);
-        EXPECT_TRUE(row.at("fluent_atoms").is_array());
-        EXPECT_TRUE(row.at("derived_atoms").is_array());
-        EXPECT_TRUE(row.at("fluent_fterm_values").is_array());
-        EXPECT_FALSE(row.contains("static_atoms"));
-        const auto& numeric = row.at("fluent_fterm_values").as_array();
-        ASSERT_EQ(numeric.size(), 1);
-        EXPECT_EQ(numeric[0].as_array().size(), 2);
+        EXPECT_EQ(row.size(), 4);
+        EXPECT_TRUE(row.at("fact_storage").is_string());
+        EXPECT_TRUE(row.at("atom_storage").is_string());
+        EXPECT_TRUE(row.at("numeric_storage").is_string());
+        EXPECT_TRUE(row.at("temporal_storage").is_string());
     }
+    EXPECT_FALSE(dictionaries.template table<tyr::planning::FactStorageBuilderView<Kind>>().empty());
+    EXPECT_FALSE(dictionaries.template table<tyr::planning::NumericStorageBuilderView<Kind>>().empty());
     const auto snapshot = dictionaries.tables();
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.tables(), snapshot);

@@ -123,9 +123,12 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     dictionaries.register_table(node_type, "nodes", "v")
     dictionaries.register_table(formalism.RowActionLifted, "actions", "a")
     dictionaries.register_table(formalism.ActionLifted, "action_schemas", "A", fields=["name"])
-    dictionaries.register_table(formalism.FunctionTermGroundFluent, "functions", "n", fields=[])
-    dictionaries.register_table(formalism.AtomGroundFluent, "atoms", "p", fields=[])
-    dictionaries.register_table(formalism.AtomGroundDerived, "derived", "d", fields=[])
+    # A state is serialized by its fields, the references to its storages, each in a table of its own.
+    module = ground if backend == "ground" else lifted
+    dictionaries.register_table(module.FactStorageBuilderView, "fact_storages", "F")
+    dictionaries.register_table(module.AtomStorageBuilderView, "atom_storages", "p")
+    dictionaries.register_table(module.NumericStorageBuilderView, "numeric_storages", "n")
+    dictionaries.register_table(module.TemporalStorageBuilderView, "temporal_storages", "T")
     assert dictionaries.table(state_type) == []
     start = plan.get_start_node()
     references = sys.getrefcount(start)
@@ -147,12 +150,12 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.serialize(start) == "v0"
     states = _rows(dictionaries.table(state_type))
     assert len(states) == 2
-    assert states[0]["fluent_atoms"] == ["p0"]
-    assert states[1]["fluent_atoms"] == ["p1"]
-    assert states[0]["fluent_fterm_values"] == [["n0", 3.0]]
-    assert states[1]["fluent_fterm_values"] == [["n0", 2.0]]
-    assert states[0]["derived_atoms"] == ["d0"]
-    assert states[1]["derived_atoms"] == []
+    assert list(states[0]) == ["fact_storage", "atom_storage", "numeric_storage", "temporal_storage"]
+    assert states[0]["fact_storage"] != states[1]["fact_storage"]
+    assert states[0]["numeric_storage"] != states[1]["numeric_storage"]
+    # The start state's derived atom and numeric value 3, the goal state's none and 2.
+    assert [len(row["indices"]) for row in _rows(dictionaries.table(module.AtomStorageBuilderView))] == [1, 0]
+    assert _rows(dictionaries.table(module.NumericStorageBuilderView)) == [{"values": [3.0]}, {"values": [2.0]}]
     tables = dictionaries.tables()
     assert tables["visited"] == {"prefix": "s", "rows": states}
     encoded_tables = json.dumps(tables)

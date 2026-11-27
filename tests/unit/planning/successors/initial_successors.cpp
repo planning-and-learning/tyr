@@ -15,18 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// The successors of each test task's initial node, ground and lifted, against the fixture
-// (tests/support/generators/planning/successors/generate_initial_successors.py): each successor's label and
-// distributions, each outcome's probability, failure, metric and state, in the generator's form and order; and that
-// expanding it again once warm allocates nothing. A task tyr does not parse yet fails to parse with the fixture's reason.
+// The successors of each test task's initial node, ground and lifted each, against the fixture
+// (tests/support/generators/planning/successors/generate_initial_successors.py): for_each_successor's successors serialized by
+// yggdrasil's dictionaries (initial_successor_tables.hpp), in the generator's order (it is deterministic); and that
+// expanding the node again once warm allocates nothing. A task tyr does not parse yet fails to parse with the fixture's
+// reason.
 
 #include "planning/parser.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/repository.hpp"
+#include "planning/successors/initial_successor_tables.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/states/state_repository.hpp"
-#include "tyr/planning/states/state_view.hpp"
 #include "tyr/planning/successors/ground/successor_generator.hpp"
 #include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successor_view.hpp"
@@ -34,25 +32,22 @@
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
 
-#include <algorithm>
 #include <boost/json.hpp>
 #include <cctype>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <exception>
 #include <filesystem>
-#include <fmt/format.h>
 #include <gtest/gtest.h>
-#include <limits>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
-#include <urd/elements/view.hpp>
+#include <urd/elements/clone.hpp>
 #include <urd/testing/allocations.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/serialization/dictionaries.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 
@@ -60,85 +55,17 @@ namespace tyr::tests
 {
 namespace
 {
-/// A time point's earliest and latest time (infinity: unbounded).
-using Window = std::pair<double, double>;
-/// An open action: its plan step, its start time point and its duration bounds.
-using OpenEntry = std::tuple<std::string, std::uint32_t, double, double>;
-/// The temporal part: its open actions, its timed initial literals that happened, its windows.
-using Temporal = std::tuple<std::vector<OpenEntry>, std::uint32_t, std::vector<Window>>;
-/// A state: its fluent atoms, its derived atoms, its fluent function values (each sorted), its temporal part.
-using StateEntry = std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<std::pair<std::string, double>>, Temporal>;
-/// An outcome: its probability, whether it fails, its metric and its state.
-using Outcome = std::tuple<double, bool, double, StateEntry>;
-/// A successor: its label and its distributions.
-using Successor = std::pair<std::string, std::vector<std::vector<Outcome>>>;
 
-/// A number rounded to the fixture's precision, so that both sides compare exactly.
-double rounded(double value)
-{
-    if (std::isinf(value))
-        return value;
-    return std::round(value * 1e9) / 1e9 + 0.0;
-}
-
-/// The generator's order: a distribution's outcomes sorted, a successor's distributions sorted, the successors sorted.
-std::vector<Successor> sorted(std::vector<Successor> successors)
-{
-    for (auto& [label, distributions] : successors)
-    {
-        for (auto& distribution : distributions)
-            std::ranges::sort(distribution);
-        std::ranges::sort(distributions);
-    }
-    std::ranges::sort(successors);
-    return successors;
-}
-
+/// A fixture case: its task, and either the parser's reason for not parsing it or its serialized successors, by kind.
 struct InitialSuccessorsCase
 {
     std::string name;
     std::filesystem::path domain_file;
     std::filesystem::path task_file;
-    /// The parser's reason where tyr does not parse the task yet, else its successors.
     std::optional<std::string> skipped;
-    std::vector<Successor> successors;
+    boost::json::value lifted;
+    boost::json::value ground;
 };
-
-std::vector<std::string> strings_of(const boost::json::value& value)
-{
-    auto result = std::vector<std::string> {};
-    for (const auto& element : value.as_array())
-        result.emplace_back(element.as_string());
-    return result;
-}
-
-StateEntry state_of_json(const boost::json::object& state)
-{
-    auto fterm_values = std::vector<std::pair<std::string, double>> {};
-    for (const auto& pair : state.at("fluent_fterm_values").as_array())
-        fterm_values.emplace_back(std::string(pair.as_array().at(0).as_string()), rounded(pair.as_array().at(1).to_number<double>()));
-    const auto& temporal = state.at("temporal").as_object();
-    auto open = std::vector<OpenEntry> {};
-    for (const auto& entry : temporal.at("open").as_array())
-    {
-        const auto& object = entry.as_object();
-        open.emplace_back(std::string(object.at("action").as_string()),
-                          object.at("start").to_number<std::uint32_t>(),
-                          rounded(object.at("min_duration").to_number<double>()),
-                          object.at("max_duration").is_null() ? std::numeric_limits<double>::infinity() : rounded(object.at("max_duration").to_number<double>()));
-    }
-    auto windows = std::vector<Window> {};
-    for (const auto& window : temporal.at("windows").as_array())
-    {
-        const auto& bounds = window.as_array();
-        windows.emplace_back(rounded(bounds.at(0).to_number<double>()),
-                             bounds.at(1).is_null() ? std::numeric_limits<double>::infinity() : rounded(bounds.at(1).to_number<double>()));
-    }
-    return { strings_of(state.at("fluent_atoms")),
-             strings_of(state.at("derived_atoms")),
-             std::move(fterm_values),
-             Temporal { std::move(open), temporal.at("til_progress").to_number<std::uint32_t>(), std::move(windows) } };
-}
 
 std::vector<InitialSuccessorsCase> load_cases()
 {
@@ -151,99 +78,86 @@ std::vector<InitialSuccessorsCase> load_cases()
                                                  ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
                                                  ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "task_file", "case")),
                                                  std::nullopt,
+                                                 {},
                                                  {} };
         if (object.contains("skipped"))
             test_case.skipped = ygg::common::as_string(object, "skipped", "case");
         else
-            for (const auto& entry : object.at("successors").as_array())
-            {
-                auto successor = Successor { std::string(entry.as_object().at("label").as_string()), {} };
-                for (const auto& distribution : entry.as_object().at("distributions").as_array())
-                {
-                    auto& outcomes = successor.second.emplace_back();
-                    for (const auto& outcome_value : distribution.as_array())
-                    {
-                        const auto& outcome = outcome_value.as_object();
-                        outcomes.emplace_back(rounded(outcome.at("probability").to_number<double>()),
-                                              outcome.at("failed").as_bool(),
-                                              rounded(outcome.at("metric").to_number<double>()),
-                                              state_of_json(outcome.at("state").as_object()));
-                    }
-                }
-                test_case.successors.push_back(std::move(successor));
-            }
-        test_case.successors = sorted(std::move(test_case.successors));
+        {
+            test_case.lifted = object.at("lifted");
+            test_case.ground = object.at("ground");
+        }
         result.push_back(std::move(test_case));
     }
     return result;
 }
 
-/// An action binding as a plan step: its action's original name and arguments.
-template<typename Binding>
-std::string plan_step(const Binding& binding)
-{ return fmt::format("{}", std::make_pair(binding, formalism::PlanFormatting())); }
-
-template<TaskKind Kind, typename State>
-StateEntry state_of(const State& state, const formalism::Repository& repository)
+/// The first place two JSON values differ ("" where none): numbers compared within the float tolerance of the repository
+/// (ygg::FloatTolerance: a build's arithmetic may differ in its last bits), everything else exactly.
+std::string first_difference(const boost::json::value& actual, const boost::json::value& expected, const std::string& path = "")
 {
-    auto fluent_atoms = std::vector<std::string> {};
-    for (const auto atom : state.template get_atoms<formalism::FluentTag>())
-        fluent_atoms.push_back(fmt::format("{}", atom));
-    std::ranges::sort(fluent_atoms);
-    auto derived_atoms = std::vector<std::string> {};
-    for (const auto atom : state.template get_atoms<formalism::DerivedTag>())
-        derived_atoms.push_back(fmt::format("{}", atom));
-    std::ranges::sort(derived_atoms);
-    auto fterm_values = std::vector<std::pair<std::string, double>> {};
-    for (const auto& [term, value] : state.template get_fterm_values<formalism::FluentTag>())
-        fterm_values.emplace_back(fmt::format("{}", term), rounded(value));
-    std::ranges::sort(fterm_values);
-
-    const auto& parts = urd::built_view(state.get_temporal_storage()).get_parts();
-    auto open = std::vector<OpenEntry> {};
-    for (const auto& open_action : parts.open)
-        open.emplace_back(plan_step(urd::resolve(open_action.action, repository)),
-                          open_action.start,
-                          rounded(open_action.min_duration),
-                          rounded(open_action.max_duration));
-    auto windows = std::vector<Window> {};
-    for (std::size_t t = 0; t < parts.network.size(); ++t)
-        windows.emplace_back(rounded(parts.network.earliest(t)), rounded(parts.network.latest(t)));
-    return { std::move(fluent_atoms), std::move(derived_atoms), std::move(fterm_values), Temporal { std::move(open), parts.til_progress, std::move(windows) } };
+    if (actual.is_number() && expected.is_number())
+    {
+        const auto lhs = actual.to_number<double>();
+        const auto rhs = expected.to_number<double>();
+        return lhs == rhs || std::abs(lhs - rhs) <= ygg::FloatTolerance<double>::tolerance(lhs, rhs) ? "" : path;
+    }
+    if (actual.kind() != expected.kind())
+        return path;
+    if (actual.is_object())
+    {
+        const auto& lhs = actual.as_object();
+        const auto& rhs = expected.as_object();
+        if (lhs.size() != rhs.size())
+            return path;
+        for (const auto& [key, value] : lhs)
+        {
+            const auto* other = rhs.if_contains(key);
+            if (other == nullptr)
+                return path + "/" + std::string(key);
+            if (auto difference = first_difference(value, *other, path + "/" + std::string(key)); !difference.empty())
+                return difference;
+        }
+        return "";
+    }
+    if (actual.is_array())
+    {
+        const auto& lhs = actual.as_array();
+        const auto& rhs = expected.as_array();
+        if (lhs.size() != rhs.size())
+            return path;
+        for (std::size_t i = 0; i < lhs.size(); ++i)
+            if (auto difference = first_difference(lhs[i], rhs[i], path + "[" + std::to_string(i) + "]"); !difference.empty())
+                return difference;
+        return "";
+    }
+    return actual == expected ? "" : path;
 }
 
+/// The successors of the task's initial node as the generator writes them (for_each_successor), serialized: each a reference into the tables, and the
+/// tables (initial_successor_tables.hpp).
 template<TaskKind Kind>
-std::vector<Successor> initial_successors(const planning::TaskPtr<Kind>& task, const ygg::ExecutionContextPtr& execution_context)
+boost::json::value serialized_initial_successors(const planning::TaskPtr<Kind>& task, const ygg::ExecutionContextPtr& execution_context)
 {
     auto repository = planning::StateRepository<Kind>::create(task);
     auto axiom_evaluator = planning::AxiomEvaluator<Kind>(task, execution_context);
     auto generator = planning::SuccessorGenerator<Kind>(task, execution_context);
     const auto initial = planning::get_initial_node(*repository, axiom_evaluator);
-    const auto& formalism_repository = *task->get_repository();
-    auto result = std::vector<Successor> {};
-    for (const auto& successor : planning::get_successors(generator, *repository, axiom_evaluator, initial))
+    auto dictionaries = ygg::serialization::Dictionaries {};
+    register_initial_successor_tables<Kind>(dictionaries);
+    // The generator's successors as it writes them (builders), each kept as a clone: they outlive the tables, which read
+    // them (each as its borrowed view).
+    auto successors = std::vector<planning::OwnedSuccessorBuilderView<Kind>> {};
+    const auto keep = [&](planning::SuccessorBuilder<Kind>& successor)
     {
-        const auto label = successor.get_label();
-        auto text = fmt::format("{}", label.get_kind());
-        if (const auto binding = label.get_binding())
-            urd::visit_view(*binding, [&](const auto& row) { text += " " + plan_step(row); });
-        if (label.get_kind() == planning::TransitionKind::END)
-            text += fmt::format(" #{}", label.get_open());
-        auto& entry = result.emplace_back(std::move(text), std::vector<std::vector<Outcome>> {});
-        for (const auto distribution : successor.get_distributions())
-        {
-            auto& outcomes = entry.second.emplace_back();
-            for (const auto outcome : distribution.get_outcomes())
-            {
-                const auto node = outcome.get_node();
-                outcomes.emplace_back(rounded(outcome.get_probability()),
-                                      outcome.get_failed(),
-                                      rounded(node.get_metric()),
-                                      state_of<Kind>(urd::built_view(node.get_state()), formalism_repository));
-            }
-        }
-    }
-    return sorted(std::move(result));
+        successors.emplace_back(urd::clone(successor), repository.get());
+        return true;
+    };
+    planning::for_each_successor(generator, initial, axiom_evaluator, keep);
+    auto serialized = boost::json::array {};
+    for (const planning::SuccessorBuilderView<Kind>& successor : successors)
+        serialized.push_back(dictionaries.serialize(successor));
+    return boost::json::object { { "successors", std::move(serialized) }, { "tables", dictionaries.tables() } };
 }
 
 /// Expanding the initial node again, once its builders have grown, allocates and frees nothing: its successors are written
@@ -293,14 +207,14 @@ TEST_P(InitialSuccessorsTest, SuccessorsMatchFixtureGroundAndLifted)
     }
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto lifted = planning::Task<LiftedTag>::create(make_test_parser(test_case.domain_file).parse_task(test_case.task_file));
-    EXPECT_EQ(initial_successors<LiftedTag>(lifted, execution_context), test_case.successors) << "lifted";
+    EXPECT_EQ(first_difference(serialized_initial_successors<LiftedTag>(lifted, execution_context), test_case.lifted), "") << "lifted";
     {
         SCOPED_TRACE("lifted");
         expect_no_allocations_after_warmup<LiftedTag>(lifted, execution_context);
     }
     const auto ground = lifted->instantiate_ground_task(*execution_context).task;
     ASSERT_TRUE(ground);
-    EXPECT_EQ(initial_successors<GroundTag>(ground, execution_context), test_case.successors) << "ground";
+    EXPECT_EQ(first_difference(serialized_initial_successors<GroundTag>(ground, execution_context), test_case.ground), "") << "ground";
     {
         SCOPED_TRACE("ground");
         expect_no_allocations_after_warmup<GroundTag>(ground, execution_context);

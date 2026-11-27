@@ -32,7 +32,14 @@ namespace tyr::planning
 /// The serialization hooks of a task kind's state views (pyyggdrasil.serialization), once they are bound.
 template<TaskKind Kind>
 void bind_state_serialization()
-{ ygg::python::bind_serialization(boost::mp11::mp_list<StateBuilderView<Kind>, SharedStateBuilderView<Kind>> {}); }
+{
+    ygg::python::bind_serialization(boost::mp11::mp_list<StateBuilderView<Kind>,
+                                                         SharedStateBuilderView<Kind>,
+                                                         FactStorageBuilderView<Kind>,
+                                                         AtomStorageBuilderView<Kind>,
+                                                         NumericStorageBuilderView<Kind>,
+                                                         TemporalStorageBuilderView<Kind>> {});
+}
 
 template void bind_state_serialization<GroundTag>();
 template void bind_state_serialization<LiftedTag>();

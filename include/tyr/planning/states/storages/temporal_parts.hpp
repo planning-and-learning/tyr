@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <fmt/format.h>
 #include <span>
+#include <string_view>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
@@ -75,6 +76,25 @@ enum class TemporalRoleKind : std::uint8_t
     NUMERIC_WRITER,
     NUMERIC_READER,
 };
+
+/// A role's name (its serialization, as the formalism's enums: to_string).
+constexpr std::string_view to_string(TemporalRoleKind kind)
+{
+    switch (kind)
+    {
+        case TemporalRoleKind::WRITER:
+            return "writer";
+        case TemporalRoleKind::READER:
+            return "reader";
+        case TemporalRoleKind::OVER_ALL:
+            return "over_all";
+        case TemporalRoleKind::NUMERIC_WRITER:
+            return "numeric_writer";
+        case TemporalRoleKind::NUMERIC_READER:
+            return "numeric_reader";
+    }
+    return "";
+}
 
 struct TemporalRole
 {
@@ -138,7 +158,9 @@ struct TemporalWords
     /// Packs built parts (a builder's, written into its record: urd's AssignsBuilt).
     TemporalWords& operator=(const TemporalParts& parts);
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&TemporalWords::words> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"words", &TemporalWords::words>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&TemporalWords::words> {}; }
 };

@@ -19,7 +19,10 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
+#include "tyr/planning/successors/distribution_view.hpp"
+#include "tyr/planning/successors/outcome_node_view.hpp"
 #include "tyr/planning/successors/successor_view.hpp"
+#include "tyr/planning/successors/transition_view.hpp"
 
 #include <boost/mp11.hpp>
 #include <yggdrasil/python/serialization.hpp>
@@ -27,10 +30,21 @@
 namespace tyr::planning
 {
 
-/// The serialization hooks of a task kind's successor views, once they are bound.
+/// The serialization hooks of a task kind's successor views and its parts' builder views (its label and the label's
+/// binding, distributions and outcomes), once they are bound.
 template<TaskKind Kind>
 void bind_successor_serialization()
-{ ygg::python::bind_serialization(boost::mp11::mp_list<SuccessorBuilderView<Kind>, SuccessorRecordView<Kind>> {}); }
+{
+    using Repository = StateRepository<Kind>;
+    ygg::python::bind_serialization(boost::mp11::mp_list<SuccessorBuilderView<Kind>,
+                                                         SuccessorRecordView<Kind>,
+                                                         urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>,
+                                                                            Repository,
+                                                                            urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>,
+                                                         urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>,
+                                                         urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>,
+                                                         urd::borrowed_view<OutcomeNode<Kind>, Repository, urd::builder<OutcomeNode<Kind>, Repository>>> {});
+}
 
 template void bind_successor_serialization<GroundTag>();
 template void bind_successor_serialization<LiftedTag>();
