@@ -17,7 +17,6 @@
 
 #include "../axiom_evaluator_impl.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"

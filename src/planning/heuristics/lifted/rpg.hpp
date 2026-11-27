@@ -19,7 +19,6 @@
 #define TYR_SRC_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
 
 #include "../rpg.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"

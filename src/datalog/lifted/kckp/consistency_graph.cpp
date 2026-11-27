@@ -19,7 +19,6 @@
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/atom_view.hpp"
@@ -27,7 +26,6 @@
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"

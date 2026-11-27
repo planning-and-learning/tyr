@@ -26,9 +26,11 @@
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -55,5 +57,13 @@ public:
     static constexpr auto functions() noexcept { return urd::Functions<> {}; }
 };
 }  // namespace urd
+
+/// A ground rule's body: its literals and constraints, separated by commas.
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::RuleBody<tyr::GroundTag>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::RuleBody<tyr::GroundTag>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

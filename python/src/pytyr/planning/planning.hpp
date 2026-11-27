@@ -32,7 +32,6 @@
 
 #include <nanobind/nanobind.h>
 #include <tyr/planning/declarations.hpp>
-#include <tyr/planning/formatter.hpp>
 #include <tyr/planning/states/worker_state_index.hpp>
 #include <tyr/planning/tasks/ground/task.hpp>
 #include <tyr/planning/tasks/lifted/task.hpp>

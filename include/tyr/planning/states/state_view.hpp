@@ -58,6 +58,7 @@
 #include "tyr/planning/states/state_view_concepts.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <ranges>
 #include <tuple>
 #include <type_traits>
@@ -72,6 +73,7 @@
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 /// A state's builder, registered (StateBuilderView: shared from its repository's pool, its index set) or being built
 /// (StateBuilderView: borrowed, no index): its storages, each a view through the formalism repository, what it reads from
@@ -378,5 +380,18 @@ bool equal_unextended(const V& lhs, const W& rhs)
 }
 
 }
+
+/// A state, registered or being built: its atoms, facts and numeric values (and its index, where it has one).
+template<::tyr::TaskKind Kind>
+struct fmt::formatter<::tyr::planning::SharedStateBuilderView<Kind>, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const ::tyr::planning::StateBuilderView<Kind>& value, fmt::format_context& ctx) const;
+};
+
+template<::tyr::TaskKind Kind>
+struct fmt::formatter<::tyr::planning::StateBuilderView<Kind>, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const ::tyr::planning::StateBuilderView<Kind>& value, fmt::format_context& ctx) const;
+};
 
 #endif

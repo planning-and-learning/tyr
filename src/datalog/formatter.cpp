@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/formatter.hpp"
 
 #include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/statistics/program.hpp"

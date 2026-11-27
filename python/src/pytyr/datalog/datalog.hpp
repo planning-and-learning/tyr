@@ -36,7 +36,6 @@
 #include <tyr/datalog/applicability_lifted.hpp>
 #include <tyr/datalog/declarations.hpp>
 #include <tyr/datalog/fact_sets.hpp>
-#include <tyr/datalog/formatter.hpp>
 #include <tyr/datalog/ground/contexts/program.hpp>
 #include <tyr/datalog/ground/program.hpp>
 #include <tyr/datalog/lifted/contexts/program.hpp>

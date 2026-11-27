@@ -22,8 +22,10 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -41,5 +43,13 @@ public:
     auto get_fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
 };
 }  // namespace urd
+
+/// A numeric effect: (increase term expression).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

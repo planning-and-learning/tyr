@@ -18,7 +18,7 @@
 
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/formatter.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/successors/distribution_view.hpp"
 #include "tyr/planning/successors/outcome_node_view.hpp"
 #include "tyr/planning/successors/successor_view.hpp"

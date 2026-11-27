@@ -22,7 +22,6 @@
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 
 #include <nanobind/stl/shared_ptr.h>

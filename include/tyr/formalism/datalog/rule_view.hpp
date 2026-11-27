@@ -30,6 +30,7 @@
 
 #include <concepts>
 #include <cstddef>
+#include <fmt/base.h>
 #include <ranges>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
@@ -37,6 +38,7 @@
 #include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/values.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -81,5 +83,12 @@ public:
     }
 };
 }  // namespace urd
+
+/// A rule: heads :- body.  % cost c (its heads separated by commas; without a body, heads.).
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::Rule<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Rule<T>, tyr::formalism::Repository>& value, fmt::format_context& context) const;
+};
 
 #endif

@@ -21,12 +21,14 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <cstddef>
+#include <fmt/base.h>
 #include <ranges>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/values.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -48,5 +50,13 @@ public:
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {}; }
 };
 }  // namespace urd
+
+/// A predicate as a domain declares it: (name ?x0 ?x1 ...).
+template<tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

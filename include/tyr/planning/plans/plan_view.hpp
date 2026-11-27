@@ -25,11 +25,13 @@
 #include "tyr/planning/plans/plan_data.hpp"
 
 #include <cstddef>
+#include <fmt/base.h>
 #include <ranges>
 #include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 /// A plan: its start node and the labeled nodes that follow it; its length, its cost (its last node's metric) and the
 /// node it ends in.
@@ -79,6 +81,20 @@ public:
         else
             return read;
     }
+};
+
+/// A plan, as its views (borrowed or owned, of its builder or its record) write it: its actions, one per line.
+template<::tyr::TaskKind Kind, typename R>
+struct fmt::formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>& value,
+                                         fmt::format_context& ctx) const;
+};
+
+template<::tyr::TaskKind Kind, typename R>
+struct fmt::formatter<urd::owning_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char> :
+    fmt::formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char>
+{
 };
 
 #endif

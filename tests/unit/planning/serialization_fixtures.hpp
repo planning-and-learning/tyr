@@ -14,7 +14,6 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"

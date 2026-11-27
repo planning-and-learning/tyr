@@ -28,7 +28,6 @@
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/algorithms/search_budget.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/nodes/node_view.hpp"

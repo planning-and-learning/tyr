@@ -20,8 +20,10 @@
 
 #include "tyr/formalism/declarations.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -35,5 +37,12 @@ public:
     const auto& get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
 };
 }  // namespace urd
+
+/// An object: its name.
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::Object, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Object, tyr::formalism::Repository>& value, fmt::format_context& context) const;
+};
 
 #endif

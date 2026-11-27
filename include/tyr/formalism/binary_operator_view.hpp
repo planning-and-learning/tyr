@@ -21,8 +21,10 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -40,5 +42,13 @@ public:
     auto get_rhs() const noexcept { return self().template member<&urd::record_of<V>::rhs>(); }
 };
 }  // namespace urd
+
+/// A binary arithmetic expression (+ a b), or a numeric comparison (>= a b); != is (not (= a b)).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

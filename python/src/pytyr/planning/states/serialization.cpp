@@ -18,7 +18,7 @@
 #include "pytyr/planning/module.hpp"
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/formatter.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_view.hpp"

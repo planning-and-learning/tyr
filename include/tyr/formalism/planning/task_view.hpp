@@ -36,9 +36,11 @@
 
 #include <concepts>
 #include <cstddef>
+#include <fmt/base.h>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -111,5 +113,13 @@ public:
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_num_objects", &view_mixin::get_num_objects>> {}; }
 };
 }  // namespace urd
+
+/// A task as a PDDL problem: (define (problem name) its domain, objects, initial state, goal and metric, one per line); a ground task is written as the problem
+/// it grounds.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::Task<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Task<T>, tyr::formalism::Repository>& value, fmt::format_context& context) const;
+};
 
 #endif

@@ -23,7 +23,9 @@
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/outcome_data.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -39,5 +41,13 @@ public:
     auto get_choices() const noexcept { return self().template member<&urd::record_of<V>::choices>(); }
 };
 }  // namespace urd
+
+/// An outcome of a choice of nature: (and effects... choices...), its effects as conditional effects, then its nested choices.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::Outcome<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Outcome<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

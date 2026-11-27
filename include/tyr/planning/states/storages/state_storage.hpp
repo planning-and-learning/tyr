@@ -105,6 +105,8 @@ struct StateBitWords
         return *this;
     }
 
+    static constexpr std::string_view name = "StateBitWords";
+
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"words", &StateBitWords::words>> {}; }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }

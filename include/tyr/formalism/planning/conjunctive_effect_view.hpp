@@ -26,8 +26,10 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -61,5 +63,13 @@ public:
     { return self().template member<::tyr::formalism::effect_facts_of<F>>(); }
 };
 }  // namespace urd
+
+/// An effect: (and literals... numeric effects...), a ground one's added and deleted facts as literals.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::ConjunctiveEffect<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::ConjunctiveEffect<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

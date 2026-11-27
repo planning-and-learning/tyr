@@ -27,11 +27,13 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <ranges>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
 #include <utility>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::formalism::detail
 {
@@ -165,5 +167,13 @@ public:
     }
 };
 }  // namespace urd
+
+/// A condition: (and literals... constraints...), a ground one's facts as the literals they stand for.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::ConjunctiveCondition<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::ConjunctiveCondition<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

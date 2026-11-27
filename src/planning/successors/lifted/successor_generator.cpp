@@ -22,7 +22,6 @@
 #include "../temporal_transitions.hpp"
 #include "effect_atom_index.hpp"
 #include "lifted_outcomes.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/kckp/static_extensions.hpp"
 #include "tyr/datalog/solver.hpp"

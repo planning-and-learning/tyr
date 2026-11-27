@@ -21,8 +21,10 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -38,5 +40,13 @@ public:
     auto get_arg() const noexcept { return self().template member<&urd::record_of<V>::arg>(); }
 };
 }  // namespace urd
+
+/// A unary arithmetic expression: (- e).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

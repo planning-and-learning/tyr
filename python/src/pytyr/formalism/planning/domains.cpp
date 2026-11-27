@@ -18,7 +18,10 @@
 #include "bindings.hpp"
 #include "pytyr/module.hpp"
 #include "tyr/analysis/domains_view.hpp"
-#include "tyr/analysis/formatter.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <nanobind/stl/pair.h>

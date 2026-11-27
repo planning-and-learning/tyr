@@ -22,7 +22,6 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/states/state_view.hpp"
 #include "tyr/planning/successors/successor_view.hpp"

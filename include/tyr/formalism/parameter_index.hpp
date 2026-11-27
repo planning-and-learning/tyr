@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PARAMETER_INDEX_HPP_
 #define TYR_FORMALISM_PARAMETER_INDEX_HPP_
 
+#include <fmt/base.h>
 #include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -34,5 +35,14 @@ struct ParameterIndex : ygg::UnsignedInteger<ParameterIndex>
 using ParameterList = urd::Store<urd::sequence<ParameterIndex>>;
 
 }
+
+/// A parameter by its index, ?x<index>: a lifted atom or function term writes it as the variable its parameters name.
+template<>
+struct fmt::formatter<tyr::formalism::ParameterIndex, char>
+{
+    constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& context) const { return context.begin(); }
+
+    fmt::format_context::iterator format(const tyr::formalism::ParameterIndex& value, fmt::format_context& context) const;
+};
 
 #endif

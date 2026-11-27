@@ -22,9 +22,11 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <fmt/base.h>
 #include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::planning
 {
@@ -192,5 +194,17 @@ private:
 };
 
 }
+
+template<>
+struct fmt::formatter<tyr::planning::Statistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::planning::Statistics& value, fmt::format_context& ctx) const;
+};
+
+template<>
+struct fmt::formatter<tyr::planning::ProgressStatistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::planning::ProgressStatistics& value, fmt::format_context& ctx) const;
+};
 
 #endif

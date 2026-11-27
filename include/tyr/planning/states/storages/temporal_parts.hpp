@@ -25,7 +25,6 @@
 #include <bit>
 #include <compare>
 #include <cstdint>
-#include <fmt/format.h>
 #include <span>
 #include <string_view>
 #include <urd/elements/concepts.hpp>
@@ -53,6 +52,8 @@ struct OpenAction
     ygg::float_t max_duration = TemporalNetwork::infinity;
 
     friend bool operator==(const OpenAction&, const OpenAction&) = default;
+
+    static constexpr std::string_view name = "OpenAction";
 
     static constexpr auto fields() noexcept
     {
@@ -105,6 +106,8 @@ struct TemporalRole
     friend bool operator==(const TemporalRole&, const TemporalRole&) = default;
     friend auto operator<=>(const TemporalRole&, const TemporalRole&) = default;
 
+    static constexpr std::string_view name = "TemporalRole";
+
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"kind", &TemporalRole::kind>, urd::field<"variable", &TemporalRole::variable>, urd::field<"timepoint", &TemporalRole::timepoint>> {};
@@ -138,6 +141,8 @@ struct TemporalParts
                && std::ranges::equal(lhs.network.distances(), rhs.network.distances());
     }
 
+    static constexpr std::string_view name = "TemporalParts";
+
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"open", &TemporalParts::open>,
@@ -157,6 +162,8 @@ struct TemporalWords
 
     /// Packs built parts (a builder's, written into its record: urd's AssignsBuilt).
     TemporalWords& operator=(const TemporalParts& parts);
+
+    static constexpr std::string_view name = "TemporalWords";
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"words", &TemporalWords::words>> {}; }
 
@@ -203,27 +210,5 @@ inline TemporalWords& TemporalWords::operator=(const TemporalParts& parts)
 }
 
 }
-
-/// A state's temporal part: its open actions (action@start [min, max]), its roles (kind variable@timepoint), the timed
-/// initial literals that happened, and each frontier timepoint's window [earliest, latest].
-template<>
-struct fmt::formatter<tyr::planning::TemporalParts, char>
-{
-    constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
-
-    fmt::format_context::iterator format(const tyr::planning::TemporalParts& value, fmt::format_context& ctx) const
-    {
-        auto out = fmt::format_to(ctx.out(), "(temporal :open (");
-        for (const auto& open : value.open)
-            out = fmt::format_to(out, " {}@{} [{}, {}]", open.action, open.start, open.min_duration, open.max_duration);
-        out = fmt::format_to(out, ") :roles (");
-        for (const auto& role : value.roles)
-            out = fmt::format_to(out, " {}:{}@{}", static_cast<int>(role.kind), role.variable, role.timepoint);
-        out = fmt::format_to(out, ") :til {} :windows (", value.til_progress);
-        for (std::size_t t = 0; t < value.network.size(); ++t)
-            out = fmt::format_to(out, " [{}, {}]", value.network.earliest(t), value.network.latest(t));
-        return fmt::format_to(out, "))");
-    }
-};
 
 #endif

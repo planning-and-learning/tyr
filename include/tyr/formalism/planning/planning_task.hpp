@@ -27,10 +27,12 @@
 
 #include <concepts>
 #include <filesystem>
+#include <fmt/base.h>
 #include <memory>
 #include <optional>
 #include <type_traits>
 #include <variant>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::analysis
 {
@@ -91,5 +93,12 @@ void describe_fields(Archive& ar, std::type_identity<PlanningTask<Kind>> /*type*
 }
 
 }
+
+/// A planning task: its domain, then its problem.
+template<tyr::TaskKind T>
+struct fmt::formatter<tyr::formalism::PlanningTask<T>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::PlanningTask<T>& value, fmt::format_context& context) const;
+};
 
 #endif

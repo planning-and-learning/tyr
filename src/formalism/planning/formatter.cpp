@@ -432,10 +432,3 @@ template struct fmt::formatter<urd::index_view<tf::Task<LiftedTag>, tf::Reposito
 template struct fmt::formatter<urd::index_view<tf::Task<GroundTag>, tf::Repository>>;
 template struct fmt::formatter<tf::PlanningTask<LiftedTag>>;
 template struct fmt::formatter<tf::PlanningTask<GroundTag>>;
-
-fmt::format_context::iterator fmt::formatter<tyr::formalism::FDRValue>::format(const tyr::formalism::FDRValue& value, fmt::format_context& ctx) const
-{ return fmt::format_to(ctx.out(), "{}", value.value); }
-
-fmt::format_context::iterator fmt::formatter<tyr::formalism::OptimizationDirection>::format(tyr::formalism::OptimizationDirection value,
-                                                                                            fmt::format_context& ctx) const
-{ return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }

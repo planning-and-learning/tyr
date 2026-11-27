@@ -21,6 +21,7 @@
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
 #include "tyr/formalism/variable_dependency_graph.hpp"
 
 #include <concepts>
@@ -37,21 +38,9 @@ fmt::format_context::iterator fmt::formatter<tyr::formalism::ParameterIndex>::fo
                                                                                      fmt::format_context& context) const
 { return fmt::format_to(context.out(), "?x{}", value.value); }
 
-fmt::format_context::iterator fmt::formatter<tyr::formalism::BooleanOperatorKind>::format(tyr::formalism::BooleanOperatorKind value,
-                                                                                          fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
-
-fmt::format_context::iterator fmt::formatter<tyr::formalism::ArithmeticOperatorKind>::format(tyr::formalism::ArithmeticOperatorKind value,
-                                                                                             fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
-
-fmt::format_context::iterator fmt::formatter<tyr::formalism::NumericEffectOperatorKind>::format(tyr::formalism::NumericEffectOperatorKind value,
-                                                                                                fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "{}", tyr::formalism::to_string(value)); }
-
 // What each shared record is in PDDL. A list is written as its elements, each after a space, so that an empty one leaves
 // its parentheses closed: (and), (p). A lifted atom or function term writes a parameter as the variable its parameters
-// name at that index. A ground condition writes its facts as the literals they stand for (planning/formatter.hpp).
+// name at that index. A ground condition writes its facts as the literals they stand for (fdr_fact_view.hpp).
 
 namespace tf = tyr::formalism;
 using tyr::GroundTag;

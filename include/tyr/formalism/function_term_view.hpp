@@ -20,14 +20,17 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/parameters_view.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -71,5 +74,13 @@ public:
     }
 };
 }  // namespace urd
+
+/// A function term: (function terms...).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

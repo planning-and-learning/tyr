@@ -22,9 +22,11 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <fmt/base.h>
 #include <urd/kinds.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::datalog
 {
@@ -130,5 +132,29 @@ inline AggregatedRuleWorkerStatistics compute_aggregated_rule_worker_statistics(
 }
 
 }
+
+template<>
+struct fmt::formatter<tyr::datalog::RuleStatistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::datalog::RuleStatistics& value, fmt::format_context& ctx) const;
+};
+
+template<>
+struct fmt::formatter<tyr::datalog::AggregatedRuleStatistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::datalog::AggregatedRuleStatistics& value, fmt::format_context& ctx) const;
+};
+
+template<>
+struct fmt::formatter<tyr::datalog::RuleWorkerStatistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::datalog::RuleWorkerStatistics& value, fmt::format_context& ctx) const;
+};
+
+template<>
+struct fmt::formatter<tyr::datalog::AggregatedRuleWorkerStatistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::datalog::AggregatedRuleWorkerStatistics& value, fmt::format_context& ctx) const;
+};
 
 #endif

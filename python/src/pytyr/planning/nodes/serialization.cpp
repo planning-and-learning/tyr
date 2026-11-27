@@ -19,9 +19,9 @@
 
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 #include <boost/mp11.hpp>
 #include <yggdrasil/python/serialization.hpp>

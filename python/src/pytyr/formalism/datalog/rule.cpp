@@ -28,7 +28,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/formalism/datalog/formatter.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/formalism/declarations.hpp>

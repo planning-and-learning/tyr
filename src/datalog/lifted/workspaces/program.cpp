@@ -17,7 +17,6 @@
 
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"

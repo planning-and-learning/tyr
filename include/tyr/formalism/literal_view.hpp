@@ -23,8 +23,10 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -40,5 +42,13 @@ public:
     auto get_polarity() const noexcept { return self().template member<&urd::record_of<V>::polarity>(); }
 };
 }  // namespace urd
+
+/// A literal: its atom, or (not atom).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

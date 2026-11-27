@@ -22,7 +22,9 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <fmt/ranges.h>
 #include <string_view>
+#include <type_traits>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
@@ -207,5 +209,11 @@ using ActionDomainViewMap = urd::Store<urd::map<urd::index_view<formalism::Actio
 template<TaskKind Kind>
 struct RuleStrata;
 }
+
+/// A variable's domain is written as urd writes a record, not as fmt writes a range.
+template<typename C, typename Char>
+struct fmt::range_format_kind<tyr::analysis::VariableDomainView<C>, Char, void> : std::false_type
+{
+};
 
 #endif

@@ -26,8 +26,10 @@
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -69,5 +71,12 @@ public:
     { return self().template member<::tyr::formalism::domain_functions_of<T>>(); }
 };
 }  // namespace urd
+
+/// A domain: (define (domain name) its requirements, constants, predicates and functions (one per line), axioms and actions (one per line)).
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::Domain, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Domain, tyr::formalism::Repository>& value, fmt::format_context& context) const;
+};
 
 #endif

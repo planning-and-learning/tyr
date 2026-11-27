@@ -46,6 +46,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <cstddef>
+#include <fmt/base.h>
 #include <string_view>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
@@ -59,6 +60,7 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::datalog
 {
@@ -235,5 +237,11 @@ extern std::pair<formalism::RuleBodyView<LiftedTag>, bool>
 create_hyperedge_conjunctive_condition(formalism::RuleBodyView<LiftedTag> conflicting_condition, formalism::Builder& builder, formalism::Repository& context);
 
 }
+
+template<>
+struct fmt::formatter<tyr::datalog::StaticConsistencyGraph, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::datalog::StaticConsistencyGraph&, fmt::format_context& ctx) const;
+};
 
 #endif

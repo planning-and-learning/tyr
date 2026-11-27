@@ -26,7 +26,9 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -60,5 +62,14 @@ public:
     }
 };
 }  // namespace urd
+
+/// A choice of nature: (forall (variables) (when condition (oneof outcomes...))), or (probabilistic p outcome...) where it
+/// has probabilities, without the forall or the when it does not need.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::ChoiceEffect<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::ChoiceEffect<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

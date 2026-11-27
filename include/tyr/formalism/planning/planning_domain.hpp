@@ -23,10 +23,12 @@
 #include "tyr/formalism/planning/domain_view.hpp"
 
 #include <filesystem>
+#include <fmt/base.h>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::formalism
 {
@@ -64,5 +66,12 @@ void describe_fields(Archive& ar, std::type_identity<PlanningDomain> /*type*/)
 }
 
 }
+
+/// A planning domain: its domain.
+template<>
+struct fmt::formatter<tyr::formalism::PlanningDomain> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::PlanningDomain& value, fmt::format_context& context) const;
+};
 
 #endif

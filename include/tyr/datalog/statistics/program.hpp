@@ -19,7 +19,9 @@
 #define TYR_DATALOG_STATISTICS_PROGRAM_HPP_
 
 #include <chrono>
+#include <fmt/base.h>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::datalog
 {
@@ -30,5 +32,11 @@ struct ProgramStatistics
     std::chrono::nanoseconds total_time { 0 };
 };
 }
+
+template<>
+struct fmt::formatter<tyr::datalog::ProgramStatistics, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::datalog::ProgramStatistics& value, fmt::format_context& ctx) const;
+};
 
 #endif

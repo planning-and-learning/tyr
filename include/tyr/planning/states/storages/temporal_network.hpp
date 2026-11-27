@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <limits>
 #include <span>
+#include <string_view>
 #include <urd/elements/concepts.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -146,6 +147,8 @@ public:
     }
 
     /// Its time points' number and their pairwise distances (the origin first), as it is identified and serialized.
+    static constexpr std::string_view name = "TemporalNetwork";
+
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"size", &TemporalNetwork::m_size>, urd::field<"distances", &TemporalNetwork::m_distances>> {}; }
 

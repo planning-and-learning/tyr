@@ -24,6 +24,7 @@
 #include <concepts>
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <string_view>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/data.hpp>
@@ -139,6 +140,22 @@ enum class TransitionKind : std::uint8_t
     END,
     TIMED_LITERAL,
 };
+
+constexpr std::string_view to_string(TransitionKind kind)
+{
+    switch (kind)
+    {
+        case TransitionKind::APPLY:
+            return "apply";
+        case TransitionKind::START:
+            return "start";
+        case TransitionKind::END:
+            return "end";
+        case TransitionKind::TIMED_LITERAL:
+            return "timed literal";
+    }
+    throw std::logic_error("to_string(TransitionKind): unknown kind");
+}
 
 /// The tags of a successor and its parts, records read through the state repository of their task (successor_data.hpp):
 /// a transition's label, an outcome (a successor state, its metric, its probability and whether it fails), a

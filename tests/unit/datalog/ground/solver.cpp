@@ -19,7 +19,6 @@
 
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
-#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <fmt/core.h>

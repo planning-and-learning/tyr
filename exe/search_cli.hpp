@@ -34,7 +34,6 @@
 #include <tyr/formalism/repository.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/axioms/axiom_evaluator.hpp>
-#include <tyr/planning/formatter.hpp>
 #include <tyr/planning/successors/ground/successor_generator.hpp>
 #include <tyr/planning/tasks/ground/task.hpp>
 #include <tyr/planning/heuristics/heuristic.hpp>

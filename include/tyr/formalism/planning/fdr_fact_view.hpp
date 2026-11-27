@@ -19,16 +19,19 @@
 #define TYR_FORMALISM_PLANNING_FDR_FACT_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 
+#include <fmt/base.h>
 #include <optional>
 #include <type_traits>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 /// A fact: its variable and value.
 template<::tyr::formalism::FactKind T, typename V>
@@ -58,5 +61,21 @@ public:
 };
 
 static_assert(std::is_trivially_copyable_v<urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>>);
+
+/// A fact as the literal it stands for: its atom, or (and (not a1) ...) where its variable holds none of its atoms.
+template<>
+struct fmt::formatter<tyr::formalism::FDRFactView<tyr::formalism::FluentTag>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::FDRFactView<tyr::formalism::FluentTag>& value, fmt::format_context& context) const;
+};
+
+/// A fact computed on the fly (a state's), as a stored one.
+template<>
+struct fmt::formatter<urd::owning_view<tyr::formalism::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::Repository>> :
+    ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::owning_view<tyr::formalism::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

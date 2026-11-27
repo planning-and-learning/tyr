@@ -23,7 +23,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/variable_dependency_graph_details.hpp"
 
+#include <fmt/base.h>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::formalism
 {
@@ -50,5 +52,12 @@ private:
     details::BinaryDependencies m_binary_dependencies;
 };
 }
+
+/// A condition's variable dependency graph: one DOT graph per kind of binary dependency.
+template<>
+struct fmt::formatter<tyr::formalism::VariableDependencyGraph> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::VariableDependencyGraph& value, fmt::format_context& context) const;
+};
 
 #endif

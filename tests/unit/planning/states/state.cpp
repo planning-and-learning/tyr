@@ -10,7 +10,6 @@
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/storages/fact_storage_view.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/successors/ground/successor_generator.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"

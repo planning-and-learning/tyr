@@ -26,8 +26,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <fmt/base.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -99,5 +101,13 @@ std::size_t rule_index_bound(const Rules& rules)
     return bound;
 }
 }
+
+/// A program: its predicates, functions and objects as comments, then its facts, function values and rules, one per line, and its goal as a query ?- body.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::Program<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Program<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
 #endif

@@ -27,7 +27,9 @@
 #include "tyr/planning/states/static_state.hpp"
 #include "tyr/planning/tasks/task.hpp"
 
+#include <fmt/base.h>
 #include <type_traits>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::planning
 {
@@ -70,5 +72,11 @@ void describe_fields(Archive& ar, std::type_identity<Task<GroundTag>> /*type*/)
 }
 
 }
+
+template<>
+struct fmt::formatter<tyr::planning::Task<::tyr::GroundTag>, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::planning::Task<::tyr::GroundTag>& value, fmt::format_context& ctx) const;
+};
 
 #endif

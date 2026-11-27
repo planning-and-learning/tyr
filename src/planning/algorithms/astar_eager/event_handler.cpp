@@ -18,7 +18,6 @@
 #include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
 
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"

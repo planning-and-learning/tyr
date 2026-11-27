@@ -15,17 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/formatter.hpp"
 
-#include <stdexcept>
-#include <bit>
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/planning/algorithms/iw/statistics.hpp"
+#include "tyr/planning/algorithms/siw/statistics.hpp"
+#include "tyr/planning/algorithms/statistics.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/states/state_view.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
-#include <limits>
 #include <ranges>
 #include <sstream>
-#include <string_view>
 #include <urd/format.hpp>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/io/iostream.hpp>
@@ -71,26 +76,6 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::Task<::tyr::LiftedTa
 fmt::format_context::iterator fmt::formatter<tyr::planning::Task<::tyr::GroundTag>>::format(const tyr::planning::Task<::tyr::GroundTag>& value,
                                                                                             fmt::format_context& ctx) const
 { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
-
-fmt::format_context::iterator
-fmt::formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>>::format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&,
-                                                                          fmt::format_context& ctx) const
-{ return ctx.out(); }
-
-fmt::format_context::iterator fmt::formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>>::format(
-    const urd::builder<tyr::planning::State<::tyr::LiftedTag>, tyr::planning::StateRepository<::tyr::LiftedTag>>&,
-    fmt::format_context& ctx) const
-{ return ctx.out(); }
-
-fmt::format_context::iterator
-fmt::formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>>::format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&,
-                                                                          fmt::format_context& ctx) const
-{ return ctx.out(); }
-
-fmt::format_context::iterator fmt::formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>>::format(
-    const urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::planning::StateRepository<::tyr::GroundTag>>&,
-    fmt::format_context& ctx) const
-{ return ctx.out(); }
 
 fmt::format_context::iterator fmt::formatter<tyr::planning::Statistics>::format(const tyr::planning::Statistics& value, fmt::format_context& ctx) const
 {
@@ -206,44 +191,6 @@ template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBuilderView<Kind>>::format(const ::tyr::planning::StateBuilderView<Kind>& value,
                                                                                        fmt::format_context& ctx) const
 { return write_state(value, ctx); }
-
-fmt::format_context::iterator fmt::formatter<tyr::planning::TransitionKind>::format(tyr::planning::TransitionKind value, fmt::format_context& ctx) const
-{
-    switch (value)
-    {
-        case tyr::planning::TransitionKind::APPLY:
-            return fmt::format_to(ctx.out(), "apply");
-        case tyr::planning::TransitionKind::START:
-            return fmt::format_to(ctx.out(), "start");
-        case tyr::planning::TransitionKind::END:
-            return fmt::format_to(ctx.out(), "end");
-        case tyr::planning::TransitionKind::TIMED_LITERAL:
-            return fmt::format_to(ctx.out(), "timed literal");
-    }
-    throw std::logic_error("fmt::formatter<TransitionKind>: unknown kind");
-}
-
-fmt::format_context::iterator fmt::formatter<::tyr::planning::TemporalWords>::format(const ::tyr::planning::TemporalWords& value,
-                                                                                     fmt::format_context& ctx) const
-{
-    auto parts = ::tyr::planning::TemporalParts();
-    ::tyr::planning::unpack_temporal(std::span<const std::uint64_t>(value.words.data(), value.words.size()), parts);
-    return fmt::format_to(ctx.out(), "{}", parts);
-}
-
-fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBitWords>::format(const ::tyr::planning::StateBitWords& value,
-                                                                                     fmt::format_context& ctx) const
-{
-    auto out = fmt::format_to(ctx.out(), "{{");
-    auto separator = std::string_view {};
-    for (std::size_t w = 0; w < value.words.size(); ++w)
-        for (auto word = value.words[w]; word != 0; word &= word - 1)
-        {
-            out = fmt::format_to(out, "{}{}", separator, w * std::numeric_limits<urd::word_t>::digits + static_cast<std::size_t>(std::countr_zero(word)));
-            separator = ", ";
-        }
-    return fmt::format_to(out, "}}");
-}
 
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::GroundTag>>;
 template struct fmt::formatter<tyr::planning::siw::Statistics<::tyr::GroundTag>>;

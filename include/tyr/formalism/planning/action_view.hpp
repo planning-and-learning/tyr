@@ -22,6 +22,8 @@
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/formatter.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/choice_effect_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -29,6 +31,7 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <concepts>
+#include <fmt/base.h>
 #include <ranges>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
@@ -36,6 +39,7 @@
 #include <urd/elements/view.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/values.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -97,5 +101,20 @@ public:
     }
 };
 }  // namespace urd
+
+/// An action: (:action name :parameters (...) :precondition C :effect E); a ground one is named after its binding.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::Action<T>, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Action<T>, tyr::formalism::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An action's binding held by a view: as a stored one.
+template<>
+struct fmt::formatter<tyr::formalism::ActionRowBuilderView> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::ActionRowBuilderView& value, fmt::format_context& context) const;
+};
 
 #endif

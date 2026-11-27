@@ -20,8 +20,10 @@
 
 #include "tyr/declarations.hpp"
 
+#include <fmt/base.h>
 #include <optional>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::planning::iw
 {
@@ -41,5 +43,11 @@ public:
 };
 
 }
+
+template<::tyr::TaskKind Kind>
+struct fmt::formatter<tyr::planning::iw::Statistics<Kind>, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::planning::iw::Statistics<Kind>& value, fmt::format_context& ctx) const;
+};
 
 #endif

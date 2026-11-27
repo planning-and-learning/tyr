@@ -21,7 +21,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 
+#include <fmt/base.h>
 #include <urd/elements/view.hpp>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace urd
 {
@@ -37,5 +39,12 @@ public:
     auto get_fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
 };
 }  // namespace urd
+
+/// A metric: (:metric minimize expression).
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::Metric, tyr::formalism::Repository>> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Metric, tyr::formalism::Repository>& value, fmt::format_context& context) const;
+};
 
 #endif

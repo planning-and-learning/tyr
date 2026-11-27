@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <fmt/base.h>
 #include <optional>
 #include <span>
 #include <urd/elements/concepts.hpp>
@@ -38,6 +39,7 @@
 #include <urd/store.hpp>
 #include <urd/tags.hpp>
 #include <utility>
+#include <yggdrasil/formatting/without_format_spec.hpp>
 
 namespace tyr::formalism::unification
 {
@@ -158,4 +160,13 @@ private:
 };
 
 }
+
+/// A substitution: each parameter of its domain with its value, `_` where it has none, in the order its parameters were
+/// given.
+template<typename T>
+struct fmt::formatter<tyr::formalism::unification::SubstitutionFunction<T>, char> : ygg::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::unification::SubstitutionFunction<T>& value, fmt::format_context& ctx) const;
+};
+
 #endif
