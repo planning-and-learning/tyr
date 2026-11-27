@@ -78,35 +78,35 @@ add_library(
     datalog/lifted/scheduler.cpp
 
     planning/formatter.cpp
-    planning/state_storage/temporal.cpp
-    planning/state_storage/numeric.cpp
-    planning/ground/state_storage.cpp
+    planning/states/storages/policies/temporal.cpp
+    planning/states/storages/policies/numeric.cpp
+    planning/states/storages/ground/state_storage.cpp
 
-    planning/heuristic.cpp
+    planning/heuristics/heuristic.cpp
     planning/heuristics/goal_count.cpp
     planning/heuristics/lmcut.cpp
     planning/heuristics/rpg_add.cpp
     planning/heuristics/rpg_ff.cpp
     planning/heuristics/rpg_max.cpp
-    planning/state.cpp
-    planning/state_delta.cpp
-    planning/state_repository.cpp
+    planning/states/state.cpp
+    planning/states/state_delta.cpp
+    planning/states/state_repository.cpp
 
-    planning/ground/axiom_evaluator.cpp
-    planning/ground/axiom_stratification.cpp
-    planning/ground/match_tree.cpp
-    planning/ground/successor_generator.cpp
-    planning/lifted/axiom_evaluator.cpp
-    planning/lifted/effect_atom_index.cpp
-    planning/lifted/successor_generator.cpp
-    planning/lifted/task_grounder.cpp
+    planning/axioms/ground/axiom_evaluator.cpp
+    planning/successors/ground/match_tree.cpp
+    planning/successors/ground/successor_generator.cpp
+    planning/axioms/lifted/axiom_evaluator.cpp
+    planning/successors/lifted/effect_atom_index.cpp
+    planning/successors/lifted/successor_generator.cpp
+    planning/tasks/lifted/task_grounder.cpp
 
-    planning/lifted/programs/action.cpp
-    planning/lifted/programs/axiom.cpp
+    planning/programs/lifted/action.cpp
+    planning/programs/lifted/axiom.cpp
     planning/programs/common.cpp
-    planning/lifted/programs/rpg.cpp
-    planning/lifted/programs/ground.cpp
-    planning/ground/programs/rpg.cpp
+    planning/programs/lifted/rpg.cpp
+    planning/programs/lifted/ground.cpp
+    planning/programs/ground/axiom.cpp
+    planning/programs/ground/rpg.cpp
 
     planning/algorithms/astar_eager.cpp
     planning/algorithms/astar_eager/event_handler.cpp
@@ -117,14 +117,14 @@ add_library(
     planning/algorithms/iw.cpp
     planning/algorithms/utils.cpp
 
-    planning/state_routing/dist_hash.cpp
+    planning/algorithms/state_routing/dist_hash.cpp
 
-    planning/applicability.cpp
-    planning/applicability_lifted.cpp
-    planning/action_executor.cpp
-    planning/task.cpp
-    planning/plan.cpp
-    planning/task_utils.cpp
+    planning/successors/applicability.cpp
+    planning/successors/applicability_lifted.cpp
+    planning/successors/action_executor.cpp
+    planning/tasks/task.cpp
+    planning/successors/successors.cpp
+    planning/tasks/task_utils.cpp
 )
 add_library(tyr::core ALIAS core)
 
@@ -149,10 +149,16 @@ brokkr_unity_directories(
         formalism/planning/invariants
         planning
         planning/algorithms
-        planning/ground
+        planning/axioms/ground
         planning/heuristics
-        planning/lifted/programs
-        planning/state_storage/tree_bitset
+        planning/programs/ground
+        planning/programs/lifted
+        planning/states
+        planning/states/storages/ground
+        planning/states/storages/policies/tree_bitset
+        planning/successors
+        planning/successors/ground
+        planning/tasks
 )
 brokkr_unity_directories(core ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 3 DIRECTORIES formalism/planning)
 # The repository's members, instantiated in their own source: the heaviest of the library's, alone.
@@ -189,13 +195,13 @@ if(TYR_ENABLE_SEMI_NAIVE)
 endif()
 
 # The pools of the state storage policy the build chooses, and only those: a state's storage keys are that policy's
-# handles (urd::key_value_of in tyr/planning/state_storage.hpp).
+# handles (urd::key_value_of in tyr/planning/states/storages/state_storage.hpp).
 if(TYR_STATE_STORAGE_POLICY STREQUAL "TreeBitset")
-    target_sources(core PRIVATE planning/state_storage/tree_bitset/atom.cpp planning/state_storage/tree_bitset/fact.cpp)
-    set(TYR_STATE_STORAGE_POLICY_HEADER "tyr/planning/state_storage/tree_bitset.hpp")
+    target_sources(core PRIVATE planning/states/storages/policies/tree_bitset/atom.cpp planning/states/storages/policies/tree_bitset/fact.cpp)
+    set(TYR_STATE_STORAGE_POLICY_HEADER "tyr/planning/states/storages/policies/tree_bitset.hpp")
 else()
-    target_sources(core PRIVATE planning/ground/state_storage/vectors.cpp planning/lifted/state_storage/vectors.cpp)
-    set(TYR_STATE_STORAGE_POLICY_HEADER "tyr/planning/state_storage/vectors.hpp")
+    target_sources(core PRIVATE planning/states/storages/policies/ground/vectors.cpp planning/states/storages/policies/lifted/vectors.cpp)
+    set(TYR_STATE_STORAGE_POLICY_HEADER "tyr/planning/states/storages/policies/vectors.hpp")
 endif()
 target_compile_definitions(core PUBLIC "TYR_STATE_STORAGE_POLICY_HEADER=\"${TYR_STATE_STORAGE_POLICY_HEADER}\"")
 target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_POLICY=${TYR_STATE_STORAGE_POLICY})

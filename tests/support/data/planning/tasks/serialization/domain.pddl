@@ -1,0 +1,8 @@
+(define (domain serialization)
+  (:requirements :strips :fluents :derived-predicates)
+  (:predicates (ready) (start) (done) (active))
+  (:functions (capacity) (fuel))
+  (:derived (active) (start))
+  (:action finish :parameters ()
+    :precondition (and (ready) (active) (> (capacity) 0))
+    :effect (and (not (start)) (done) (decrease (fuel) 1))))

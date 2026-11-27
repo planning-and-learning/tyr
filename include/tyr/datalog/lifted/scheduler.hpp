@@ -50,7 +50,7 @@ namespace tyr::datalog
 class TypedRuleSchedulerStratum
 {
 public:
-    TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
+    TypedRuleSchedulerStratum(const analysis::RuleStratum<LiftedTag>& rules,
                               const analysis::TypedListenerStratum& listeners,
                               const formalism::Repository& context,
                               formalism::ProgramView<LiftedTag> program);
@@ -81,7 +81,7 @@ public:
 private:
     void rebuild_sorted_active_rules();
 
-    const analysis::TypedRuleStratum* m_rules;
+    const analysis::RuleStratum<LiftedTag>* m_rules;
     const analysis::TypedListenerStratum* m_listeners;
     const formalism::Repository* m_context;
 
@@ -100,7 +100,7 @@ template<>
 class Scheduler<LiftedTag>
 {
 public:
-    Scheduler(const analysis::RuleStratum& rules,
+    Scheduler(const analysis::RuleStratum<LiftedTag>& rules,
               const analysis::ListenerStratum& listeners,
               const formalism::Repository& context,
               formalism::ProgramView<LiftedTag> program);
@@ -156,7 +156,7 @@ private:
     TypedRuleSchedulerStratum predicate_rules;
 };
 
-urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
+urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata<LiftedTag>& rules,
                                                                   const analysis::ListenerStrata& listeners,
                                                                   const formalism::Repository& context,
                                                                   formalism::ProgramView<LiftedTag> program);

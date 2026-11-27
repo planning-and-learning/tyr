@@ -52,7 +52,7 @@ private:
     formalism::ProgramView<LiftedTag> m_program;
     formalism::RepositoryPtr m_program_repository;
     analysis::ProgramAnalysis m_analysis;
-    analysis::RuleStrata m_strata;
+    analysis::RuleStrata<LiftedTag> m_strata;
     analysis::ListenerStrata m_listeners;
     ConstProgramWorkspace<LiftedTag> m_const_program_workspace;
 };

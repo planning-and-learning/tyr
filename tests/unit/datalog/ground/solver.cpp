@@ -719,14 +719,39 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctio
               ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
-TEST(TyrDatalogGroundQueueTest, PredicateRuleWithNegativeFluentLiteralIsRejected)
+TEST(TyrDatalogGroundQueueTest, NegativeLiteralHoldsWhereItsAtomIsAbsent)
 {
     auto fixture = GroundQueueFixture();
     const auto a = fixture.fluent_atom("a");
     const auto b = fixture.fluent_atom("b");
     fixture.rule(fixture.condition({ fixture.fluent_literal(a, false) }), b);
 
-    EXPECT_THROW(datalog::ConstProgramWorkspace<GroundTag>(fixture.program()), std::invalid_argument);
+    EXPECT_EQ(solve_default_state(fixture).fluent_bindings, binding_views({ b }));
+
+    fixture.initial_fluent_atoms.push_back(a);
+    EXPECT_EQ(solve_default_state(fixture).fluent_bindings, binding_views({ a }));
 }
 
+TEST(TyrDatalogGroundQueueTest, NegativeLiteralReadsItsAtomOnceALowerStratumIsComplete)
+{
+    // c is derived from a; d from not c: d's stratum begins only once c's is complete.
+    auto fixture = GroundQueueFixture();
+    const auto a = fixture.fluent_atom("a");
+    const auto c = fixture.fluent_atom("c");
+    const auto d = fixture.fluent_atom("d");
+    fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), c);
+    fixture.rule(fixture.condition({ fixture.fluent_literal(c, false) }), d);
+    fixture.initial_fluent_atoms.push_back(a);
+
+    EXPECT_EQ(solve_default_state(fixture).fluent_bindings, binding_views({ a, c }));
+}
+
+TEST(TyrDatalogGroundQueueTest, NegativeCycleIsRejected)
+{
+    auto fixture = GroundQueueFixture();
+    const auto a = fixture.fluent_atom("a");
+    fixture.rule(fixture.condition({ fixture.fluent_literal(a, false) }), a);
+
+    EXPECT_THROW(datalog::ConstProgramWorkspace<GroundTag>(fixture.program()), std::runtime_error);
+}
 }

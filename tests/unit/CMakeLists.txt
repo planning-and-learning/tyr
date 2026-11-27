@@ -61,11 +61,11 @@ add_gtest(
 
 add_gtest(
     planning_match_tree_types
-    "planning/ground/match_tree/nodes/atom.cpp"
-    "planning/ground/match_tree/nodes/constraint.cpp"
-    "planning/ground/match_tree/nodes/generator.cpp"
-    "planning/ground/match_tree/nodes/negative_fact.cpp"
-    "planning/ground/match_tree/nodes/variable.cpp"
+    "planning/successors/ground/match_tree/nodes/atom.cpp"
+    "planning/successors/ground/match_tree/nodes/constraint.cpp"
+    "planning/successors/ground/match_tree/nodes/generator.cpp"
+    "planning/successors/ground/match_tree/nodes/negative_fact.cpp"
+    "planning/successors/ground/match_tree/nodes/variable.cpp"
 )
 
 # Type tests of one directory include the same headers and check their types against them: batched, the headers and
@@ -74,30 +74,31 @@ target_link_libraries(formalism_planning_types PRIVATE Boost::json)
 brokkr_unity_directories(formalism_core_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism)
 brokkr_unity_directories(formalism_datalog_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism/datalog)
 brokkr_unity_directories(formalism_planning_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism/planning)
-brokkr_unity_directories(planning_match_tree_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES planning/ground/match_tree/nodes)
+brokkr_unity_directories(planning_match_tree_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES planning/successors/ground/match_tree/nodes)
 
 add_gtest(
     planning_state_types
-    "planning/ground/state.cpp"
-    "planning/lifted/state.cpp"
-    "planning/state.cpp"
+    "planning/states/ground_state.cpp"
+    "planning/states/lifted_state.cpp"
+    "planning/states/state.cpp"
 )
 
-add_gtest(planning_applicability "planning/applicability.cpp" "planning/applicability_schema.cpp")
-add_gtest(planning_plan_reconstruction "planning/plan_reconstruction.cpp")
-add_gtest(planning_search_engine "planning/search_engine.cpp")
+add_gtest(planning_applicability "planning/successors/applicability.cpp" "planning/successors/applicability_schema.cpp")
+add_gtest(planning_plan_reconstruction "planning/plans/plan_reconstruction.cpp")
+add_gtest(planning_search_engine "planning/algorithms/search_engine.cpp")
 target_include_directories(planning_search_engine PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_gtest(planning_workers "planning/workers.cpp")
-add_gtest(planning_task_layers "planning/task_layers.cpp")
-add_gtest(planning_state_routing "planning/state_routing.cpp")
+add_gtest(planning_task_layers "planning/tasks/task_layers.cpp")
+add_gtest(planning_state_routing "planning/algorithms/state_routing.cpp")
 target_include_directories(planning_state_routing PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_gtest(formalism_planning_invariants_synthesis "formalism/planning/invariants/synthesis.cpp")
 target_link_libraries(formalism_planning_invariants_synthesis PRIVATE Boost::json)
-add_gtest(planning_invariant_order "planning/lifted/invariant_order.cpp")
-add_gtest(planning_task_grounder "planning/lifted/task_grounder.cpp")
-add_gtest(planning_outcome_successors "planning/outcome_successors.cpp")
-add_gtest(planning_temporal_successors "planning/temporal_successors.cpp")
-add_gtest(planning_temporal_network "planning/temporal_network.cpp")
+add_gtest(planning_invariant_order "planning/tasks/lifted/invariant_order.cpp")
+add_gtest(planning_task_grounder "planning/tasks/lifted/task_grounder.cpp")
+add_gtest(planning_temporal_network "planning/states/temporal_network.cpp")
+add_gtest(planning_outcome_successors "planning/successors/outcome_successors.cpp")
+add_gtest(planning_temporal_successors "planning/successors/temporal_successors.cpp")
+add_gtest(planning_initial_successors "planning/successors/initial_successors.cpp")
 add_gtest(formalism_unification "formalism/unification.cpp")
 add_gtest(formalism_numeric_expression_utils "formalism/numeric_expression_utils.cpp")
 add_gtest(algorithms_kckp "algorithms/kckp/kckp.cpp")

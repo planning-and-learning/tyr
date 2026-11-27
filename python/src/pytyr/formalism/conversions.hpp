@@ -17,9 +17,9 @@ namespace tyr::python
 {
 using FormalismKinds = tyr::formalism::Repository::SymbolTypes;
 
-/// Binds repository.insert(data) and repository.insert(builder) -> (view, created). Data is canonicalized in place and
-/// interned (no copy); a builder is interned with its children, built ones first, through scratch records of a builder
-/// storage of its own.
+/// Binds repository.insert(data) and repository.insert(builder) -> (view, created), and repository.view(key) -> the
+/// view of the record of T under key. Data is canonicalized in place and interned (no copy); a builder is interned with
+/// its children, built ones first, through scratch records of a builder storage of its own.
 template<typename T>
 void bind_insert(nanobind::class_<tyr::formalism::Repository>& repository)
 {
@@ -33,6 +33,7 @@ void bind_insert(nanobind::class_<tyr::formalism::Repository>& repository)
             return self.insert(built, storage);
         },
         nanobind::arg("builder"));
+    repository.def("view", [](const Repository& self, urd::key_t<T> key) { return self.view(key); }, nanobind::arg("key"), nanobind::keep_alive<0, 1>());
 }
 }
 

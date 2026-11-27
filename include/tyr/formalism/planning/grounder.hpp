@@ -386,7 +386,7 @@ ground(ActionView<LiftedTag> element, GroundingContext<Builder, Repository>& con
 
     auto action = checkout<Action<GroundTag>>(context.builder());
 
-    action->row = binding;
+    action->row.template emplace<0>(binding);
     urd::store(action->condition, ground(element.get_condition(), context, fdr).first);
 
     for (const auto cond_effect : element.get_effects())
@@ -427,7 +427,7 @@ ground(AxiomView<LiftedTag> element, GroundingContext<Builder, Repository>& cont
 
     auto axiom = checkout<Axiom<GroundTag>>(context.builder());
 
-    axiom->row = binding;
+    axiom->row.template emplace<0>(binding);
     urd::store(axiom->body, ground(element.get_body(), context, fdr).first);
     urd::store(axiom->head, ground(element.get_head(), context).first);
 

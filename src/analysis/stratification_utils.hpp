@@ -83,7 +83,7 @@ inline std::pair<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t> compute_sc
         const auto u = boost::source(e, g);
         const auto v = boost::target(e, g);
         if (comp[u] == comp[v])
-            throw std::runtime_error("Set of ground axioms is not stratifiable (negative cycle within SCC).");
+            throw std::runtime_error("The program is not stratifiable: a relation depends negatively on itself.");
     }
 
     return { comp, num };

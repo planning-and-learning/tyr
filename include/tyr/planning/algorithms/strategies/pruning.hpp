@@ -20,6 +20,7 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_view_concepts.hpp"
 
 #include <memory>
 #include <urd/elements/index.hpp>
@@ -27,23 +28,25 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
+template<TaskKind Kind, typename V>
 class PruningStrategy
 {
+    static_assert(StateBuilderViewConcept<V, Kind>, "PruningStrategy: V is a view of a state of Kind (StateBuilderViewConcept).");
+
 public:
     PruningStrategy() = default;
     virtual ~PruningStrategy() = default;
 
-    static PruningStrategyPtr<Kind> create();
+    static PruningStrategyPtr<Kind, V> create();
 
     /// Custom strategies opt into parallel search by returning an independently usable worker. Each returned worker is called serially, without OS-thread
     /// affinity. State views retain the repository wrappers that produced them; these wrappers may differ in hash-distributed mode and need not identify the
     /// logical owner in shared mode. A strategy must not re-enter the search or wait for work from the same logical worker.
-    [[nodiscard]] virtual PruningStrategyPtr<Kind> make_worker(urd::index<Worker>) const { return nullptr; }
+    [[nodiscard]] virtual PruningStrategyPtr<Kind, V> make_worker(urd::index<Worker>) const { return nullptr; }
 
-    virtual bool should_prune_state(const StateView<Kind>&) { return false; }
+    virtual bool should_prune_state(const V&) { return false; }
 
-    virtual bool should_prune_successor_state(const StateView<Kind>&, const StateView<Kind>&, bool) { return false; }
+    virtual bool should_prune_successor_state(const V&, const V&, bool) { return false; }
 
 protected:
     PruningStrategy(const PruningStrategy&) = default;
@@ -55,18 +58,18 @@ protected:
 namespace detail
 {
 
-template<TaskKind Kind>
-class NoPruningStrategy final : public PruningStrategy<Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+class NoPruningStrategy final : public PruningStrategy<Kind, V>
 {
 public:
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return PruningStrategy<Kind>::create(); }
+    [[nodiscard]] PruningStrategyPtr<Kind, V> make_worker(urd::index<Worker>) const override { return PruningStrategy<Kind, V>::create(); }
 };
 
 }
 
-template<TaskKind Kind>
-PruningStrategyPtr<Kind> PruningStrategy<Kind>::create()
-{ return std::make_shared<detail::NoPruningStrategy<Kind>>(); }
+template<TaskKind Kind, typename V>
+PruningStrategyPtr<Kind, V> PruningStrategy<Kind, V>::create()
+{ return std::make_shared<detail::NoPruningStrategy<Kind, V>>(); }
 
 }
 

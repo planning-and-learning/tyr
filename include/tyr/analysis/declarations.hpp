@@ -204,6 +204,7 @@ using ActionDomainViewMap = urd::Store<urd::map<urd::index_view<formalism::Actio
  * Stratification
  */
 
+template<TaskKind Kind>
 struct RuleStrata;
 }
 

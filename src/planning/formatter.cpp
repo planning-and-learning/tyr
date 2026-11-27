@@ -17,6 +17,7 @@
 
 #include "tyr/planning/formatter.hpp"
 
+#include <stdexcept>
 #include <bit>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -184,48 +185,43 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::siw::Statistics<Kind
                           value.get_num_solved_subsearches());
 }
 
-template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::Plan<Kind>>::format(const tyr::planning::Plan<Kind>& value, fmt::format_context& ctx) const
+template<::tyr::TaskKind Kind, typename R>
+fmt::format_context::iterator fmt::formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>>::format(
+    const urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>& value,
+    fmt::format_context& ctx) const
 {
     auto out = ctx.out();
     for (const auto& labeled_node : value.get_labeled_succ_nodes())
-    {
-        out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::PlanFormatting()));
-    }
+        urd::visit_view(labeled_node.get_label(),
+                        [&](const auto& label) { out = fmt::format_to(out, "{}\n", std::make_pair(label, tyr::formalism::PlanFormatting())); });
     return out;
 }
 
 template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::PackedPlan<Kind>>::format(const tyr::planning::PackedPlan<Kind>& value,
-                                                                                      fmt::format_context& ctx) const
-{
-    auto out = ctx.out();
-    for (const auto& labeled_node : value.get_labeled_succ_nodes())
-    {
-        out = fmt::format_to(out, "{}\n", std::make_pair(labeled_node.label, tyr::formalism::PlanFormatting()));
-    }
-    return out;
-}
-
-template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<::tyr::planning::StateView<Kind>>::format(const ::tyr::planning::StateView<Kind>& value,
-                                                                                       fmt::format_context& ctx) const
+fmt::format_context::iterator fmt::formatter<::tyr::planning::SharedStateBuilderView<Kind>>::format(const ::tyr::planning::StateBuilderView<Kind>& value,
+                                                                                             fmt::format_context& ctx) const
 { return write_state(value, ctx); }
 
 template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBuilderView<Kind>>::format(const ::tyr::planning::StateBuilderView<Kind>& value,
-                                                                                              fmt::format_context& ctx) const
+                                                                                       fmt::format_context& ctx) const
 { return write_state(value, ctx); }
 
-template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::PackedNode<Kind>>::format(const tyr::planning::PackedNode<Kind>& value,
-                                                                                      fmt::format_context& ctx) const
-{ return fmt::format_to(ctx.out(), "{}", value.unpack()); }
-
-template<::tyr::TaskKind Kind>
-fmt::format_context::iterator fmt::formatter<tyr::planning::PackedLabeledNode<Kind>>::format(const tyr::planning::PackedLabeledNode<Kind>& value,
-                                                                                             fmt::format_context& ctx) const
-{ return fmt::format_to(ctx.out(), "{}", value.unpack()); }
+fmt::format_context::iterator fmt::formatter<tyr::planning::TransitionKind>::format(tyr::planning::TransitionKind value, fmt::format_context& ctx) const
+{
+    switch (value)
+    {
+        case tyr::planning::TransitionKind::APPLY:
+            return fmt::format_to(ctx.out(), "apply");
+        case tyr::planning::TransitionKind::START:
+            return fmt::format_to(ctx.out(), "start");
+        case tyr::planning::TransitionKind::END:
+            return fmt::format_to(ctx.out(), "end");
+        case tyr::planning::TransitionKind::TIMED_LITERAL:
+            return fmt::format_to(ctx.out(), "timed literal");
+    }
+    throw std::logic_error("fmt::formatter<TransitionKind>: unknown kind");
+}
 
 fmt::format_context::iterator fmt::formatter<::tyr::planning::TemporalWords>::format(const ::tyr::planning::TemporalWords& value,
                                                                                      fmt::format_context& ctx) const
@@ -251,17 +247,13 @@ fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBitWords>::fo
 
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::GroundTag>>;
 template struct fmt::formatter<tyr::planning::siw::Statistics<::tyr::GroundTag>>;
-template struct fmt::formatter<tyr::planning::Plan<::tyr::GroundTag>>;
-template struct fmt::formatter<tyr::planning::PackedPlan<::tyr::GroundTag>>;
-template struct fmt::formatter<::tyr::planning::StateView<::tyr::GroundTag>>;
+template struct fmt::formatter<tyr::planning::PlanBuilderView<::tyr::GroundTag>>;
+template struct fmt::formatter<tyr::planning::PlanRecordView<::tyr::GroundTag>>;
+template struct fmt::formatter<::tyr::planning::SharedStateBuilderView<::tyr::GroundTag>>;
 template struct fmt::formatter<::tyr::planning::StateBuilderView<::tyr::GroundTag>>;
-template struct fmt::formatter<tyr::planning::PackedNode<::tyr::GroundTag>>;
-template struct fmt::formatter<tyr::planning::PackedLabeledNode<::tyr::GroundTag>>;
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::LiftedTag>>;
 template struct fmt::formatter<tyr::planning::siw::Statistics<::tyr::LiftedTag>>;
-template struct fmt::formatter<tyr::planning::Plan<::tyr::LiftedTag>>;
-template struct fmt::formatter<tyr::planning::PackedPlan<::tyr::LiftedTag>>;
-template struct fmt::formatter<::tyr::planning::StateView<::tyr::LiftedTag>>;
+template struct fmt::formatter<tyr::planning::PlanBuilderView<::tyr::LiftedTag>>;
+template struct fmt::formatter<tyr::planning::PlanRecordView<::tyr::LiftedTag>>;
+template struct fmt::formatter<::tyr::planning::SharedStateBuilderView<::tyr::LiftedTag>>;
 template struct fmt::formatter<::tyr::planning::StateBuilderView<::tyr::LiftedTag>>;
-template struct fmt::formatter<tyr::planning::PackedNode<::tyr::LiftedTag>>;
-template struct fmt::formatter<tyr::planning::PackedLabeledNode<::tyr::LiftedTag>>;

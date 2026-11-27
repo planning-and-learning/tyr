@@ -46,7 +46,7 @@ public:
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
-    void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
+    void on_solved(const PlanBuilderView<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 
     [[nodiscard]] const Statistics<Kind>& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
 };
@@ -119,7 +119,7 @@ void bind_event_handler(nb::module_& m, const std::string& name)
         .def("add_subsearch_statistics", &T::add_subsearch_statistics, "search_statistics"_a, "solver_statistics"_a)
         .def("on_end_subsearch", &T::on_end_subsearch, "subsearch_index"_a, "status"_a)
         .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)
-        .def("on_solved", &T::on_solved, "plan"_a)
+        .def("on_solved", &T::on_solved, "plan"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (plan.pack()).")
         .def("get_statistics", &T::get_statistics, nb::rv_policy::reference_internal);
 }
 

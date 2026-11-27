@@ -111,7 +111,7 @@ def make_heuristic(context: Context, heuristic_name: HeuristicName, cost_mode: C
 
 
 def evaluate_initial(context: Context, heuristic_name: HeuristicName, cost_mode: CostMode) -> JsonNumber:
-    state = context.successor_generator.get_initial_node(context.state_repository, context.axiom_evaluator).get_state()
+    state = planning_module(context).get_initial_node(context.state_repository, context.axiom_evaluator).get_state()
     heuristic = make_heuristic(context, heuristic_name, cost_mode)
     return as_json_number(float(heuristic.evaluate(state)))
 

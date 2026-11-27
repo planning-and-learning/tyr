@@ -17,8 +17,8 @@ foreach(backend ground lifted)
     tyr_add_benchmark(astar_blind_${backend} algorithms/astar_eager/astar_blind.cpp)
     target_compile_definitions(astar_blind_${backend} PRIVATE TYR_BENCHMARK_TASK_KIND=${task_kind})
 
-    tyr_add_benchmark(successors_${backend} successor_generator.cpp)
-    tyr_add_benchmark(schema_selection_${backend} ${backend}/schema_selection.cpp)
+    tyr_add_benchmark(successors_${backend} successors/successor_generator.cpp)
+    tyr_add_benchmark(schema_selection_${backend} successors/${backend}/schema_selection.cpp)
 
     foreach(heuristic rpg_add rpg_ff lmcut)
         if(heuristic STREQUAL "rpg_add")

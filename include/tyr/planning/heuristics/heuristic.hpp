@@ -1,0 +1,83 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_PLANNING_HEURISTICS_HEURISTIC_HPP_
+#define TYR_PLANNING_HEURISTICS_HEURISTIC_HPP_
+
+#include "tyr/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_view_concepts.hpp"
+
+#include <cstddef>
+#include <urd/kinds.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/execution/declarations.hpp>
+
+namespace tyr::planning
+{
+
+/**
+ * A heuristic instance is a mutable evaluator owned by one search worker. Evaluation may reuse scratch storage, update statistics, and replace the
+ * relaxed plan, so evaluate() is intentionally non-const and must not be called concurrently on the same instance. The relaxed plan describes the latest
+ * evaluation and must not be retained across another evaluation or reconfiguration.
+ *
+ * Evaluation consumes state contents through a builder and must not depend on repository registration or state identity.
+ *
+ * Heavy built-in heuristics hide a task-derived definition and a worker-local evaluator behind their private implementation. Definitions are frozen before
+ * being shared between workers, while evaluators own all mutable workspaces. This avoids repeating task translation without exposing those implementation
+ * details through the search API. set_goal() is configuration and must run before workers are materialized, or after they have been discarded. Custom
+ * heuristics need not use the same internal representation, but must return an independently mutable evaluator from make_worker() that gives equivalent
+ * results for identical task, goal, and state contents. Each worker instance is called serially by its source worker. In parallel eager search, the state
+ * being evaluated may be registered with a different logical owner. Evaluation must not re-enter the search or wait for work from the source worker.
+ */
+template<TaskKind Kind, typename V>
+class Heuristic
+{
+    static_assert(StateBuilderViewConcept<V, Kind>, "Heuristic: V is a view of a state of Kind (StateBuilderViewConcept).");
+
+public:
+    Heuristic() = default;
+    virtual ~Heuristic() = default;
+
+    virtual void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) = 0;
+
+    virtual ygg::float_t evaluate(const V& state) = 0;
+
+    [[nodiscard]] virtual HeuristicPtr<Kind, V> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
+
+    /// The relaxed plan of the last evaluation, or nullptr if this heuristic does not compute one. An empty plan (e.g. in a goal state or a dead end) is
+    /// not nullptr. Searches decide which actions to prefer from it.
+    [[nodiscard]] virtual const urd::Store<urd::set<formalism::ActionRowView>>* get_relaxed_plan() const { return nullptr; }
+
+    virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
+
+protected:
+    Heuristic(const Heuristic&) = default;
+    Heuristic& operator=(const Heuristic&) = default;
+    Heuristic(Heuristic&&) = default;
+    Heuristic& operator=(Heuristic&&) = default;
+};
+
+}
+
+#endif

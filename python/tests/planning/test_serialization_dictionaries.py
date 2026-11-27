@@ -7,6 +7,7 @@ import sys
 import time
 import weakref
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Literal, cast
 
 import pytest
@@ -20,19 +21,9 @@ from pytyr import formalism
 from pytyr.planning import SearchStatus, ground, lifted
 from pytyr.planning.algorithms import brfs
 
-DOMAIN = """(define (domain serialize)
-  (:requirements :strips :fluents :derived-predicates)
-  (:predicates (ready) (start) (done) (active))
-  (:functions (capacity) (fuel))
-  (:derived (active) (start))
-  (:action finish :parameters ()
-    :precondition (and (ready) (active) (> (capacity) 0))
-    :effect (and (not (start)) (done) (decrease (fuel) 1))))
-"""
-PROBLEM = """(define (problem serialize-1) (:domain serialize)
-  (:init (ready) (start) (= (capacity) 10) (= (fuel) 3))
-  (:goal (done)))
-"""
+TASKS = Path(__file__).resolve().parents[3] / "tests/support/data/planning/tasks"
+DOMAIN = str(TASKS / "serialization/domain.pddl")
+PROBLEM = str(TASKS / "serialization/serialization-1.pddl")
 
 # The bindings check their arguments at runtime. The tests of those checks pass values the stubs reject, so they call
 # the bindings through these signatures, which accept any arguments.
@@ -69,13 +60,13 @@ def test_default_fields_need_no_live_entity() -> None:
     assert list(formalism.AtomGroundFluent.Fields.__members__) == ["row"]
     assert formalism.Object.Fields.name.name == "name"
     assert formalism.Object.Fields.name.value == "name"
-    assert formalism.FDRFactFluentBorrowed.Fields.value.name == "value"
-    assert formalism.FDRFactFluentBorrowed.Fields.value.value == "value"
+    assert formalism.FDRFactFluentRecordView.Fields.value.name == "value"
+    assert formalism.FDRFactFluentRecordView.Fields.value.value == "value"
 
 
 def test_field_enum_selection_validates_the_native_type_before_registration() -> None:
-    parser = formalism.Parser(DOMAIN, None, ParserOptions())
-    task = parser.parse_task(PROBLEM, None, ParserOptions())
+    parser = formalism.Parser(DOMAIN, ParserOptions())
+    task = parser.parse_task(PROBLEM, ParserOptions())
     (atom,) = task.get_task().get_static_atoms()
     dictionaries = Dictionaries()
     with pytest.raises(TypeError):
@@ -98,8 +89,8 @@ def test_field_enum_selection_validates_the_native_type_before_registration() ->
 
 @pytest.mark.parametrize("backend", ["ground", "lifted"])
 def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -> None:
-    parser = formalism.Parser(DOMAIN, None, ParserOptions())
-    task = lifted.Task(parser.parse_task(PROBLEM, None, ParserOptions()))
+    parser = formalism.Parser(DOMAIN, ParserOptions())
+    task = lifted.Task(parser.parse_task(PROBLEM, ParserOptions()))
     execution = ExecutionContext(1)
     if backend == "ground":
         instantiated = task.instantiate_ground_task(execution, lifted.GroundTaskInstantiationOptions())
@@ -109,15 +100,15 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
         evaluator = ground.AxiomEvaluator(task, execution)
         generator = ground.SuccessorGenerator(task, execution)
         result = brfs.ground.find_solution(task, repository, evaluator, generator, brfs.ground.Options())
-        state_type = ground.StateBuilderShared
-        node_type = ground.Node
+        state_type = ground.StateBuilderView
+        node_type = ground.NodeBuilderView
     else:
         repository = lifted.StateRepository(task)
         evaluator = lifted.AxiomEvaluator(task, execution)
         generator = lifted.SuccessorGenerator(task, execution)
         result = brfs.lifted.find_solution(task, repository, evaluator, generator, brfs.lifted.Options())
-        state_type = lifted.StateBuilderShared
-        node_type = lifted.Node
+        state_type = lifted.StateBuilderView
+        node_type = lifted.NodeBuilderView
     assert result.status == SearchStatus.SOLVED
     plan = result.plan
     assert plan is not None
@@ -141,12 +132,14 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.serialize(start) == "v0"
     assert sys.getrefcount(start) > references
     (step,) = plan.get_labeled_succ_nodes()
-    assert [atom.get_predicate().get_name() for atom in plan.get_start_node().get_state().fluent_atoms()] == ["start"]
-    assert [atom.get_predicate().get_name() for atom in step.node.get_state().fluent_atoms()] == ["done"]
-    assert dictionaries.serialize(step.node) == "v1"
-    assert dictionaries.serialize(step.label) == "a0"
+    assert [atom.get_predicate().get_name() for atom in plan.get_start_node().get_state().fluent_atoms()] == [
+        "start"
+    ]
+    assert [atom.get_predicate().get_name() for atom in step.get_node().get_state().fluent_atoms()] == ["done"]
+    assert dictionaries.serialize(step.get_node()) == "v1"
+    assert dictionaries.serialize(step.get_label()) == "a0"
     assert dictionaries.table(formalism.RowActionLifted) == [{"relation": "A0", "values": []}]
-    assert dictionaries.table(formalism.ActionLifted) == [{"name": step.label.get_relation().get_name()}]
+    assert dictionaries.table(formalism.ActionLifted) == [{"name": step.get_label().get_relation().get_name()}]
     assert list(formalism.RowActionLifted.Fields.__members__) == list(
         _rows(dictionaries.table(formalism.RowActionLifted))[0]
     )
@@ -175,8 +168,8 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
 
 
 def test_registration_errors_and_explicit_native_text() -> None:
-    parser = formalism.Parser(DOMAIN, None, ParserOptions())
-    task = lifted.Task(parser.parse_task(PROBLEM, None, ParserOptions()))
+    parser = formalism.Parser(DOMAIN, ParserOptions())
+    task = lifted.Task(parser.parse_task(PROBLEM, ParserOptions()))
     term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
     dictionaries = Dictionaries()
     with pytest.raises(ValueError, match="prefix must end in a non-digit"):
@@ -198,8 +191,8 @@ def test_registration_errors_and_explicit_native_text() -> None:
 
 @pytest.mark.parametrize("nested", [False, True])
 def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nested: bool) -> None:
-    parser = formalism.Parser(DOMAIN, None, ParserOptions())
-    task = parser.parse_task(PROBLEM, None, ParserOptions())
+    parser = formalism.Parser(DOMAIN, ParserOptions())
+    task = parser.parse_task(PROBLEM, ParserOptions())
     term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
     dictionaries = Dictionaries()
     if nested:
@@ -215,8 +208,8 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
 
 @pytest.mark.parametrize("fields", [[], ["static_atoms", "name"]])
 def test_task_field_selection_limits_collected_descendants(fields: list[str]) -> None:
-    parser = formalism.Parser(DOMAIN, None, ParserOptions())
-    task = parser.parse_task(PROBLEM, None, ParserOptions())
+    parser = formalism.Parser(DOMAIN, ParserOptions())
+    task = parser.parse_task(PROBLEM, ParserOptions())
     dictionaries = Dictionaries()
     dictionaries.register_table(formalism.TaskLifted, "tasks", "t", fields=fields)
     dictionaries.register_table(formalism.AtomGroundStatic, "static_atoms", "a")
@@ -230,7 +223,7 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
         assert row == {}
         assert all(not snapshot["rows"] for name, snapshot in dictionaries.tables().items() if name != "tasks")
     else:
-        assert row["name"] == "serialize-1"
+        assert row["name"] == "serialization-1"
         assert row["static_atoms"] == ["a0"]
         assert dictionaries.table(formalism.AtomGroundStatic) == [{"row": "b0"}]
         assert dictionaries.table(formalism.RowPredicateStatic) == [{"relation": "p0", "values": []}]
@@ -241,21 +234,8 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
 
 @pytest.mark.parametrize("fields", [None, ["name"]])
 def test_projected_binding_collects_only_selected_output_fields(fields: list[str] | None) -> None:
-    parser = formalism.Parser(
-        """(define (domain bindings)
-      (:requirements :strips)
-      (:predicates (ready ?item) (done ?item))
-      (:action finish :parameters (?item) :precondition (ready ?item)
-        :effect (and (not (ready ?item)) (done ?item))))""",
-        None,
-        ParserOptions(),
-    )
-    task = parser.parse_task(
-        """(define (problem binding-1) (:domain bindings)
-      (:objects item) (:init (ready item)) (:goal (done item)))""",
-        None,
-        ParserOptions(),
-    )
+    parser = formalism.Parser(str(TASKS / "bindings/domain.pddl"), ParserOptions())
+    task = parser.parse_task(str(TASKS / "bindings/binding-1.pddl"), ParserOptions())
     (action,) = parser.get_domain().get_domain().get_actions()
     (item,) = task.get_task().get_objects()
     binding = task.get_repository().insert(formalism.RowActionLiftedData(action.index(), [item.index().value]))[0]

@@ -36,8 +36,8 @@
 namespace tyr::planning::iw
 {
 
-template<TaskKind Kind>
-class NoveltyPruningStrategy : public PruningStrategy<Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+class NoveltyPruningStrategy : public PruningStrategy<Kind, V>
 {
 public:
     explicit NoveltyPruningStrategy(ygg::uint_t max_arity) : m_max_arity(max_arity), m_root_state(std::make_shared<SharedRootState>())
@@ -46,15 +46,15 @@ public:
             throw std::invalid_argument("NoveltyPruningStrategy(...): max_arity exceeds iw::MaxArity.");
     }
 
-    static std::shared_ptr<NoveltyPruningStrategy<Kind>> create(ygg::uint_t max_arity) { return std::make_shared<NoveltyPruningStrategy<Kind>>(max_arity); }
+    static std::shared_ptr<NoveltyPruningStrategy<Kind, V>> create(ygg::uint_t max_arity) { return std::make_shared<NoveltyPruningStrategy<Kind, V>>(max_arity); }
 
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker>) const override
+    [[nodiscard]] PruningStrategyPtr<Kind, V> make_worker(urd::index<Worker>) const override
     {
         m_root_state->enable_thread_safety();
         return std::shared_ptr<NoveltyPruningStrategy>(new NoveltyPruningStrategy(m_max_arity, m_root_state, m_novelty_table.make_worker()));
     }
 
-    bool should_prune_state(const StateView<Kind>& state) override
+    bool should_prune_state(const V& state) override
     {
         if (m_max_arity == 0)
             return !m_root_state->initialize_or_matches(state);
@@ -62,7 +62,7 @@ public:
         return !m_novelty_table.insert(state, m_max_arity);
     }
 
-    bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) override
+    bool should_prune_successor_state(const V& state, const V& succ_state, bool is_new_succ) override
     {
         if (m_max_arity == 0)
         {
@@ -79,7 +79,7 @@ public:
 private:
     struct SharedRootState
     {
-        bool initialize_or_matches(const StateView<Kind>& state)
+        bool initialize_or_matches(const V& state)
         {
             const auto lock = lock_if_shared();
             if (!identity)
@@ -87,7 +87,7 @@ private:
             return matches_unlocked(state);
         }
 
-        bool matches(const StateView<Kind>& state) const
+        bool matches(const V& state) const
         {
             const auto lock = lock_if_shared();
             return identity && matches_unlocked(state);
@@ -105,7 +105,7 @@ private:
             return lock;
         }
 
-        bool matches_unlocked(const StateView<Kind>& state) const
+        bool matches_unlocked(const V& state) const
         {
             URD_ASSUME(identity.has_value());
             return *identity == state.pack();
@@ -115,7 +115,7 @@ private:
         // initialize different roots or race while observing the root identity.
         mutable std::mutex mutex;
         mutable bool thread_safe { false };
-        std::optional<PackedStateView<Kind>> identity;
+        std::optional<StateView<Kind>> identity;
     };
 
     NoveltyPruningStrategy(ygg::uint_t max_arity, std::shared_ptr<SharedRootState> root_state, DynamicNoveltyTable<MaxArity> novelty_table) :

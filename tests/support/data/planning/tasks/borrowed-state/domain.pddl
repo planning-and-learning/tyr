@@ -1,0 +1,7 @@
+(define (domain borrowed-state)
+  (:requirements :adl :numeric-fluents :derived-predicates)
+  (:predicates (on) (live))
+  (:functions (value))
+  (:derived (live) (on))
+  (:action disable :parameters () :precondition (on)
+    :effect (and (not (on)) (increase (value) 1))))

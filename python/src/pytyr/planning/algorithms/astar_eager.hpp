@@ -33,14 +33,14 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    void on_start_search(const Node<Kind>& node, ygg::float_t f_value) override { NB_OVERRIDE_PURE(on_start_search, node, f_value); }
+    void on_start_search(const NodeBuilderView<Kind>& node, ygg::float_t f_value) override { NB_OVERRIDE_PURE(on_start_search, node, f_value); }
 
     void on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics& statistics) override { NB_OVERRIDE(on_finish_f_layer, f_value, statistics); }
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
-    void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
+    void on_solved(const PlanBuilderView<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 };
 
 template<TaskKind Kind>
@@ -110,10 +110,10 @@ void bind_event_handler(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
         .def(nb::init<>())
-        .def("on_start_search", &T::on_start_search, "node"_a, "f_value"_a)
+        .def("on_start_search", &T::on_start_search, "node"_a, "f_value"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (node.pack()).")
         .def("on_finish_f_layer", &T::on_finish_f_layer, "f_value"_a, "statistics"_a)
         .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)
-        .def("on_solved", &T::on_solved, "plan"_a);
+        .def("on_solved", &T::on_solved, "plan"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (plan.pack()).");
 }
 
 template<TaskKind Kind>

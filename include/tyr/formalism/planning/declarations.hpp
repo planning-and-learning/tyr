@@ -26,6 +26,7 @@
 #include <urd/store.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/row_view_concepts.hpp>
 
 namespace tyr::formalism
 {
@@ -68,6 +69,9 @@ using AxiomViewList = urd::Store<urd::sequence<AxiomView<T>>>;
 
 using ActionRowView = ygg::RowView<Action<LiftedTag>, Repository>;
 using ActionRowBuilderView = urd::borrowed_view<ygg::Row<Action<LiftedTag>>, Repository, urd::builder<ygg::Row<Action<LiftedTag>>, Repository>>;
+/// A view of an action binding: an interned row (ActionRowView) or a row being built (ActionRowBuilderView).
+template<typename T>
+concept ActionRowViewConcept = ygg::RowViewConcept<T, Action<LiftedTag>>;
 using AxiomRowView = ygg::RowView<Axiom<LiftedTag>, Repository>;
 
 template<TaskKind T>

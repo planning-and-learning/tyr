@@ -10,7 +10,7 @@ from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism import (
     AtomGroundFluent,
-    FDRFactFluentBorrowed,
+    FDRFactFluentRecordView,
     FDRVariableFluent,
     Invariant,
     InvariantOrderCriterion,
@@ -132,7 +132,7 @@ def test_options_stay_backward_compatible() -> None:
     assert lifted.GroundTaskInstantiationOptions(disable_invariant_synthesis=True).disable_invariant_synthesis is True
 
 
-def _fact_atoms(facts: list[FDRFactFluentBorrowed]) -> list[AtomGroundFluent]:
+def _fact_atoms(facts: list[FDRFactFluentRecordView]) -> list[AtomGroundFluent]:
     atoms: list[AtomGroundFluent] = []
     for fact in facts:
         atom = fact.get_atom()

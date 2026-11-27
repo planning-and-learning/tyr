@@ -17,8 +17,8 @@
 
 #include "tyr/planning/heuristics/rpg_max.hpp"
 
-#include "../ground/heuristics/rpg.hpp"
-#include "../lifted/heuristics/rpg.hpp"
+#include "ground/rpg.hpp"
+#include "lifted/rpg.hpp"
 #include "rpg.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -29,8 +29,8 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-struct MaxRPGHeuristic<Kind>::Impl :
+template<TaskKind Kind, typename V>
+struct MaxRPGHeuristic<Kind, V>::Impl :
     detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::MaxAggregation>, datalog::TerminationPolicy<datalog::MaxAggregation>>
 {
     using Base =
@@ -39,44 +39,44 @@ struct MaxRPGHeuristic<Kind>::Impl :
     using Base::Base;
 };
 
-template<TaskKind Kind>
-MaxRPGHeuristic<Kind>::MaxRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+template<TaskKind Kind, typename V>
+MaxRPGHeuristic<Kind, V>::MaxRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
     m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
 
-template<TaskKind Kind>
-MaxRPGHeuristic<Kind>::MaxRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
+template<TaskKind Kind, typename V>
+MaxRPGHeuristic<Kind, V>::MaxRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
 {
 }
 
-template<TaskKind Kind>
-MaxRPGHeuristic<Kind>::~MaxRPGHeuristic() = default;
+template<TaskKind Kind, typename V>
+MaxRPGHeuristic<Kind, V>::~MaxRPGHeuristic() = default;
 
-template<TaskKind Kind>
-MaxRPGHeuristic<Kind>::MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+MaxRPGHeuristic<Kind, V>::MaxRPGHeuristic(MaxRPGHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-MaxRPGHeuristic<Kind>& MaxRPGHeuristic<Kind>::operator=(MaxRPGHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+MaxRPGHeuristic<Kind, V>& MaxRPGHeuristic<Kind, V>::operator=(MaxRPGHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-MaxRPGHeuristicPtr<Kind> MaxRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{ return std::make_shared<MaxRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
+template<TaskKind Kind, typename V>
+MaxRPGHeuristicPtr<Kind, V> MaxRPGHeuristic<Kind, V>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
+{ return std::make_shared<MaxRPGHeuristic<Kind, V>>(std::move(task), std::move(execution_context), cost_mode); }
 
-template<TaskKind Kind>
-void MaxRPGHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
+template<TaskKind Kind, typename V>
+void MaxRPGHeuristic<Kind, V>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
-template<TaskKind Kind>
-ygg::float_t MaxRPGHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+template<TaskKind Kind, typename V>
+ygg::float_t MaxRPGHeuristic<Kind, V>::evaluate(const V& state)
 { return m_impl->evaluate(state); }
 
-template<TaskKind Kind>
-HeuristicPtr<Kind> MaxRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return HeuristicPtr<Kind>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
+template<TaskKind Kind, typename V>
+HeuristicPtr<Kind, V> MaxRPGHeuristic<Kind, V>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{ return HeuristicPtr<Kind, V>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
-template<TaskKind Kind>
-void MaxRPGHeuristic<Kind>::print_summary(size_t verbosity) const
+template<TaskKind Kind, typename V>
+void MaxRPGHeuristic<Kind, V>::print_summary(size_t verbosity) const
 { m_impl->print_summary(verbosity); }
 
 template class MaxRPGHeuristic<GroundTag>;

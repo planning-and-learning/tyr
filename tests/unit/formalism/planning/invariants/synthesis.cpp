@@ -31,8 +31,8 @@
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <boost/json.hpp>

@@ -312,7 +312,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 
     auto fterm = checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
-    fterm->row = binding_or_nullopt->index();
+    fterm->row.template emplace<0>(binding_or_nullopt->index());
 
     return context.destination().find(*fterm, context.builder());
 }
@@ -326,7 +326,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
     auto atom = checkout<Atom<GroundTag, T>>(context.builder());
 
-    atom->row = binding_or_nullopt->index();
+    atom->row.template emplace<0>(binding_or_nullopt->index());
 
     return context.destination().find(*atom, context.builder());
 }

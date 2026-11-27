@@ -1,0 +1,7 @@
+(define (domain mutex-membership)
+  (:requirements :strips :typing)
+  (:types place)
+  (:predicates (at ?x - place) (next ?from ?to - place))
+  (:action move :parameters (?from ?to - place)
+    :precondition (and (at ?from) (next ?from ?to))
+    :effect (and (not (at ?from)) (at ?to))))

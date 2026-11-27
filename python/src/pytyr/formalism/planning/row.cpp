@@ -17,6 +17,7 @@
 
 #include "bindings.hpp"
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <nanobind/stl/optional.h>
@@ -56,6 +57,10 @@ void bind_row(nb::module_& m, RepositoryBinding& repository)
     urd::python::bind_index<urd::key<Axiom<LiftedTag>, ygg::Row<Axiom<LiftedTag>>>>(m);
     urd::python::bind_data<ygg::Row<Axiom<LiftedTag>>>(m);
 
+    // An action binding being built, read through the repository: what a lifted successor generator hands out (borrowed).
+    urd::python::bind_view<ActionRowBuilderView>(m);
+    // An action binding held as a record of its own (a label's binding not interned).
+    urd::python::bind_view<urd::borrowed_view<ygg::Row<Action<LiftedTag>>, Repository, urd::data<ygg::Row<Action<LiftedTag>>>>>(m);
     bind_row_view<Predicate<DerivedTag>>(m, repository);
     bind_row_view<Action<LiftedTag>>(m, repository);
     bind_row_view<Axiom<LiftedTag>>(m, repository);

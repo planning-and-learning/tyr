@@ -25,10 +25,11 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/search_space/sequential.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/successor_generator.hpp"
-#include "tyr/planning/worker_state_index.hpp"
+#include "tyr/planning/algorithms/search_space/sequential.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/successors/successor_generator.hpp"
+#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/states/worker_state_index.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -69,8 +70,8 @@ public:
     static urd::index<State<Kind>> search_node_index(urd::index<State<Kind>> state, urd::index<Worker>, size_t) noexcept { return state; }
 
     template<typename Engine>
-    static std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine&, const StateView<Kind>& start_state)
-    { return { urd::index<Worker>(0), start_state }; }
+    static std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state(Engine&, const StateBuilderView<Kind>& start_state)
+    { return { urd::index<Worker>(0), start_state.context().get_registered_state(start_state.pack().index()) }; }
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value = value; }
 
@@ -157,22 +158,22 @@ public:
     template<typename Engine, typename WorkerData>
     AcceptanceResult route(Engine& engine,
                            WorkerData& worker,
-                           const Node<Kind>& source,
-                           std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> target,
+                           const NodeBuilderView<Kind>& source,
+                           StateBuilderHandle<Kind> target,
                            const StateDelta& delta,
                            ygg::float_t auxiliary_value,
-                           formalism::ActionRowView action,
+                           ActionBindingView<Kind> action,
                            SuccessorMetadataT<SearchPolicy> metadata)
     {
-        const auto metric = engine.evaluate_successor_metric(*worker.state_repository, *target, auxiliary_value);
-        auto node = Node<Kind>(worker.state_repository->register_state(*worker.axiom_evaluator, std::move(target), source.get_state(), delta), metric);
-        const auto g_value = compute_successor_g_value(metadata.source_g_value, node.get_metric(), engine.m_options->cost_mode);
+        auto node = register_successor(*worker.state_repository, *worker.axiom_evaluator, std::move(target), auxiliary_value, source, delta);
+        const auto g_value = compute_successor_g_value(metadata.source_g_value, node.metric, engine.m_options->cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
         worker.statistics.increment_num_generated_candidates(false);
-        const auto routed = RoutedSuccessorT<Engine> { LabeledNode<Kind> { action, std::move(node) }, std::move(metadata), g_value, false };
-        return engine.accept_successor(worker, source, routed, [&](const StateView<Kind>& state) { return worker.heuristic->evaluate(state); });
+        node.metric = g_value;
+        const auto routed = RoutedSuccessorT<Engine> { action, std::move(node), std::move(metadata), g_value, false };
+        return engine.accept_successor(worker, source, routed, [&](const StateBuilderView<Kind>& state) { return worker.heuristic->evaluate(state); });
     }
 
     template<typename Engine, typename WorkerData, typename EmitTransition>
@@ -180,14 +181,14 @@ public:
                                                                  WorkerData&,
                                                                  SearchNodeT<SearchPolicy>&,
                                                                  const RoutedSuccessorT<Engine>&,
-                                                                 const StateView<Kind>&,
+                                                                 const StateBuilderView<Kind>&,
                                                                  ygg::float_t,
                                                                  EmitTransition&&)
     { return std::nullopt; }
 
     template<typename Engine, typename WorkerData>
-    static bool is_generated_goal(Engine& engine, WorkerData& worker, const RoutedSuccessorT<Engine>&, const StateView<Kind>& state)
-    { return worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state); }
+    static bool is_generated_goal(Engine& engine, WorkerData& worker, const RoutedSuccessorT<Engine>&, const StateBuilderView<Kind>& state)
+    { return worker.goal_strategy->is_dynamic_goal_satisfied(urd::built_view(engine.start_node().get_state()), state); }
 
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
@@ -254,12 +255,11 @@ public:
     void for_each(Callback&& callback)
     { std::forward<Callback>(callback)(m_worker); }
 
-    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
+    std::pair<OwnedPlanBuilderView<Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
         auto& worker = get(goal.worker);
-        const auto state = worker.state_repository->get_registered_state(goal.state);
         const auto& search_node = worker.get_search_node(goal.state);
-        auto node = Node<Kind>(state, search_node.g_value);
+        const auto node = urd::data<Node<Kind>>(goal.state, search_node.g_value);
         auto plan = PlanReconstructionPolicy<SequentialSearch>::extract_total_ordered_plan(search_node,
                                                                                            node,
                                                                                            worker.search.get_search_nodes(),
@@ -267,7 +267,7 @@ public:
                                                                                            *worker.axiom_evaluator,
                                                                                            *worker.successor_generator,
                                                                                            options.cost_mode);
-        return { std::move(plan), std::move(node) };
+        return { OwnedPlanBuilderView<Kind>(std::move(plan), worker.state_repository.get()), OwnedNodeRecordView<Kind>(node, worker.state_repository.get()) };
     }
 
 private:

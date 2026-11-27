@@ -1,0 +1,12 @@
+(define (problem pairwise-conditional-effect-problem)
+  (:domain pairwise-conditional-effect)
+  (:objects a b c - item)
+  (:init
+    (ready a)
+    (allowed a b)
+    (allowed c c)
+    (= (value a) 0)
+    (= (value b) 0)
+    (= (value c) 0))
+  (:goal (ready a))
+)

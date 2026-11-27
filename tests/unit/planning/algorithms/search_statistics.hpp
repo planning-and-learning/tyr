@@ -20,9 +20,9 @@
 
 #include "planning/parser.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 
 #include <boost/json.hpp>
 #include <cstdint>
@@ -36,9 +36,10 @@
 #include <string>
 #include <tyr/planning/algorithms/statistics.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
-#include <tyr/planning/ground/task.hpp>
-#include <tyr/planning/lifted/task.hpp>
-#include <tyr/planning/plan.hpp>
+#include <tyr/planning/tasks/ground/task.hpp>
+#include <tyr/planning/tasks/lifted/task.hpp>
+#include <tyr/planning/plans/plan_view.hpp>
+#include <urd/elements/view.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
@@ -117,16 +118,17 @@ inline std::optional<SearchStatistics> parse_optional_statistics(const boost::js
 }
 
 template<TaskKind Kind>
-urd::Store<urd::sequence<std::string>> plan_actions(const planning::Plan<Kind>& plan)
+urd::Store<urd::sequence<std::string>> plan_actions(const planning::PlanBuilderView<Kind>& plan)
 {
     auto result = urd::Store<urd::sequence<std::string>> {};
     for (const auto& labeled_node : plan.get_labeled_succ_nodes())
-        result.push_back(fmt::format("{}", std::make_pair(labeled_node.label, formalism::PlanFormatting())));
+        urd::visit_view(labeled_node.get_label(),
+                        [&](const auto& label) { result.push_back(fmt::format("{}", std::make_pair(label, formalism::PlanFormatting()))); });
     return result;
 }
 
 template<TaskKind Kind>
-void expect_plan(const PlanStatistics& expected, const planning::Plan<Kind>& actual)
+void expect_plan(const PlanStatistics& expected, const std::type_identity_t<planning::PlanBuilderView<Kind>>& actual)
 {
     EXPECT_EQ(actual.get_length(), expected.length);
     EXPECT_DOUBLE_EQ(static_cast<double>(actual.get_cost()), static_cast<double>(expected.cost));
@@ -140,7 +142,7 @@ void expect_statistics(const SearchStatistics& expected, const planning::Statist
 
     ASSERT_EQ(result.plan.has_value(), expected.plan.has_value());
     if (expected.plan)
-        expect_plan(expected.plan.value(), result.plan.value());
+        expect_plan<Kind>(expected.plan.value(), result.plan.value());
 }
 
 inline planning::SearchStatus parse_search_status(const std::string& status)
@@ -223,7 +225,7 @@ SearchContext<Kind> create_search_context(const std::filesystem::path& domain_fi
         task = lifted_task->instantiate_ground_task(*execution_context).task;
 
     auto axiom_evaluator = std::make_shared<planning::AxiomEvaluator<Kind>>(task, execution_context);
-    auto state_repository = std::make_shared<planning::StateRepository<Kind>>(task);
+    auto state_repository = planning::StateRepository<Kind>::create(task);
     auto successor_generator = std::make_shared<planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     return SearchContext<Kind> { std::move(execution_context),

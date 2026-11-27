@@ -1,0 +1,5 @@
+(define (problem mutex-membership-problem)
+  (:domain mutex-membership)
+  (:objects a b - place)
+  (:init (at a) (next a b) (next b a))
+  (:goal (at b)))

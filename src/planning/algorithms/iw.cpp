@@ -22,11 +22,12 @@
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/iw/pruning_strategy.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/nodes/labeled_node_view.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -42,18 +43,18 @@ namespace tyr::planning::iw
 namespace
 {
 
-template<TaskKind Kind>
-class CombinedPruningStrategy : public PruningStrategy<Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+class CombinedPruningStrategy : public PruningStrategy<Kind, V>
 {
 public:
-    CombinedPruningStrategy(PruningStrategyPtr<Kind> lhs, PruningStrategyPtr<Kind> rhs) : m_lhs(std::move(lhs)), m_rhs(std::move(rhs)) {}
+    CombinedPruningStrategy(PruningStrategyPtr<Kind, V> lhs, PruningStrategyPtr<Kind, V> rhs) : m_lhs(std::move(lhs)), m_rhs(std::move(rhs)) {}
 
-    bool should_prune_state(const StateView<Kind>& state) override { return m_lhs->should_prune_state(state) || m_rhs->should_prune_state(state); }
+    bool should_prune_state(const V& state) override { return m_lhs->should_prune_state(state) || m_rhs->should_prune_state(state); }
 
-    bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) override
+    bool should_prune_successor_state(const V& state, const V& succ_state, bool is_new_succ) override
     { return m_lhs->should_prune_successor_state(state, succ_state, is_new_succ) || m_rhs->should_prune_successor_state(state, succ_state, is_new_succ); }
 
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker> index) const override
+    [[nodiscard]] PruningStrategyPtr<Kind, V> make_worker(urd::index<Worker> index) const override
     {
         auto lhs = m_lhs->make_worker(index);
         auto rhs = m_rhs->make_worker(index);
@@ -63,8 +64,8 @@ public:
     }
 
 private:
-    PruningStrategyPtr<Kind> m_lhs;
-    PruningStrategyPtr<Kind> m_rhs;
+    PruningStrategyPtr<Kind, V> m_lhs;
+    PruningStrategyPtr<Kind, V> m_rhs;
 };
 
 template<TaskKind Kind>

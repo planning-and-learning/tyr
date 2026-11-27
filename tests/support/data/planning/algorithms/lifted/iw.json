@@ -949,10 +949,10 @@
                     ]
                 },
                 "solution_arity": 2,
-                "num_generated_successors": 74,
-                "num_expanded": 61,
+                "num_generated_successors": 70,
+                "num_expanded": 57,
                 "num_deadends": 0,
-                "num_pruned": 927
+                "num_pruned": 717
             }
         },
         {

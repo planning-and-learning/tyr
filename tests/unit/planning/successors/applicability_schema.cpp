@@ -1,0 +1,21 @@
+#include "planning/successors/applicability_schema.hpp"
+
+#include <gtest/gtest.h>
+#include <tyr/planning/successors/applicability.hpp>
+
+namespace tyr::tests
+{
+
+TEST(TyrPlanningApplicabilityTest, GroundSchemaQueriesMatchFilteredSuccessors)
+{
+    expect_schema_queries_match_filtered_successors<GroundTag>();
+    expect_schema_queries_match_filtered_successors<GroundTag, true>();
+}
+
+TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesMatchFilteredSuccessors)
+{
+    expect_schema_queries_match_filtered_successors<LiftedTag>();
+    expect_schema_queries_match_filtered_successors<LiftedTag, true>();
+}
+
+}  // namespace tyr::tests

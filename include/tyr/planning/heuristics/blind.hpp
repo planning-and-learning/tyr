@@ -21,7 +21,7 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/heuristic.hpp"
+#include "tyr/planning/heuristics/heuristic.hpp"
 
 #include <memory>
 #include <yggdrasil/core/config.hpp>
@@ -30,21 +30,21 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-class BlindHeuristic : public Heuristic<Kind>
+template<TaskKind Kind, typename V>
+class BlindHeuristic : public Heuristic<Kind, V>
 {
 public:
     BlindHeuristic() = default;
 
     static std::shared_ptr<BlindHeuristic> create() { return std::make_shared<BlindHeuristic>(); }
 
-    using Heuristic<Kind>::evaluate;
+    using Heuristic<Kind, V>::evaluate;
 
     void set_goal([[maybe_unused]] formalism::ConjunctiveConditionView<GroundTag> goal) override {}
 
-    ygg::float_t evaluate([[maybe_unused]] const StateView<Kind>& state) override { return ygg::float_t { 0 }; }
+    ygg::float_t evaluate([[maybe_unused]] const V& state) override { return ygg::float_t { 0 }; }
 
-    [[nodiscard]] HeuristicPtr<Kind> make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const override { return create(); }
+    [[nodiscard]] HeuristicPtr<Kind, V> make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const override { return create(); }
 };
 
 }

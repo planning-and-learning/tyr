@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_ALGORITHMS_SERIALIZED_HPP_
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_HPP_
 
+#include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/serialized/event_handler.hpp"
 #include "tyr/planning/algorithms/serialized/statistics.hpp"
@@ -25,7 +26,8 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/plan.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/successors/successors.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -39,6 +41,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace tyr::planning::serialized
@@ -48,7 +51,7 @@ template<TaskKind Kind, std::copy_constructible Stats = tyr::planning::Statistic
 struct Options
 {
     /// Optional initial node for the first subsearch; when a subsearch runs, it must belong to the subsolver's task.
-    std::optional<Node<Kind>> start_node = std::nullopt;
+    std::optional<OwnedNodeRecordView<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind, Stats> event_handler = nullptr;
     GoalStrategyPtr<Kind> subgoal_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
@@ -62,31 +65,58 @@ struct Options
 namespace detail
 {
 
+/// A packed node's record (its state's key and its metric).
+template<TaskKind Kind, typename V>
+urd::data<Node<Kind>> record_of(const V& node)
+{ return urd::data<Node<Kind>>(node.get_state().index(), node.get_metric()); }
+
+/// A node of a plan kept apart from it, packed.
 template<TaskKind Kind>
-SearchResult<Kind> make_empty_result(const Node<Kind>& start_node, SearchStatus status)
+OwnedNodeRecordView<Kind> kept(const NodeBuilderView<Kind>& node)
+{ return OwnedNodeRecordView<Kind>(node.pack(), &node.context()); }
+
+/// The plan from `start` through `steps` (records of `repository`), unpacked from `repository`.
+template<TaskKind Kind>
+OwnedPlanBuilderView<Kind> make_plan(const StateRepository<Kind>& repository, const urd::data<Node<Kind>>& start, const LabeledNodeRecordList<Kind>& steps)
+{
+    auto plan = PlanBuilder<Kind>();
+    plan.start_node = get_node(repository, start);
+    plan.labeled_succ_nodes.reserve(steps.size());
+    for (const auto& step : steps)
+        plan.labeled_succ_nodes.push_back(get_labeled_node(repository, step));
+    return OwnedPlanBuilderView<Kind>(std::move(plan), &repository);
+}
+
+/// The node a plan ends in, packed.
+template<TaskKind Kind>
+OwnedNodeRecordView<Kind> goal_of(const OwnedPlanBuilderView<Kind>& plan)
+{ return OwnedNodeRecordView<Kind>(plan.get_goal_node().pack(), &plan.context()); }
+
+template<TaskKind Kind>
+SearchResult<Kind> make_empty_result(const OwnedNodeRecordView<Kind>& start_node, SearchStatus status)
 {
     auto result = SearchResult<Kind> {};
     result.status = status;
     result.goal_node = start_node;
-    result.plan = Plan<Kind>(start_node);
+    result.plan.emplace(make_plan(start_node.context(), record_of<Kind>(start_node), LabeledNodeRecordList<Kind> {}));
     return result;
 }
 
 template<TaskKind Kind, SolverConcept<Kind> Solver>
-void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<Kind>& current_node, LabeledNodeList<Kind>& labeled_succ_nodes)
+void append_plan(Solver& solver, const PlanBuilderView<Kind>& subplan, OwnedNodeRecordView<Kind>& current_node, LabeledNodeRecordList<Kind>& labeled_succ_nodes)
 {
-    auto previous_metric = solver.normalize_start_node(subplan.get_start_node()).get_metric();
+    auto previous_metric = solver.normalize_start_node(kept(subplan.get_start_node())).get_metric();
     auto cumulative_metric = current_node.get_metric();
 
     for (const auto& labeled_succ_node : subplan.get_labeled_succ_nodes())
     {
-        const auto normalized_succ_node = solver.normalize_start_node(labeled_succ_node.node);
+        const auto normalized_succ_node = solver.normalize_start_node(kept(labeled_succ_node.get_node()));
         const auto step_cost = normalized_succ_node.get_metric() - previous_metric;
         cumulative_metric = ygg::FloatTolerance<ygg::float_t>::canonicalize(cumulative_metric + step_cost);
         if (!std::isfinite(cumulative_metric))
             throw std::runtime_error("serialized::find_solution(...): cumulative plan metric is not finite.");
-        current_node = Node<Kind>(normalized_succ_node.get_state(), cumulative_metric);
-        labeled_succ_nodes.emplace_back(labeled_succ_node.label, current_node);
+        current_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(normalized_succ_node.get_state().index(), cumulative_metric), &normalized_succ_node.context());
+        labeled_succ_nodes.emplace_back(urd::interned_view(labeled_succ_node.get_label()).index(), record_of<Kind>(current_node));
         previous_metric = normalized_succ_node.get_metric();
     }
 }
@@ -94,12 +124,12 @@ void append_plan(Solver& solver, const Plan<Kind>& subplan, Node<Kind>& current_
 template<TaskKind Kind>
 struct ReachedSubgoal
 {
-    Node<Kind> node;
+    OwnedNodeRecordView<Kind> node;
     size_t plan_position;
 };
 
 template<TaskKind Kind>
-std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<ReachedSubgoal<Kind>>>& reached_subgoals, const Node<Kind>& node)
+std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<ReachedSubgoal<Kind>>>& reached_subgoals, const OwnedNodeRecordView<Kind>& node)
 {
     for (const auto& reached_subgoal : reached_subgoals)
     {
@@ -108,6 +138,15 @@ std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<Reache
     }
 
     return std::nullopt;
+}
+
+/// Whether the dynamic goal of `strategy` holds in the state of `node`, seeded by `seed` (both registered states, read
+/// unpacked).
+template<TaskKind Kind>
+bool is_dynamic_goal_satisfied(GoalStrategy<Kind>& strategy, const StateBuilderView<Kind>& seed, const OwnedNodeRecordView<Kind>& node)
+{
+    const auto state = node.context().get_registered_state(node.get_state().index());
+    return strategy.is_dynamic_goal_satisfied(seed, urd::resolve(*state, node.context()));
 }
 
 }
@@ -135,7 +174,9 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
 
     auto current_start_node = solver.normalize_start_node(options.start_node);
     const auto combined_start_node = current_start_node;
-    const auto final_goal_seed = current_start_node.get_state();
+    const auto& state_repository = combined_start_node.context();
+    const auto final_goal_seed_state = state_repository.get_registered_state(combined_start_node.get_state().index());
+    const auto final_goal_seed = urd::resolve(*final_goal_seed_state, state_repository);
 
     event_handler->on_start_search();
 
@@ -169,7 +210,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
     if (options.max_num_subsearches == 0)
         return finalize(detail::make_empty_result(combined_start_node, SearchStatus::EXHAUSTED));
 
-    auto combined_labeled_succ_nodes = LabeledNodeList<Kind> {};
+    auto combined_labeled_succ_nodes = LabeledNodeRecordList<Kind> {};
     auto reached_subgoals = urd::Store<urd::sequence<detail::ReachedSubgoal<Kind>>> { { combined_start_node, 0 } };
 
     for (auto subsearch_index = ygg::uint_t { 0 }; subsearch_index < options.max_num_subsearches; ++subsearch_index)
@@ -181,8 +222,8 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
             result.status = SearchStatus::OUT_OF_TIME;
             if (!combined_labeled_succ_nodes.empty())
             {
-                result.plan = Plan<Kind>(combined_start_node, std::move(combined_labeled_succ_nodes));
-                result.goal_node = result.plan->get_labeled_succ_nodes().back().node;
+                result.plan = detail::make_plan(state_repository, detail::record_of<Kind>(combined_start_node), combined_labeled_succ_nodes);
+                result.goal_node = detail::goal_of(*result.plan);
             }
             return finalize(std::move(result));
         }
@@ -216,13 +257,14 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
             return finalize(std::move(result));
         }
 
-        auto current_node = combined_labeled_succ_nodes.empty() ? combined_start_node : combined_labeled_succ_nodes.back().node;
+        auto current_node =
+            combined_labeled_succ_nodes.empty() ? combined_start_node : OwnedNodeRecordView<Kind>(combined_labeled_succ_nodes.back().node, &state_repository);
         if (sub_result.plan->empty())
         {
             auto result = SearchResult<Kind> {};
             result.status =
-                options.goal_strategy->is_dynamic_goal_satisfied(final_goal_seed, current_node.get_state()) ? SearchStatus::SOLVED : SearchStatus::EXHAUSTED;
-            result.plan = Plan<Kind>(combined_start_node, std::move(combined_labeled_succ_nodes));
+                detail::is_dynamic_goal_satisfied(*options.goal_strategy, final_goal_seed, current_node) ? SearchStatus::SOLVED : SearchStatus::EXHAUSTED;
+            result.plan = detail::make_plan(state_repository, detail::record_of<Kind>(combined_start_node), combined_labeled_succ_nodes);
             result.goal_node = current_node;
 
             return finalize(std::move(result));
@@ -230,12 +272,12 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
 
         detail::append_plan(solver, *sub_result.plan, current_node, combined_labeled_succ_nodes);
 
-        if (options.goal_strategy->is_dynamic_goal_satisfied(final_goal_seed, current_node.get_state()))
+        if (detail::is_dynamic_goal_satisfied(*options.goal_strategy, final_goal_seed, current_node))
         {
             auto result = SearchResult<Kind> {};
             result.status = SearchStatus::SOLVED;
-            result.plan = Plan<Kind>(combined_start_node, std::move(combined_labeled_succ_nodes));
-            result.goal_node = result.plan->get_labeled_succ_nodes().back().node;
+            result.plan = detail::make_plan(state_repository, detail::record_of<Kind>(combined_start_node), combined_labeled_succ_nodes);
+            result.goal_node = detail::goal_of(*result.plan);
 
             return finalize(std::move(result));
         }
@@ -244,21 +286,21 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
         {
             auto result = SearchResult<Kind> {};
             result.status = SearchStatus::CYCLE;
-            result.plan = Plan<Kind>(combined_start_node, std::move(combined_labeled_succ_nodes));
-            result.goal_node = result.plan->get_labeled_succ_nodes().back().node;
+            result.plan = detail::make_plan(state_repository, detail::record_of<Kind>(combined_start_node), combined_labeled_succ_nodes);
+            result.goal_node = detail::goal_of(*result.plan);
             result.cycle_range = std::pair<size_t, size_t> { *cycle_begin, result.plan->get_length() };
 
             return finalize(std::move(result));
         }
 
-        current_start_node = Node<Kind>(current_node.get_state(), 0);
+        current_start_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(current_node.get_state().index(), 0), &current_node.context());
         reached_subgoals.push_back(detail::ReachedSubgoal<Kind> { current_start_node, combined_labeled_succ_nodes.size() });
     }
 
     auto result = SearchResult<Kind> {};
     result.status = SearchStatus::EXHAUSTED;
-    result.plan = Plan<Kind>(combined_start_node, std::move(combined_labeled_succ_nodes));
-    result.goal_node = !result.plan->empty() ? result.plan->get_labeled_succ_nodes().back().node : result.plan->get_start_node();
+    result.plan = detail::make_plan(state_repository, detail::record_of<Kind>(combined_start_node), combined_labeled_succ_nodes);
+    result.goal_node = detail::goal_of(*result.plan);
     return finalize(std::move(result));
 }
 
@@ -274,11 +316,11 @@ struct Solver
     Subsolver subsolver;
     Options<Kind> options;
 
-    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    OwnedNodeRecordView<Kind> normalize_start_node(std::optional<OwnedNodeRecordView<Kind>> start_node)
     {
         if (!start_node)
             start_node = options.start_node;
-        return subsolver.normalize_start_node(std::move(start_node));
+        return subsolver.normalize_start_node(start_node);
     }
 
     SearchResult<Kind> solve() { return find_solution<Kind>(subsolver, options); }

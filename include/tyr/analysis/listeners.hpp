@@ -82,7 +82,7 @@ struct ListenerStrata
     urd::Store<urd::sequence<ListenerStratum>> data;
 };
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::Repository& context);
+ListenerStrata compute_listeners(const RuleStrata<LiftedTag>& strata, const formalism::Repository& context);
 }
 
 #endif

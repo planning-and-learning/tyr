@@ -24,14 +24,14 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
-#include "tyr/planning/lifted/programs/action.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/programs/lifted/action.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
-#include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/task_utils.hpp"
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/tasks/task_utils.hpp"
 
 #include <algorithm>
 #include <array>
@@ -491,7 +491,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     auto sequential_context = ygg::ExecutionContext::create(1);
     auto parallel_context = ygg::ExecutionContext::create(ygg::ExecutionContext::get_max_num_threads());
     auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<LiftedTag>>(task, sequential_context);
-    auto state_repository = std::make_shared<tyr::planning::StateRepository<LiftedTag>>(task);
+    auto state_repository = tyr::planning::StateRepository<LiftedTag>::create(task);
     auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, sequential_context);
     const auto initial_state = successor_generator->get_initial_node(*state_repository, *axiom_evaluator).get_state();
 

@@ -17,8 +17,8 @@
 
 #include "tyr/planning/heuristics/lmcut.hpp"
 
-#include "../ground/heuristics/rpg.hpp"
-#include "../lifted/heuristics/rpg.hpp"
+#include "ground/rpg.hpp"
+#include "lifted/rpg.hpp"
 #include "rpg.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -139,7 +139,8 @@ struct LMCutImplementation :
 
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition, ygg::ExecutionContextPtr execution_context);
     LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context);
-    ygg::float_t evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
+    template<typename V>
+    ygg::float_t evaluate(const V& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
     void print_summary(size_t verbosity) const;
 
 private:
@@ -200,7 +201,8 @@ LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source
 { this->workspace().tp.set_early_termination(false); }
 
 template<TaskKind Kind>
-ygg::float_t LMCutImplementation<Kind>::evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms)
+template<typename V>
+ygg::float_t LMCutImplementation<Kind>::evaluate(const V& state, CutFrontierAtoms* cut_frontier_atoms)
 {
     this->begin_state_evaluation();
     auto value = static_cast<datalog::Cost>(0);
@@ -507,8 +509,8 @@ void LMCutImplementation<Kind>::print_summary(size_t verbosity) const
 
 // NOLINTEND(misc-use-internal-linkage)
 
-template<TaskKind Kind>
-struct LMCutHeuristic<Kind>::Impl
+template<TaskKind Kind, typename V>
+struct LMCutHeuristic<Kind, V>::Impl
 {
     using Implementation = lmcut_details::LMCutImplementation<Kind>;
     using CutFrontierAtoms = formalism::AtomViewList<GroundTag, formalism::FluentTag>;
@@ -522,7 +524,7 @@ struct LMCutHeuristic<Kind>::Impl
 
     void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
-    ygg::float_t evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
+    ygg::float_t evaluate(const V& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
     { return m_implementation.evaluate(state, cut_frontier_atoms); }
 
     void print_summary(size_t verbosity) const { m_implementation.print_summary(verbosity); }
@@ -534,40 +536,40 @@ private:
     Implementation m_implementation;
 };
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>::LMCutHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+template<TaskKind Kind, typename V>
+LMCutHeuristic<Kind, V>::LMCutHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
     m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>::LMCutHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
+template<TaskKind Kind, typename V>
+LMCutHeuristic<Kind, V>::LMCutHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
 {
 }
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>::~LMCutHeuristic() = default;
+template<TaskKind Kind, typename V>
+LMCutHeuristic<Kind, V>::~LMCutHeuristic() = default;
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>::LMCutHeuristic(LMCutHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+LMCutHeuristic<Kind, V>::LMCutHeuristic(LMCutHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-LMCutHeuristic<Kind>& LMCutHeuristic<Kind>::operator=(LMCutHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+LMCutHeuristic<Kind, V>& LMCutHeuristic<Kind, V>::operator=(LMCutHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{ return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
+template<TaskKind Kind, typename V>
+LMCutHeuristicPtr<Kind, V> LMCutHeuristic<Kind, V>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
+{ return std::make_shared<LMCutHeuristic<Kind, V>>(std::move(task), std::move(execution_context), cost_mode); }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
+template<TaskKind Kind, typename V>
+void LMCutHeuristic<Kind, V>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
-template<TaskKind Kind>
-ygg::float_t LMCutHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+template<TaskKind Kind, typename V>
+ygg::float_t LMCutHeuristic<Kind, V>::evaluate(const V& state)
 { return m_impl->evaluate(state); }
 
-template<TaskKind Kind>
-formalism::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const StateView<Kind>& state)
+template<TaskKind Kind, typename V>
+formalism::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind, V>::compute_cut_frontier_atoms(const V& state)
 {
     auto atoms = formalism::AtomViewList<GroundTag, formalism::FluentTag> {};
     static_cast<void>(m_impl->evaluate(state, &atoms));
@@ -576,12 +578,12 @@ formalism::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::c
     return atoms;
 }
 
-template<TaskKind Kind>
-HeuristicPtr<Kind> LMCutHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
+template<TaskKind Kind, typename V>
+HeuristicPtr<Kind, V> LMCutHeuristic<Kind, V>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{ return HeuristicPtr<Kind, V>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
-template<TaskKind Kind>
-void LMCutHeuristic<Kind>::print_summary(size_t verbosity) const
+template<TaskKind Kind, typename V>
+void LMCutHeuristic<Kind, V>::print_summary(size_t verbosity) const
 { m_impl->print_summary(verbosity); }
 
 template class LMCutHeuristic<GroundTag>;

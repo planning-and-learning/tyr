@@ -32,20 +32,8 @@ namespace
 void validate_rules(formalism::ProgramView<GroundTag> program, const FactSets& fact_sets)
 {
     for (const auto rule : program.get_rules())
-    {
         if (!is_statically_applicable(rule, fact_sets))
             throw std::invalid_argument("Ground Datalog programs must remove statically inapplicable rules before execution");
-        boost::mp11::mp_for_each<MutableTags>(
-            [&]<typename F>(F)
-            {
-                for (const auto literal : rule.get_body().template get_literals<F>())
-                    if (!literal.get_polarity())
-                    {
-                        throw std::invalid_argument("Ground Datalog rule " + std::to_string(static_cast<ygg::uint_t>(rule.index().value))
-                                                    + " contains a negative fluent or derived literal; only positive rule bodies are supported");
-                    }
-            });
-    }
 }
 
 void validate_program(formalism::ProgramView<GroundTag> program, const FactSets& fact_sets) { validate_rules(program, fact_sets); }
@@ -74,7 +62,8 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::ProgramView<G
           program.template get_atoms<formalism::StaticTag>(),
           program.template get_fterm_values<formalism::StaticTag>(),
           program.context()),
-    dependencies(program)
+    dependencies(program),
+    strata(analysis::compute_rule_stratification(program))
 {
     auto mutable_fact_sets = MutableFactSets(program, program.context());
     insert_program_facts(mutable_fact_sets, program);

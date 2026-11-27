@@ -20,7 +20,7 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/worker_state_index.hpp"
+#include "tyr/planning/states/worker_state_index.hpp"
 
 #include <urd/elements/index.hpp>
 

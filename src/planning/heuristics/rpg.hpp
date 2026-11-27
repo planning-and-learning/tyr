@@ -59,8 +59,8 @@
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/rpg.hpp"
-#include "tyr/planning/state_view.hpp"
-#include "tyr/planning/task_utils.hpp"
+#include "tyr/planning/states/state_view.hpp"
+#include "tyr/planning/tasks/task_utils.hpp"
 
 #include <boost/mp11.hpp>
 #include <concepts>
@@ -166,7 +166,8 @@ public:
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
-    ygg::float_t evaluate(const StateView<Kind>& state)
+    template<typename V>
+    ygg::float_t evaluate(const V& state)
     {
         begin_state_evaluation();
         return evaluate_current_state(state);
@@ -177,7 +178,8 @@ public:
 protected:
     void begin_state_evaluation() { Policy::begin_state_evaluation(*m_definition, m_workspace, m_source_goal); }
 
-    ygg::float_t evaluate_current_state(const StateView<Kind>& state)
+    template<typename V>
+    ygg::float_t evaluate_current_state(const V& state)
     {
         const auto& repository = *m_definition->task->get_repository();
         // LM-cut repeats this evaluation while retaining the current goal and cost overrides.
@@ -195,7 +197,8 @@ protected:
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    ygg::float_t compute_result(const StateView<Kind>&) const { return get_goal_cost(); }
+    template<typename V>
+    ygg::float_t compute_result(const V&) const { return get_goal_cost(); }
 
     void set_action_binding_cost(formalism::ActionRowView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>

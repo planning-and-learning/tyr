@@ -15,15 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "benchmark_successors.hpp"
 #include "common.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/successors/successors.hpp"
 
 #include <algorithm>
 #include <array>
@@ -177,7 +179,7 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
         for ([[maybe_unused]] auto _ : state)
         {
             const auto worker_setup_start = Clock::now();
-            auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(prepared.task);
+            auto repository = tyr::planning::StateRepository<Kind>::create(prepared.task);
             auto axiom_evaluator = prepared.axiom_evaluator->make_worker(execution_context);
             auto successor_generator = prepared.successor_generator->make_worker(execution_context);
             auto heuristic = tyr::planning::BlindHeuristic<Kind> {};
@@ -186,7 +188,8 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
             search_options.parallel_search_mode = options.search_mode;
             search_options.search_budget.max_num_states = options.max_states;
             search_options.search_budget.max_time = std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(options.search_timeout));
-            search_options.start_node = successor_generator->get_initial_node(*repository, *axiom_evaluator);
+            const auto initial_node = tyr::planning::get_initial_node(*repository, *axiom_evaluator);
+            search_options.start_node = tyr::planning::OwnedNodeRecordView<Kind>(initial_node.pack(), repository.get());
             const auto worker_setup_seconds = std::chrono::duration<double>(Clock::now() - worker_setup_start).count();
 
             const auto search_start = Clock::now();

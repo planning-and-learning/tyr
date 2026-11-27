@@ -20,7 +20,7 @@
 
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/search_budget.hpp"
+#include "tyr/planning/algorithms/search_budget.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -42,7 +42,7 @@ template<TaskKind Kind>
 struct Options
 {
     /// Optional initial node. It must belong to this task; search materializes it in the caller repository while preserving its metric.
-    std::optional<Node<Kind>> start_node = std::nullopt;
+    std::optional<OwnedNodeRecordView<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     PruningStrategyPtr<Kind> pruning_strategy = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
@@ -78,7 +78,7 @@ struct Solver
     HeuristicPtr<Kind> heuristic;
     Options<Kind> options;
 
-    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    OwnedNodeRecordView<Kind> normalize_start_node(std::optional<OwnedNodeRecordView<Kind>> start_node)
     {
         if (!task)
             throw std::invalid_argument("astar_eager::Solver::normalize_start_node(): task is required.");
@@ -89,7 +89,8 @@ struct Solver
         if (!start_node)
             start_node = options.start_node;
 
-        return tyr::planning::normalize_start_node(*task, *state_repository, *axiom_evaluator, std::move(start_node));
+        const auto node = tyr::planning::normalize_start_node(*task, *state_repository, *axiom_evaluator, start_node);
+        return OwnedNodeRecordView<Kind>(urd::resolve(node, *state_repository).pack(), state_repository.get());
     }
 
     SearchResult<Kind> solve()

@@ -26,10 +26,10 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/search_space/parallel.hpp"
-#include "tyr/planning/state_routing/dist_hash.hpp"
-#include "tyr/planning/successor_generator.hpp"
-#include "tyr/planning/worker_state_index.hpp"
+#include "tyr/planning/algorithms/search_space/parallel.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
+#include "tyr/planning/successors/successor_generator.hpp"
+#include "tyr/planning/states/worker_state_index.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -62,7 +62,7 @@ namespace tyr::planning::detail
 template<TaskKind Kind, typename HashKind>
 class HashDistributedStatePolicy
 {
-    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>>;
+    using BuilderPtr = StateBuilderHandle<Kind>;
 
 public:
     static constexpr bool uses_owner_repositories = true;
@@ -70,13 +70,13 @@ public:
     struct PreparedTarget
     {
         urd::index<Worker> owner;
-        Node<Kind> node;
+        NodeBuilder<Kind> node;
     };
 
     explicit HashDistributedStatePolicy(uint64_t seed) : m_dist_hash(seed) {}
 
     template<typename Engine>
-    std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
+    std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state(Engine& engine, const StateBuilderView<Kind>& start_state)
     {
         m_dist_hash.initialize(start_state);
         const auto owner = m_dist_hash.owner(start_state, engine.num_workers());
@@ -87,7 +87,7 @@ public:
     template<typename Engine, typename WorkerData>
     PreparedTarget prepare_target([[maybe_unused]] Engine& engine,
                                   WorkerData& sender,
-                                  const StateView<Kind>& parent,
+                                  const StateBuilderView<Kind>& parent,
                                   BuilderPtr target,
                                   const StateDelta& delta,
                                   ygg::float_t metric,
@@ -105,9 +105,9 @@ public:
             target = std::move(receiver_target);
         }
 
-        auto node = Node<Kind>(repository.register_state(*sender.axiom_evaluator, std::move(target), parent, delta), metric);
+        repository.register_state(*sender.axiom_evaluator, *target, parent, delta);
         assert(repository.shares_storage_with(*engine.get_worker(owner).state_repository));
-        return PreparedTarget { owner, std::move(node) };
+        return PreparedTarget { owner, NodeBuilder<Kind> { std::move(target), metric } };
     }
 
     static size_t search_node_divisor(size_t) noexcept { return 1; }
@@ -131,7 +131,7 @@ private:
 template<TaskKind Kind>
 class SharedStatePolicy
 {
-    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>>;
+    using BuilderPtr = StateBuilderHandle<Kind>;
 
 public:
     static constexpr bool uses_owner_repositories = false;
@@ -139,16 +139,16 @@ public:
     struct PreparedTarget
     {
         urd::index<Worker> owner;
-        Node<Kind> node;
+        NodeBuilder<Kind> node;
     };
 
     explicit SharedStatePolicy(uint64_t) noexcept {}
 
     template<typename Engine>
-    static std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
+    static std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state(Engine& engine, const StateBuilderView<Kind>& start_state)
     {
         const auto start_owner = SharedStatePolicy::owner(start_state.pack().index(), engine.num_workers());
-        return { start_owner, start_state };
+        return { start_owner, start_state.context().get_registered_state(start_state.pack().index()) };
     }
 
     static urd::index<Worker> owner(urd::index<State<Kind>> state, size_t num_workers) noexcept
@@ -160,14 +160,15 @@ public:
     template<typename Engine, typename WorkerData>
     static PreparedTarget prepare_target(Engine&,
                                          WorkerData& worker,
-                                         const StateView<Kind>& parent,
+                                         const StateBuilderView<Kind>& parent,
                                          BuilderPtr target,
                                          const StateDelta& delta,
                                          ygg::float_t metric,
                                          size_t num_workers)
     {
-        auto node = Node<Kind>(worker.state_repository->register_state(*worker.axiom_evaluator, std::move(target), parent, delta), metric);
-        return PreparedTarget { owner(node.get_state().pack().index(), num_workers), std::move(node) };
+        worker.state_repository->register_state(*worker.axiom_evaluator, *target, parent, delta);
+        const auto state_owner = owner(target->index, num_workers);
+        return PreparedTarget { state_owner, NodeBuilder<Kind> { std::move(target), metric } };
     }
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
@@ -363,7 +364,7 @@ template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, StateRoutingPoli
     requires std::same_as<SearchTagT<SearchPolicy>, ParallelSearch>
 class ParallelExecutionPolicy
 {
-    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>>;
+    using BuilderPtr = StateBuilderHandle<Kind>;
     using CoordinationPolicy = ParallelLayerCoordinationPolicy<SearchPolicy>;
     using Metadata = SuccessorMetadataT<SearchPolicy>;
 
@@ -404,7 +405,7 @@ public:
     { return StatePolicy::search_node_index(state, worker, num_workers); }
 
     template<typename Engine>
-    auto prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
+    auto prepare_start_state(Engine& engine, const StateBuilderView<Kind>& start_state)
     { return m_state_policy.prepare_start_state(engine, start_state); }
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value.store(value, std::memory_order_relaxed); }
@@ -533,23 +534,25 @@ public:
     template<typename Engine, typename WorkerData>
     AcceptanceResult route(Engine& engine,
                            WorkerData& sender,
-                           const Node<Kind>& source,
+                           const NodeBuilderView<Kind>& source,
                            BuilderPtr target,
                            const StateDelta& delta,
                            ygg::float_t auxiliary_value,
-                           formalism::ActionRowView action,
+                           ActionBindingView<Kind> action,
                            Metadata metadata)
     {
-        const auto metric = engine.evaluate_successor_metric(source.get_state().context(), *target, auxiliary_value);
+        const auto metric = engine.evaluate_successor_metric(source.context(), *target, auxiliary_value);
         const auto g_value = compute_successor_g_value(metadata.source_g_value, metric, engine.m_options->cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
-        auto prepared = m_state_policy.prepare_target(engine, sender, source.get_state(), std::move(target), delta, metric, engine.num_workers());
-        const auto is_goal = sender.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), prepared.node.get_state());
+        auto prepared = m_state_policy.prepare_target(engine, sender, urd::built_view(source.get_state()), std::move(target), delta, metric, engine.num_workers());
+        const auto is_goal =
+            sender.goal_strategy->is_dynamic_goal_satisfied(urd::built_view(engine.start_node().get_state()), urd::built_view(urd::resolve(prepared.node, *sender.state_repository).get_state()));
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
-        auto routed = RoutedSuccessorT<Engine> { LabeledNode<Kind> { action, std::move(prepared.node) }, std::move(metadata), g_value, is_goal };
+        prepared.node.metric = g_value;
+        auto routed = RoutedSuccessorT<Engine> { action, std::move(prepared.node), std::move(metadata), g_value, is_goal };
 
         auto result = AcceptanceResult::TERMINAL;
         {
@@ -564,7 +567,7 @@ public:
                 receiver.statistics.add_destination_lock_statistics(std::chrono::duration_cast<std::chrono::nanoseconds>(hold_start - wait_start),
                                                                     std::chrono::duration_cast<std::chrono::nanoseconds>(hold_end - hold_start));
             };
-            const auto evaluate_heuristic = [&](const StateView<Kind>& state)
+            const auto evaluate_heuristic = [&](const StateBuilderView<Kind>& state)
             {
                 record_lock();
                 lock.unlock();
@@ -594,7 +597,7 @@ public:
                                                           WorkerData& worker,
                                                           SearchNodeT<SearchPolicy>& search_node,
                                                           const RoutedSuccessorT<Engine>& routed_successor,
-                                                          const StateView<Kind>& state,
+                                                          const StateBuilderView<Kind>& state,
                                                           ygg::float_t g_value,
                                                           EmitTransition&& emit_transition)
     {
@@ -608,7 +611,7 @@ public:
     }
 
     template<typename Engine, typename WorkerData>
-    static constexpr bool is_generated_goal(Engine&, WorkerData&, const RoutedSuccessorT<Engine>& routed_successor, const StateView<Kind>&) noexcept
+    static constexpr bool is_generated_goal(Engine&, WorkerData&, const RoutedSuccessorT<Engine>& routed_successor, const StateBuilderView<Kind>&) noexcept
     { return routed_successor.is_goal; }
 
     template<typename Engine>
@@ -741,7 +744,7 @@ public:
         {
             m_owner_state_repositories.reserve(num_workers);
             for (size_t i = 0; i < num_workers; ++i)
-                m_owner_state_repositories.push_back(std::make_shared<StateRepository<Kind>>(state_repository.get_task(), true));
+                m_owner_state_repositories.push_back(StateRepository<Kind>::create(state_repository.get_task(), true));
         }
 
         m_workers.reserve(num_workers);
@@ -830,7 +833,7 @@ public:
             callback(*worker);
     }
 
-    std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
+    std::pair<OwnedPlanBuilderView<Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
         auto views = urd::Store<urd::sequence<WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>> {};
         views.reserve(size());
@@ -853,8 +856,9 @@ public:
                                                                                  *m_caller_state_repository,
                                                                                  *m_caller_axiom_evaluator,
                                                                                  options.cost_mode);
-        auto goal_node = plan.empty() ? plan.get_start_node() : plan.get_labeled_succ_nodes().back().node;
-        return { std::move(plan), std::move(goal_node) };
+        auto owned = OwnedPlanBuilderView<Kind>(std::move(plan), m_caller_state_repository);
+        auto goal_node = OwnedNodeRecordView<Kind>(owned.get_goal_node().pack(), m_caller_state_repository);
+        return { std::move(owned), std::move(goal_node) };
     }
 
 private:

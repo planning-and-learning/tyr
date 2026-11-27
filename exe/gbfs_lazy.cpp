@@ -39,7 +39,7 @@ try
         {
             const auto arguments = cli::Arguments(program);
             auto options = planning::gbfs_lazy::Options<Kind>();
-            cli::set_common_options(options, arguments, search);
+            cli::set_common_options(options, arguments);
             options.event_handler = planning::gbfs_lazy::DefaultEventHandler<Kind>::create(arguments.verbosity);
             if (const auto max_time = program.present<uint64_t>("--max-time"))
                 options.search_budget.max_time = std::chrono::seconds(*max_time);

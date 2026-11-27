@@ -133,7 +133,7 @@ public:
 
     template<typename EvaluateUnlocked, typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry&,
-                                      const Node<Kind>& node,
+                                      const NodeBuilderView<Kind>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
                                       EvaluateUnlocked&& evaluate_unlocked,
@@ -147,7 +147,7 @@ public:
         m_state_h_value = std::forward<EvaluateUnlocked>(evaluate_unlocked)(
             [&]
             {
-                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic->evaluate(node.get_state()));
+                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic->evaluate(urd::built_view(node.get_state())));
                 if (std::isnan(h_value))
                     throw std::runtime_error("GBFS heuristic value is NaN.");
                 if (h_value != std::numeric_limits<ygg::float_t>::infinity())
@@ -166,11 +166,11 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::ActionRowView action) const
+    [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const NodeBuilderView<Kind>& node, ActionBindingView<Kind> action) const
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
-        const auto preferred = m_relaxed_plan && m_relaxed_plan->contains(action);
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().pack().index() }, node.get_metric(), m_state_h_value, preferred };
+        const auto preferred = m_relaxed_plan && in_relaxed_plan(node, action);
+        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.get_metric(), m_state_h_value, preferred };
     }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool is_preferred)
@@ -179,8 +179,8 @@ public:
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,
                                       WorkerData& worker,
-                                      const Node<Kind>& source_node,
-                                      const Node<Kind>& successor_node,
+                                      const NodeBuilderView<Kind>& source_node,
+                                      const NodeBuilderView<Kind>& successor_node,
                                       const RoutedSuccessorT<Engine>& routed_successor,
                                       SearchNode& successor_search_node,
                                       bool is_new,
@@ -193,8 +193,8 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        const auto& source_state = source_node.get_state();
-        const auto& successor_state = successor_node.get_state();
+        const auto source_state = urd::built_view(source_node.get_state());
+        const auto successor_state = urd::built_view(successor_node.get_state());
         const auto g_value = successor_node.get_metric();
         successor_search_node.status = SearchNodeStatus::OPEN;
         successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);
@@ -229,7 +229,7 @@ public:
     [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& get_search_nodes() const noexcept { return m_search_nodes; }
 
     template<typename Handler>
-    static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
+    static void on_start_search(Handler& handler, const NodeBuilderView<Kind>& node, ygg::float_t priority)
     { handler.on_start_search(node, priority); }
 
     template<typename Handler>
@@ -261,6 +261,28 @@ private:
     ygg::float_t m_start_h_value { 0 };
     ygg::float_t m_state_h_value { 0 };
     const urd::Store<urd::set<formalism::ActionRowView>>* m_relaxed_plan { nullptr };
+    /// The row of a lifted binding being looked up in the relaxed plan (found, never interned: a row nothing interned is in
+    /// no relaxed plan).
+    mutable urd::data<ygg::Row<formalism::Action<LiftedTag>>> m_binding_row;
+
+    /// Whether the relaxed plan holds `action`: a ground binding is its interned row; a lifted one is found by its values.
+    [[nodiscard]] bool in_relaxed_plan(const NodeBuilderView<Kind>& node, ActionBindingView<Kind> action) const
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+        {
+            return m_relaxed_plan->contains(action);
+        }
+        else
+        {
+            m_binding_row.relation = action_of(action).index();
+            m_binding_row.values.clear();
+            for (const auto value : action.get_values())
+                m_binding_row.values.push_back(value);
+            const auto row = node.context().get_task()->get_repository()->find(m_binding_row);
+            return row.has_value() && m_relaxed_plan->contains(*row);
+        }
+    }
+
     urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
     std::array<Queue, 2> m_openlists;
     std::array<size_t, 2> m_weights { 1, 1 };

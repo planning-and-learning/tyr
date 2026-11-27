@@ -1,0 +1,5 @@
+(define (domain bindings)
+  (:requirements :strips)
+  (:predicates (ready ?item) (done ?item))
+  (:action finish :parameters (?item) :precondition (ready ?item)
+    :effect (and (not (ready ?item)) (done ?item))))

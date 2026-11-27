@@ -34,16 +34,21 @@
 namespace tyr::analysis
 {
 
-using TypedRuleStratum = urd::flat_vector<urd::index<formalism::Rule<LiftedTag>>>;
+/// The rules of a stratum: those whose heads it holds.
+template<TaskKind Kind>
+using RuleStratum = urd::flat_vector<urd::index<formalism::Rule<Kind>>>;
 
-using RuleStratum = TypedRuleStratum;
-
+/// A program's rules by stratum, lowest first: a rule's negative literals read relations of lower strata only.
+template<TaskKind Kind>
 struct RuleStrata
 {
-    urd::Store<urd::sequence<RuleStratum>> data;
+    urd::Store<urd::sequence<RuleStratum<Kind>>> data;
 };
 
-RuleStrata compute_rule_stratification(formalism::ProgramView<LiftedTag> program);
+/// The least strata of the program's rules, over its relations (predicates and fluent functions); throws if a relation
+/// depends negatively on itself.
+template<TaskKind Kind>
+RuleStrata<Kind> compute_rule_stratification(formalism::ProgramView<Kind> program);
 }
 
 #endif

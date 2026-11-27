@@ -17,8 +17,8 @@
 
 #include "tyr/planning/heuristics/rpg_add.hpp"
 
-#include "../ground/heuristics/rpg.hpp"
-#include "../lifted/heuristics/rpg.hpp"
+#include "ground/rpg.hpp"
+#include "lifted/rpg.hpp"
 #include "rpg.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -29,8 +29,8 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-struct AddRPGHeuristic<Kind>::Impl :
+template<TaskKind Kind, typename V>
+struct AddRPGHeuristic<Kind, V>::Impl :
     detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>
 {
     using Base =
@@ -39,44 +39,44 @@ struct AddRPGHeuristic<Kind>::Impl :
     using Base::Base;
 };
 
-template<TaskKind Kind>
-AddRPGHeuristic<Kind>::AddRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+template<TaskKind Kind, typename V>
+AddRPGHeuristic<Kind, V>::AddRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
     m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
 
-template<TaskKind Kind>
-AddRPGHeuristic<Kind>::AddRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
+template<TaskKind Kind, typename V>
+AddRPGHeuristic<Kind, V>::AddRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
 {
 }
 
-template<TaskKind Kind>
-AddRPGHeuristic<Kind>::~AddRPGHeuristic() = default;
+template<TaskKind Kind, typename V>
+AddRPGHeuristic<Kind, V>::~AddRPGHeuristic() = default;
 
-template<TaskKind Kind>
-AddRPGHeuristic<Kind>::AddRPGHeuristic(AddRPGHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+AddRPGHeuristic<Kind, V>::AddRPGHeuristic(AddRPGHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-AddRPGHeuristic<Kind>& AddRPGHeuristic<Kind>::operator=(AddRPGHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+AddRPGHeuristic<Kind, V>& AddRPGHeuristic<Kind, V>::operator=(AddRPGHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-AddRPGHeuristicPtr<Kind> AddRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{ return std::make_shared<AddRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
+template<TaskKind Kind, typename V>
+AddRPGHeuristicPtr<Kind, V> AddRPGHeuristic<Kind, V>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
+{ return std::make_shared<AddRPGHeuristic<Kind, V>>(std::move(task), std::move(execution_context), cost_mode); }
 
-template<TaskKind Kind>
-void AddRPGHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
+template<TaskKind Kind, typename V>
+void AddRPGHeuristic<Kind, V>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
-template<TaskKind Kind>
-ygg::float_t AddRPGHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+template<TaskKind Kind, typename V>
+ygg::float_t AddRPGHeuristic<Kind, V>::evaluate(const V& state)
 { return m_impl->evaluate(state); }
 
-template<TaskKind Kind>
-HeuristicPtr<Kind> AddRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return HeuristicPtr<Kind>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
+template<TaskKind Kind, typename V>
+HeuristicPtr<Kind, V> AddRPGHeuristic<Kind, V>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{ return HeuristicPtr<Kind, V>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
-template<TaskKind Kind>
-void AddRPGHeuristic<Kind>::print_summary(size_t verbosity) const
+template<TaskKind Kind, typename V>
+void AddRPGHeuristic<Kind, V>::print_summary(size_t verbosity) const
 { m_impl->print_summary(verbosity); }
 
 template class AddRPGHeuristic<GroundTag>;

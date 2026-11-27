@@ -62,7 +62,7 @@ void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::
 }
 }
 
-TypedRuleSchedulerStratum::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
+TypedRuleSchedulerStratum::TypedRuleSchedulerStratum(const analysis::RuleStratum<LiftedTag>& rules,
                                                      const analysis::TypedListenerStratum& listeners,
                                                      const formalism::Repository& context,
                                                      formalism::ProgramView<LiftedTag> program) :
@@ -106,7 +106,7 @@ void TypedRuleSchedulerStratum::on_finish_iteration()
     rebuild_sorted_active_rules();
 }
 
-Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum& rules,
+Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum<LiftedTag>& rules,
                                 const analysis::ListenerStratum& listeners,
                                 const formalism::Repository& context,
                                 formalism::ProgramView<LiftedTag> program) :
@@ -120,7 +120,7 @@ void Scheduler<LiftedTag>::on_start_iteration() noexcept { predicate_rules.on_st
 
 void Scheduler<LiftedTag>::on_finish_iteration() { predicate_rules.on_finish_iteration(); }
 
-urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
+urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata<LiftedTag>& rules,
                                                                   const analysis::ListenerStrata& listeners,
                                                                   const formalism::Repository& context,
                                                                   formalism::ProgramView<LiftedTag> program)

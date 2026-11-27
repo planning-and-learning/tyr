@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_SCHEDULER_HPP_
 #define TYR_DATALOG_GROUND_SCHEDULER_HPP_
 
+#include "tyr/analysis/stratification.hpp"
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
@@ -32,6 +33,7 @@
 #include <boost/mp11.hpp>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <limits>
 #include <optional>
 #include <tuple>
@@ -90,9 +92,10 @@ template<>
 class Scheduler<GroundTag>
 {
 public:
-    /// What a run starts from is computed once here, by rule: the number of its conditions (fluent and derived literals and
-    /// numeric constraints), the rules without any, the rules with numeric constraints.
-    explicit Scheduler(formalism::ProgramView<GroundTag> program) : m_program(program)
+    /// What a run starts from is computed once here, by rule: the number of its conditions (fluent and derived literals of
+    /// either polarity and numeric constraints), the rules without any, the rules with numeric constraints, and by stratum
+    /// the rules with negative literals.
+    Scheduler(formalism::ProgramView<GroundTag> program, const analysis::RuleStrata<GroundTag>& strata) : m_program(program)
     {
         const auto rules = program.get_rules();
         const auto num_slots = formalism::rule_index_bound(rules);
@@ -113,6 +116,21 @@ public:
             if (m_conditions[rule_index] == 0)
                 m_unconditional_rules.push_back(rule);
         }
+        m_negative_rules.resize(strata.data.size());
+        for (ygg::uint_t stratum = 0; stratum < strata.data.size(); ++stratum)
+            for (const auto rule_index : strata.data[stratum])
+            {
+                const auto rule = m_rules[static_cast<ygg::uint_t>(rule_index.value)];
+                auto has_negative_literal = false;
+                boost::mp11::mp_for_each<MutableTags>(
+                    [&]<typename F>(F)
+                    {
+                        for (const auto literal : rule.get_body().template get_literals<F>())
+                            has_negative_literal = has_negative_literal || !literal.get_polarity();
+                    });
+                if (has_negative_literal)
+                    m_negative_rules[stratum].push_back(rule);
+            }
     }
 
     /// Back to no condition holding, in time linear in the rules (a copy of their condition counts, no reads of the
@@ -132,6 +150,16 @@ public:
         m_ready.clear();
         for (const auto rule : m_unconditional_rules)
             m_ready.insert(rule.index());
+        m_next_stratum = 0;
+    }
+
+    /// Moves on to the next stratum, if any: begin_stratum then satisfies its rules' negative literals that hold.
+    bool next_stratum() noexcept
+    {
+        if (m_next_stratum == m_negative_rules.size())
+            return false;
+        m_stratum = m_next_stratum++;
+        return true;
     }
 
     /// One condition of `rule` holds, of cost `cost`, aggregated into its support by `aggregate`: a fact of its body is
@@ -201,6 +229,11 @@ private:
     urd::Store<urd::sequence<ygg::uint_t>> m_conditions;
     Rules m_unconditional_rules;
     Rules m_numeric_rules;
+    /// By stratum: its rules with negative literals. A negative literal reads a relation of a lower stratum, final when
+    /// the stratum begins: it is satisfied then or never.
+    urd::Store<urd::sequence<Rules>> m_negative_rules;
+    std::size_t m_stratum = 0;
+    std::size_t m_next_stratum = 0;
     /// By rule index: its rule.
     Rules m_rules;
     /// The rules whose conditions all hold and that have not fired yet.

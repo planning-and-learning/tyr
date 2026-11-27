@@ -20,9 +20,9 @@
 
 #include "tyr/planning/algorithms/declarations.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/plan.hpp"
-#include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -53,25 +53,29 @@ inline ygg::float_t compute_successor_g_value(ygg::float_t source_g_value, ygg::
     throw std::runtime_error("compute_successor_g_value(...): unknown action cost mode.");
 }
 
+/// The start node of a search in `state_repository`: the task's initial node, or `start_node` (a packed node of the task,
+/// of any repository) unpacked there (its state registered there).
 template<TaskKind Kind>
-Node<Kind>
-normalize_start_node(Task<Kind>& task, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator, std::optional<Node<Kind>> start_node);
+NodeBuilder<Kind> normalize_start_node(Task<Kind>& task,
+                                       StateRepository<Kind>& state_repository,
+                                       AxiomEvaluator<Kind>& axiom_evaluator,
+                                       const std::optional<OwnedNodeRecordView<Kind>>& start_node);
 
-extern template Node<GroundTag> normalize_start_node(Task<GroundTag>& task,
-                                                     StateRepository<GroundTag>& state_repository,
-                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                     std::optional<Node<GroundTag>> start_node);
-extern template Node<LiftedTag> normalize_start_node(Task<LiftedTag>& task,
-                                                     StateRepository<LiftedTag>& state_repository,
-                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                     std::optional<Node<LiftedTag>> start_node);
+extern template NodeBuilder<GroundTag> normalize_start_node(Task<GroundTag>& task,
+                                                            StateRepository<GroundTag>& state_repository,
+                                                            AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                            const std::optional<OwnedNodeRecordView<GroundTag>>& start_node);
+extern template NodeBuilder<LiftedTag> normalize_start_node(Task<LiftedTag>& task,
+                                                            StateRepository<LiftedTag>& state_repository,
+                                                            AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                            const std::optional<OwnedNodeRecordView<LiftedTag>>& start_node);
 
 template<TaskKind Kind>
 struct SearchResult
 {
     SearchStatus status = SearchStatus::IN_PROGRESS;
-    std::optional<Plan<Kind>> plan = std::nullopt;
-    std::optional<Node<Kind>> goal_node = std::nullopt;
+    std::optional<OwnedPlanBuilderView<Kind>> plan = std::nullopt;
+    std::optional<OwnedNodeRecordView<Kind>> goal_node = std::nullopt;
     std::optional<std::pair<size_t, size_t>> cycle_range = std::nullopt;
     /// Idle time is summed worker time and may exceed the aggregate wall time.
     Statistics statistics {};

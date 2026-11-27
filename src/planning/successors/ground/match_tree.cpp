@@ -1,0 +1,897 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "tyr/planning/successors/ground/match_tree/match_tree.hpp"
+
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
+#include "tyr/planning/successors/applicability.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/successors/ground/match_tree/declarations.hpp"
+#include "tyr/planning/successors/ground/match_tree/nodes/node_view.hpp"
+#include "tyr/planning/successors/ground/match_tree/repository.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+
+#include <algorithm>
+#include <cassert>
+#include <memory>
+#include <optional>
+#include <span>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <utility>
+#include <variant>
+#include <vector>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/builder_instantiations.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/symbol_context_impl.hpp>
+#include <yggdrasil/formalism/symbol_context_instantiations.hpp>
+
+namespace tyr::planning::match_tree
+{
+
+// NOLINTBEGIN(misc-use-internal-linkage): an exported class holds these types, so an anonymous namespace would give it
+// a member of internal linkage (g++ -Wsubobject-linkage in a unity batch)
+namespace match_tree_details
+{
+
+using PreconditionVariant = std::variant<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>,
+                                         formalism::FDRVariableView<formalism::FluentTag>,
+                                         urd::data<formalism::FDRFact<formalism::FluentTag>>,
+                                         urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>;
+
+template<typename Tag>
+using ElementView = urd::index_view<Tag, formalism::Repository>;
+
+template<typename Tag>
+using ElementViews = urd::Store<urd::sequence<ElementView<Tag>>>;
+
+template<typename Tag>
+using ElementSpan = std::span<ElementView<Tag>>;
+
+template<typename Tag>
+using Builder = std::conditional_t<std::same_as<Tag, formalism::Action<GroundTag>>, GroundActionBuilder, GroundAxiomBuilder>;
+
+template<typename Tag>
+using SortedPreconditions = urd::Store<urd::sequence<std::pair<PreconditionVariant, ElementViews<Tag>>>>;
+
+template<typename Tag>
+using PreconditionOccurrences = urd::Store<urd::map<PreconditionVariant, ElementViews<Tag>>>;
+
+template<typename Tag>
+using PreconditionDetails =
+    urd::Store<urd::map<ElementView<Tag>, urd::Store<urd::map<PreconditionVariant, std::variant<std::monostate, bool, formalism::FDRValue>>>>>;
+
+template<typename Tag>
+struct BaseEntry
+{
+    size_t depth;
+    ElementSpan<Tag> elements;
+
+    BaseEntry(size_t depth_, ElementSpan<Tag> elements_) : depth(depth_), elements(elements_) {}
+};
+
+template<typename Tag>
+struct AtomStackEntry;
+
+template<typename Tag>
+struct VariableStackEntry;
+
+template<typename Tag>
+struct NegativeFactStackEntry;
+
+template<typename Tag>
+struct ConstraintStackEntry;
+
+template<typename Tag>
+struct GeneratorStackEntry;
+
+template<typename Tag>
+using StackEntry = std::variant<AtomStackEntry<Tag>, VariableStackEntry<Tag>, NegativeFactStackEntry<Tag>, ConstraintStackEntry<Tag>, GeneratorStackEntry<Tag>>;
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
+                                                             const SortedPreconditions<Tag>& sorted_preconditions,
+                                                             const PreconditionDetails<Tag>& details,
+                                                             Builder<Tag>& builder,
+                                                             const Repository<Tag>& repository);
+
+template<typename Tag>
+struct AtomStackEntry
+{
+    BaseEntry<Tag> base;
+
+    ElementSpan<Tag> true_elements;
+    ElementSpan<Tag> false_elements;
+    ElementSpan<Tag> dontcare_elements;
+
+    urd::handle<urd::builder<AtomSelectorNode<Tag>, Repository<Tag>>> result;
+
+    AtomStackEntry(Builder<Tag>& builder,
+                   const Repository<Tag>& repository,
+                   BaseEntry<Tag> base_,
+                   urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> atom,
+                   ElementSpan<Tag> true_elements_,
+                   ElementSpan<Tag> false_elements_,
+                   ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        true_elements(true_elements_),
+        false_elements(false_elements_),
+        dontcare_elements(dontcare_elements_),
+        result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
+    { urd::build_member(result->atom, atom, repository.template get<formalism::Repository>()); }
+
+    [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+
+    [[nodiscard]] bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
+
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+};
+
+template<typename Tag>
+struct VariableStackEntry
+{
+    BaseEntry<Tag> base;
+
+    urd::Store<urd::sequence<ElementSpan<Tag>>> domain_elements;
+    urd::Store<urd::sequence<ygg::uint_t>> forward;
+    ElementSpan<Tag> dontcare_elements;
+    size_t forward_pos = 0;
+
+    urd::handle<urd::builder<VariableSelectorNode<Tag>, Repository<Tag>>> result;
+
+    VariableStackEntry(Builder<Tag>& builder,
+                       BaseEntry<Tag> base_,
+                       formalism::FDRVariableView<formalism::FluentTag> variable,
+                       urd::Store<urd::sequence<ElementSpan<Tag>>> domain_elements_,
+                       urd::Store<urd::sequence<ygg::uint_t>> forward_,
+                       ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        domain_elements(std::move(domain_elements_)),
+        forward(std::move(forward_)),
+        dontcare_elements(dontcare_elements_),
+
+        result(planning::match_tree::checkout<VariableSelectorNode<Tag>>(builder))
+    {
+        urd::store(result->variable, variable);
+        result->domain_children.resize(domain_elements.size());
+    }
+
+    [[nodiscard]] bool explored_children() const noexcept { return forward_pos == forward.size(); }
+
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+};
+
+template<typename Tag>
+struct NegativeFactStackEntry
+{
+    BaseEntry<Tag> base;
+
+    ElementSpan<Tag> true_elements;
+    ElementSpan<Tag> dontcare_elements;
+
+    urd::handle<urd::builder<NegativeFactSelectorNode<Tag>, Repository<Tag>>> result;
+
+    NegativeFactStackEntry(Builder<Tag>& builder,
+                           const Repository<Tag>& repository,
+                           BaseEntry<Tag> base_,
+                           urd::data<formalism::FDRFact<formalism::FluentTag>> fact,
+                           ElementSpan<Tag> true_elements_,
+                           ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        true_elements(true_elements_),
+        dontcare_elements(dontcare_elements_),
+        result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
+    { urd::build_member(result->fact, fact, repository.template get<formalism::Repository>()); }
+
+    [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+};
+
+template<typename Tag>
+struct ConstraintStackEntry
+{
+    BaseEntry<Tag> base;
+
+    ElementSpan<Tag> true_elements;
+    ElementSpan<Tag> dontcare_elements;
+
+    urd::handle<urd::builder<NumericConstraintSelectorNode<Tag>, Repository<Tag>>> result;
+
+    ConstraintStackEntry(Builder<Tag>& builder,
+                         const Repository<Tag>& repository,
+                         BaseEntry<Tag> base_,
+                         urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
+                         ElementSpan<Tag> true_elements_,
+                         ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        true_elements(true_elements_),
+        dontcare_elements(dontcare_elements_),
+        result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
+    { urd::build_member(result->constraint, constraint, repository.template get<formalism::Repository>()); }
+
+    [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+};
+
+template<typename Tag>
+struct GeneratorStackEntry
+{
+    BaseEntry<Tag> base;
+
+    urd::handle<urd::builder<planning::match_tree::ElementGeneratorNode<Tag>, Repository<Tag>>> result;
+
+    GeneratorStackEntry(Builder<Tag>& builder, const Repository<Tag>& /*repository*/, BaseEntry<Tag> base_) :
+        base(base_),
+        result(planning::match_tree::checkout<planning::match_tree::ElementGeneratorNode<Tag>>(builder))
+    {
+        for (const auto element : base_.elements)
+            urd::append(result->elements, element);
+
+        // std::cout << "Num elements in generator node: " << result->elements.size() << std::endl;
+    }
+};
+
+template<typename Entry, typename Tag>
+auto store_result(Entry& entry, Repository<Tag>& repository, Builder<Tag>& builder)
+{
+    const auto stored = repository.insert(*entry.result, builder).first;
+    return Node<Tag>(stored.index());
+}
+
+template<typename Tag>
+bool explored(const AtomStackEntry<Tag>& el) noexcept
+{ return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child(); }
+
+template<typename Tag>
+std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& el,
+                                          const SortedPreconditions<Tag>& sorted_preconditions,
+                                          const PreconditionDetails<Tag>& details,
+                                          Builder<Tag>& builder,
+                                          const Repository<Tag>& repository)
+{
+    if (!el.explored_true_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, builder, repository);
+    else if (!el.explored_false_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.false_elements }, sorted_preconditions, details, builder, repository);
+    else if (!el.explored_dontcare_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+void push_result(AtomStackEntry<Tag>& el, const Node<Tag>& node, const Repository<Tag>& repository)
+{
+    if (!el.explored_true_child())
+        urd::build_member(el.result->true_child.emplace(), node, repository);
+    else if (!el.explored_false_child())
+        urd::build_member(el.result->false_child.emplace(), node, repository);
+    else if (!el.explored_dontcare_child())
+        urd::build_member(el.result->dontcare_child.emplace(), node, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+bool explored(const VariableStackEntry<Tag>& el) noexcept
+{ return el.explored_children() && el.explored_dontcare_child(); }
+
+template<typename Tag>
+std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
+                                          const SortedPreconditions<Tag>& sorted_preconditions,
+                                          const PreconditionDetails<Tag>& details,
+                                          Builder<Tag>& builder,
+                                          const Repository<Tag>& repository)
+{
+    if (!el.explored_children())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.domain_elements.at(el.forward.at(el.forward_pos)) },
+                                      sorted_preconditions,
+                                      details,
+                                      builder,
+                                      repository);
+    else if (!el.explored_dontcare_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+void push_result(VariableStackEntry<Tag>& el, const Node<Tag>& node, const Repository<Tag>& repository)
+{
+    if (!el.explored_children())
+    {
+        urd::build_member(el.result->domain_children.at(el.forward.at(el.forward_pos)).emplace(), node, repository);
+        ++el.forward_pos;
+    }
+    else if (!el.explored_dontcare_child())
+        urd::build_member(el.result->dontcare_child.emplace(), node, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+bool explored(const NegativeFactStackEntry<Tag>& el) noexcept
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
+
+template<typename Tag>
+std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
+                                          const SortedPreconditions<Tag>& sorted_preconditions,
+                                          const PreconditionDetails<Tag>& details,
+                                          Builder<Tag>& builder,
+                                          const Repository<Tag>& repository)
+{
+    if (!el.explored_true_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, builder, repository);
+    else if (!el.explored_dontcare_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+void push_result(NegativeFactStackEntry<Tag>& el, const Node<Tag>& node, const Repository<Tag>& repository)
+{
+    if (!el.explored_true_child())
+        urd::build_member(el.result->true_child.emplace(), node, repository);
+    else if (!el.explored_dontcare_child())
+        urd::build_member(el.result->dontcare_child.emplace(), node, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+bool explored(const ConstraintStackEntry<Tag>& el) noexcept
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
+
+template<typename Tag>
+std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
+                                          const SortedPreconditions<Tag>& sorted_preconditions,
+                                          const PreconditionDetails<Tag>& details,
+                                          Builder<Tag>& builder,
+                                          const Repository<Tag>& repository)
+{
+    if (!el.explored_true_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, builder, repository);
+    else if (!el.explored_dontcare_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, builder, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+void push_result(ConstraintStackEntry<Tag>& el, const Node<Tag>& node, const Repository<Tag>& repository)
+{
+    if (!el.result->true_child && !el.true_elements.empty())
+        urd::build_member(el.result->true_child.emplace(), node, repository);
+    else if (!el.result->dontcare_child && !el.dontcare_elements.empty())
+        urd::build_member(el.result->dontcare_child.emplace(), node, repository);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+bool explored(const GeneratorStackEntry<Tag>&) noexcept
+{ return true; }
+
+template<typename Tag>
+std::optional<StackEntry<Tag>>
+next_entry(const GeneratorStackEntry<Tag>&, const SortedPreconditions<Tag>&, const PreconditionDetails<Tag>&, Builder<Tag>&, const Repository<Tag>&)
+{ return std::nullopt; }
+
+template<typename Tag>
+void push_result(GeneratorStackEntry<Tag>&, const Node<Tag>&, const Repository<Tag>&)
+{ throw std::logic_error("Unexpected case."); }
+
+inline auto get_condition(formalism::AxiomView<GroundTag> el) { return el.get_body(); }
+
+inline auto get_condition(formalism::ActionView<GroundTag> el) { return el.get_condition(); }
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> atom,
+                                                                  BaseEntry<Tag> base,
+                                                                  const PreconditionDetails<Tag>& details,
+                                                                  Builder<Tag>& builder,
+                                                                  const Repository<Tag>& repository)
+{
+    assert(!base.elements.empty());
+
+    auto category = [&](ElementView<Tag> e) -> ygg::uint_t
+    {
+        if (!details.at(e).contains(atom))
+            return 2;  // dontcare
+
+        const auto polarity = std::get<bool>(details.at(e).at(atom));
+        return polarity ? 0 : 1;  // true first, then false
+    };
+
+    // stable_sort: the comparator has ties, and unstable sorts permute them differently across
+    // standard library implementations (libstdc++ vs libc++).
+    std::stable_sort(base.elements.begin(),
+                     base.elements.end(),
+                     [&](auto&& lhs, auto&& rhs)
+                     {
+                         const auto lhs_cat = category(lhs);
+                         const auto rhs_cat = category(rhs);
+                         if (lhs_cat != rhs_cat)
+                             return lhs_cat < rhs_cat;  // 0 < 1 < 2
+                         return lhs < rhs;
+                     });
+
+    const auto mid1 = std::find_if(base.elements.begin(), base.elements.end(), [&](ElementView<Tag> e) { return category(e) >= 1; });
+    const auto mid2 = std::find_if(mid1, base.elements.end(), [&](ElementView<Tag> e) { return category(e) >= 2; });
+
+    const auto true_elements = ElementSpan<Tag>(base.elements.begin(), mid1);
+    const auto false_elements = ElementSpan<Tag>(mid1, mid2);
+    const auto dontcare_elements = ElementSpan<Tag>(mid2, base.elements.end());
+
+    if (true_elements.empty() && false_elements.empty())
+        return std::nullopt;  ///< no element cares about the atom
+
+    return AtomStackEntry<Tag>(builder, repository, base, atom, true_elements, false_elements, dontcare_elements);
+}
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism::FDRVariableView<formalism::FluentTag> variable,
+                                                                      BaseEntry<Tag> base,
+                                                                      const PreconditionDetails<Tag>& details,
+                                                                      Builder<Tag>& builder)
+{
+    assert(!base.elements.empty());
+
+    const auto domain_size = variable.get_domain_size();
+
+    auto category = [&](ElementView<Tag> e) -> ygg::uint_t
+    {
+        if (!details.at(e).contains(variable))
+            return domain_size;  // dontcare
+
+        const auto value = std::get<formalism::FDRValue>(details.at(e).at(variable));
+        return value.value;
+    };
+
+    // stable_sort: the comparator has ties, and unstable sorts permute them differently across
+    // standard library implementations (libstdc++ vs libc++).
+    std::stable_sort(base.elements.begin(),
+                     base.elements.end(),
+                     [&](auto&& lhs, auto&& rhs)
+                     {
+                         const auto lhs_cat = category(lhs);
+                         const auto rhs_cat = category(rhs);
+                         if (lhs_cat != rhs_cat)
+                             return lhs_cat < rhs_cat;  // 0 < 1 < ... < domain_size (dontcare)
+                         return lhs < rhs;
+                     });
+
+    auto children_elements = urd::Store<urd::sequence<ElementSpan<Tag>>> {};
+    children_elements.reserve(domain_size);
+
+    auto it = base.elements.begin();
+    for (ygg::uint_t i = 0; i < domain_size; ++i)
+    {
+        const auto mid = std::find_if(it, base.elements.end(), [&](ElementView<Tag> e) { return category(e) > i; });
+        children_elements.push_back(ElementSpan<Tag>(it, mid));
+        it = mid;
+    }
+
+    auto forward = urd::Store<urd::sequence<ygg::uint_t>>();
+    for (ygg::uint_t i = 0; i < domain_size; ++i)
+    {
+        if (!children_elements[i].empty())
+            forward.push_back(i);
+    }
+
+    const auto dontcare_elements = ElementSpan<Tag>(it, base.elements.end());
+
+    if (forward.empty())
+        return std::nullopt;  ///< no element cares about the atom
+
+    return VariableStackEntry<Tag>(builder, base, variable, std::move(children_elements), std::move(forward), dontcare_elements);
+}
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(urd::data<formalism::FDRFact<formalism::FluentTag>> fact,
+                                                                           BaseEntry<Tag> base,
+                                                                           const PreconditionDetails<Tag>& details,
+                                                                           Builder<Tag>& builder,
+                                                                           const Repository<Tag>& repository)
+{
+    assert(!base.elements.empty());
+
+    // stable_sort: the comparator has ties, and unstable sorts permute them differently across
+    // standard library implementations (libstdc++ vs libc++).
+    std::stable_sort(base.elements.begin(),
+                     base.elements.end(),
+                     [&](auto&& lhs, auto&& rhs)
+                     {
+                         const auto lhs_has = details.at(lhs).contains(fact);
+                         const auto rhs_has = details.at(rhs).contains(fact);
+                         if (lhs_has == rhs_has)
+                             return lhs < rhs;
+                         return lhs_has > rhs_has;  // true < dontcare
+                     });
+
+    const auto mid = std::find_if(base.elements.begin(), base.elements.end(), [&](auto&& e) { return !details.at(e).contains(fact); });
+
+    const auto true_elements = ElementSpan<Tag>(base.elements.begin(), mid);
+    const auto dontcare_elements = ElementSpan<Tag>(mid, base.elements.end());
+
+    if (true_elements.empty())
+        return std::nullopt;  ///< no element cares about the constraint
+
+    return NegativeFactStackEntry<Tag>(builder, repository, base, fact, true_elements, dontcare_elements);
+}
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>>
+try_create_constraint_stack_entry(urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
+                                  BaseEntry<Tag> base,
+                                  const PreconditionDetails<Tag>& details,
+                                  Builder<Tag>& builder,
+                                  const Repository<Tag>& repository)
+{
+    assert(!base.elements.empty());
+
+    // stable_sort: the comparator has ties, and unstable sorts permute them differently across
+    // standard library implementations (libstdc++ vs libc++).
+    std::stable_sort(base.elements.begin(),
+                     base.elements.end(),
+                     [&](auto&& lhs, auto&& rhs)
+                     {
+                         const auto lhs_has = details.at(lhs).contains(constraint);
+                         const auto rhs_has = details.at(rhs).contains(constraint);
+                         if (lhs_has == rhs_has)
+                             return lhs < rhs;
+                         return lhs_has > rhs_has;  // true < dontcare
+                     });
+
+    const auto mid = std::find_if(base.elements.begin(), base.elements.end(), [&](auto&& e) { return !details.at(e).contains(constraint); });
+
+    const auto true_elements = ElementSpan<Tag>(base.elements.begin(), mid);
+    const auto dontcare_elements = ElementSpan<Tag>(mid, base.elements.end());
+
+    if (true_elements.empty())
+        return std::nullopt;  ///< no element cares about the constraint
+
+    return ConstraintStackEntry<Tag>(builder, repository, base, constraint, true_elements, dontcare_elements);
+}
+
+template<typename Tag>
+static StackEntry<Tag> create_generator_stack_entry(BaseEntry<Tag> base, Builder<Tag>& builder, const Repository<Tag>& repository)
+{
+    assert(!base.elements.empty());
+    return GeneratorStackEntry(builder, repository, base);
+}
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<Tag> base,
+                                                                      const SortedPreconditions<Tag>& sorted_preconditions,
+                                                                      const PreconditionDetails<Tag>& details,
+                                                                      Builder<Tag>& builder,
+                                                                      const Repository<Tag>& repository)
+{
+    return std::visit(
+        [&]<typename Alternative>(const Alternative& arg)
+        {
+            if constexpr (std::same_as<Alternative, formalism::FDRVariableView<formalism::FluentTag>>)
+                return try_create_variable_stack_entry(arg, base, details, builder);
+            else if constexpr (std::same_as<Alternative, urd::data<formalism::FDRFact<formalism::FluentTag>>>)
+                return try_create_negative_fact_stack_entry(arg, base, details, builder, repository);
+            else if constexpr (std::same_as<Alternative, urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>>)
+                return try_create_atom_stack_entry(arg, base, details, builder, repository);
+            else if constexpr (std::same_as<Alternative, urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>)
+                return try_create_constraint_stack_entry(arg, base, details, builder, repository);
+            else
+                static_assert(false, "Missing case");
+        },
+        sorted_preconditions[base.depth].first);
+}
+
+template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
+                                                             const SortedPreconditions<Tag>& sorted_preconditions,
+                                                             const PreconditionDetails<Tag>& details,
+                                                             Builder<Tag>& builder,
+                                                             const Repository<Tag>& repository)
+{
+    if (!base.elements.empty())
+    {
+        for (; base.depth < sorted_preconditions.size(); ++base.depth)
+            if (auto entry = try_create_selector_stack_entry(base, sorted_preconditions, details, builder, repository))
+                return entry;
+    }
+    else
+        return std::nullopt;
+
+    return create_generator_stack_entry(base, builder, repository);
+}
+
+}  // namespace match_tree_details
+
+// NOLINTEND(misc-use-internal-linkage)
+
+template<typename Tag>
+MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::Repository>>> elements_,
+                          std::shared_ptr<const formalism::Repository> context_) :
+    m_definition(),
+    m_evaluator()
+{
+    using namespace match_tree_details;  // its steps, in this function only
+    auto definition = std::make_shared<Definition>(std::move(context_));
+    m_definition = definition;
+
+    auto occurrences = PreconditionOccurrences<Tag> {};
+    auto details = PreconditionDetails<Tag> {};
+
+    // std::cout << "Num elements: " << elements_.size() << std::endl;
+
+    for (const auto element : elements_)
+    {
+        const auto condition = get_condition(element);
+
+        details.try_emplace(element);  //
+
+        for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
+        {
+            const auto key = fact.get_variable();
+            occurrences[key].push_back(element);
+            details[element][key] = fact.get_value();
+        }
+
+        for (const auto fact : condition.template get_facts<formalism::NegativeTag>())
+        {
+            const auto key = urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value());
+            occurrences[key].push_back(element);
+            details[element][key] = std::monostate {};
+        }
+
+        for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
+        {
+            const auto key = literal.get_atom().index();
+            occurrences[key].push_back(element);
+            details[element][key] = literal.get_polarity();
+        }
+
+        for (const auto constraint : condition.get_numeric_constraints())
+        {
+            const auto key = constraint.index();
+            occurrences[key].push_back(element);
+            details[element][key] = std::monostate {};
+        }
+    }
+
+    auto sorted_preconditions = SortedPreconditions<Tag>(occurrences.begin(), occurrences.end());
+
+    // Total order (occurrence count, then canonical precondition key): sorted_preconditions is built
+    // from unordered-map iteration and feeds the tree construction, so ties must not be broken by the
+    // container's iteration order or the standard library's unstable sort.
+    const auto precondition_less = [](const PreconditionVariant& lhs, const PreconditionVariant& rhs)
+    {
+        if (lhs.index() != rhs.index())
+            return lhs.index() < rhs.index();
+        return std::visit([&]<typename Alternative>(const Alternative& lhs_alt) { return lhs_alt < std::get<Alternative>(rhs); }, lhs);
+    };
+    std::sort(sorted_preconditions.begin(),
+              sorted_preconditions.end(),
+              [&](const auto& a, const auto& b)
+              {
+                  if (a.second.size() != b.second.size())
+                      return a.second.size() > b.second.size();
+                  return precondition_less(a.first, b.first);
+              });
+
+    // std::cout << details << std::endl;
+    // std::cout << sorted_preconditions << std::endl;
+
+    auto builder = Builder<Tag> {};
+    const auto& repository = definition->repository;
+    auto stack = urd::Store<urd::queue<StackEntry<Tag>>, urd::lifo> {};
+    auto initial_entry =
+        try_create_stack_entry(BaseEntry<Tag>(static_cast<size_t>(0), ElementSpan<Tag>(elements_)), sorted_preconditions, details, builder, repository);
+    if (!initial_entry)
+        return;
+
+    stack.emplace(std::move(initial_entry.value()));
+
+    // iterative post-order dfs
+    while (!stack.empty())
+    {
+        auto& entry = stack.top();
+
+        std::optional<Node<Tag>> produced;
+        std::optional<StackEntry<Tag>> next;
+
+        std::visit(
+            [&](auto& frame)
+            {
+                if (!explored(frame))
+                {
+                    // std::cout << "next_entry" << std::endl;
+                    next = next_entry(frame, sorted_preconditions, details, builder, repository);
+                }
+                else
+                {
+                    produced = store_result(frame, definition->repository, builder);
+                }
+            },
+            entry);
+
+        if (next)
+        {
+            // std::cout << "push next" << std::endl;
+            stack.push(std::move(next.value()));
+            continue;
+        }
+
+        assert(produced);
+
+        stack.pop();
+
+        if (stack.empty())
+        {
+            definition->root = std::move(*produced);
+            break;
+        }
+        else
+        {
+            // std::cout << "push result" << std::endl;
+            std::visit([&](auto& parent) { push_result(parent, *produced, definition->repository); }, stack.top());
+        }
+    }
+
+    // std::cout << "Num nodes: " << num_nodes << std::endl;
+}
+
+template<typename Tag>
+MatchTree<Tag>::~MatchTree() = default;
+
+template<typename Tag>
+MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_definition(std::move(definition)), m_evaluator()
+{
+}
+
+template<typename Tag>
+MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::Repository>>> elements,
+                                         std::shared_ptr<const formalism::Repository> context)
+{ return std::make_unique<MatchTree<Tag>>(std::move(elements), std::move(context)); }
+
+template<typename Tag>
+MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
+{ return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition)); }
+
+template<typename Tag>
+void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
+                              urd::Store<urd::sequence<urd::index_view<Tag, formalism::Repository>>>& out_applicable_elements)
+{
+    out_applicable_elements.clear();
+    auto& stack = m_evaluator.stack;
+    stack.clear();
+
+    if (m_definition->root)
+        stack.push(urd::resolve(*m_definition->root, m_definition->repository));
+
+    while (!stack.empty())
+    {
+        const auto node = stack.top();
+        stack.pop();
+
+        std::visit(
+            [&](auto&& arg)
+            {
+                using Handle = std::decay_t<decltype(arg.index())>;
+
+                if constexpr (std::is_same_v<Handle, urd::index<AtomSelectorNode<Tag>>>)
+                {
+                    const auto holds = state.atom_storage().test(arg.get_atom().index());
+
+                    if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
+                        stack.push(*child);
+
+                    if (const auto child = arg.get_dontcare_child())
+                        stack.push(*child);
+                }
+                else if constexpr (std::is_same_v<Handle, urd::index<NumericConstraintSelectorNode<Tag>>>)
+                {
+                    const auto holds = evaluate(arg.get_constraint(), state);
+
+                    if (holds)
+                        if (const auto child = arg.get_true_child())
+                            stack.push(*child);
+
+                    if (const auto child = arg.get_dontcare_child())
+                        stack.push(*child);
+                }
+                else if constexpr (std::is_same_v<Handle, urd::index<VariableSelectorNode<Tag>>>)
+                {
+                    const auto value = state.fact_storage().get(arg.get_variable().index());
+                    const auto children = arg.get_domain_children();
+                    assert(value.value < children.size());
+
+                    if (const auto child = children[value.value])
+                        stack.push(*child);
+
+                    if (const auto child = arg.get_dontcare_child())
+                        stack.push(*child);
+                }
+                else if constexpr (std::is_same_v<Handle, urd::index<NegativeFactSelectorNode<Tag>>>)
+                {
+                    const auto fact = arg.get_fact();
+                    const auto holds = state.fact_storage().get(fact.get_variable().index()) != fact.get_value();
+
+                    if (holds)
+                        if (const auto child = arg.get_true_child())
+                            stack.push(*child);
+
+                    if (const auto child = arg.get_dontcare_child())
+                        stack.push(*child);
+                }
+                else if constexpr (std::is_same_v<Handle, urd::index<ElementGeneratorNode<Tag>>>)
+                {
+                    for (const auto element : arg.get_elements())
+                        out_applicable_elements.push_back(element);
+                }
+                else
+                {
+                    static_assert(false, "Missing case");
+                }
+            },
+            node);
+    }
+}
+
+template class MatchTree<formalism::Action<GroundTag>>;
+template class MatchTree<formalism::Axiom<GroundTag>>;
+
+}
+
+// The repositories' symbols, which the library's other sources only declare (yggdrasil/formalism/symbol_context.hpp).
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::Action<tyr::GroundTag>>, 5)
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::Axiom<tyr::GroundTag>>, 5)
+YGG_FORMALISM_BUILDER(, tyr::planning::match_tree::GroundActionBuilder, 5)
+YGG_FORMALISM_BUILDER(, tyr::planning::match_tree::GroundAxiomBuilder, 5)

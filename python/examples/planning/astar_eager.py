@@ -36,11 +36,10 @@ from pytyr.planning.lifted import (
     GoalCountHeuristic,
     GoalStrategy,
     Heuristic,
-    Node,
-    Plan,
+    NodeBuilderView,
+    PlanBuilderView,
     PruningStrategy,
-    StateBuilderBorrowed,
-    StateBuilderShared,
+    StateBuilderView,
     StateRepository,
     SuccessorGenerator,
     Task,
@@ -61,7 +60,7 @@ class CustomHeuristic(Heuristic):
         pass
 
     @override
-    def evaluate(self, state: StateBuilderShared) -> float:
+    def evaluate(self, state: StateBuilderView) -> float:
         raise NotImplementedError
 
 
@@ -73,13 +72,13 @@ class CustomPruningStrategy(PruningStrategy):
     """
 
     @override
-    def should_prune_state(self, state: StateBuilderShared) -> bool:
+    def should_prune_state(self, state: StateBuilderView) -> bool:
         """Is checked for the initial state."""
         raise NotImplementedError
 
     @override
     def should_prune_successor_state(
-        self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool
+        self, state: StateBuilderView, succ_state: StateBuilderView, is_new_succ_state: bool
     ) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
@@ -98,9 +97,7 @@ class CustomGoalStrategy(GoalStrategy):
         raise NotImplementedError
 
     @override
-    def is_dynamic_goal_satisfied(
-        self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilderBorrowed
-    ) -> bool:
+    def is_dynamic_goal_satisfied(self, seed_state: StateBuilderView, state: StateBuilderView) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 
@@ -113,7 +110,7 @@ class CustomEventHandler(EventHandler):
     """
 
     @override
-    def on_start_search(self, node: Node, f_value: float) -> None:
+    def on_start_search(self, node: NodeBuilderView, f_value: float) -> None:
         pass
 
     @override
@@ -121,7 +118,7 @@ class CustomEventHandler(EventHandler):
         pass
 
     @override
-    def on_solved(self, plan: Plan) -> None:
+    def on_solved(self, plan: PlanBuilderView) -> None:
         pass
 
 

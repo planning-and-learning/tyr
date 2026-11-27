@@ -18,11 +18,12 @@
 #include "tyr/planning/algorithms/utils.hpp"
 
 #include "../metric.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/successors.hpp"
 
 #include <cmath>
 #include <stdexcept>
@@ -32,38 +33,38 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind>
-Node<Kind>
-normalize_start_node(Task<Kind>& task, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator, std::optional<Node<Kind>> start_node)
+NodeBuilder<Kind> normalize_start_node(Task<Kind>& task,
+                                       StateRepository<Kind>& state_repository,
+                                       AxiomEvaluator<Kind>& axiom_evaluator,
+                                       const std::optional<OwnedNodeRecordView<Kind>>& start_node)
 {
     if (state_repository.get_task().get() != &task)
         throw std::invalid_argument("normalize_start_node(...): state repository belongs to a different task.");
     if (axiom_evaluator.get_task().get() != &task)
         throw std::invalid_argument("normalize_start_node(...): axiom evaluator belongs to a different task.");
+    if (!start_node)
+        return get_initial_node(state_repository, axiom_evaluator).release();
 
-    auto node = [&]
-    {
-        if (start_node)
-            return std::move(*start_node);
-
-        auto state = state_repository.get_initial_state(axiom_evaluator);
-        const auto state_context = StateContext<Kind>(task, state, 0);
-        const auto metric = evaluate_metric(task.get_task().get_metric(), task.get_task().get_auxiliary_fterm_value(), state_context);
-        return Node<Kind>(std::move(state), metric);
-    }();
-    if (node.get_state().context().get_task().get() != &task)
+    const auto& source = start_node->context();
+    if (source.get_task().get() != &task)
         throw std::invalid_argument("normalize_start_node(...): start node belongs to a different task.");
-    if (!std::isfinite(node.get_metric()))
+    const auto metric = start_node->get_metric();
+    if (!std::isfinite(metric))
         throw std::runtime_error("normalize_start_node(...): start node metric value is not finite.");
 
-    return Node<Kind>(materialize_state(node.get_state(), state_repository, axiom_evaluator), node.get_metric());
+    const auto source_state = source.get_registered_state(start_node->get_state().index());
+    auto node = NodeBuilder<Kind>();
+    node.state = materialize_state(urd::resolve(*source_state, source), state_repository, axiom_evaluator);
+    node.metric = metric;
+    return node;
 }
 
-template Node<GroundTag> normalize_start_node(Task<GroundTag>& task,
-                                              StateRepository<GroundTag>& state_repository,
-                                              AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                              std::optional<Node<GroundTag>> start_node);
-template Node<LiftedTag> normalize_start_node(Task<LiftedTag>& task,
-                                              StateRepository<LiftedTag>& state_repository,
-                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                              std::optional<Node<LiftedTag>> start_node);
+template NodeBuilder<GroundTag> normalize_start_node(Task<GroundTag>& task,
+                                                     StateRepository<GroundTag>& state_repository,
+                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
+                                                     const std::optional<OwnedNodeRecordView<GroundTag>>& start_node);
+template NodeBuilder<LiftedTag> normalize_start_node(Task<LiftedTag>& task,
+                                                     StateRepository<LiftedTag>& state_repository,
+                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
+                                                     const std::optional<OwnedNodeRecordView<LiftedTag>>& start_node);
 }

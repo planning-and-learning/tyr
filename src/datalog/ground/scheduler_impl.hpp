@@ -73,6 +73,18 @@ void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, 
 {
     for (const auto rule : m_numeric_rules)
         update_numeric_constraint_satisfaction(rule, ctx);
+
+    // A negative literal holds of no cost: it takes nothing into the support.
+    const auto fact_sets = FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets };
+    const auto aggregate = support_aggregation<AP>();
+    for (const auto rule : m_negative_rules[m_stratum])
+        boost::mp11::mp_for_each<MutableTags>(
+            [&]<typename F>(F)
+            {
+                for (const auto literal : rule.get_body().template get_literals<F>())
+                    if (!literal.get_polarity() && is_applicable(literal, fact_sets))
+                        satisfy(rule, support_start<AP>(), aggregate);
+            });
 }
 
 template<formalism::FactKind F, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

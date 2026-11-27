@@ -22,7 +22,7 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/planning/algorithms/iw/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 #include <algorithm>
 #include <array>
@@ -243,8 +243,8 @@ public:
         return insert_unlocked(tuple);
     }
 
-    template<TaskKind Kind>
-    bool insert(const StateView<Kind>& state, ygg::uint_t max_arity)
+    template<typename V>
+    bool insert(const V& state, ygg::uint_t max_arity)
     {
         validate_max_arity(max_arity);
 
@@ -260,8 +260,8 @@ public:
         return novel;
     }
 
-    template<TaskKind Kind>
-    bool insert(const StateView<Kind>& src, const StateView<Kind>& dst, ygg::uint_t max_arity)
+    template<typename V>
+    bool insert(const V& src, const V& dst, ygg::uint_t max_arity)
     {
         validate_max_arity(max_arity);
 
@@ -309,8 +309,8 @@ private:
 
     bool insert_unlocked(std::span<const ygg::uint_t> tuple) { return m_storage->seen_by_arity[tuple.size()].insert(rank_tuple<Arity>(tuple)).second; }
 
-    template<TaskKind Kind>
-    void collect_atoms(const StateView<Kind>& state, AtomIndexList& out)
+    template<typename V>
+    void collect_atoms(const V& state, AtomIndexList& out)
     {
         out.clear();
         for (const auto fact : state.get_fluent_facts())

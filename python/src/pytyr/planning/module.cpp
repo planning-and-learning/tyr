@@ -22,22 +22,30 @@
 #include "algorithms/gbfs_lazy/module.hpp"
 #include "algorithms/iw/module.hpp"
 #include "algorithms/siw/module.hpp"
-#include "ground/module.hpp"
-#include "lifted/module.hpp"
+#include "pytyr/planning/ground/module.hpp"
+#include "pytyr/planning/lifted/module.hpp"
 #include "pytyr/module.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/search_budget.hpp"
+#include "tyr/planning/algorithms/search_budget.hpp"
+#include "tyr/planning/states/state_delta.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/states/storages/temporal_parts.hpp"
+#include "tyr/planning/successors/transition_data.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/optional.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <urd/python/bindings.hpp>
+#include <urd/python/sequences/sequence.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::planning
@@ -52,15 +60,27 @@ void bind_transition(nb::module_& m)
         .value("START", TransitionKind::START)
         .value("END", TransitionKind::END)
         .value("TIMED_LITERAL", TransitionKind::TIMED_LITERAL);
-    nb::class_<OpenAction>(m, "OpenAction")
-        .def_ro("action", &OpenAction::action)
-        .def_ro("start", &OpenAction::start)
-        .def_ro("min_duration", &OpenAction::min_duration)
-        .def_ro("max_duration", &OpenAction::max_duration);
-    nb::class_<Transition<>>(m, "Transition")
-        .def_ro("kind", &Transition<>::kind)
-        .def_ro("binding", &Transition<>::binding, nb::rv_policy::reference_internal)
-        .def_ro("open", &Transition<>::open);
+    // A state's temporal part (a state's temporal storage's parts): its open durative actions (each its action binding's
+    // key: Repository.view gives its row), the roles of its frontier time points (internal numbering), how many timed
+    // initial literals happened, and its temporal network over the frontier (the origin first).
+    nb::enum_<TemporalRoleKind>(m, "TemporalRoleKind")
+        .value("WRITER", TemporalRoleKind::WRITER)
+        .value("READER", TemporalRoleKind::READER)
+        .value("OVER_ALL", TemporalRoleKind::OVER_ALL)
+        .value("NUMERIC_WRITER", TemporalRoleKind::NUMERIC_WRITER)
+        .value("NUMERIC_READER", TemporalRoleKind::NUMERIC_READER);
+    auto open_action = nb::class_<OpenAction>(m, "OpenAction");
+    urd::python::bind_fields(open_action);
+    auto role = nb::class_<TemporalRole>(m, "TemporalRole");
+    urd::python::bind_fields(role);
+    nb::class_<TemporalNetwork>(m, "TemporalNetwork")
+        .def("size", &TemporalNetwork::size)
+        .def("distance", &TemporalNetwork::distance, nb::arg("i"), nb::arg("j"))
+        .def("earliest", &TemporalNetwork::earliest, nb::arg("i"), "The earliest time of time point i.")
+        .def("latest", &TemporalNetwork::latest, nb::arg("i"), "The latest time of time point i (inf: unbounded).");
+    auto parts = nb::class_<TemporalParts>(m, "TemporalParts");
+    urd::python::bind_fields(parts);
+    urd::python::bind_data<Transition>(m);
 }
 }  // namespace
 
@@ -72,6 +92,9 @@ void bind_module_definitions(nb::module_& m)
 {
     using namespace nb::literals;
     urd::python::bind_index<Worker>(m);
+
+    // The exact changes of a successor state from its source, which the generator writes and registration stores.
+    nb::class_<StateDelta>(m, "StateDelta").def(nb::init<>());
 
     nb::class_<SearchBudget>(m, "SearchBudget")
         .def(nb::init<std::optional<ygg::uint_t>, std::optional<std::chrono::steady_clock::duration>>(),

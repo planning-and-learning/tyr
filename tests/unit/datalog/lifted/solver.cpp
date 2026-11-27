@@ -31,10 +31,10 @@
 #include "tyr/formalism/grounder.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/lifted/programs/action.hpp"
-#include "tyr/planning/lifted/programs/axiom.hpp"
-#include "tyr/planning/lifted/programs/ground.hpp"
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/programs/lifted/action.hpp"
+#include "tyr/planning/programs/axiom.hpp"
+#include "tyr/planning/programs/lifted/ground.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -178,7 +178,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         {
             if (config == "axiom_evaluator")
             {
-                const auto program = tyr::planning::AxiomEvaluatorProgram(task->get_formalism_task());
+                const auto program = tyr::planning::AxiomEvaluatorProgram<tyr::LiftedTag>(task->get_formalism_task());
                 return solve_program(program.get_datalog_program());
             }
 
@@ -188,7 +188,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                 auto action_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(action_program.get_datalog_program());
                 if (task->has_axioms())
                 {
-                    const auto axiom_program = tyr::planning::AxiomEvaluatorProgram(task->get_formalism_task());
+                    const auto axiom_program = tyr::planning::AxiomEvaluatorProgram<tyr::LiftedTag>(task->get_formalism_task());
                     auto axiom_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(axiom_program.get_datalog_program());
                     solve_workspace(axiom_workspace);
 

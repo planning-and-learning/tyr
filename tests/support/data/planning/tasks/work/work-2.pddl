@@ -1,0 +1,2 @@
+(define (problem work-2) (:domain work) (:objects o1 o2 - obj) (:init (a o1) (a o2) (free)) (:goal (and (b o1) (b o2)))
+  (:metric minimize (total-time)))

@@ -1,0 +1,93 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_PLANNING_PROGRAMS_LIFTED_GROUND_HPP_
+#define TYR_PLANNING_PROGRAMS_LIFTED_GROUND_HPP_
+
+#include "tyr/datalog/lifted/program.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_body_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/programs/state_inputs.hpp"
+
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
+#include <utility>
+#include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
+
+namespace tyr::planning
+{
+
+class GroundTaskProgram
+{
+public:
+    using AppPredicateToAxiomMapping =
+        urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, urd::Store<urd::sequence<formalism::AxiomView<LiftedTag>>>>>;
+
+    explicit GroundTaskProgram(const formalism::PlanningTask<LiftedTag>& task);
+
+    [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
+    [[nodiscard]] const AppPredicateToAxiomMapping& get_predicate_to_axiom_mapping() const noexcept;
+    [[nodiscard]] const ConditionalEffectToPredicateMapping& get_conditional_effect_to_predicate_mapping() const noexcept;
+    datalog::Program<LiftedTag>& get_datalog_program() noexcept;
+    [[nodiscard]] const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
+    [[nodiscard]] const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
+
+private:
+    AppPredicateToActionMapping m_predicate_to_actions;
+    AppPredicateToAxiomMapping m_predicate_to_axioms;
+    ConditionalEffectToPredicateMapping m_conditional_effect_to_predicate;
+
+    datalog::Program<LiftedTag> m_datalog_program;
+};
+
+}
+
+#endif

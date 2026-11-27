@@ -1,0 +1,6 @@
+(define (domain kitchen) (:requirements :strips :durative-actions)
+  (:predicates (light) (cooked) (have-match))
+  (:durative-action light-match :parameters () :duration (= ?duration 5)
+    :condition (at start (have-match)) :effect (and (at start (light)) (at end (not (light)))))
+  (:durative-action cook :parameters () :duration (= ?duration 2)
+    :condition (over all (light)) :effect (at end (cooked))))

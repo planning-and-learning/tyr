@@ -17,29 +17,29 @@
 
 #include "tyr/planning/heuristics/goal_count.hpp"
 
-#include "tyr/planning/applicability.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/successors/applicability.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/states/state_view.hpp"
 
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-GoalCountHeuristic<Kind>::GoalCountHeuristic(std::shared_ptr<const Task<Kind>> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal())
+template<TaskKind Kind, typename V>
+GoalCountHeuristic<Kind, V>::GoalCountHeuristic(std::shared_ptr<const Task<Kind>> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal())
 {
 }
 
-template<TaskKind Kind>
-std::shared_ptr<GoalCountHeuristic<Kind>> GoalCountHeuristic<Kind>::create(std::shared_ptr<const Task<Kind>> task)
-{ return std::make_shared<GoalCountHeuristic<Kind>>(std::move(task)); }
+template<TaskKind Kind, typename V>
+std::shared_ptr<GoalCountHeuristic<Kind, V>> GoalCountHeuristic<Kind, V>::create(std::shared_ptr<const Task<Kind>> task)
+{ return std::make_shared<GoalCountHeuristic<Kind, V>>(std::move(task)); }
 
-template<TaskKind Kind>
-void GoalCountHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
+template<TaskKind Kind, typename V>
+void GoalCountHeuristic<Kind, V>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_goal = goal; }
 
-template<TaskKind Kind>
-ygg::float_t GoalCountHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+template<TaskKind Kind, typename V>
+ygg::float_t GoalCountHeuristic<Kind, V>::evaluate(const V& state)
 {
     auto unsat_counter = ygg::float_t { 0 };
 
@@ -72,8 +72,8 @@ ygg::float_t GoalCountHeuristic<Kind>::evaluate(const StateView<Kind>& state)
     return unsat_counter;
 }
 
-template<TaskKind Kind>
-HeuristicPtr<Kind> GoalCountHeuristic<Kind>::make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const
+template<TaskKind Kind, typename V>
+HeuristicPtr<Kind, V> GoalCountHeuristic<Kind, V>::make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const
 {
     auto worker = create(m_task);
     worker->m_goal = m_goal;

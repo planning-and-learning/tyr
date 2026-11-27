@@ -1,6 +1,8 @@
 #ifndef TYR_TESTS_UNIT_PLANNING_SERIALIZATION_FIXTURES_HPP_
 #define TYR_TESTS_UNIT_PLANNING_SERIALIZATION_FIXTURES_HPP_
 
+#include "planning/parser.hpp"
+#include "planning/successors/successor_compositions.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
@@ -10,15 +12,17 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/plan.hpp"
+#include "tyr/planning/nodes/labeled_node_view.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <boost/json.hpp>
@@ -52,18 +56,8 @@ inline tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag> make_atom(
 template<TaskKind Kind>
 tyr::planning::TaskPtr<Kind> make_task()
 {
-    auto parser = tyr::formalism::Parser(std::string(R"((define (domain serialization)
-      (:requirements :strips :fluents :derived-predicates)
-      (:predicates (ready) (start) (done) (active))
-      (:functions (capacity) (fuel))
-      (:derived (active) (start))
-      (:action finish :parameters ()
-        :precondition (and (ready) (active) (> (capacity) 0))
-        :effect (and (not (start)) (done) (decrease (fuel) 1)))))"),
-                                         std::nullopt);
-    auto lifted = tyr::planning::Task<LiftedTag>::create(parser.parse_task(std::string(R"((define (problem serialization-1)
-      (:domain serialization) (:init (ready) (start) (= (capacity) 10) (= (fuel) 3)) (:goal (done))))"),
-                                                                           std::nullopt));
+    auto parser = tyr::formalism::Parser(task_fixture("serialization/domain.pddl"));
+    auto lifted = tyr::planning::Task<LiftedTag>::create(parser.parse_task(task_fixture("serialization/serialization-1.pddl")));
     if constexpr (std::same_as<Kind, LiftedTag>)
         return lifted;
     else
@@ -75,18 +69,18 @@ tyr::planning::TaskPtr<Kind> make_task()
 
 /// A plan and the repository its states borrow (the plan goes first).
 template<TaskKind Kind>
-std::pair<tyr::planning::StateRepositoryPtr<Kind>, tyr::planning::Plan<Kind>> make_plan()
+std::pair<tyr::planning::StateRepositoryPtr<Kind>, tyr::planning::OwnedPlanBuilderView<Kind>> make_plan()
 {
     auto task = make_task<Kind>();
     auto execution = ygg::ExecutionContext::create(1);
-    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto repository = tyr::planning::StateRepository<Kind>::create(task);
     auto evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution);
     auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution);
-    const auto initial = generator->get_initial_node(*repository, *evaluator);
-    const auto successors = generator->get_labeled_successor_nodes(initial, *repository, *evaluator);
+    const auto initial = tyr::tests::owned_initial_node(*repository, *evaluator);
+    const auto successors = tyr::tests::get_labeled_successor_nodes(*generator, initial, {}, *repository, *evaluator);
     if (successors.size() != 1)
         throw std::runtime_error("Serialization fixture requires one successor");
-    return { repository, tyr::planning::Plan<Kind>(initial, { successors.front(), successors.front() }) };
+    return { repository, tyr::tests::make_plan<Kind>(initial, { successors.front().pack(), successors.front().pack() }) };
 }
 
 template<TaskKind Kind>
@@ -98,8 +92,8 @@ void check_runtime_serialization()
     EXPECT_THROW(rejected.serialize(plan), std::invalid_argument);
     EXPECT_THROW(rejected.tables(), std::logic_error);
     auto dictionaries = ygg::serialization::Dictionaries {};
-    dictionaries.template register_table<tyr::planning::StateView<Kind>>("states", "s");
-    dictionaries.template register_table<tyr::planning::Node<Kind>>("nodes", "n");
+    dictionaries.template register_table<tyr::planning::StateBuilderView<Kind>>("states", "s");
+    dictionaries.template register_table<tyr::planning::NodeBuilderView<Kind>>("nodes", "n");
     dictionaries.template register_table<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms",
                                                                                                          "a",
                                                                                                          urd::Store<urd::sequence<std::string>> {});
@@ -109,16 +103,16 @@ void check_runtime_serialization()
     dictionaries.template register_table<tyr::formalism::FunctionTermView<GroundTag, tyr::formalism::FluentTag>>("functions",
                                                                                                                  "f",
                                                                                                                  urd::Store<urd::sequence<std::string>> {});
-    EXPECT_TRUE(dictionaries.template table<tyr::planning::StateView<Kind>>().empty());
+    EXPECT_TRUE(dictionaries.template table<tyr::planning::StateBuilderView<Kind>>().empty());
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
-    EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].node).as_string(), "n1");
-    EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[1].node).as_string(), "n1");
-    const auto nodes = dictionaries.template table<tyr::planning::Node<Kind>>();
+    EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].get_node()).as_string(), "n1");
+    EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[1].get_node()).as_string(), "n1");
+    const auto nodes = dictionaries.template table<tyr::planning::NodeBuilderView<Kind>>();
     ASSERT_EQ(nodes.size(), 2);
     EXPECT_EQ(nodes[0].as_object().at("state").as_string(), "s0");
     EXPECT_EQ(nodes[0].as_object().at("metric").as_double(), plan.get_start_node().get_metric());
     EXPECT_EQ(nodes[1].as_object().at("state").as_string(), "s1");
-    const auto states = dictionaries.template table<tyr::planning::StateView<Kind>>();
+    const auto states = dictionaries.template table<tyr::planning::StateBuilderView<Kind>>();
     ASSERT_EQ(states.size(), 2);
     for (const auto& state : states)
     {

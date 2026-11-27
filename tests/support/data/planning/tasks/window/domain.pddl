@@ -1,0 +1,6 @@
+(define (domain window) (:requirements :strips :durative-actions :timed-initial-literals)
+  (:predicates (open) (done))
+  (:durative-action go :parameters () :duration (= ?duration 2)
+    :condition (over all (open)) :effect (at end (done)))
+  (:durative-action crawl :parameters () :duration (= ?duration 6)
+    :condition (over all (open)) :effect (at end (done))))

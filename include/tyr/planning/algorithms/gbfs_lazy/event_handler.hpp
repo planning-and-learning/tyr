@@ -21,6 +21,7 @@
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/successors/successor_generator_concepts.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -39,11 +40,11 @@ public:
     WorkerEventHandler() = default;
     virtual ~WorkerEventHandler() = default;
 
-    virtual void on_expand_node(const Node<Kind>&) {}
+    virtual void on_expand_node(const NodeBuilderView<Kind>&) {}
 
-    virtual void on_expand_goal_node(const Node<Kind>&) {}
+    virtual void on_expand_goal_node(const NodeBuilderView<Kind>&) {}
 
-    virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
+    virtual void on_generate_transition(const NodeBuilderView<Kind>&, ActionBindingView<Kind>, const NodeBuilderView<Kind>&, TransitionOutcome) {}
 
 protected:
     WorkerEventHandler(const WorkerEventHandler&) = default;
@@ -62,10 +63,10 @@ public:
     EventHandler() = default;
     virtual ~EventHandler() = default;
 
-    virtual void on_start_search(const Node<Kind>& node, ygg::float_t h_value) = 0;
+    virtual void on_start_search(const NodeBuilderView<Kind>& node, ygg::float_t h_value) = 0;
     virtual void on_new_best_h_value(ygg::float_t h_value) = 0;
     virtual void on_end_search(SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
-    virtual void on_solved(const Plan<Kind>& plan) = 0;
+    virtual void on_solved(const PlanBuilderView<Kind>& plan) = 0;
 
     virtual WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker>) { return nullptr; }
 
@@ -82,10 +83,10 @@ class DefaultEventHandler : public EventHandler<Kind>
 public:
     explicit DefaultEventHandler(size_t verbosity = 0);
 
-    void on_start_search(const Node<Kind>& node, ygg::float_t h_value) override;
+    void on_start_search(const NodeBuilderView<Kind>& node, ygg::float_t h_value) override;
     void on_new_best_h_value(ygg::float_t h_value) override;
     void on_end_search(SearchStatus status, const tyr::planning::Statistics& statistics) override;
-    void on_solved(const Plan<Kind>& plan) override;
+    void on_solved(const PlanBuilderView<Kind>& plan) override;
     WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker> index) override;
 
     static DefaultEventHandlerPtr<Kind> create(size_t verbosity = 0);

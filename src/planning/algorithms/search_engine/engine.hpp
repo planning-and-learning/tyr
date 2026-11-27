@@ -25,17 +25,19 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/heuristic.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_delta.hpp"
-#include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/worker_state_index.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/heuristics/heuristic.hpp"
+#include "tyr/planning/nodes/labeled_node_view.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/states/state_delta.hpp"
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/states/worker_state_index.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -98,13 +100,21 @@ public:
     using SearchNode = SearchNodeT<SearchPolicy>;
     using WorkerExecutionState = typename ExecutionPolicy::WorkerState;
 
+    /// A successor routed to the worker that owns its state (its node: its state registered there, its metric its g
+    /// value), labeled by its binding as the generator handed it out: routing is synchronous (the receiver accepts it
+    /// within route), so the borrowed binding is still valid.
     struct RoutedSuccessor
     {
-        LabeledNode<Kind> labeled_node;
+        ActionBindingView<Kind> label;
+        NodeBuilder<Kind> node;
         SuccessorMetadataT<SearchPolicy> metadata;
         ygg::float_t g_value;
         bool is_goal;
     };
+
+    /// A lifted binding copied out of its enumeration callback: a row builder, read through the task's repository.
+    using LiftedBindingBuilder = urd::builder<ygg::Row<formalism::Action<LiftedTag>>, formalism::Repository>;
+    using ShuffledBinding = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::ActionRowView, urd::handle<LiftedBindingBuilder>>;
 
     struct WorkerData
     {
@@ -150,7 +160,10 @@ public:
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
-        urd::Store<urd::sequence<formalism::ActionRowView>> applicable_actions;
+        /// The applicable bindings of a shuffled expansion, copied (not interned): a ground one its interned row, a lifted one
+        /// into a row builder of the pool.
+        urd::Store<urd::sequence<ShuffledBinding>> shuffled_bindings;
+        urd::Store<urd::slots<LiftedBindingBuilder>> binding_builders;
         StateDelta successor_delta;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
@@ -257,6 +270,7 @@ private:
         m_event_handler(options.event_handler),
         m_search_start_time_point(search_start),
         m_start_node(tyr::planning::normalize_start_node(task, state_repository, axiom_evaluator, options.start_node)),
+        m_start_node_repository(&state_repository),
         m_execution(options.random_seed),
         m_workers(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, m_event_handler)
     {
@@ -280,16 +294,17 @@ private:
                 worker.statistics.set_search_end_time_point(m_search_start_time_point);
             });
 
-        auto [start_owner, start_state] = prepare_start_state();
+        auto [start_owner, start_state_builder] = prepare_start_state();
         auto& root_worker = get_worker(urd::index<Worker>(0));
 
         if (!root_worker.goal_strategy->is_static_goal_satisfied(*m_task))
             return stop(SearchStatus::UNSOLVABLE);
 
-        if (root_worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), m_start_node.get_state()))
+        const auto start_node_state = urd::built_view(start_node().get_state());
+        if (root_worker.goal_strategy->is_dynamic_goal_satisfied(start_node_state, start_node_state))
         {
-            m_result.plan = Plan(m_start_node, LabeledNodeList<Kind> {});
-            m_result.goal_node = m_start_node;
+            m_result.plan.emplace(PlanBuilder<Kind> { get_node(*m_start_node_repository, start_node().pack()), {} }, m_start_node_repository);
+            m_result.goal_node = OwnedNodeRecordView<Kind>(m_result.plan->get_goal_node().pack(), m_start_node_repository);
             finalize(SearchStatus::SOLVED);
             call_root_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
             return std::move(m_result);
@@ -304,8 +319,9 @@ private:
             return stop(SearchStatus::OUT_OF_TIME);
 
         auto& start_worker = get_worker(start_owner);
+        const auto start_state = urd::resolve(*start_state_builder, *start_worker.state_repository);
         const auto start_state_index = start_state.pack().index();
-        const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
+        const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.metric);
 
         if (start_worker.pruning_strategy->should_prune_state(start_state))
             return stop(SearchStatus::EXHAUSTED);
@@ -320,7 +336,7 @@ private:
             return stop(SearchStatus::OUT_OF_TIME);
         m_execution.initialize_best_h(start_h_value);
         auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
-        call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, m_start_node, start_worker.search.get_start_priority()); });
+        call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, start_node(), start_worker.search.get_start_priority()); });
 
         if (start_search_node.status == SearchNodeStatus::DEAD_END)
         {
@@ -343,7 +359,10 @@ private:
         }
     }
 
-    std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, m_start_node.get_state()); }
+    std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, urd::built_view(start_node().get_state())); }
+
+    /// The start node, its state registered in the caller's repository.
+    [[nodiscard]] NodeBuilderView<Kind> start_node() const noexcept { return NodeBuilderView<Kind>(&m_start_node, m_start_node_repository); }
 
     template<typename Callback>
     bool improve_best_h(ygg::float_t h_value, Callback&& callback)
@@ -359,7 +378,7 @@ private:
 
     bool expand_one(WorkerData& worker)
     {
-        auto prepared = std::optional<Node<Kind>> {};
+        auto prepared = std::optional<NodeBuilder<Kind>> {};
         auto claimed = false;
         m_execution.with_worker_lock(
             worker,
@@ -383,11 +402,14 @@ private:
                 auto& search_node = worker.get_search_node(entry.state);
                 if (!m_execution.running() || is_stale(search_node.status))
                     return;
-                auto node = Node<Kind>(std::move(state), search_node.g_value);
+                auto node = NodeBuilder<Kind>();
+                node.state = std::move(state);
+                node.metric = search_node.g_value;
+                const auto node_view = NodeBuilderView<Kind>(&node, worker.state_repository.get());
 
                 const auto expansion_result = worker.search.prepare_expansion(
                     entry,
-                    node,
+                    node_view,
                     search_node,
                     worker.statistics,
                     std::forward<EvaluateUnlocked>(evaluate_unlocked),
@@ -396,7 +418,7 @@ private:
                     [&](ygg::float_t priority) { on_finish_priority_layer(priority); });
                 if (expansion_result == ExpansionResult::GOAL)
                 {
-                    solve(worker, node);
+                    solve(worker, node_view);
                     return;
                 }
                 if (expansion_result == ExpansionResult::EXPAND)
@@ -409,8 +431,7 @@ private:
         m_execution.notify_if_stopped(*this);
         if (prepared && m_execution.running())
         {
-            worker.successor_generator->get_applicable_action_bindings(*prepared, worker.applicable_actions);
-            expand_successors(worker, *prepared);
+            expand_successors(worker, NodeBuilderView<Kind>(&*prepared, worker.state_repository.get()));
         }
         m_execution.finish_expansion(*this);
         return true;
@@ -418,11 +439,10 @@ private:
 
     template<typename EvaluateHeuristic>
     AcceptanceResult
-    accept_successor(WorkerData& worker, const Node<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
+    accept_successor(WorkerData& worker, const NodeBuilderView<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
     {
-        const auto& labeled_successor = routed_successor.labeled_node;
-        const auto& successor_node = labeled_successor.node;
-        const auto& successor_state = successor_node.get_state();
+        const auto successor_node = NodeBuilderView<Kind>(&routed_successor.node, worker.state_repository.get());
+        const auto successor_state = urd::built_view(successor_node.get_state());
         auto& successor_search_node = worker.get_search_node(successor_state.pack().index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
@@ -432,17 +452,12 @@ private:
             return AcceptanceResult::TERMINAL;
         }
 
-        const auto normalized_node = Node<Kind>(successor_state, routed_successor.g_value);
         const auto emit_transition = [&](TransitionOutcome outcome)
-        {
-            call_worker_event(worker,
-                              [&](auto& handler)
-                              { handler.on_generate_transition(source_node, LabeledNode<Kind> { labeled_successor.label, normalized_node }, outcome); });
-        };
+        { call_worker_event(worker, [&](auto& handler) { handler.on_generate_transition(source_node, routed_successor.label, successor_node, outcome); }); };
         return worker.search.accept_successor(*this,
                                               worker,
                                               source_node,
-                                              normalized_node,
+                                              successor_node,
                                               routed_successor,
                                               successor_search_node,
                                               is_new,
@@ -450,24 +465,67 @@ private:
                                               emit_transition);
     }
 
-    void expand_successors(WorkerData& worker, const Node<Kind>& node)
+    /// Generates the successor of `node` by `binding` (borrowed) and routes it; false when the search stops.
+    bool expand_successor(WorkerData& worker, const NodeBuilderView<Kind>& node, ActionBindingView<Kind> binding)
     {
-        if (m_options->shuffle_labeled_succ_nodes)
-            ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
+        if (!m_execution.running())
+            return false;
+        auto successor_state = worker.state_repository->get_state_builder();
+        const auto auxiliary_value = worker.successor_generator->generate_successor_state(node, binding, *successor_state, worker.successor_delta);
+        auto metadata = worker.search.make_successor_metadata(worker.index, node, binding);
+        return m_execution.route(*this, worker, node, std::move(successor_state), worker.successor_delta, auxiliary_value, binding, std::move(metadata))
+                   != AcceptanceResult::TERMINAL
+               && m_execution.running();
+    }
 
-        for (const auto action : worker.applicable_actions)
+    /// Expands `node`: each applicable binding as the generator hands it out (borrowed, never interned), its successor
+    /// generated and routed within the enumeration; shuffled, the bindings are copied first (not interned).
+    void expand_successors(WorkerData& worker, const NodeBuilderView<Kind>& node)
+    {
+        auto& generator = *worker.successor_generator;
+        if (!m_options->shuffle_labeled_succ_nodes)
         {
-            if (!m_execution.running())
-                break;
-
-            auto successor_state = worker.state_repository->get_state_builder();
-            const auto auxiliary_value = worker.successor_generator->generate_successor_state(node, action, *successor_state, worker.successor_delta);
-            auto metadata = worker.search.make_successor_metadata(worker.index, node, action);
-            if (m_execution.route(*this, worker, node, std::move(successor_state), worker.successor_delta, auxiliary_value, action, std::move(metadata))
-                    == AcceptanceResult::TERMINAL
-                || !m_execution.running())
-                break;
+            generator.for_each_applicable_action_binding(node, {}, [&](ActionBindingView<Kind> binding) { return expand_successor(worker, node, binding); });
+            return;
         }
+
+        auto& shuffled = worker.shuffled_bindings;
+        shuffled.clear();
+        generator.for_each_applicable_action_binding(node,
+                                                     {},
+                                                     [&](ActionBindingView<Kind> binding)
+                                                     {
+                                                         if constexpr (std::same_as<Kind, GroundTag>)
+                                                         {
+                                                             shuffled.push_back(binding);
+                                                         }
+                                                         else
+                                                         {
+                                                             auto copy = worker.binding_builders.make_handle();
+                                                             urd::store(copy->relation, action_of(binding));
+                                                             copy->values.clear();
+                                                             for (const auto value : binding.get_values())
+                                                                 copy->values.push_back(value);
+                                                             shuffled.push_back(std::move(copy));
+                                                         }
+                                                         return true;
+                                                     });
+        ygg::portable_shuffle(shuffled.begin(), shuffled.end(), worker.rng);
+        const auto& repository = *generator.get_task()->get_repository();
+        for (const auto& binding : shuffled)
+        {
+            if constexpr (std::same_as<Kind, GroundTag>)
+            {
+                if (!expand_successor(worker, node, binding))
+                    break;
+            }
+            else
+            {
+                if (!expand_successor(worker, node, urd::resolve(*binding, repository)))
+                    break;
+            }
+        }
+        shuffled.clear();
     }
 
     ygg::float_t evaluate_successor_metric(const StateRepository<Kind>& repository,
@@ -475,9 +533,9 @@ private:
                                            ygg::float_t auxiliary_value)
     { return planning::evaluate_successor_metric(repository, state, auxiliary_value); }
 
-    void solve(WorkerData& worker, const Node<Kind>& node)
+    void solve(WorkerData& worker, const NodeBuilderView<Kind>& node)
     {
-        const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().pack().index() };
+        const auto goal = WorkerStateIndex<Kind> { worker.index, node.pack().state };
         if (m_execution.consider_goal(goal, node.get_metric(), SearchPolicy::terminate_on_goal))
             call_worker_event(worker, [&](auto& handler) { handler.on_expand_goal_node(node); });
     }
@@ -490,6 +548,9 @@ private:
         m_execution.set_terminal(status);
         m_result.status = status;
         snapshot_statistics();
+        // The task repository as the solve leaves it: a search interns no action binding; reconstructing its plan interns the
+        // plan's.
+        snapshot_task_repository_statistics(*m_task->get_repository(), m_result.statistics);
         m_finalized = true;
         call_root_event([&](auto& handler) { handler.on_end_search(status, m_result.statistics); });
     }
@@ -516,7 +577,6 @@ private:
             });
         m_result.statistics.set_num_registered_states(num_registered_states);
         m_result.statistics.set_state_storage_memory_usage(state_storage_memory_usage);
-        snapshot_task_repository_statistics(*m_task->get_repository(), m_result.statistics);
         m_result.statistics.set_search_end_time_point(search_end);
         m_statistics_snapshotted = true;
     }
@@ -567,7 +627,8 @@ private:
     const Options* m_options;
     EventHandlerPtrT<SearchPolicy> m_event_handler;
     std::chrono::steady_clock::time_point m_search_start_time_point;
-    Node<Kind> m_start_node;
+    NodeBuilder<Kind> m_start_node;
+    const StateRepository<Kind>* m_start_node_repository;
     ExecutionPolicy m_execution;
     Workers m_workers;
     SearchResult<Kind> m_result;

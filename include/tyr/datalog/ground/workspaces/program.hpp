@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/analysis/stratification.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/scheduler.hpp"
@@ -72,6 +73,7 @@ struct ConstProgramWorkspace<GroundTag>
     formalism::ProgramView<GroundTag> program;
     ConstFactsWorkspace<GroundTag> facts;
     GroundRuleDependencies dependencies;
+    analysis::RuleStrata<GroundTag> strata;
 
     explicit ConstProgramWorkspace(formalism::ProgramView<GroundTag> program);
 };
@@ -97,7 +99,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
         annotations(cws.program),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
-        scheduler(cws.program),
+        scheduler(cws.program, cws.strata),
         datalog_builder()
     {
         if constexpr (AP::records_propositional_achievers)

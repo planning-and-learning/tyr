@@ -25,11 +25,11 @@
 #include "tyr/planning/algorithms/siw/statistics.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/plan.hpp"
-#include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_storage.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <fmt/base.h>
 #include <urd/elements/builder.hpp>
@@ -81,6 +81,12 @@ struct formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>, tyr::plann
 };
 
 template<>
+struct formatter<tyr::planning::TransitionKind, char> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(tyr::planning::TransitionKind value, fmt::format_context& ctx) const;
+};
+
+template<>
 struct formatter<tyr::planning::Statistics, char> : tyr::formalism::detail::without_format_spec
 {
     fmt::format_context::iterator format(const tyr::planning::Statistics& value, fmt::format_context& ctx) const;
@@ -120,9 +126,9 @@ struct formatter<::tyr::planning::TemporalWords, char> : tyr::formalism::detail:
 
 /// A state, registered or being built: its atoms, facts and numeric values (and its index, where it has one).
 template<::tyr::TaskKind Kind>
-struct formatter<::tyr::planning::StateView<Kind>, char> : tyr::formalism::detail::without_format_spec
+struct formatter<::tyr::planning::SharedStateBuilderView<Kind>, char> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const ::tyr::planning::StateView<Kind>& value, fmt::format_context& ctx) const;
+    fmt::format_context::iterator format(const ::tyr::planning::StateBuilderView<Kind>& value, fmt::format_context& ctx) const;
 };
 
 template<::tyr::TaskKind Kind>
@@ -131,28 +137,18 @@ struct formatter<::tyr::planning::StateBuilderView<Kind>, char> : tyr::formalism
     fmt::format_context::iterator format(const ::tyr::planning::StateBuilderView<Kind>& value, fmt::format_context& ctx) const;
 };
 
-template<::tyr::TaskKind Kind>
-struct formatter<tyr::planning::PackedNode<Kind>, char> : tyr::formalism::detail::without_format_spec
+/// A plan, as its views (borrowed or owned, of its builder or its record) write it: its actions, one per line.
+template<::tyr::TaskKind Kind, typename R>
+struct formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const tyr::planning::PackedNode<Kind>& value, fmt::format_context& ctx) const;
+    fmt::format_context::iterator format(const urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>& value,
+                                         fmt::format_context& ctx) const;
 };
 
-template<::tyr::TaskKind Kind>
-struct formatter<tyr::planning::PackedLabeledNode<Kind>, char> : tyr::formalism::detail::without_format_spec
+template<::tyr::TaskKind Kind, typename R>
+struct formatter<urd::owning_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char> :
+    formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char>
 {
-    fmt::format_context::iterator format(const tyr::planning::PackedLabeledNode<Kind>& value, fmt::format_context& ctx) const;
-};
-
-template<::tyr::TaskKind Kind>
-struct formatter<tyr::planning::Plan<Kind>, char> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const tyr::planning::Plan<Kind>& value, fmt::format_context& ctx) const;
-};
-
-template<::tyr::TaskKind Kind>
-struct formatter<tyr::planning::PackedPlan<Kind>, char> : tyr::formalism::detail::without_format_spec
-{
-    fmt::format_context::iterator format(const tyr::planning::PackedPlan<Kind>& value, fmt::format_context& ctx) const;
 };
 
 }  // namespace fmt

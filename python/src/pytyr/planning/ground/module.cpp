@@ -15,28 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "module.hpp"
+#include "pytyr/planning/ground/module.hpp"
 
-#include "../planning.hpp"
-#include "pytyr/module.hpp"
-#include "tyr/planning/state_repository.hpp"
+#include "pytyr/planning/planning.hpp"
+#include "pytyr/planning/successors/ground/match_tree.hpp"
+#include "pytyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 namespace tyr::planning
 {
 
 void bind_ground_module_definitions(nb::module_& m)
 {
-    auto task = nb::class_<Task<GroundTag>>(m, "Task")  //
-                    .def("get_formalism_task", &Task<GroundTag>::get_formalism_task, nb::rv_policy::reference_internal)
-                    .def("get_repository", &Task<GroundTag>::get_repository)
-                    .def("get_task", &Task<GroundTag>::get_task)
-                    .def("get_fdr_context", &Task<GroundTag>::get_fdr_context, nb::rv_policy::reference_internal);
-    ygg::add_print(task);
+    bind_ground_task(m);
 
     bind_kind_definitions<GroundTag>(m);
     bind_match_tree(m);
 
-    bind_ground_serialization();
 }
 
 }  // namespace tyr::planning

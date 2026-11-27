@@ -33,20 +33,20 @@
 #include <tyr/formalism/planning/parser.hpp>
 #include <tyr/formalism/repository.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
-#include <tyr/planning/axiom_evaluator.hpp>
+#include <tyr/planning/axioms/axiom_evaluator.hpp>
 #include <tyr/planning/formatter.hpp>
-#include <tyr/planning/ground/successor_generator.hpp>
-#include <tyr/planning/ground/task.hpp>
-#include <tyr/planning/heuristic.hpp>
+#include <tyr/planning/successors/ground/successor_generator.hpp>
+#include <tyr/planning/tasks/ground/task.hpp>
+#include <tyr/planning/heuristics/heuristic.hpp>
 #include <tyr/planning/heuristics/blind.hpp>
 #include <tyr/planning/heuristics/goal_count.hpp>
 #include <tyr/planning/heuristics/lmcut.hpp>
 #include <tyr/planning/heuristics/rpg_add.hpp>
 #include <tyr/planning/heuristics/rpg_ff.hpp>
 #include <tyr/planning/heuristics/rpg_max.hpp>
-#include <tyr/planning/lifted/successor_generator.hpp>
-#include <tyr/planning/lifted/task.hpp>
-#include <tyr/planning/lifted/task_grounder_decl.hpp>
+#include <tyr/planning/successors/lifted/successor_generator.hpp>
+#include <tyr/planning/tasks/lifted/task.hpp>
+#include <tyr/planning/tasks/lifted/task_grounder_decl.hpp>
 #include <urd/config.hpp>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/memory.hpp>
@@ -169,10 +169,9 @@ planning::HeuristicPtr<Kind> make_heuristic(const Arguments& arguments, const Se
 }
 
 /// Sets the options every search algorithm shares.
-template<typename Options, TaskKind Kind>
-void set_common_options(Options& options, const Arguments& arguments, const Search<Kind>& search)
+template<typename Options>
+void set_common_options(Options& options, const Arguments& arguments)
 {
-    options.start_node = search.successor_generator->get_initial_node(*search.state_repository, *search.axiom_evaluator);
     options.cost_mode = arguments.search_cost_mode;
     options.random_seed = arguments.random_seed;
     options.num_search_workers = arguments.num_search_workers;
@@ -234,7 +233,7 @@ int run_search(const Arguments& arguments,
 {
     auto search = Search<Kind> { std::move(task), std::move(execution_context) };
     search.axiom_evaluator = std::make_shared<planning::AxiomEvaluator<Kind>>(search.task, search.execution_context);
-    search.state_repository = std::make_shared<planning::StateRepository<Kind>>(search.task, arguments.state_repository_mode == "shared");
+    search.state_repository = planning::StateRepository<Kind>::create(search.task, arguments.state_repository_mode == "shared");
     search.successor_generator = std::make_shared<planning::SuccessorGenerator<Kind>>(search.task, search.execution_context);
     search.heuristic = make_heuristic(arguments, search);
 

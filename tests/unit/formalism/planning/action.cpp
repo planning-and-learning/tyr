@@ -1,3 +1,4 @@
+#include "planning/parser.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
@@ -53,14 +54,7 @@ static_assert(requires(const ActionView& view) {
 
 TEST(TyrFormalismPlanningAction, PreservesOriginalArityAfterNormalization)
 {
-    const auto parser = tyr::formalism::Parser(std::string(R"((define (domain witness)
-      (:requirements :strips :existential-preconditions)
-      (:predicates (edge ?x ?y) (done ?x))
-      (:action mark
-        :parameters (?x)
-        :precondition (exists (?w) (edge ?x ?w))
-        :effect (done ?x))))"),
-                                               std::nullopt);
+    const auto parser = tyr::formalism::Parser(task_fixture("witness/domain.pddl"));
     const auto domain = parser.get_domain();
     const auto actions = domain.get_domain().get_actions();
     ASSERT_EQ(actions.size(), 1);
@@ -102,15 +96,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
 // copied as children (the same objects by name, at other indices there).
 TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndBindingObjects)
 {
-    const auto parser = tyr::formalism::Parser(std::string(R"((define (domain transfer)
-      (:requirements :strips :conditional-effects :fluents)
-      (:predicates (ready ?x) (done ?x))
-      (:functions (fuel ?x))
-      (:action finish
-        :parameters (?x)
-        :precondition (ready ?x)
-        :effect (and (when (ready ?x) (done ?x)) (decrease (fuel ?x) 1)))))"),
-                                               std::nullopt);
+    const auto parser = tyr::formalism::Parser(task_fixture("transfer/domain.pddl"));
     const auto domain = parser.get_domain();
     const auto source_action = domain.get_domain().get_actions().front();
     auto source = tyr::formalism::Repository(&source_action.context());

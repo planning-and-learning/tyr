@@ -21,7 +21,7 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/heuristic.hpp"
+#include "tyr/planning/heuristics/heuristic.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -31,8 +31,8 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-class AddRPGHeuristic : public Heuristic<Kind>
+template<TaskKind Kind, typename V>
+class AddRPGHeuristic : public Heuristic<Kind, V>
 {
 public:
     AddRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
@@ -43,13 +43,13 @@ public:
     AddRPGHeuristic(AddRPGHeuristic&&) noexcept;
     AddRPGHeuristic& operator=(AddRPGHeuristic&&) noexcept;
 
-    static AddRPGHeuristicPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
+    static AddRPGHeuristicPtr<Kind, V> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode = CostMode::UNIT);
 
-    using Heuristic<Kind>::evaluate;
+    using Heuristic<Kind, V>::evaluate;
 
     void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) override;
-    ygg::float_t evaluate(const StateView<Kind>& state) override;
-    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+    ygg::float_t evaluate(const V& state) override;
+    [[nodiscard]] HeuristicPtr<Kind, V> make_worker(ygg::ExecutionContextPtr execution_context) const override;
     void print_summary(size_t verbosity) const override;
 
 private:

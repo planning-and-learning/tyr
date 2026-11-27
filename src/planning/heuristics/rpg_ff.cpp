@@ -17,8 +17,8 @@
 
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 
-#include "../ground/heuristics/rpg.hpp"
-#include "../lifted/heuristics/rpg.hpp"
+#include "ground/rpg.hpp"
+#include "lifted/rpg.hpp"
 #include "rpg.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -42,8 +42,8 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-struct FFRPGHeuristic<Kind>::Impl :
+template<TaskKind Kind, typename V>
+struct FFRPGHeuristic<Kind, V>::Impl :
     detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>
 {
     using Base =
@@ -60,13 +60,13 @@ struct FFRPGHeuristic<Kind>::Impl :
         m_relaxed_plan.clear();
     }
 
-    ygg::float_t evaluate(const StateView<Kind>& state)
+    ygg::float_t evaluate(const V& state)
     {
         m_relaxed_plan.clear();
         return Base::evaluate(state);
     }
 
-    ygg::float_t compute_result(const StateView<Kind>&)
+    ygg::float_t compute_result(const V&)
     {
         boost::mp11::mp_for_each<datalog::MutableTags>(
             [&]<typename F>(F)
@@ -133,48 +133,48 @@ private:
     urd::Store<urd::set<formalism::ActionRowView>> m_relaxed_plan;
 };
 
-template<TaskKind Kind>
-FFRPGHeuristic<Kind>::FFRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
+template<TaskKind Kind, typename V>
+FFRPGHeuristic<Kind, V>::FFRPGHeuristic(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
     m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context), cost_mode))
 {
 }
 
-template<TaskKind Kind>
-FFRPGHeuristic<Kind>::FFRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
+template<TaskKind Kind, typename V>
+FFRPGHeuristic<Kind, V>::FFRPGHeuristic(std::unique_ptr<Impl> impl) : m_impl(std::move(impl))
 {
 }
 
-template<TaskKind Kind>
-FFRPGHeuristic<Kind>::~FFRPGHeuristic() = default;
+template<TaskKind Kind, typename V>
+FFRPGHeuristic<Kind, V>::~FFRPGHeuristic() = default;
 
-template<TaskKind Kind>
-FFRPGHeuristic<Kind>::FFRPGHeuristic(FFRPGHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+FFRPGHeuristic<Kind, V>::FFRPGHeuristic(FFRPGHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-FFRPGHeuristic<Kind>& FFRPGHeuristic<Kind>::operator=(FFRPGHeuristic&&) noexcept = default;
+template<TaskKind Kind, typename V>
+FFRPGHeuristic<Kind, V>& FFRPGHeuristic<Kind, V>::operator=(FFRPGHeuristic&&) noexcept = default;
 
-template<TaskKind Kind>
-FFRPGHeuristicPtr<Kind> FFRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{ return std::make_shared<FFRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
+template<TaskKind Kind, typename V>
+FFRPGHeuristicPtr<Kind, V> FFRPGHeuristic<Kind, V>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
+{ return std::make_shared<FFRPGHeuristic<Kind, V>>(std::move(task), std::move(execution_context), cost_mode); }
 
-template<TaskKind Kind>
-void FFRPGHeuristic<Kind>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
+template<TaskKind Kind, typename V>
+void FFRPGHeuristic<Kind, V>::set_goal(formalism::ConjunctiveConditionView<GroundTag> goal)
 { m_impl->set_goal(goal); }
 
-template<TaskKind Kind>
-ygg::float_t FFRPGHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+template<TaskKind Kind, typename V>
+ygg::float_t FFRPGHeuristic<Kind, V>::evaluate(const V& state)
 { return m_impl->evaluate(state); }
 
-template<TaskKind Kind>
-HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return HeuristicPtr<Kind>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
+template<TaskKind Kind, typename V>
+HeuristicPtr<Kind, V> FFRPGHeuristic<Kind, V>::make_worker(ygg::ExecutionContextPtr execution_context) const
+{ return HeuristicPtr<Kind, V>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
-template<TaskKind Kind>
-const urd::Store<urd::set<formalism::ActionRowView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
+template<TaskKind Kind, typename V>
+const urd::Store<urd::set<formalism::ActionRowView>>* FFRPGHeuristic<Kind, V>::get_relaxed_plan() const
 { return &m_impl->get_relaxed_plan(); }
 
-template<TaskKind Kind>
-void FFRPGHeuristic<Kind>::print_summary(size_t verbosity) const
+template<TaskKind Kind, typename V>
+void FFRPGHeuristic<Kind, V>::print_summary(size_t verbosity) const
 { m_impl->print_summary(verbosity); }
 
 template class FFRPGHeuristic<GroundTag>;

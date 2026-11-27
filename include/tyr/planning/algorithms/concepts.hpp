@@ -20,7 +20,7 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/node_concepts.hpp"
+#include "tyr/planning/nodes/node_concepts.hpp"
 
 #include <chrono>
 #include <concepts>
@@ -34,15 +34,15 @@ template<TaskKind Kind>
 struct SearchResult;
 
 template<typename T, typename Kind>
-concept SolverConcept = TaskKind<Kind> && requires(T& solver, std::optional<Node<Kind>> start_node) {
+concept SolverConcept = TaskKind<Kind> && requires(T& solver, std::optional<OwnedNodeRecordView<Kind>> start_node) {
     { solver.solve() } -> std::same_as<SearchResult<Kind>>;
-    { solver.normalize_start_node(start_node) } -> std::same_as<Node<Kind>>;
+    { solver.normalize_start_node(start_node) } -> std::same_as<OwnedNodeRecordView<Kind>>;
 };
 
 template<typename Options, typename Kind>
 concept SolverOptionsConcept = TaskKind<Kind>
                                && requires(Options& options,
-                                           std::optional<Node<Kind>> start_node,
+                                           std::optional<OwnedNodeRecordView<Kind>> start_node,
                                            GoalStrategyPtr<Kind> goal_strategy,
                                            std::optional<ygg::uint_t> max_num_states,
                                            std::optional<std::chrono::steady_clock::duration> max_time) {

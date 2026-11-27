@@ -121,7 +121,7 @@ void check_expectation(const IwExpectation& expectation, const IwCase& test_case
     if (expectation.plan)
     {
         ASSERT_TRUE(result.plan);
-        expect_plan(*expectation.plan, result.plan.value());
+        expect_plan<Kind>(*expectation.plan, result.plan.value());
         EXPECT_TRUE(solution_arity);
     }
     if (expectation.solution_arity)

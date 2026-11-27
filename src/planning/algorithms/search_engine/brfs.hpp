@@ -143,7 +143,7 @@ public:
 
     template<typename EvaluateUnlocked, typename ImproveBestH, typename EmitEvent, typename FinishPriorityLayer>
     ExpansionResult prepare_expansion(const PoppedEntry& entry,
-                                      const Node<Kind>& node,
+                                      const NodeBuilderView<Kind>& node,
                                       SearchNode& search_node,
                                       Statistics& statistics,
                                       EvaluateUnlocked&&,
@@ -158,8 +158,8 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::ActionRowView)
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().pack().index() }, node.get_metric() }; }
+    static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const NodeBuilderView<Kind>& node, ActionBindingView<Kind>)
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.get_metric() }; }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
     { m_openlist.push(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
@@ -167,8 +167,8 @@ public:
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,
                                       WorkerData& worker,
-                                      const Node<Kind>& source_node,
-                                      const Node<Kind>& successor_node,
+                                      const NodeBuilderView<Kind>& source_node,
+                                      const NodeBuilderView<Kind>& successor_node,
                                       const RoutedSuccessorT<Engine>& routed_successor,
                                       SearchNode& successor_search_node,
                                       bool is_new,
@@ -181,8 +181,8 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        const auto& source_state = source_node.get_state();
-        const auto& successor_state = successor_node.get_state();
+        const auto source_state = urd::built_view(source_node.get_state());
+        const auto successor_state = urd::built_view(successor_node.get_state());
         const auto g_value = successor_node.get_metric();
         successor_search_node.status = SearchNodeStatus::OPEN;
         successor_search_node.g_value = static_cast<ygg::uint_t>(g_value);
@@ -214,7 +214,7 @@ public:
     static constexpr bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
 
     template<typename Handler>
-    static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t)
+    static void on_start_search(Handler& handler, const NodeBuilderView<Kind>& node, ygg::float_t)
     { handler.on_start_search(node); }
 
     template<typename Handler>

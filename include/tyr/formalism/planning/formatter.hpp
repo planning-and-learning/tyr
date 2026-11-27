@@ -25,6 +25,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 
+#include <cstddef>
 #include <fmt/base.h>
 #include <urd/elements/view.hpp>
 #include <utility>
@@ -151,12 +152,29 @@ struct fmt::formatter<tyr::formalism::PlanningTask<T>> : tyr::formalism::detail:
     fmt::format_context::iterator format(const tyr::formalism::PlanningTask<T>& value, fmt::format_context& context) const;
 };
 
-/// A plan's step: (original-name original arguments...), as a plan file lists it.
-template<>
-struct fmt::formatter<std::pair<tyr::formalism::ActionRowView, tyr::formalism::PlanFormatting>> : tyr::formalism::detail::without_format_spec
+/// A plan's step: (original-name original arguments...), as a plan file lists it; of any view of an action binding (an
+/// interned row, a row being built, a row record).
+template<typename V>
+    requires urd::ViewOf<V, ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>>
+struct fmt::formatter<std::pair<V, tyr::formalism::PlanFormatting>> : tyr::formalism::detail::without_format_spec
 {
-    fmt::format_context::iterator format(const std::pair<tyr::formalism::ActionRowView, tyr::formalism::PlanFormatting>& value,
-                                         fmt::format_context& context) const;
+    fmt::format_context::iterator format(const std::pair<V, tyr::formalism::PlanFormatting>& value, fmt::format_context& context) const
+    {
+        // Its relation in whichever form the row holds it; its objects through the row's repository (the relation's may
+        // be a layer below the objects: a domain's).
+        return urd::visit_view(value.first.get_relation(),
+                               [&](const auto& relation)
+                               {
+                                   auto out = fmt::format_to(context.out(), "({}", relation.get_original_name());
+                                   // Its original arguments only: an action's row has further columns after them.
+                                   for (std::size_t column = 0; column < relation.get_original_arity(); ++column)
+                                       out = fmt::format_to(
+                                           out,
+                                           " {}",
+                                           urd::resolve(value.first.template get<urd::index<tyr::formalism::Object>>(column), value.first.context()).get_name());
+                                   return fmt::format_to(out, ")");
+                               });
+    }
 };
 
 /// A plan's step of a ground action: its binding's.

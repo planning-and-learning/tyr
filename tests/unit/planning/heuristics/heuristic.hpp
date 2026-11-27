@@ -18,14 +18,16 @@
 #ifndef TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 #define TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 
+#include "planning/successors/successor_compositions.hpp"
 #include "planning/parser.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/successors/successors.hpp"
 
 #include <algorithm>
 #include <boost/json.hpp>
@@ -128,7 +130,7 @@ HeuristicContext<Kind> create_heuristic_context(const tyr::planning::TaskPtr<Lif
         task = lifted_task->instantiate_ground_task(*execution_context).task;
 
     auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
-    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto state_repository = tyr::planning::StateRepository<Kind>::create(task);
     auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     return HeuristicContext<Kind> { std::move(execution_context),
@@ -156,15 +158,17 @@ void expect_relaxed_plan_reset_after_dead_end()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = tyr::planning::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto initial_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
 
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
     EXPECT_FALSE(heuristic->get_relaxed_plan()->empty());
 
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
-    const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
+    const auto successors =
+        tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
+    const auto dead_end =
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
-    EXPECT_EQ(heuristic->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(dead_end->get_node())), std::numeric_limits<ygg::float_t>::infinity());
     EXPECT_TRUE(heuristic->get_relaxed_plan()->empty());
 }
 
@@ -173,16 +177,18 @@ void expect_builtin_set_goal_reconfigures_evaluator()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = tyr::planning::AddRPGHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto initial_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
 
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
 
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
-    const auto achieve = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
+    const auto successors =
+        tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
+    const auto achieve =
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "achieve"; });
     ASSERT_NE(achieve, successors.end());
-    heuristic->set_goal(context.successor_generator->ground_action(achieve->label).get_condition());
+    heuristic->set_goal(context.successor_generator->ground_action(urd::interned_view(achieve->get_label())).get_condition());
 
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 0);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 0);
 }
 
 template<TaskKind Kind, template<TaskKind> class Heuristic>
@@ -190,17 +196,19 @@ void expect_worker_snapshots_configured_goal()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = Heuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
-    const auto achieve = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
+    const auto initial_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto successors =
+        tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
+    const auto achieve =
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "achieve"; });
     ASSERT_NE(achieve, successors.end());
 
-    heuristic->set_goal(context.successor_generator->ground_action(achieve->label).get_condition());
+    heuristic->set_goal(context.successor_generator->ground_action(urd::interned_view(achieve->get_label())).get_condition());
     auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
 
     ASSERT_NE(worker.get(), heuristic.get());
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 0);
-    EXPECT_EQ(worker->evaluate(initial_node.get_state()), 0);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 0);
+    EXPECT_EQ(worker->evaluate(tyr::tests::built_state(initial_node)), 0);
 }
 
 template<TaskKind Kind>
@@ -208,18 +216,20 @@ void expect_worker_has_independent_relaxed_plan()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = tyr::planning::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto initial_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
 
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
     ASSERT_FALSE(heuristic->get_relaxed_plan()->empty());
 
     auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
     EXPECT_TRUE(worker->get_relaxed_plan()->empty());
 
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
-    const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
+    const auto successors =
+        tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
+    const auto dead_end =
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
-    EXPECT_EQ(worker->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(worker->evaluate(tyr::tests::built_state(dead_end->get_node())), std::numeric_limits<ygg::float_t>::infinity());
     EXPECT_TRUE(worker->get_relaxed_plan()->empty());
     EXPECT_FALSE(heuristic->get_relaxed_plan()->empty());
 }
@@ -245,19 +255,22 @@ void expect_alternating_states_replace_previous_model()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = Heuristic<Kind>::create(context.task, context.execution_context);
-    const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
-    const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
-    const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
-    const auto goal = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "achieve"; });
+    const auto initial_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto successors =
+        tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
+    const auto dead_end =
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "consume"; });
+    const auto goal =
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "achieve"; });
     ASSERT_NE(dead_end, successors.end());
     ASSERT_NE(goal, successors.end());
 
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
-    EXPECT_EQ(heuristic->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
-    EXPECT_EQ(heuristic->evaluate(goal->node.get_state()), 0);
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
-    EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(dead_end->get_node())), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(goal->get_node())), 0);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
 }
 
 /// The heuristic value of the initial state matches the fixture for each cost mode.
@@ -265,7 +278,8 @@ template<TaskKind Kind, template<TaskKind> class Heuristic>
 void check_heuristic_case(const HeuristicCase& test_case)
 {
     auto context = create_heuristic_context<Kind>(test_case.domain_file, test_case.task_file);
-    const auto initial_state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
+    const auto initial_state_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
+    const auto initial_state = tyr::tests::built_state(initial_state_node);
 
     for (const auto& [key, expectation] : test_case.configs)
     {

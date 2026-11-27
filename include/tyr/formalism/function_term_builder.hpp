@@ -29,6 +29,7 @@
 #include <concepts>
 #include <type_traits>
 #include <urd/elements/builder.hpp>
+#include <yggdrasil/formalism/row_builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/index.hpp>

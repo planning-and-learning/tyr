@@ -22,7 +22,7 @@
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/heuristic.hpp"
+#include "tyr/planning/heuristics/heuristic.hpp"
 
 #include <memory>
 #include <yggdrasil/core/config.hpp>
@@ -31,21 +31,21 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-class GoalCountHeuristic : public Heuristic<Kind>
+template<TaskKind Kind, typename V>
+class GoalCountHeuristic : public Heuristic<Kind, V>
 {
 public:
     explicit GoalCountHeuristic(std::shared_ptr<const Task<Kind>> task);
 
-    static std::shared_ptr<GoalCountHeuristic<Kind>> create(std::shared_ptr<const Task<Kind>> task);
+    static std::shared_ptr<GoalCountHeuristic<Kind, V>> create(std::shared_ptr<const Task<Kind>> task);
 
-    using Heuristic<Kind>::evaluate;
+    using Heuristic<Kind, V>::evaluate;
 
     void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) override;
 
-    ygg::float_t evaluate(const StateView<Kind>& state) override;
+    ygg::float_t evaluate(const V& state) override;
 
-    [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
+    [[nodiscard]] HeuristicPtr<Kind, V> make_worker(ygg::ExecutionContextPtr execution_context) const override;
 
 private:
     std::shared_ptr<const Task<Kind>> m_task;

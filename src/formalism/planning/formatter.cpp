@@ -411,17 +411,6 @@ fmt::format_context::iterator fmt::formatter<tf::PlanningTask<T>>::format(const 
 { return fmt::format_to(context.out(), "{}\n{}", value.get_task().get_domain(), value.get_task()); }
 
 fmt::format_context::iterator
-fmt::formatter<std::pair<tf::ActionRowView, tf::PlanFormatting>>::format(const std::pair<tf::ActionRowView, tf::PlanFormatting>& value,
-                                                                         fmt::format_context& context) const
-{
-    auto out = fmt::format_to(context.out(), "({}", value.first.get_relation().get_original_name());
-    // Its original arguments only: an action's row has further columns after them.
-    for (std::size_t column = 0; column < value.first.get_relation().get_original_arity(); ++column)
-        out = fmt::format_to(out, " {}", value.first.template resolve<tf::Object>(column).get_name());
-    return fmt::format_to(out, ")");
-}
-
-fmt::format_context::iterator
 fmt::formatter<std::pair<tf::ActionView<GroundTag>, tf::PlanFormatting>>::format(const std::pair<tf::ActionView<GroundTag>, tf::PlanFormatting>& value,
                                                                                  fmt::format_context& context) const
 { return fmt::format_to(context.out(), "{}", std::make_pair(value.first.get_row(), value.second)); }

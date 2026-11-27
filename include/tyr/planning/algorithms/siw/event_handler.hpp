@@ -92,7 +92,7 @@ public:
             self().on_end_search_impl(status, statistics);
     }
 
-    void on_solved(const Plan<Kind>& plan) override
+    void on_solved(const PlanBuilderView<Kind>& plan) override
     {
         if (verbosity(1))
             self().on_solved_impl(plan);
@@ -123,7 +123,7 @@ private:
         static_cast<void>(statistics);
     }
 
-    void on_solved_impl(const Plan<Kind>& plan) const { static_cast<void>(plan); }
+    void on_solved_impl(const PlanBuilderView<Kind>& plan) const { static_cast<void>(plan); }
 
 public:
     explicit DefaultEventHandler(size_t verbosity = 0) : EventHandlerBase<DefaultEventHandler<Kind>, Kind>(verbosity) {}

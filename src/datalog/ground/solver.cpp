@@ -53,8 +53,7 @@ class SolverPolicy<GroundTag, AP, TP, CP>
 public:
     explicit SolverPolicy(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx) : m_ctx(&ctx) {}
 
-    // Ground programs currently reject negative fluent bodies, so every supported program has one stratum.
-    bool next_stratum() noexcept { return std::exchange(m_pending_stratum, false); }
+    bool next_stratum() noexcept { return scheduler().next_stratum(); }
 
     /// Fires every ready rule, each once: its conditions are all committed, so it fires with their aggregated cost, its
     /// support. Its heads go to the cost buckets; none is committed here, so no rule becomes ready while they fire.
@@ -92,7 +91,6 @@ private:
     }
 
     ProgramExecutionContext<GroundTag, AP, TP, CP>* m_ctx;
-    bool m_pending_stratum = true;
 };
 
 template void compute_model(ProgramExecutionContext<GroundTag, NoAnnotationPolicy, NoTerminationPolicy, RuleCostPolicy>& ctx);

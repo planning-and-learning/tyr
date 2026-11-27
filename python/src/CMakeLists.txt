@@ -26,11 +26,15 @@ nanobind_add_module(
     pytyr/datalog/lifted/module.cpp
     pytyr/planning/module.cpp
     pytyr/planning/ground/module.cpp
-    pytyr/planning/ground/serialization.cpp
-    pytyr/planning/ground/match_tree.cpp
+    pytyr/planning/states/serialization.cpp
+    pytyr/planning/nodes/serialization.cpp
+    pytyr/planning/plans/serialization.cpp
+    pytyr/planning/successors/serialization.cpp
+    pytyr/planning/successors/ground/match_tree.cpp
+    pytyr/planning/tasks/ground/task.cpp
+    pytyr/planning/tasks/lifted/task.cpp
     pytyr/planning/lifted/module.cpp
-    pytyr/planning/lifted/serialization.cpp
-    pytyr/planning/lifted/programs.cpp
+    pytyr/planning/programs/lifted/programs.cpp
     pytyr/planning/algorithms/astar_eager/ground.cpp
     pytyr/planning/algorithms/brfs/ground.cpp
     pytyr/planning/algorithms/gbfs_lazy/ground.cpp

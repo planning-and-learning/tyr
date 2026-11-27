@@ -19,11 +19,11 @@
 
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/plan.hpp"
-#include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 #include <fmt/ostream.h>
 
@@ -38,7 +38,7 @@ class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
 public:
     explicit DefaultWorkerEventHandler(urd::index<Worker> index) : m_index(index) {}
 
-    void on_expand_node(const Node<Kind>& node) override
+    void on_expand_node(const NodeBuilderView<Kind>& node) override
     {
         fmt::print("[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
                    static_cast<ygg::uint_t>(m_index.value),
@@ -46,16 +46,16 @@ public:
                    node);
     }
 
-    void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>& labeled_succ_node, TransitionOutcome outcome) override
+    void on_generate_transition(const NodeBuilderView<Kind>&, ActionBindingView<Kind> label, const NodeBuilderView<Kind>& succ_node, TransitionOutcome outcome) override
     {
         if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::RELAXED && outcome != TransitionOutcome::DEAD_END
             && outcome != TransitionOutcome::GOAL)
             return;
         fmt::print("[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
                    static_cast<ygg::uint_t>(m_index.value),
-                   labeled_succ_node.label,
+                   label,
                    static_cast<ygg::uint_t>(m_index.value),
-                   labeled_succ_node.node);
+                   succ_node);
     }
 
 private:
@@ -70,7 +70,7 @@ DefaultEventHandler<Kind>::DefaultEventHandler(size_t verbosity) : m_verbosity(v
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_start_search(const Node<Kind>&, ygg::float_t f_value)
+void DefaultEventHandler<Kind>::on_start_search(const NodeBuilderView<Kind>&, ygg::float_t f_value)
 {
     m_progress_statistics.clear();
     if (m_verbosity < 1)
@@ -96,7 +96,7 @@ void DefaultEventHandler<Kind>::on_end_search(SearchStatus, const tyr::planning:
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
+void DefaultEventHandler<Kind>::on_solved(const PlanBuilderView<Kind>& plan)
 {
     if (m_verbosity < 1)
         return;

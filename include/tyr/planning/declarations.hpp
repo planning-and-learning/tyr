@@ -94,10 +94,29 @@ struct TemporalStorage
 template<TaskKind Kind>
 using TaskPtr = std::shared_ptr<Task<Kind>>;
 
+/// The tag of a search node: its record urd::data<Node<Kind>> holds its state's key and its metric (node_data.hpp); its
+/// builder urd::builder<Node<Kind>, StateRepository<Kind>> holds its state built, by its handle (node_builder.hpp).
 template<TaskKind Kind>
-class PackedNode;
+struct Node
+{
+    static constexpr std::string_view name = "Node";
+};
+
+/// The tag of a node and the action binding that reached it (an interned row of its action): its record holds the label
+/// and the node's record, its builder the label and the node's builder (labeled_node_data.hpp, labeled_node_builder.hpp).
 template<TaskKind Kind>
-struct PackedLabeledNode;
+struct LabeledNode
+{
+    static constexpr std::string_view name = "LabeledNode";
+};
+
+/// The tag of a plan: a start node and the labeled nodes that follow it. Its record holds their records (plan_data.hpp),
+/// its builder their builders: states unpacked, registered or not (plan_builder.hpp).
+template<TaskKind Kind>
+struct Plan
+{
+    static constexpr std::string_view name = "Plan";
+};
 
 class StaticState;
 
@@ -145,33 +164,6 @@ struct Successor
     static constexpr std::string_view name = "Successor";
 };
 
-/// The tags of the set of distributions a transition draws from while it is built (pick_data.hpp,
-/// joint_outcome_data.hpp, joint_distribution_data.hpp, joint_distributions_data.hpp): an outcome nature may pick, a joint
-/// outcome (the outcomes picked on its way), a distribution over joint outcomes, and a set of such distributions.
-template<TaskKind Kind>
-struct Pick
-{
-    static constexpr std::string_view name = "Pick";
-};
-
-template<TaskKind Kind>
-struct JointOutcome
-{
-    static constexpr std::string_view name = "JointOutcome";
-};
-
-template<TaskKind Kind>
-struct JointDistribution
-{
-    static constexpr std::string_view name = "JointDistribution";
-};
-
-template<TaskKind Kind>
-struct JointDistributions
-{
-    static constexpr std::string_view name = "JointDistributions";
-};
-
 template<TaskKind Kind>
 class StateContext;
 
@@ -187,86 +179,129 @@ class StateRepository;
 template<TaskKind Kind>
 using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
 
-/// A registered state, unpacked: the view of its builder, shared from its repository's pool (whose slot keeps the
-/// repository alive), through the repository that registered it; it holds the state's index.
-template<TaskKind Kind>
-using StateView = urd::shared_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>, StateRepository<Kind>>>;
-/// A state builder, borrowed, read through a state repository of its task.
+/// A state read unpacked: the view of its builder (a registered state's, which holds its index, or one being built),
+/// borrowed, through a state repository of its task. What every reader of a state takes: a node's state reads as it, and
+/// a view that shares a builder (SharedStateBuilderView) lends it (urd::borrowed_view).
 template<TaskKind Kind>
 using StateBuilderView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>, StateRepository<Kind>>>;
+/// A state on its own, unpacked: the view of its builder, shared (the builder goes back to its repository's pool with
+/// the last copy), through the repository that holds it. What a repository hands out a state as where no node holds it.
+template<TaskKind Kind>
+using SharedStateBuilderView = urd::shared_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>, StateRepository<Kind>>>;
 /// A state's storages being built, borrowed, read through their state repository (which resolves the task's facts
 /// through the formalism repository it nests): its fluent facts, derived atoms and numeric values.
 template<TaskKind Kind>
-using FactStorageView = urd::borrowed_view<FactStorage<Kind>, StateRepository<Kind>, urd::builder<FactStorage<Kind>, StateRepository<Kind>>>;
+using FactStorageBuilderView = urd::borrowed_view<FactStorage<Kind>, StateRepository<Kind>, urd::builder<FactStorage<Kind>, StateRepository<Kind>>>;
 template<TaskKind Kind>
-using AtomStorageView = urd::borrowed_view<AtomStorage<Kind>, StateRepository<Kind>, urd::builder<AtomStorage<Kind>, StateRepository<Kind>>>;
+using AtomStorageBuilderView = urd::borrowed_view<AtomStorage<Kind>, StateRepository<Kind>, urd::builder<AtomStorage<Kind>, StateRepository<Kind>>>;
 template<TaskKind Kind>
-using NumericStorageView = urd::borrowed_view<NumericStorage<Kind>, StateRepository<Kind>, urd::builder<NumericStorage<Kind>, StateRepository<Kind>>>;
+using NumericStorageBuilderView = urd::borrowed_view<NumericStorage<Kind>, StateRepository<Kind>, urd::builder<NumericStorage<Kind>, StateRepository<Kind>>>;
 template<TaskKind Kind>
-using TemporalStorageView = urd::borrowed_view<TemporalStorage<Kind>, StateRepository<Kind>, urd::builder<TemporalStorage<Kind>, StateRepository<Kind>>>;
-/// A successor being built or handed out (a pooled builder of the successor generator), borrowed, read through the state
-/// repository of its task; its outcomes' states are registered (their keys) or built (pooled state builders).
+using TemporalStorageBuilderView = urd::borrowed_view<TemporalStorage<Kind>, StateRepository<Kind>, urd::builder<TemporalStorage<Kind>, StateRepository<Kind>>>;
+/// A successor being built (a generator writes it: its outcome states built, unregistered) and a successor packed (its
+/// record: its outcome states' keys), each borrowed or owned, read through the state repository of its task.
 template<TaskKind Kind>
-using SuccessorView = urd::borrowed_view<Successor<Kind>, StateRepository<Kind>, urd::builder<Successor<Kind>, StateRepository<Kind>>>;
-/// A successor handed out by a successor generator: its pooled builder, held by its handle, which gives it back to the
-/// generator's pools when it goes.
+using SuccessorBuilder = urd::builder<Successor<Kind>, StateRepository<Kind>>;
 template<TaskKind Kind>
-using SuccessorHandle = urd::handle<urd::builder<Successor<Kind>, StateRepository<Kind>>>;
-/// A registered state, packed: the view of its record's index, through its repository, which must outlive it (a
-/// PackedNode keeps it alive; unpack() gives its StateView).
+using SuccessorBuilderView = urd::borrowed_view<Successor<Kind>, StateRepository<Kind>, SuccessorBuilder<Kind>>;
 template<TaskKind Kind>
-using PackedStateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
+using OwnedSuccessorBuilderView = urd::owning_view<Successor<Kind>, StateRepository<Kind>, SuccessorBuilder<Kind>>;
+template<TaskKind Kind>
+using SuccessorRecordView = urd::borrowed_view<Successor<Kind>, StateRepository<Kind>, urd::data<Successor<Kind>>>;
+template<TaskKind Kind>
+using OwnedSuccessorRecordView = urd::owning_view<Successor<Kind>, StateRepository<Kind>, urd::data<Successor<Kind>>>;
+/// A registered state, packed: the view of its record's index, through its repository, which must outlive it (unpack()
+/// gives it unpacked, a SharedStateBuilderView).
+template<TaskKind Kind>
+using StateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
+/// A state held as a record of its own (not interned), borrowed: one of the forms a node's state takes (urd::child).
+template<TaskKind Kind>
+using StateRecordView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::data<State<Kind>>>;
+/// A node being built or held (its builder: its state built), and a node packed (its record: its state's key), each
+/// borrowed and read through its state repository; likewise a labeled node.
+template<TaskKind Kind>
+using NodeBuilder = urd::builder<Node<Kind>, StateRepository<Kind>>;
+template<TaskKind Kind>
+using NodeBuilderView = urd::borrowed_view<Node<Kind>, StateRepository<Kind>, NodeBuilder<Kind>>;
+template<TaskKind Kind>
+using NodeRecordView = urd::borrowed_view<Node<Kind>, StateRepository<Kind>, urd::data<Node<Kind>>>;
+/// A node packed, owned (its record by value) and read through its repository, which must outlive it: what is kept of a
+/// node apart from a search (a start node given, a goal node found).
+template<TaskKind Kind>
+using OwnedNodeRecordView = urd::owning_view<Node<Kind>, StateRepository<Kind>, urd::data<Node<Kind>>>;
+/// A node owned whole (its builder by value: its state by its handle) and read through its repository, which must outlive
+/// it: a node handed out on its own (as in Python, or a test's list).
+template<TaskKind Kind>
+using OwnedNodeBuilderView = urd::owning_view<Node<Kind>, StateRepository<Kind>, NodeBuilder<Kind>>;
+template<TaskKind Kind>
+using LabeledNodeBuilder = urd::builder<LabeledNode<Kind>, StateRepository<Kind>>;
+template<TaskKind Kind>
+using LabeledNodeBuilderView = urd::borrowed_view<LabeledNode<Kind>, StateRepository<Kind>, LabeledNodeBuilder<Kind>>;
+template<TaskKind Kind>
+using LabeledNodeRecordView = urd::borrowed_view<LabeledNode<Kind>, StateRepository<Kind>, urd::data<LabeledNode<Kind>>>;
+template<TaskKind Kind>
+using OwnedLabeledNodeBuilderView = urd::owning_view<LabeledNode<Kind>, StateRepository<Kind>, LabeledNodeBuilder<Kind>>;
+template<TaskKind Kind>
+using OwnedLabeledNodeRecordView = urd::owning_view<LabeledNode<Kind>, StateRepository<Kind>, urd::data<LabeledNode<Kind>>>;
+/// A plan being built or held (its builder), borrowed or owned, and a plan packed (its record), borrowed or owned; each read
+/// through its state repository, which must outlive it (its states' builders go back to its pool).
+template<TaskKind Kind>
+using PlanBuilder = urd::builder<Plan<Kind>, StateRepository<Kind>>;
+template<TaskKind Kind>
+using PlanBuilderView = urd::borrowed_view<Plan<Kind>, StateRepository<Kind>, PlanBuilder<Kind>>;
+template<TaskKind Kind>
+using OwnedPlanBuilderView = urd::owning_view<Plan<Kind>, StateRepository<Kind>, PlanBuilder<Kind>>;
+template<TaskKind Kind>
+using PlanRecordView = urd::borrowed_view<Plan<Kind>, StateRepository<Kind>, urd::data<Plan<Kind>>>;
+template<TaskKind Kind>
+using OwnedPlanRecordView = urd::owning_view<Plan<Kind>, StateRepository<Kind>, urd::data<Plan<Kind>>>;
 
 template<TaskKind Kind>
 class AxiomEvaluator;
 template<TaskKind Kind>
 using AxiomEvaluatorPtr = std::shared_ptr<AxiomEvaluator<Kind>>;
 
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class Heuristic;
-template<TaskKind Kind>
-using HeuristicPtr = std::shared_ptr<Heuristic<Kind>>;
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using HeuristicPtr = std::shared_ptr<Heuristic<Kind, V>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class BlindHeuristic;
-template<TaskKind Kind>
-using BlindHeuristicPtr = std::shared_ptr<BlindHeuristic<Kind>>;
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using BlindHeuristicPtr = std::shared_ptr<BlindHeuristic<Kind, V>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class GoalCountHeuristic;
-template<TaskKind Kind>
-using GoalCountHeuristicPtr = std::shared_ptr<GoalCountHeuristic<Kind>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using GoalCountHeuristicPtr = std::shared_ptr<GoalCountHeuristic<Kind, V>>;
 template<TaskKind Kind>
 class RPGProgram;
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class AddRPGHeuristic;
-template<TaskKind Kind>
-using AddRPGHeuristicPtr = std::shared_ptr<AddRPGHeuristic<Kind>>;
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using AddRPGHeuristicPtr = std::shared_ptr<AddRPGHeuristic<Kind, V>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class FFRPGHeuristic;
-template<TaskKind Kind>
-using FFRPGHeuristicPtr = std::shared_ptr<FFRPGHeuristic<Kind>>;
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using FFRPGHeuristicPtr = std::shared_ptr<FFRPGHeuristic<Kind, V>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class MaxRPGHeuristic;
-template<TaskKind Kind>
-using MaxRPGHeuristicPtr = std::shared_ptr<MaxRPGHeuristic<Kind>>;
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using MaxRPGHeuristicPtr = std::shared_ptr<MaxRPGHeuristic<Kind, V>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class LMCutHeuristic;
-template<TaskKind Kind>
-using LMCutHeuristicPtr = std::shared_ptr<LMCutHeuristic<Kind>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using LMCutHeuristicPtr = std::shared_ptr<LMCutHeuristic<Kind, V>>;
 
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class PruningStrategy;
-template<TaskKind Kind>
-using PruningStrategyPtr = std::shared_ptr<PruningStrategy<Kind>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using PruningStrategyPtr = std::shared_ptr<PruningStrategy<Kind, V>>;
 
-template<TaskKind Kind>
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class GoalStrategy;
-template<TaskKind Kind>
-using GoalStrategyPtr = std::shared_ptr<GoalStrategy<Kind>>;
+template<TaskKind Kind, typename V = StateBuilderView<Kind>>
+using GoalStrategyPtr = std::shared_ptr<GoalStrategy<Kind, V>>;
 
-template<TaskKind Kind>
-class Plan;
-template<TaskKind Kind>
-class PackedPlan;
 
 class Statistics;
 class ProgressStatistics;

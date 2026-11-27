@@ -127,7 +127,7 @@ void check_expectation(const SiwExpectation& expectation, const SiwCase& test_ca
     if (expectation.plan)
     {
         ASSERT_TRUE(result.plan);
-        expect_plan(*expectation.plan, result.plan.value());
+        expect_plan<Kind>(*expectation.plan, result.plan.value());
     }
     if (expectation.maximum_effective_width)
     {

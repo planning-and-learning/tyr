@@ -1,0 +1,5 @@
+(define (problem schema-successors)
+  (:domain effect-validity)
+  (:objects spare - item)
+  (:init (enabled low) (enabled high) (= (value low) 1) (= (value high) 1))
+  (:goal (enabled low)))

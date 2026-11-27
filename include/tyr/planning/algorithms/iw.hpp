@@ -26,7 +26,7 @@
 #include "tyr/planning/algorithms/iw/utils.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/search_budget.hpp"
+#include "tyr/planning/algorithms/search_budget.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -42,7 +42,7 @@ struct Options
 {
     /// Optional initial node for every width subsearch; when set, it overrides the underlying BrFS option, must belong to the same task, and restarts unit
     /// depth at zero.
-    std::optional<Node<Kind>> start_node = std::nullopt;
+    std::optional<OwnedNodeRecordView<Kind>> start_node = std::nullopt;
     EventHandlerPtr<Kind> event_handler = nullptr;
     GoalStrategyPtr<Kind> goal_strategy = nullptr;
     /// State limits apply to each width subsearch; the time limit spans all widths.
@@ -64,11 +64,11 @@ struct Solver
     ygg::uint_t max_arity = MaxArity;
     Options<Kind> options {};
 
-    Node<Kind> normalize_start_node(std::optional<Node<Kind>> start_node)
+    OwnedNodeRecordView<Kind> normalize_start_node(std::optional<OwnedNodeRecordView<Kind>> start_node)
     {
         if (!start_node)
             start_node = options.start_node;
-        return brfs_solver.normalize_start_node(std::move(start_node));
+        return brfs_solver.normalize_start_node(start_node);
     }
 
     SearchResult<Kind> solve() { return find_solution(brfs_solver, max_arity, options); }

@@ -92,8 +92,9 @@ _deps
 *.out
 *.app
 
-# Benchmark data materialized by pypddl-datasets (see README)
+# Benchmark data materialized by pypddl-datasets (see README); the test fixtures are tracked
 data/
+!tests/support/data/
 
 # Non-canonical fixture previews produced by filtered generator runs
 *.generated
@@ -107,3 +108,4 @@ data/
 /experiments/**/*.tgz
 /experiments/**/*.zip
 /experiments/**/*.png
+/introduction_to_pddl.pdf

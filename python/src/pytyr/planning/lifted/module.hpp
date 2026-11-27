@@ -18,7 +18,7 @@
 #ifndef TYR_PYTHON_PLANNING_LIFTED_MODULE_HPP_
 #define TYR_PYTHON_PLANNING_LIFTED_MODULE_HPP_
 
-#include "../module.hpp"
+#include "pytyr/planning/module.hpp"
 
 #include <nanobind/nanobind.h>
 
@@ -26,12 +26,6 @@ namespace tyr::planning
 {
 
 void bind_lifted_module_definitions(nb::module_& m);
-
-/// The serialization hooks of the lifted task kind's types (pyyggdrasil.serialization), once they are bound.
-void bind_lifted_serialization();
-
-/// The lifted Datalog programs' bindings (programs.cpp).
-void bind_lifted_programs(nb::module_& m);
 
 }  // namespace tyr::planning
 

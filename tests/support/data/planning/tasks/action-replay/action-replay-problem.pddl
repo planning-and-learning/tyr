@@ -1,0 +1,5 @@
+(define (problem action-replay-problem)
+  (:domain action-replay)
+  (:init (start) (= (total-cost) 0))
+  (:goal (done))
+  (:metric minimize (total-cost)))
