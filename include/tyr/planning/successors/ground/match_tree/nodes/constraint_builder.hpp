@@ -49,7 +49,6 @@ struct builder<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, 
                            urd::field<"true_child", &builder::true_child>,
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
-
 };
 
 }  // namespace urd

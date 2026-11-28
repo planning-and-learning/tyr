@@ -54,10 +54,7 @@ struct builder<::tyr::planning::NumericStorage<Kind>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
 
-    static constexpr auto functions() noexcept
-    {
-        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">, urd::arg<"value">>> {};
-    }
+    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">, urd::arg<"value">>> {}; }
 };
 
 }  // namespace urd

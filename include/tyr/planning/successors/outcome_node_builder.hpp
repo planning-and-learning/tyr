@@ -52,9 +52,7 @@ struct builder<::tyr::planning::OutcomeNode<E, Kind>, C>
     urd::built_t<bool, C> failed = false;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"node", &builder::node>, urd::field<"probability", &builder::probability>, urd::field<"failed", &builder::failed>> {};
-    }
+    { return urd::Fields<urd::field<"node", &builder::node>, urd::field<"probability", &builder::probability>, urd::field<"failed", &builder::failed>> {}; }
 };
 }
 

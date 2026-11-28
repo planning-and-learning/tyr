@@ -105,8 +105,7 @@ struct data<::tyr::formalism::Program<T>>
                            urd::field<"rules", &data::rules, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Program<T>> key() const noexcept { return urd::key<::tyr::formalism::Program<T>>(index); }
 };

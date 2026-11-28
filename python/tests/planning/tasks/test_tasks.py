@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import gc
+
 import pytest
 from pypddl.formalism import ParserOptions
+from python.tests.planning.support.components import GRIPPER
 from pyyggdrasil.execution import ExecutionContext
+
 from pytyr import planning
 from pytyr.formalism import Parser
-from python.tests.planning.support.components import GRIPPER
 
 
 def test_planning_task_view_accessors_keep_temporary_owners_alive() -> None:

@@ -20,9 +20,9 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/tasks/task.hpp"
 
 #include <cmath>

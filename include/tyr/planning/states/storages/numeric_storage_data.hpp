@@ -20,9 +20,9 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/config.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <type_traits>
 #include <urd/elements/data.hpp>

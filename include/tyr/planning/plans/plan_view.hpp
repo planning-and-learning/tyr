@@ -80,10 +80,12 @@ public:
 
 /// A plan, as its views (borrowed or owned, of its builder or its record) write it: its actions, one per line.
 template<::tyr::TaskKind Kind, typename R>
-struct fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>, char> : ygg::without_format_spec
+struct fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>, char> :
+    ygg::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>& value,
-                                         fmt::format_context& ctx) const;
+    fmt::format_context::iterator
+    format(const urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>& value,
+           fmt::format_context& ctx) const;
 };
 
 template<::tyr::TaskKind Kind, typename R>

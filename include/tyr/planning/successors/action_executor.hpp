@@ -27,10 +27,10 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/outcome_view.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <boost/compat/function_ref.hpp>
-#include "tyr/formalism/planning/outcome_view.hpp"
 #include <cstdint>
 #include <span>
 #include <urd/elements/builder.hpp>

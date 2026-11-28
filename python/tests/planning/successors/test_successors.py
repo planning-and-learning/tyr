@@ -5,10 +5,20 @@ import gc
 from collections import Counter
 from collections.abc import Callable, Sequence
 from typing import Never, TypeVar
-import pytest
-from pytyr import formalism, planning
-from python.tests.planning.support.components import GroundNode, GroundSuccessors, LiftedNode, LiftedSuccessors, make_components_ground, make_components_lifted, make_gripper_tasks
 
+import pytest
+from python.tests.planning.support.components import (
+    GroundNode,
+    GroundSuccessors,
+    LiftedNode,
+    LiftedSuccessors,
+    interned_label,
+    make_components_ground,
+    make_components_lifted,
+    make_gripper_tasks,
+)
+
+from pytyr import formalism, planning
 
 SuccessorT = TypeVar("SuccessorT")
 
@@ -124,7 +134,7 @@ def _check_action_binding_api_ground(task: planning.ground.Task) -> None:
     assert planning.ground.get_node(state_repository, packed_binding_successor) == binding_successor
     assert planning.ground.get_node(state_repository, packed_action_successor) == binding_successor
     assert any(
-        labeled_successor.label() == binding and labeled_successor.node() == binding_successor
+        interned_label(labeled_successor) == binding and labeled_successor.node() == binding_successor
         for labeled_successor in labeled_successor_nodes
     )
 
@@ -167,7 +177,7 @@ def _check_action_binding_api_lifted(task: planning.lifted.Task) -> None:
     assert planning.lifted.get_node(state_repository, packed_binding_successor) == binding_successor
     assert planning.lifted.get_node(state_repository, packed_action_successor) == binding_successor
     assert any(
-        labeled_successor.label() == binding and labeled_successor.node() == binding_successor
+        interned_label(labeled_successor) == binding and labeled_successor.node() == binding_successor
         for labeled_successor in labeled_successor_nodes
     )
 
@@ -182,7 +192,7 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
     picked_node = next(
         successor.node()
         for successor in initial_successors
-        if successor.label().relation().original_name() == "pick"
+        if interned_label(successor).relation().original_name() == "pick"
     )
 
     for node in (initial_node, picked_node):
@@ -190,9 +200,13 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
             successor_generator, state_repository, axiom_evaluator
         ).labeled_successor_nodes(node)
         all_bindings = GroundSuccessors.applicable_action_bindings(successor_generator, node)
-        successors = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node)
+        successors = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
+            node
+        )
         packed = [successor.pack() for successor in successors]
-        packed_plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+        packed_plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(
+            state_repository
+        )
         assert [
             (step.label(), planning.ground.get_node(state_repository, record.node))
             for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
@@ -213,7 +227,7 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
             expected = {
                 successor.label(): successor.node()
                 for successor in all_successors
-                if successor.label().relation() == action
+                if interned_label(successor).relation() == action
             }
             selected = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
                 node, action=action
@@ -227,9 +241,13 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
                     node, action=action
                 )
             ) == Counter(expected.values())
-            successors = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node, action=action)
+            successors = GroundSuccessors(
+                successor_generator, state_repository, axiom_evaluator
+            ).labeled_successor_nodes(node, action=action)
             packed = [successor.pack() for successor in successors]
-            packed_plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+            packed_plan = planning.ground.deterministic.PlanBuilder(
+                start_node=node, labeled_succ_nodes=successors
+            ).view(state_repository)
             assert {
                 step.label(): planning.ground.get_node(state_repository, record.node)
                 for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
@@ -257,7 +275,7 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
     picked_node = next(
         successor.node()
         for successor in initial_successors
-        if successor.label().relation().original_name() == "pick"
+        if interned_label(successor).relation().original_name() == "pick"
     )
 
     for node in (initial_node, picked_node):
@@ -265,9 +283,13 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
             successor_generator, state_repository, axiom_evaluator
         ).labeled_successor_nodes(node)
         all_bindings = LiftedSuccessors.applicable_action_bindings(successor_generator, node)
-        successors = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node)
+        successors = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
+            node
+        )
         packed = [successor.pack() for successor in successors]
-        packed_plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+        packed_plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(
+            state_repository
+        )
         assert [
             (step.label(), planning.lifted.get_node(state_repository, record.node))
             for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
@@ -288,7 +310,7 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
             expected = {
                 successor.label(): successor.node()
                 for successor in all_successors
-                if successor.label().relation() == action
+                if interned_label(successor).relation() == action
             }
             selected = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
                 node, action=action
@@ -302,9 +324,13 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
                     node, action=action
                 )
             ) == Counter(expected.values())
-            successors = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node, action=action)
+            successors = LiftedSuccessors(
+                successor_generator, state_repository, axiom_evaluator
+            ).labeled_successor_nodes(node, action=action)
             packed = [successor.pack() for successor in successors]
-            packed_plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+            packed_plan = planning.lifted.deterministic.PlanBuilder(
+                start_node=node, labeled_succ_nodes=successors
+            ).view(state_repository)
             assert {
                 step.label(): planning.lifted.get_node(state_repository, record.node)
                 for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)

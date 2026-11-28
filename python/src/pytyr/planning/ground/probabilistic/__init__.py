@@ -1,6 +1,9 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The probabilistic environment on ground tasks. Chance draws one of a transition's outcomes (probabilistic effects): their probabilities sum to 1."""
+"""The probabilistic environment on ground tasks.
+
+Chance draws one of a transition's outcomes (probabilistic effects): their probabilities sum to 1.
+"""
 
 # Import all classes for better IDE support
 

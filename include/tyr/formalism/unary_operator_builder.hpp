@@ -40,7 +40,6 @@ struct builder<::tyr::formalism::UnaryOperator<T, O>, C>
     urd::built_t<::tyr::formalism::FunctionExpression<T>, C> operand;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"operand", &builder::operand>> {}; }
-
 };
 
 }  // namespace urd

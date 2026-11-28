@@ -47,8 +47,7 @@ public:
 
     auto has_value() const noexcept { return value() != ::tyr::formalism::FDRValue::none(); }
 
-    auto atom_index() const noexcept
-    { return has_value() ? std::make_optional(self().context()[variable().index()]->atoms[value().value - 1]) : std::nullopt; }
+    auto atom_index() const noexcept { return has_value() ? std::make_optional(self().context()[variable().index()]->atoms[value().value - 1]) : std::nullopt; }
 
     auto atom() const noexcept { return urd::resolve(atom_index(), self().context()); }
 
@@ -71,8 +70,7 @@ struct fmt::formatter<tyr::formalism::FDRFactView<tyr::formalism::FluentTag>> : 
 
 /// A fact computed on the fly (a state's), as a stored one.
 template<>
-struct fmt::formatter<urd::owning_view<tyr::formalism::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::Repository>> :
-    ygg::without_format_spec
+struct fmt::formatter<urd::owning_view<tyr::formalism::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::Repository>> : ygg::without_format_spec
 {
     fmt::format_context::iterator format(const urd::owning_view<tyr::formalism::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::Repository>& value,
                                          fmt::format_context& context) const;

@@ -1,6 +1,9 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The general environment on lifted tasks. An adversary picks a distribution, chance draws an outcome from it (oneof and probabilistic effects, in any nesting)."""
+"""The general environment on lifted tasks.
+
+An adversary picks a distribution, chance draws an outcome from it (oneof and probabilistic effects, in any nesting).
+"""
 
 # Import all classes for better IDE support
 

@@ -37,19 +37,10 @@
 
 namespace tyr::formalism::detail
 {
-/// The repository a view of a record (index_view, borrowed_view, ...: a view of T through C) reads through.
-template<typename V>
-struct ViewContext;
-
-template<template<typename, typename, typename...> class View, typename T, typename C, typename... Rest>
-struct ViewContext<View<T, C, Rest...>>
-{
-    using type = C;
-};
-
-/// A predicate of kind F through the repository a view V reads through.
+/// A predicate of kind F through the repository a view V reads through (urd::view_context_t: of any view, a child
+/// view too).
 template<typename V, typename F>
-using PredicateViewOf = urd::index_view<Predicate<F>, typename ViewContext<V>::type>;
+using PredicateViewOf = urd::index_view<Predicate<F>, urd::view_context_t<V>>;
 }  // namespace tyr::formalism::detail
 
 namespace urd
@@ -83,8 +74,7 @@ public:
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::negative_facts>(); }
 
-    auto numeric_constraints() const noexcept(std::same_as<T, ::tyr::GroundTag>)
-    { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
+    auto numeric_constraints() const noexcept(std::same_as<T, ::tyr::GroundTag>) { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>

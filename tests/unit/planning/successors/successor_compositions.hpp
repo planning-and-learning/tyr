@@ -162,10 +162,10 @@ planning::NodeBuilder<Kind> successor_builder(planning::SuccessorGenerator<Kind>
 
 template<TaskKind Kind, typename Binding, typename Storage>
 planning::OwnedNodeBuilderView<Kind> get_successor_node(planning::SuccessorGenerator<Kind>& generator,
-                                             const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                             Binding binding,
-                                             Storage& storage,
-                                             planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                        const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                        Binding binding,
+                                                        Storage& storage,
+                                                        planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     validate_storage(generator, storage, axiom_evaluator);
     validate_binding(generator, binding);
@@ -176,10 +176,10 @@ planning::OwnedNodeBuilderView<Kind> get_successor_node(planning::SuccessorGener
 /// Like get_successor_node, labeled by `binding`, interned.
 template<TaskKind Kind, typename Binding, typename Storage>
 planning::OwnedLabeledNodeBuilderView<Kind> get_labeled_successor_node(planning::SuccessorGenerator<Kind>& generator,
-                                                            const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                                            Binding binding,
-                                                            Storage& storage,
-                                                            planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                                       const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                                       Binding binding,
+                                                                       Storage& storage,
+                                                                       planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     validate_storage(generator, storage, axiom_evaluator);
     validate_binding(generator, binding);
@@ -198,10 +198,10 @@ planning::OwnedLabeledNodeBuilderView<Kind> get_labeled_successor_node(planning:
 
 template<TaskKind Kind, typename Binding>
 planning::OwnedNodeRecordView<Kind> get_packed_successor_node(planning::SuccessorGenerator<Kind>& generator,
-                                                     const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                                     Binding binding,
-                                                     planning::StateRepository<Kind>& repository,
-                                                     planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                              const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                              Binding binding,
+                                                              planning::StateRepository<Kind>& repository,
+                                                              planning::AxiomEvaluator<Kind>& axiom_evaluator)
 { return planning::OwnedNodeRecordView<Kind>(get_successor_node(generator, node, binding, repository, axiom_evaluator).pack(), &repository); }
 
 /// Calls `callback` with the successor (an OwnedNodeBuilderView) of each applicable binding `filter` reports.
@@ -221,8 +221,8 @@ bool for_each_successor_node(planning::SuccessorGenerator<Kind>& generator,
         filter,
         [&](planning::ActionBindingView<Kind> binding)
         {
-            return callback(
-                planning::OwnedNodeBuilderView<Kind>(successor_builder(generator, node, binding, storage, axiom_evaluator, delta), &repository_of<Kind>(storage)));
+            return callback(planning::OwnedNodeBuilderView<Kind>(successor_builder(generator, node, binding, storage, axiom_evaluator, delta),
+                                                                 &repository_of<Kind>(storage)));
         });
 }
 
@@ -272,10 +272,10 @@ void get_successor_nodes(planning::SuccessorGenerator<Kind>& generator,
 
 template<TaskKind Kind, typename Storage>
 OwnedNodeBuilderViewList<Kind> get_successor_nodes(planning::SuccessorGenerator<Kind>& generator,
-                                     const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                     const planning::ActionBindingFilter<Kind>& filter,
-                                     Storage& storage,
-                                     planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                   const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                   const planning::ActionBindingFilter<Kind>& filter,
+                                                   Storage& storage,
+                                                   planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto result = OwnedNodeBuilderViewList<Kind> {};
     get_successor_nodes(generator, node, filter, storage, axiom_evaluator, result);
@@ -305,10 +305,10 @@ void get_labeled_successor_nodes(planning::SuccessorGenerator<Kind>& generator,
 
 template<TaskKind Kind, typename Storage>
 OwnedLabeledNodeBuilderViewList<Kind> get_labeled_successor_nodes(planning::SuccessorGenerator<Kind>& generator,
-                                                    const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                                    const planning::ActionBindingFilter<Kind>& filter,
-                                                    Storage& storage,
-                                                    planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                                  const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                                  const planning::ActionBindingFilter<Kind>& filter,
+                                                                  Storage& storage,
+                                                                  planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto result = OwnedLabeledNodeBuilderViewList<Kind> {};
     get_labeled_successor_nodes(generator, node, filter, storage, axiom_evaluator, result);
@@ -317,10 +317,10 @@ OwnedLabeledNodeBuilderViewList<Kind> get_labeled_successor_nodes(planning::Succ
 
 template<TaskKind Kind>
 OwnedNodeRecordViewList<Kind> get_packed_successor_nodes(planning::SuccessorGenerator<Kind>& generator,
-                                             const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                             const planning::ActionBindingFilter<Kind>& filter,
-                                             planning::StateRepository<Kind>& repository,
-                                             planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                         const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                         const planning::ActionBindingFilter<Kind>& filter,
+                                                         planning::StateRepository<Kind>& repository,
+                                                         planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto result = OwnedNodeRecordViewList<Kind> {};
     for_each_successor_node(generator,
@@ -338,10 +338,10 @@ OwnedNodeRecordViewList<Kind> get_packed_successor_nodes(planning::SuccessorGene
 
 template<TaskKind Kind>
 OwnedLabeledNodeRecordViewList<Kind> get_packed_labeled_successor_nodes(planning::SuccessorGenerator<Kind>& generator,
-                                                            const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
-                                                            const planning::ActionBindingFilter<Kind>& filter,
-                                                            planning::StateRepository<Kind>& repository,
-                                                            planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                                        const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                                        const planning::ActionBindingFilter<Kind>& filter,
+                                                                        planning::StateRepository<Kind>& repository,
+                                                                        planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto result = OwnedLabeledNodeRecordViewList<Kind> {};
     for_each_labeled_successor_node(generator,
@@ -402,8 +402,9 @@ ActionBindings get_applicable_action_bindings(planning::SuccessorGenerator<Kind>
 
 /// The status of `binding` (check_action_binding), and the binding interned where it is applicable.
 template<TaskKind Kind, typename Binding>
-planning::ActionBindingResult
-try_get_applicable_action_binding(planning::SuccessorGenerator<Kind>& generator, const std::type_identity_t<planning::NodeBuilderView<Kind>>& node, Binding binding)
+planning::ActionBindingResult try_get_applicable_action_binding(planning::SuccessorGenerator<Kind>& generator,
+                                                                const std::type_identity_t<planning::NodeBuilderView<Kind>>& node,
+                                                                Binding binding)
 {
     const auto status = generator.check_action_binding(node, binding);
     if (status != planning::ActionBindingStatus::APPLICABLE)
@@ -458,15 +459,15 @@ template<TaskKind Kind>
 planning::OwnedNodeBuilderView<Kind> unpacked(const planning::OwnedNodeRecordView<Kind>& node)
 {
     return planning::OwnedNodeBuilderView<Kind>(planning::get_node(node.context(), urd::data<planning::Node<Kind>>(node.state().index(), node.metric())),
-                                     &node.context());
+                                                &node.context());
 }
 
 template<TaskKind Kind>
 planning::OwnedLabeledNodeBuilderView<Kind> unpacked(const planning::OwnedLabeledNodeRecordView<Kind>& node)
 {
     const auto packed_node = node.node();
-    const auto record = urd::data<planning::LabeledNode<Kind>>(node.label().index(),
-                                                               urd::data<planning::Node<Kind>>(packed_node.state().index(), packed_node.metric()));
+    const auto record =
+        urd::data<planning::LabeledNode<Kind>>(node.label().index(), urd::data<planning::Node<Kind>>(packed_node.state().index(), packed_node.metric()));
     return planning::OwnedLabeledNodeBuilderView<Kind>(planning::get_labeled_node(node.context(), record), &node.context());
 }
 
@@ -478,7 +479,7 @@ planning::OwnedNodeRecordView<Kind> packed(const std::type_identity_t<planning::
 /// The plan from `start` through the labeled nodes `steps` (records), unpacked from `start`'s repository.
 template<TaskKind Kind>
 planning::OwnedPlanBuilderView<planning::DeterministicTag, Kind> make_plan(const std::type_identity_t<planning::NodeBuilderView<Kind>>& start,
-                                    std::initializer_list<urd::data<planning::LabeledNode<Kind>>> steps)
+                                                                           std::initializer_list<urd::data<planning::LabeledNode<Kind>>> steps)
 {
     const auto& repository = start.context();
     auto plan = planning::PlanBuilder<planning::DeterministicTag, Kind>();

@@ -112,8 +112,7 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
                            urd::field<"timed_literals", &data::timed_literals>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::LiftedTag>>(index); }
 };
@@ -218,8 +217,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
                            urd::field<"ground_axioms", &data::ground_axioms, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::GroundTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::GroundTag>>(index); }
 };

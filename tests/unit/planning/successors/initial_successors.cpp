@@ -41,10 +41,10 @@
 #include <gtest/gtest.h>
 #include <optional>
 #include <string>
-#include <utility>
-#include <vector>
 #include <urd/elements/clone.hpp>
 #include <urd/testing/allocations.hpp>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/serialization/dictionaries.hpp>
@@ -74,12 +74,13 @@ std::vector<InitialSuccessorsCase> load_cases()
     for (const auto& value : ygg::common::as_array(ygg::common::as_object(suite, "suite"), "cases", "suite"))
     {
         const auto& object = ygg::common::as_object(value, "case");
-        auto test_case = InitialSuccessorsCase { ygg::common::as_string(object, "name", "case"),
-                                                 ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
-                                                 ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "task_file", "case")),
-                                                 std::nullopt,
-                                                 {},
-                                                 {} };
+        auto test_case =
+            InitialSuccessorsCase { ygg::common::as_string(object, "name", "case"),
+                                    ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
+                                    ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "task_file", "case")),
+                                    std::nullopt,
+                                    {},
+                                    {} };
         if (object.contains("skipped"))
             test_case.skipped = ygg::common::as_string(object, "skipped", "case");
         else
@@ -173,7 +174,8 @@ void expect_no_allocations_after_warmup(const planning::TaskPtr<Kind>& task, con
     auto axiom_evaluator = planning::AxiomEvaluator<Kind>(task, execution_context);
     auto generator = planning::SuccessorGenerator<Kind>(task, execution_context);
     const auto initial = planning::get_initial_node(*repository, axiom_evaluator);
-    const auto visit = [](const planning::TransitionLabel<Kind>& /*transition*/, planning::SuccessorBuilder<planning::GeneralTag, Kind>& /*successor*/) { return true; };
+    const auto visit = [](const planning::TransitionLabel<Kind>& /*transition*/, planning::SuccessorBuilder<planning::GeneralTag, Kind>& /*successor*/)
+    { return true; };
     const auto expand = [&] { return planning::for_each_successor<planning::GeneralTag>(generator, initial, visit); };
     ASSERT_TRUE(expand());
     ASSERT_TRUE(expand());

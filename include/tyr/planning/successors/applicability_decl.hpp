@@ -19,8 +19,8 @@
 #define TYR_PLANNING_SUCCESSORS_APPLICABILITY_DECL_HPP_
 
 #include "tyr/declarations.hpp"
-#include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/states/storages/fact_storage_view.hpp"
 #include "tyr/planning/states/storages/numeric_storage_view.hpp"
 #include "tyr/planning/states/storages/temporal_storage_view.hpp"
@@ -41,12 +41,7 @@ public:
     /// From the view of a state's builder (registered or being built): its storages, through its getters.
     template<urd::BuilderView V>
     StateContext(const Task<Kind>& task, const V& state, ygg::float_t auxiliary_value) :
-        StateContext(task,
-                     state.fact_storage(),
-                     state.atom_storage(),
-                     state.numeric_storage(),
-                     state.temporal_storage(),
-                     auxiliary_value)
+        StateContext(task, state.fact_storage(), state.atom_storage(), state.numeric_storage(), state.temporal_storage(), auxiliary_value)
     {
     }
 

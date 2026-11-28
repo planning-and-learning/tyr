@@ -24,8 +24,8 @@
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 #include "tyr/planning/states/static_state.hpp"
+#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 #include "tyr/planning/tasks/task.hpp"
 
 #include <fmt/base.h>

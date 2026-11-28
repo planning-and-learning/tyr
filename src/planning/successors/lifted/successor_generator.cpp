@@ -28,18 +28,18 @@
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/successors/action_executor.hpp"
-#include "tyr/planning/successors/applicability_lifted.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/programs/lifted/action.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/programs/lifted/action.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/action_executor.hpp"
+#include "tyr/planning/successors/applicability_lifted.hpp"
+#include "tyr/planning/successors/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/successors/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/tasks/task_utils.hpp"
 
 #include <algorithm>
@@ -141,6 +141,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
                 static_extension_workspaces.resize(rule + 1);
             return static_extension_workspaces[rule];
         }
+
         /// The effect atoms of the facts, grouped by action binding.
         EffectAtomIndex effect_atom_index;
         ActionExecutor executor;
@@ -445,8 +446,8 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node, B
         throw std::invalid_argument("SuccessorGenerator: a durative action happens at its start and its end, within a temporal network: use "
                                     "generate_successor or for_each_successor.");
     if (!action.choices().empty())
-        throw std::invalid_argument(
-            "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: no deterministic successor (an environment with an adversary or chance gives them).");
+        throw std::invalid_argument("SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: no deterministic successor (an "
+                                    "environment with an adversary or chance gives them).");
 
     require_action_facts(node, action);
     const auto auxiliary_value = evaluator.executor.apply_action_unregistered(
@@ -588,8 +589,7 @@ formalism::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fo
                     return;
                 }
                 const auto rule =
-                    *std::ranges::find_if(schema_rules,
-                                          [&](auto schema_rule) { return schema_rule.derived_heads().front().predicate() == it->second; });
+                    *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.derived_heads().front().predicate() == it->second; });
                 datalog::for_each_static_extension(*rules[static_cast<ygg::uint_t>(rule.index().value)],
                                                    std::span<const urd::index<formalism::Object>>(objects.data(), objects.size()),
                                                    m_impl->evaluator.static_extension_workspace(rule.index().value),
@@ -685,8 +685,7 @@ struct LiftedTools
         }
         const auto& rules = impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules;
         const auto schema_rules = impl->get_schema_evaluator(action).program.rules();
-        const auto rule =
-            *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.derived_heads().front().predicate() == it->second; });
+        const auto rule = *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.derived_heads().front().predicate() == it->second; });
         auto& binding = grounder.binding();
         const auto action_arity = binding.size();
         auto& evaluator = impl->evaluator;
@@ -765,8 +764,7 @@ void lifted_transition(Impl& impl,
 {
     auto& evaluator = impl.evaluator;
     auto& fdr = *impl.definition->task->get_fdr_context();
-    auto grounder =
-        formalism::GroundingContext { evaluator.workspace.planning_builder, *impl.definition->task->get_repository(), evaluator.workspace.binding };
+    auto grounder = formalism::GroundingContext { evaluator.workspace.planning_builder, *impl.definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = state_context_of(node);
     const auto time_metric = minimizes_total_time(*node.context().get_task());
     const auto views = [&](std::span<const LiftedPick> picks)
@@ -803,7 +801,8 @@ void lifted_transition(Impl& impl,
                     happening.numeric_writes.clear();
                     evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
                     auto makespan = time_metric ? node.metric() : ygg::float_t { 0 };
-                    evaluator.scheduled = !impl.definition->features.temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
+                    evaluator.scheduled =
+                        !impl.definition->features.temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,
@@ -839,8 +838,9 @@ void build_label_binding(Out& out, const StateRepository<LiftedTag>& repository,
 {
     auto& label = *out.label;
     using Row = ygg::Row<formalism::Action<LiftedTag>>;
-    auto& row = urd::builder_of(label.binding.has_value() ? *label.binding : label.binding.emplace(),
-                                [&repository]() -> urd::built_child<Row, StateRepository<LiftedTag>> { return ygg::formalism::checkout<Row>(repository.builders()); });
+    auto& row =
+        urd::builder_of(label.binding.has_value() ? *label.binding : label.binding.emplace(),
+                        [&repository]() -> urd::built_child<Row, StateRepository<LiftedTag>> { return ygg::formalism::checkout<Row>(repository.builders()); });
     urd::store(row.relation, action_of(binding));
     row.values.clear();
     for (const auto value : binding.values())
@@ -990,33 +990,24 @@ bool SuccessorGenerator<LiftedTag>::over_all_holds(const StateBuilderView<Lifted
 StateDelta& SuccessorGenerator<LiftedTag>::scratch_delta() noexcept { return m_scratch_delta; }
 
 template<NatureEnvironment E, formalism::ActionRowViewConcept Binding>
-void SuccessorGenerator<LiftedTag>::generate_successor(const Source& node,
-                                                       Binding binding,
-                                                       SuccessorBuilder<E, LiftedTag>& out)
+void SuccessorGenerator<LiftedTag>::generate_successor(const Source& node, Binding binding, SuccessorBuilder<E, LiftedTag>& out)
 {
     validate_task(m_impl->definition->task, node);
     lifted_action_transition(*m_impl, node, binding, building(node), out);
 }
 
 template<NatureEnvironment E>
-void SuccessorGenerator<LiftedTag>::generate_end_successor(const Source& node,
-                                                           std::uint32_t open,
-                                                           SuccessorBuilder<E, LiftedTag>& out)
+void SuccessorGenerator<LiftedTag>::generate_end_successor(const Source& node, std::uint32_t open, SuccessorBuilder<E, LiftedTag>& out)
 {
     validate_task(m_impl->definition->task, node);
     lifted_end_transition(*m_impl, node, open, building(node), out);
 }
 
 template<NatureEnvironment E>
-void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor(const Source& node,
-                                                                     SuccessorBuilder<E, LiftedTag>& out)
+void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor(const Source& node, SuccessorBuilder<E, LiftedTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    timed_literal_transition(
-        m_impl->evaluator,
-        node,
-        building(node),
-        out);
+    timed_literal_transition(m_impl->evaluator, node, building(node), out);
 }
 
 template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Source& node, formalism::ActionRowView binding);
@@ -1026,38 +1017,39 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Source& node, form
 template ygg::float_t
 SuccessorGenerator<LiftedTag>::generate_successor_state(const Source& node, formalism::ActionRowBuilderView binding, Builder& out_state, StateDelta& out_delta);
 
-template void SuccessorGenerator<LiftedTag>::generate_successor<NondeterministicTag, formalism::ActionRowView>(const Source& node,
-                                                              formalism::ActionRowView binding,
-                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
-template void SuccessorGenerator<LiftedTag>::generate_successor<NondeterministicTag, formalism::ActionRowBuilderView>(const Source& node,
-                                                              formalism::ActionRowBuilderView binding,
-                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+template void
+SuccessorGenerator<LiftedTag>::generate_successor<NondeterministicTag, formalism::ActionRowView>(const Source& node,
+                                                                                                 formalism::ActionRowView binding,
+                                                                                                 SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+template void
+SuccessorGenerator<LiftedTag>::generate_successor<NondeterministicTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                                                                        formalism::ActionRowBuilderView binding,
+                                                                                                        SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_end_successor<NondeterministicTag>(const Source& node,
-                                                              std::uint32_t open,
-                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+                                                                                         std::uint32_t open,
+                                                                                         SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<NondeterministicTag>(const Source& node,
-                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+                                                                                                   SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_successor<ProbabilisticTag, formalism::ActionRowView>(const Source& node,
-                                                              formalism::ActionRowView binding,
-                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
-template void SuccessorGenerator<LiftedTag>::generate_successor<ProbabilisticTag, formalism::ActionRowBuilderView>(const Source& node,
-                                                              formalism::ActionRowBuilderView binding,
-                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+                                                                                                            formalism::ActionRowView binding,
+                                                                                                            SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+template void
+SuccessorGenerator<LiftedTag>::generate_successor<ProbabilisticTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                                                                     formalism::ActionRowBuilderView binding,
+                                                                                                     SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_end_successor<ProbabilisticTag>(const Source& node,
-                                                              std::uint32_t open,
-                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+                                                                                      std::uint32_t open,
+                                                                                      SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<ProbabilisticTag>(const Source& node,
-                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+                                                                                                SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_successor<GeneralTag, formalism::ActionRowView>(const Source& node,
-                                                              formalism::ActionRowView binding,
-                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
+                                                                                                      formalism::ActionRowView binding,
+                                                                                                      SuccessorBuilder<GeneralTag, LiftedTag>& out);
 template void SuccessorGenerator<LiftedTag>::generate_successor<GeneralTag, formalism::ActionRowBuilderView>(const Source& node,
-                                                              formalism::ActionRowBuilderView binding,
-                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
-template void SuccessorGenerator<LiftedTag>::generate_end_successor<GeneralTag>(const Source& node,
-                                                              std::uint32_t open,
-                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
-template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<GeneralTag>(const Source& node,
-                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
+                                                                                                             formalism::ActionRowBuilderView binding,
+                                                                                                             SuccessorBuilder<GeneralTag, LiftedTag>& out);
+template void
+SuccessorGenerator<LiftedTag>::generate_end_successor<GeneralTag>(const Source& node, std::uint32_t open, SuccessorBuilder<GeneralTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<GeneralTag>(const Source& node, SuccessorBuilder<GeneralTag, LiftedTag>& out);
 
 }

@@ -20,6 +20,7 @@
 
 #include "pytyr/formalism/conversions.hpp"
 #include "pytyr/planning/module.hpp"
+
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/pair.h>
@@ -42,10 +43,6 @@ namespace tyr::planning
 {
 
 /// The state records and their storages (S4): records, builders and views.
-/// The serialization hooks of a task kind's state views (serialization.cpp: its own source, instantiated per kind).
-template<TaskKind Kind>
-void bind_state_serialization();
-
 template<TaskKind Kind>
 void bind_states(nb::module_& m)
 {
@@ -85,7 +82,8 @@ void bind_state_repository(nb::module_& m, const std::string& name)
         .def("layer", &T::layer)
         .def(
             "get_initial_state",
-            [](T& self, AxiomEvaluator<Kind>& axiom_evaluator) { return ::tyr::planning::share(self, ::tyr::planning::get_initial_state(self, axiom_evaluator)); },
+            [](T& self, AxiomEvaluator<Kind>& axiom_evaluator)
+            { return ::tyr::planning::share(self, ::tyr::planning::get_initial_state(self, axiom_evaluator)); },
             "axiom_evaluator"_a)
         .def(
             "get_state_builder",
@@ -93,7 +91,8 @@ void bind_state_repository(nb::module_& m, const std::string& name)
             "A builder of a state of this repository, emptied: what a successor is written into.")
         .def(
             "get_registered_state",
-            [](const T& self, urd::index<State<Kind>> state_index) { return ::tyr::planning::share(self, ::tyr::planning::get_registered_state(self, state_index)); },
+            [](const T& self, urd::index<State<Kind>> state_index)
+            { return ::tyr::planning::share(self, ::tyr::planning::get_registered_state(self, state_index)); },
             "state_index"_a)
         .def("is_concurrent", &T::is_concurrent)
         .def("num_states", [](const T& self) { return ::tyr::planning::num_states(self); })

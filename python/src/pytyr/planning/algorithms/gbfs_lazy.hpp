@@ -111,7 +111,11 @@ void bind_event_handler(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
         .def(nb::init<>())
-        .def("on_start_search", &T::on_start_search, "node"_a, "h_value"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (node.pack()).")
+        .def("on_start_search",
+             &T::on_start_search,
+             "node"_a,
+             "h_value"_a,
+             "A search calls it with views it owns, valid during the call: keep one by copying it (node.pack()).")
         .def("on_new_best_h_value", &T::on_new_best_h_value, "h_value"_a)
         .def("on_end_search", &T::on_end_search, "status"_a, "statistics"_a)
         .def("on_solved", &T::on_solved, "plan"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (plan.pack()).");

@@ -3,9 +3,9 @@
 
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
+
 from pytyr import planning
 from pytyr.formalism import Parser
-
 
 Node = planning.lifted.OwnedNodeBuilderView | planning.lifted.NodeBuilderView
 

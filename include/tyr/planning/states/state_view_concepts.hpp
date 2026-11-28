@@ -96,32 +96,32 @@ concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs
 /// they are defined (src/planning/state.cpp).
 template<typename T, typename Kind>
 concept StateBuilderViewConcept = TaskKind<Kind> && urd::Identifiable<std::remove_cvref_t<T>>
-                           && requires(const std::remove_reference_t<T>& state,
-                                       urd::index<formalism::FDRVariable<formalism::FluentTag>> variable,
-                                       urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
-                                       urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
-                                       urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> static_atom,
-                                       urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
-                                       formalism::FDRVariableView<formalism::FluentTag> variable_view,
-                                       formalism::FunctionTermView<GroundTag, formalism::StaticTag> static_fterm_view,
-                                       formalism::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
-                                       formalism::AtomView<GroundTag, formalism::StaticTag> static_atom_view,
-                                       formalism::AtomView<GroundTag, formalism::FluentTag> fluent_atom_view,
-                                       formalism::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view) {
-                                  { state.context() } -> std::same_as<const StateRepository<Kind>&>;
-                                  { state.formalism_repository() } -> std::same_as<const formalism::RepositoryPtr&>;
-                                  { state.value(variable) } -> std::same_as<formalism::FDRValue>;
-                                  { state.value(static_fterm) } -> std::same_as<ygg::float_t>;
-                                  { state.value(fluent_fterm) } -> std::same_as<ygg::float_t>;
-                                  { state.test(static_atom) } -> std::same_as<bool>;
-                                  { state.test(derived_atom) } -> std::same_as<bool>;
-                                  { state.value(variable_view) } -> std::same_as<formalism::FDRValue>;
-                                  { state.value(static_fterm_view) } -> std::same_as<ygg::float_t>;
-                                  { state.value(fluent_fterm_view) } -> std::same_as<ygg::float_t>;
-                                  { state.test(static_atom_view) } -> std::same_as<bool>;
-                                  { state.test(fluent_atom_view) } -> std::same_as<bool>;
-                                  { state.test(derived_atom_view) } -> std::same_as<bool>;
-                              };
+                                  && requires(const std::remove_reference_t<T>& state,
+                                              urd::index<formalism::FDRVariable<formalism::FluentTag>> variable,
+                                              urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
+                                              urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
+                                              urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> static_atom,
+                                              urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
+                                              formalism::FDRVariableView<formalism::FluentTag> variable_view,
+                                              formalism::FunctionTermView<GroundTag, formalism::StaticTag> static_fterm_view,
+                                              formalism::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
+                                              formalism::AtomView<GroundTag, formalism::StaticTag> static_atom_view,
+                                              formalism::AtomView<GroundTag, formalism::FluentTag> fluent_atom_view,
+                                              formalism::AtomView<GroundTag, formalism::DerivedTag> derived_atom_view) {
+                                         { state.context() } -> std::same_as<const StateRepository<Kind>&>;
+                                         { state.formalism_repository() } -> std::same_as<const formalism::RepositoryPtr&>;
+                                         { state.value(variable) } -> std::same_as<formalism::FDRValue>;
+                                         { state.value(static_fterm) } -> std::same_as<ygg::float_t>;
+                                         { state.value(fluent_fterm) } -> std::same_as<ygg::float_t>;
+                                         { state.test(static_atom) } -> std::same_as<bool>;
+                                         { state.test(derived_atom) } -> std::same_as<bool>;
+                                         { state.value(variable_view) } -> std::same_as<formalism::FDRValue>;
+                                         { state.value(static_fterm_view) } -> std::same_as<ygg::float_t>;
+                                         { state.value(fluent_fterm_view) } -> std::same_as<ygg::float_t>;
+                                         { state.test(static_atom_view) } -> std::same_as<bool>;
+                                         { state.test(fluent_atom_view) } -> std::same_as<bool>;
+                                         { state.test(derived_atom_view) } -> std::same_as<bool>;
+                                     };
 
 }
 

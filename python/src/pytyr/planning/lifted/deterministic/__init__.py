@@ -1,6 +1,9 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The deterministic environment on lifted tasks. One successor state per transition: what nature does not touch. Its plans are sequences of labeled nodes."""
+"""The deterministic environment on lifted tasks.
+
+One successor state per transition: what nature does not touch. Its plans are sequences of labeled nodes.
+"""
 
 # Import all classes for better IDE support
 

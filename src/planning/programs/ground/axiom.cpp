@@ -60,9 +60,10 @@ namespace tyr::planning
 namespace
 {
 /// The literal of a fact of an axiom's condition: an FDR fact of a condition names an atom.
-formalism::LiteralView<GroundTag, formalism::FluentTag> create_condition_literal(formalism::FDRFactView<formalism::FluentTag> fact,
-                                                                                 bool polarity,
-                                                                                 formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
+formalism::LiteralView<GroundTag, formalism::FluentTag>
+create_condition_literal(formalism::FDRFactView<formalism::FluentTag> fact,
+                         bool polarity,
+                         formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
     const auto literal = create_fact_literal(fact, polarity, context);
     if (!literal)

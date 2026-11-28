@@ -55,7 +55,8 @@ struct builder<::tyr::planning::Successor<::tyr::planning::GeneralTag, Kind>, C>
     urd::built_only_t<urd::index<::tyr::planning::Transition>, C> label = urd::make_owned<urd::builder<::tyr::planning::Transition, C>>();
     urd::built_only_t<urd::flat_vector<urd::index<::tyr::planning::Distribution<Kind>>>, C> distributions;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &builder::label>, urd::field<"distributions", &builder::distributions>> {}; }
+    static constexpr auto fields() noexcept
+    { return urd::Fields<urd::field<"label", &builder::label>, urd::field<"distributions", &builder::distributions>> {}; }
 };
 }
 

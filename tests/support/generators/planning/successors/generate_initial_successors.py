@@ -1,14 +1,16 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Regenerate the initial successors fixture: for each test task of the five suites (classical, numeric, nondeterministic,
-probabilistic, temporal), the successors of its initial node as the generator writes them (for_each_successor), lifted and
-ground each, serialized by
-yggdrasil's dictionaries in the generator's order (it is deterministic): each successor a reference into the tables, and
-the tables (the same as tests/unit/planning/successors/initial_successor_tables.hpp registers). A task tyr does not parse
-yet is skipped with the parser's reason; a slow task (SLOW) is left out.
+"""Regenerate the initial successors fixture.
 
-Run from the repository root: python -m tests.support.generators.planning.successors.generate_initial_successors [name...]
+For each test task of the five suites (classical, numeric, nondeterministic, probabilistic, temporal), the successors
+of its initial node as the generator writes them (for_each_successor), lifted and ground each, serialized by
+yggdrasil's dictionaries in the generator's order (it is deterministic): each successor a reference into the tables,
+and the tables (the same as tests/unit/planning/successors/initial_successor_tables.hpp registers). A task tyr does
+not parse yet is skipped with the parser's reason; a slow task (SLOW) is left out.
+
+Run from the repository root:
+    python -m tests.support.generators.planning.successors.generate_initial_successors [name...]
 """
 
 from __future__ import annotations
@@ -25,7 +27,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 from pyyggdrasil.serialization import Dictionaries
 
-import pytyr.formalism as formalism
+from pytyr import formalism
 from pytyr.planning import ground, lifted
 
 ROOT = Path(__file__).resolve().parents[5]
@@ -74,9 +76,12 @@ def serialized_initial_successors(module: ModuleType, task: ground.Task | lifted
     dictionaries = Dictionaries()
     register_tables(module, dictionaries)
     # The generator's successors (builders), their states closed under the axioms and none registered, each kept.
-    successors = []
+    successors: list[ground.general.OwnedSuccessorBuilderView | lifted.general.OwnedSuccessorBuilderView] = []
 
-    def keep(transition: Any, successor: Any) -> bool:
+    def keep(
+        _transition: ground.TransitionLabel | lifted.TransitionLabel,
+        successor: ground.general.SuccessorBuilderView | lifted.general.SuccessorBuilderView,
+    ) -> bool:
         # The axiom step, without interning: a transition whose outcomes all fail there is not applicable.
         extended = module.general.extend_outcomes(generator, evaluator, successor)
         if extended is not None:
@@ -97,21 +102,28 @@ def generate_case(suite: str, domain_dir: Path) -> dict[str, object]:
     }
     options = ParserOptions()
     try:
-        formalism_task = formalism.Parser(str(domain_dir / "domain.pddl"), options).parse_task(str(domain_dir / "test-1.pddl"), options)
+        formalism_task = formalism.Parser(str(domain_dir / "domain.pddl"), options).parse_task(
+            str(domain_dir / "test-1.pddl"), options
+        )
     except ValueError as error:
         case["skipped"] = str(error)
         return case
     task = lifted.Task(formalism_task)
-    ground_task = task.instantiate_ground_task(ExecutionContext(1)).task
-    if ground_task is None:
-        raise RuntimeError(f"{case['name']}: the ground task is unsolvable, it has no initial successors")
-    return {**case, "lifted": serialized_initial_successors(lifted, task), "ground": serialized_initial_successors(ground, ground_task)}
+    result = task.instantiate_ground_task(ExecutionContext(1))
+    if result.status != lifted.GroundTaskInstantiationStatus.SUCCESS:
+        message = f"{case['name']}: the ground task is unsolvable, it has no initial successors"
+        raise RuntimeError(message)
+    return {
+        **case,
+        "lifted": serialized_initial_successors(lifted, task),
+        "ground": serialized_initial_successors(ground, result.task),
+    }
 
 
 def main() -> None:
     filters = set(sys.argv[1:])
     root = pypddl_datasets.data_root()
-    cases = []
+    cases: list[dict[str, object]] = []
     for suite in SUITES:
         for domain_dir in sorted((root / suite / "tests").iterdir()):
             name = f"{suite}/{domain_dir.name}"

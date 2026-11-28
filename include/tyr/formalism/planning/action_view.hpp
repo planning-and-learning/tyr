@@ -23,10 +23,10 @@
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/choice_effect_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/temporal_part_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 

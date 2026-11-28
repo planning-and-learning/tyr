@@ -60,7 +60,9 @@ public:
     explicit AxiomEvaluatorProgram(const formalism::PlanningTask<Kind>& task);
 
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
+
     [[nodiscard]] const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
+
     [[nodiscard]] const datalog::ConstProgramWorkspace<Kind>& get_const_program_workspace() const noexcept
     { return m_datalog_program.get_const_program_workspace(); }
 

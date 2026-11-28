@@ -1,14 +1,15 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import ModuleType
+
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
+
 from pytyr import formalism, planning
 from pytyr.formalism import Parser
-
 
 GroundNode = planning.ground.OwnedNodeBuilderView | planning.ground.NodeBuilderView
 
@@ -23,6 +24,13 @@ LiftedLabeledNode = planning.lifted.OwnedLabeledNodeBuilderView | planning.lifte
 
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
+
+
+def interned_label(labeled: GroundLabeledNode | LiftedLabeledNode) -> formalism.RowActionLifted:
+    """A labeled node's label where it is interned: a registered node's, a plan step's."""
+    label = labeled.label()
+    assert isinstance(label, formalism.RowActionLifted)
+    return label
 
 
 class GroundSuccessors:
@@ -72,7 +80,7 @@ class GroundSuccessors:
         """Visit node's successors until callback returns False."""
 
         def visit(
-            transition: planning.ground.TransitionLabel, successor_state: planning.ground.SuccessorState
+            _transition: planning.ground.TransitionLabel, successor_state: planning.ground.SuccessorState
         ) -> bool:
             return callback(self.register(node, successor_state))
 
@@ -86,14 +94,11 @@ class GroundSuccessors:
     ) -> bool:
         """Visit node's successors labeled by their interned bindings until callback returns False."""
 
-        def visit(
-            transition: planning.ground.TransitionLabel, successor_state: planning.ground.SuccessorState
-        ) -> bool:
+        def visit(transition: planning.ground.TransitionLabel, successor_state: planning.ground.SuccessorState) -> bool:
+            assert transition.binding is not None
             binding = planning.ground.intern_action_binding(self.generator, transition.binding)
             successor = self.register(node, successor_state)
-            return callback(
-                planning.ground.LabeledNodeBuilder(label=binding, node=successor).view(self.repository)
-            )
+            return callback(planning.ground.LabeledNodeBuilder(label=binding, node=successor).view(self.repository))
 
         return planning.ground.deterministic.for_each_successor(self.generator, node, visit, action=action)
 
@@ -121,12 +126,14 @@ class GroundSuccessors:
         result: list[formalism.RowActionLifted] = []
 
         # Labels only: arrange sees every transition's label and has none generated.
-        def collect(labels: list[planning.ground.TransitionLabel]) -> list[int]:
-            result.extend(planning.ground.intern_action_binding(generator, label.binding) for label in labels)
+        def collect(labels: Sequence[planning.ground.TransitionLabel]) -> list[int]:
+            for label in labels:
+                assert label.binding is not None
+                result.append(planning.ground.intern_action_binding(generator, label.binding))
             return []
 
         planning.ground.deterministic.for_each_successor(
-            generator, node, lambda transition, successor_state: True, action=action, arrange=collect
+            generator, node, lambda _transition, _successor_state: True, action=action, arrange=collect
         )
         return result
 
@@ -180,7 +187,7 @@ class LiftedSuccessors:
         """Visit node's successors until callback returns False."""
 
         def visit(
-            transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState
+            _transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState
         ) -> bool:
             return callback(self.register(node, successor_state))
 
@@ -194,14 +201,11 @@ class LiftedSuccessors:
     ) -> bool:
         """Visit node's successors labeled by their interned bindings until callback returns False."""
 
-        def visit(
-            transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState
-        ) -> bool:
+        def visit(transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState) -> bool:
+            assert transition.binding is not None
             binding = planning.lifted.intern_action_binding(self.generator, transition.binding)
             successor = self.register(node, successor_state)
-            return callback(
-                planning.lifted.LabeledNodeBuilder(label=binding, node=successor).view(self.repository)
-            )
+            return callback(planning.lifted.LabeledNodeBuilder(label=binding, node=successor).view(self.repository))
 
         return planning.lifted.deterministic.for_each_successor(self.generator, node, visit, action=action)
 
@@ -229,12 +233,14 @@ class LiftedSuccessors:
         result: list[formalism.RowActionLifted] = []
 
         # Labels only: arrange sees every transition's label and has none generated.
-        def collect(labels: list[planning.lifted.TransitionLabel]) -> list[int]:
-            result.extend(planning.lifted.intern_action_binding(generator, label.binding) for label in labels)
+        def collect(labels: Sequence[planning.lifted.TransitionLabel]) -> list[int]:
+            for label in labels:
+                assert label.binding is not None
+                result.append(planning.lifted.intern_action_binding(generator, label.binding))
             return []
 
         planning.lifted.deterministic.for_each_successor(
-            generator, node, lambda transition, successor_state: True, action=action, arrange=collect
+            generator, node, lambda _transition, _successor_state: True, action=action, arrange=collect
         )
         return result
 

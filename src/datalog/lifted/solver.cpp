@@ -282,10 +282,7 @@ private:
         auto& applicability_cache = out.applicability_cache();
 
         const auto statically_applicable = [&]()
-        {
-            return applicability_cache.static_nullary
-                   && is_applicable(conflicting_condition.template literals<formalism::StaticTag>(), applicability_context);
-        };
+        { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template literals<formalism::StaticTag>(), applicability_context); };
         const auto dynamically_applicable = [&]()
         {
             if (!applicability_cache.dynamic_nullary)
@@ -449,10 +446,7 @@ private:
         auto& applicability_cache = out.applicability_cache();
 
         const auto statically_applicable = [&]()
-        {
-            return applicability_cache.static_nullary
-                   && is_applicable(conflicting_condition.template literals<formalism::StaticTag>(), applicability_context);
-        };
+        { return applicability_cache.static_nullary && is_applicable(conflicting_condition.template literals<formalism::StaticTag>(), applicability_context); };
 
         if (!statically_applicable())
         {

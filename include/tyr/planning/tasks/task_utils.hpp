@@ -25,10 +25,10 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/programs/state_inputs.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/tasks/task.hpp"
 
 #include <concepts>
@@ -127,7 +127,12 @@ void read_derived_atoms_from_fact_set(urd::builder<State<GroundTag>, StateReposi
     const auto& fact_sets = workspace.facts.fact_sets.template get<formalism::DerivedTag>();
     for (ygg::uint_t i = 0; i < fact_sets.predicate.size(); ++i)
         for (const auto row : datalog::rows(fact_sets, i))
-            state.set(find_ground_atom(row, repository).value());
+        {
+            const auto atom = find_ground_atom(row, repository);
+            if (!atom.has_value())
+                throw std::logic_error("read_derived_atoms_from_fact_set: a derived row's atom is in the task's repository.");
+            state.set(*atom);
+        }
 }
 
 /// Sets the derived atoms of the task's derived predicates (the first `num_task_derived_predicates`) the program

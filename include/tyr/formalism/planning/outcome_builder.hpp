@@ -42,7 +42,6 @@ struct builder<::tyr::formalism::Outcome<T>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::ChoiceEffect<T>>>, C> choices;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"effects", &builder::effects>, urd::field<"choices", &builder::choices>> {}; }
-
 };
 
 }  // namespace urd

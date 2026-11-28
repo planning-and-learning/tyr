@@ -18,6 +18,7 @@
 #define TYR_PYTHON_PLANNING_SUCCESSORS_SUCCESSORS_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <concepts>
 #include <nanobind/nanobind.h>
 #include <tyr/planning/declarations.hpp>
@@ -29,15 +30,7 @@ namespace tyr::planning
 {
 
 /// A transition's label as records (S4): its builder and views (its record is bound once, for both kinds), alike in every
-/// environment. The serialization hooks of a task kind's label views (serialization.cpp: its own source, instantiated
-/// per kind).
-template<TaskKind Kind>
-void bind_successor_serialization();
-
-/// The serialization hooks of a task kind's successor views of environment E and its parts' builder views.
-template<NatureEnvironment E, TaskKind Kind>
-void bind_environment_successor_serialization();
-
+/// environment.
 template<TaskKind Kind>
 void bind_successors(nb::module_& m)
 {

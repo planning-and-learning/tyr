@@ -18,9 +18,9 @@
 #ifndef TYR_PLANNING_SUCCESSORS_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_SUCCESSORS_SUCCESSOR_GENERATOR_HPP_
 
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
 
 #include <concepts>

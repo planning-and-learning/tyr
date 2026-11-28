@@ -41,7 +41,6 @@ struct builder<::tyr::formalism::Literal<T, F>, C>
     urd::built_t<bool, C> polarity = false;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atom", &builder::atom>, urd::field<"polarity", &builder::polarity>> {}; }
-
 };
 
 }  // namespace urd

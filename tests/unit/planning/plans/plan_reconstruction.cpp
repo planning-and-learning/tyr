@@ -27,32 +27,32 @@
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/algorithms/iw.hpp"
 #include "tyr/planning/algorithms/iw/event_handler.hpp"
+#include "tyr/planning/algorithms/search_space/parallel.hpp"
+#include "tyr/planning/algorithms/search_space/sequential.hpp"
 #include "tyr/planning/algorithms/siw.hpp"
 #include "tyr/planning/algorithms/siw/event_handler.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 #include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
-#include "tyr/planning/algorithms/search_space/parallel.hpp"
-#include "tyr/planning/algorithms/search_space/sequential.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/state_repository.hpp"
-#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
-#include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
-#include "tyr/planning/successors/successors.hpp"
 #include "tyr/planning/states/worker_state_index.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 
 #include <array>
 #include <atomic>
@@ -350,7 +350,8 @@ public:
     {
     }
 
-    void on_expand_node(const std::type_identity_t<tyr::planning::NodeBuilderView<Kind>>& node) override { m_guard->access(m_worker, tyr::tests::built_state(node)); }
+    void on_expand_node(const std::type_identity_t<tyr::planning::NodeBuilderView<Kind>>& node) override
+    { m_guard->access(m_worker, tyr::tests::built_state(node)); }
 
     void on_generate_transition(const std::type_identity_t<tyr::planning::NodeBuilderView<Kind>>& source,
                                 tyr::planning::ActionBindingView<Kind>,
@@ -558,8 +559,8 @@ SearchNode& get_or_create_search_node(ygg::uint_t index, urd::Store<urd::sequenc
 
 template<TaskKind Kind>
 tyr::planning::SharedStateBuilderView<Kind> copy_state(const std::type_identity_t<tyr::planning::StateBuilderView<Kind>>& source,
-                                                tyr::planning::StateRepository<Kind>& destination,
-                                                tyr::planning::AxiomEvaluator<Kind>& axiom_evaluator)
+                                                       tyr::planning::StateRepository<Kind>& destination,
+                                                       tyr::planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto builder = ::tyr::planning::get_state_builder(destination);
     builder->assign_unextended_part(source);
@@ -594,7 +595,9 @@ void expect_action_sequence_replay(const tyr::planning::TaskPtr<Kind>& task)
         retained_repository = repository;
         const auto initial = tyr::tests::owned_initial_node(*repository, *axioms).pack();
         const auto start = urd::data<tyr::planning::Node<Kind>>(initial.state, 11);
-        const auto empty = tyr::planning::OwnedPlanBuilderView<tyr::planning::DeterministicTag, Kind>(tyr::planning::replay_plan<Kind>(start, {}, *generator, *repository, *axioms), repository.get());
+        const auto empty = tyr::planning::OwnedPlanBuilderView<tyr::planning::DeterministicTag, Kind>(
+            tyr::planning::replay_plan<Kind>(start, {}, *generator, *repository, *axioms),
+            repository.get());
         EXPECT_TRUE(empty.empty());
         EXPECT_TRUE(urd::EqualTo<> {}(empty.start_node().pack(), start));
         EXPECT_EQ(empty.length(), 0);
@@ -647,18 +650,20 @@ void expect_sequential_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
     auto search_nodes = urd::Store<urd::sequence<SequentialSearchNode<Kind>>, urd::stable_refs> {};
     get_or_create_search_node(static_cast<ygg::uint_t>(tyr::tests::built_state(start).pack().index().value), search_nodes, default_node) =
         SequentialSearchNode<Kind> { start.metric(), urd::index<tyr::planning::State<Kind>>() };
-    auto& final_search_node = get_or_create_search_node(static_cast<ygg::uint_t>(tyr::tests::built_state(final_node).pack().index().value), search_nodes, default_node);
+    auto& final_search_node =
+        get_or_create_search_node(static_cast<ygg::uint_t>(tyr::tests::built_state(final_node).pack().index().value), search_nodes, default_node);
     final_search_node = SequentialSearchNode<Kind> { g_value, tyr::tests::built_state(start).pack().index() };
 
     const auto num_states = ::tyr::planning::num_states(*repository);
-    const auto plan = tyr::planning::OwnedPlanBuilderView<tyr::planning::DeterministicTag, Kind>(tyr::planning::PlanReconstructionPolicy<tyr::planning::SequentialSearch>::extract_total_ordered_plan(final_search_node,
-                                                                                                                           final_node.pack(),
-                                                                                                                           search_nodes,
-                                                                                                                           *repository,
-                                                                                                                           *axiom_evaluator,
-                                                                                                                           *generator,
-                                                                                                                           CostMode::GENERAL),
-                                                     repository.get());
+    const auto plan = tyr::planning::OwnedPlanBuilderView<tyr::planning::DeterministicTag, Kind>(
+        tyr::planning::PlanReconstructionPolicy<tyr::planning::SequentialSearch>::extract_total_ordered_plan(final_search_node,
+                                                                                                             final_node.pack(),
+                                                                                                             search_nodes,
+                                                                                                             *repository,
+                                                                                                             *axiom_evaluator,
+                                                                                                             *generator,
+                                                                                                             CostMode::GENERAL),
+        repository.get());
 
     ASSERT_EQ(plan.length(), 1);
     EXPECT_EQ(::tyr::planning::num_states(*repository), num_states);
@@ -729,7 +734,6 @@ void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
                          final,
                          std::span<const tyr::planning::WorkerSearchSpaceView<Kind, ParallelSearchNode<Kind>>>(workers),
                          *caller_repository,
-                         *axiom_evaluator,
                          CostMode::GENERAL),
                      caller_repository.get());
         EXPECT_EQ(::tyr::planning::num_states(*caller_repository), 3);
@@ -1309,8 +1313,8 @@ void expect_parallel_brfs_exhaustion(const tyr::planning::TaskPtr<Kind>& task, R
 
 TEST(TyrPlanningPlanReconstructionTest, ReplaysKnownActionsWithMetricsAndOwnedPackedStates)
 {
-    auto lifted = tyr::planning::Task<LiftedTag>::create(formalism::Parser(task_fixture("action-replay/domain.pddl"))
-                                                             .parse_task(task_fixture("action-replay/action-replay-problem.pddl")));
+    auto lifted = tyr::planning::Task<LiftedTag>::create(
+        formalism::Parser(task_fixture("action-replay/domain.pddl")).parse_task(task_fixture("action-replay/action-replay-problem.pddl")));
     auto execution = ygg::ExecutionContext::create(1);
     const auto ground = lifted->instantiate_ground_task(*execution).task;
     ASSERT_TRUE(ground);

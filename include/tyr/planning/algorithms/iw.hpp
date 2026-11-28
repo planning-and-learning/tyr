@@ -24,9 +24,9 @@
 #include "tyr/planning/algorithms/iw/pruning_strategy.hpp"
 #include "tyr/planning/algorithms/iw/statistics.hpp"
 #include "tyr/planning/algorithms/iw/utils.hpp"
+#include "tyr/planning/algorithms/search_budget.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/algorithms/search_budget.hpp"
 
 #include <cstdint>
 #include <memory>

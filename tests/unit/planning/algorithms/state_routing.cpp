@@ -22,18 +22,18 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/heuristics/lmcut.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/nodes/node_view.hpp"
-#include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
 #include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/heuristics/lmcut.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/states/state_delta.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <concepts>
@@ -74,7 +74,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 
     const auto expected_source_index = tyr::tests::built_state(initial).pack().index();
     const auto expected_source_hash = dist_hash.hash(tyr::tests::built_state(initial));
-    auto source = std::optional<tyr::planning::SharedStateBuilderView<Kind>>(::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index)));
+    auto source = std::optional<tyr::planning::SharedStateBuilderView<Kind>>(
+        ::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index)));
     auto transferred_source = source;
     source.reset();
     auto source_reader = std::jthread(
@@ -90,7 +91,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto thread_release_evaluator = axiom_evaluator->make_worker(thread_release_context);
     auto thread_release_repository = repository->make_worker();
     auto thread_release_worker = generator->make_worker(thread_release_context);
-    auto thread_released_state = ::tyr::planning::share(*thread_release_repository, ::tyr::planning::get_initial_state(*thread_release_repository, *thread_release_evaluator));
+    auto thread_released_state =
+        ::tyr::planning::share(*thread_release_repository, ::tyr::planning::get_initial_state(*thread_release_repository, *thread_release_evaluator));
     {
         auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.pack().index().is_none()); });
     }
@@ -99,7 +101,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto copy_assignment_evaluator = axiom_evaluator->make_worker(copy_assignment_context);
     auto copy_assignment_repository = repository->make_worker();
     auto copy_assignment_worker = generator->make_worker(copy_assignment_context);
-    auto copy_assigned_source = ::tyr::planning::share(*copy_assignment_repository, ::tyr::planning::get_initial_state(*copy_assignment_repository, *copy_assignment_evaluator));
+    auto copy_assigned_source =
+        ::tyr::planning::share(*copy_assignment_repository, ::tyr::planning::get_initial_state(*copy_assignment_repository, *copy_assignment_evaluator));
     const auto registered_source = ::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index));
     copy_assigned_source = registered_source;
     EXPECT_EQ(&copy_assigned_source.context(), repository.get());
@@ -108,7 +111,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto move_assignment_evaluator = axiom_evaluator->make_worker(move_assignment_context);
     auto move_assignment_repository = repository->make_worker();
     auto move_assignment_worker = generator->make_worker(move_assignment_context);
-    auto move_assigned_source = ::tyr::planning::share(*move_assignment_repository, ::tyr::planning::get_initial_state(*move_assignment_repository, *move_assignment_evaluator));
+    auto move_assigned_source =
+        ::tyr::planning::share(*move_assignment_repository, ::tyr::planning::get_initial_state(*move_assignment_repository, *move_assignment_evaluator));
     move_assigned_source = ::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, expected_source_index));
     EXPECT_EQ(&move_assigned_source.context(), repository.get());
 
@@ -194,11 +198,15 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     swap(*owner_state, *remote_state);
     EXPECT_EQ(dist_hash.hash(urd::resolve(*owner_state, *worker_repository)), remote_hash);
     ::tyr::planning::register_extended_state(*worker_repository, *owner_state);
-    const auto owner_node = tyr::planning::OwnedNodeBuilderView<Kind>(tyr::planning::NodeBuilder<Kind> { std::move(owner_state), remote_metric }, worker_repository.get());
+    const auto owner_node =
+        tyr::planning::OwnedNodeBuilderView<Kind>(tyr::planning::NodeBuilder<Kind> { std::move(owner_state), remote_metric }, worker_repository.get());
     EXPECT_EQ(owner_node.metric(), compatibility_node.metric());
     EXPECT_EQ(::tyr::planning::num_states(*repository), source_states_after_local_registration);
     EXPECT_EQ(::tyr::planning::num_states(*worker_repository), 2);
-    EXPECT_EQ(dist_hash.hash(::tyr::planning::share(*worker_repository, ::tyr::planning::get_registered_state(*worker_repository, tyr::tests::built_state(owner_node).pack().index()))), remote_hash);
+    EXPECT_EQ(
+        dist_hash.hash(::tyr::planning::share(*worker_repository,
+                                              ::tyr::planning::get_registered_state(*worker_repository, tyr::tests::built_state(owner_node).pack().index()))),
+        remote_hash);
 }
 
 template<TaskKind Kind>

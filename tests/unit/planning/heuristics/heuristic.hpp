@@ -18,16 +18,16 @@
 #ifndef TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 #define TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 
-#include "planning/successors/successor_compositions.hpp"
 #include "planning/parser.hpp"
+#include "planning/successors/successor_compositions.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
 #include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <boost/json.hpp>

@@ -22,14 +22,14 @@
 #include "concepts.hpp"
 #include "engine.hpp"
 #include "sequential.hpp"
+#include "tyr/planning/algorithms/search_space/parallel.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/algorithms/search_space/parallel.hpp"
-#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
-#include "tyr/planning/successors/successor_generator.hpp"
 #include "tyr/planning/states/worker_state_index.hpp"
+#include "tyr/planning/successors/successor_generator.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -734,8 +734,7 @@ public:
                  Heuristic<Kind>& heuristic,
                  const OptionsT<SearchPolicy>& options,
                  const EventHandlerPtrT<SearchPolicy>& event_handler) :
-        m_caller_state_repository(&state_repository),
-        m_caller_axiom_evaluator(&axiom_evaluator)
+        m_caller_state_repository(&state_repository)
     {
         const auto num_workers = ExecutionPolicy::num_workers(options);
         constexpr auto uses_owner_repositories = ExecutionPolicy::uses_owner_repositories;
@@ -832,7 +831,8 @@ public:
             callback(*worker);
     }
 
-    std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
+    std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal,
+                                                                                                            const OptionsT<SearchPolicy>& options)
     {
         auto views = urd::Store<urd::sequence<WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>> {};
         views.reserve(size());
@@ -853,7 +853,6 @@ public:
             PlanReconstructionPolicy<ParallelSearch>::extract_total_ordered_plan(goal,
                                                                                  std::span<const WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>(views),
                                                                                  *m_caller_state_repository,
-                                                                                 *m_caller_axiom_evaluator,
                                                                                  options.cost_mode);
         auto owned = OwnedPlanBuilderView<DeterministicTag, Kind>(std::move(plan), m_caller_state_repository);
         auto goal_node = OwnedNodeRecordView<Kind>(owned.goal_node().pack(), m_caller_state_repository);
@@ -862,7 +861,6 @@ public:
 
 private:
     StateRepository<Kind>* m_caller_state_repository;
-    AxiomEvaluator<Kind>* m_caller_axiom_evaluator;
     urd::Store<urd::sequence<StateRepositoryPtr<Kind>>> m_owner_state_repositories;
     urd::Store<urd::sequence<std::unique_ptr<WorkerData>>> m_workers;
 };

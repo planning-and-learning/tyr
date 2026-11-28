@@ -67,8 +67,7 @@ struct data<::tyr::formalism::Invariant>
                            urd::field<"atoms", &data::atoms, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Invariant> key() const noexcept { return urd::key<::tyr::formalism::Invariant>(index); }
 };

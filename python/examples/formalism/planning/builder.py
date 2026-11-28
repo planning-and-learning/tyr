@@ -136,9 +136,7 @@ def goal(
     """The conjunction of fluent ground atoms, as FDR facts: the FDR context gives each atom its binary variable."""
     facts = [fdr_context.get_fact(repository.insert(atom)[0]) for atom in atoms]
     return tyr.ConjunctiveConditionGroundBuilder(
-        positive_facts=[
-            tyr.FDRFactFluentBuilder(variable=fact.variable(), value=fact.value()) for fact in facts
-        ]
+        positive_facts=[tyr.FDRFactFluentBuilder(variable=fact.variable(), value=fact.value()) for fact in facts]
     )
 
 

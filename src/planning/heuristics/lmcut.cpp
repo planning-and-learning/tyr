@@ -524,8 +524,7 @@ struct LMCutHeuristic<Kind, V>::Impl
 
     void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
-    ygg::float_t evaluate(const V& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
-    { return m_implementation.evaluate(state, cut_frontier_atoms); }
+    ygg::float_t evaluate(const V& state, CutFrontierAtoms* cut_frontier_atoms = nullptr) { return m_implementation.evaluate(state, cut_frontier_atoms); }
 
     void print_summary(size_t verbosity) const { m_implementation.print_summary(verbosity); }
 

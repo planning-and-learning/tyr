@@ -58,7 +58,6 @@ struct builder<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>, C>
                            urd::field<"derived_literals", &builder::derived_literals>,
                            urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
     }
-
 };
 
 /// The builder of ConjunctiveCondition: its record's members, each in its built form (urd::built_t).

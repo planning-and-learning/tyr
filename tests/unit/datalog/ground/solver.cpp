@@ -714,8 +714,7 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctio
 
     ctx.initialize(fixture.initial_fluent_atoms);
 
-    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.row().index()),
-              ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.row().index()), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
 TEST(TyrDatalogGroundQueueTest, NegativeLiteralHoldsWhereItsAtomIsAbsent)

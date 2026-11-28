@@ -31,8 +31,8 @@
 #include "tyr/formalism/grounder.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/programs/lifted/action.hpp"
 #include "tyr/planning/programs/axiom.hpp"
+#include "tyr/planning/programs/lifted/action.hpp"
 #include "tyr/planning/programs/lifted/ground.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
 

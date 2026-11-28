@@ -21,9 +21,9 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/config.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <type_traits>
 #include <urd/elements/data.hpp>
@@ -56,8 +56,7 @@ struct data<::tyr::planning::FactStorage<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>> key() const noexcept
-    { return index; }
+    [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>> key() const noexcept { return index; }
 };
 
 /// A lifted state's fluent facts: a bit per (binary) fluent variable, as words. Its pool packs them and names them by
@@ -82,8 +81,7 @@ struct data<::tyr::planning::FactStorage<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>> key() const noexcept
-    { return index; }
+    [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>> key() const noexcept { return index; }
 };
 
 }  // namespace urd

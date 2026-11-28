@@ -46,7 +46,6 @@ struct builder<::tyr::planning::match_tree::VariableSelectorNode<Tag>, C>
                            urd::field<"domain_children", &builder::domain_children>,
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
-
 };
 
 }  // namespace urd

@@ -23,11 +23,11 @@
 
 #include <cstdint>
 #include <urd/elements/builder.hpp>
-#include <yggdrasil/formalism/row_builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_builder.hpp>
 
 namespace urd
 {
@@ -41,8 +41,8 @@ struct builder<::tyr::planning::Transition, C>
     urd::built_t<urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>>, C> binding;
     urd::built_t<std::uint32_t, C> open;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"kind", &builder::kind>, urd::field<"binding", &builder::binding>, urd::field<"open", &builder::open>> {}; }
-
+    static constexpr auto fields() noexcept
+    { return urd::Fields<urd::field<"kind", &builder::kind>, urd::field<"binding", &builder::binding>, urd::field<"open", &builder::open>> {}; }
 };
 
 }

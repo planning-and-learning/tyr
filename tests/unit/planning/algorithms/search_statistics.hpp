@@ -36,9 +36,9 @@
 #include <string>
 #include <tyr/planning/algorithms/statistics.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
+#include <tyr/planning/plans/plan_view.hpp>
 #include <tyr/planning/tasks/ground/task.hpp>
 #include <tyr/planning/tasks/lifted/task.hpp>
-#include <tyr/planning/plans/plan_view.hpp>
 #include <urd/elements/view.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>

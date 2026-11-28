@@ -1,6 +1,9 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The nondeterministic environment on lifted tasks. An adversary picks one of a transition's outcomes (oneof): an outcome has no probability."""
+"""The nondeterministic environment on lifted tasks.
+
+An adversary picks one of a transition's outcomes (oneof): an outcome has no probability.
+"""
 
 # Import all classes for better IDE support
 

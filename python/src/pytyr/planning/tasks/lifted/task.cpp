@@ -26,10 +26,10 @@
 #include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/tasks/lifted/task_grounder.hpp"
 
+#include <boost/mp11.hpp>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
-#include <boost/mp11.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/serialization.hpp>

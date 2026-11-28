@@ -19,6 +19,7 @@
 #define TYR_PYTHON_PLANNING_PLANS_PLANS_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <nanobind/nanobind.h>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/plans/plan_view.hpp>
@@ -29,10 +30,6 @@ namespace tyr::planning
 {
 
 /// A plan, as a record (S4): its record, builder and views, each borrowed view bound before the owned one, which lends it.
-/// The serialization hooks of a task kind's plan views (serialization.cpp: its own source, instantiated per kind).
-template<TaskKind Kind>
-void bind_plan_serialization();
-
 template<TaskKind Kind>
 void bind_plans(nb::module_& m)
 {

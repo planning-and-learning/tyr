@@ -156,14 +156,17 @@ constexpr std::string_view to_string(TransitionKind kind)
 struct DeterministicTag
 {
 };
+
 /// An adversary picks one of a transition's outcomes (oneof).
 struct NondeterministicTag
 {
 };
+
 /// Chance draws one of a transition's outcomes (probabilistic).
 struct ProbabilisticTag
 {
 };
+
 /// The general case, which the others specialize: an adversary picks a distribution, chance draws an outcome from it
 /// (oneof and probabilistic effects, in any nesting).
 struct GeneralTag
@@ -355,15 +358,28 @@ using AxiomEvaluatorPtr = std::shared_ptr<AxiomEvaluator<Kind>>;
 template<TaskKind Kind>
 using StateBuilderHandle = urd::handle<urd::builder<State<Kind>, StateRepository<Kind>>>;
 
-/// The free functions over a state repository (state_repository.hpp), declared where its views read them.
+// The free functions over a state repository that its views read: declared here, defined with the repository
+// (state_repository.hpp, src/planning/states/state_repository.cpp).
+
+/// A state builder of `repository`'s storage, its storages' builders checked out with it, emptied for its task: what a
+/// state is written into. It goes back with its handle, which the repository must outlive.
 template<TaskKind Kind>
 StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& repository);
+
+/// A state record unpacked into a state builder, its storages read through `repository`'s generic unpack_built: a
+/// registered one's (its index not set here) or one held outside, packed in its storage but not registered.
 template<TaskKind Kind>
 StateBuilderHandle<Kind> unpack(const StateRepository<Kind>& repository, const urd::data<State<Kind>>& packed);
+
+/// A registered state unpacked into a state builder (its index set).
 template<TaskKind Kind>
 StateBuilderHandle<Kind> get_registered_state(const StateRepository<Kind>& repository, urd::index<State<Kind>> state_index);
+
+/// A state held by its handle, shared: released with its last copy, keeping `repository` alive meanwhile (a state held
+/// where nothing else keeps its repository, as in Python). Its slot and its control block are the repository's, pooled:
+/// sharing allocates nothing once as many states have been shared at once.
 template<TaskKind Kind>
-SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, StateBuilderHandle<Kind> state);
+[[nodiscard]] SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, StateBuilderHandle<Kind> state);
 
 template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class Heuristic;
@@ -405,7 +421,6 @@ template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class GoalStrategy;
 template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 using GoalStrategyPtr = std::shared_ptr<GoalStrategy<Kind, V>>;
-
 
 class Statistics;
 class ProgressStatistics;

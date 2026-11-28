@@ -1,8 +1,15 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from python.tests.planning.support.components import (
+    GroundSuccessors,
+    LiftedSuccessors,
+    make_components_ground,
+    make_components_lifted,
+    make_gripper_tasks,
+)
+
 from pytyr import planning
-from python.tests.planning.support.components import GroundSuccessors, LiftedSuccessors, make_components_ground, make_components_lifted, make_gripper_tasks
 
 
 def _check_repr_matches_str_ground(task: planning.ground.Task) -> None:

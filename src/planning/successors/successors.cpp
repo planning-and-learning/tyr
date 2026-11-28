@@ -21,32 +21,32 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
 #include "tyr/planning/tasks/task.hpp"
 
+#include <cstddef>
+#include <cstdint>
 #include <fmt/format.h>
 #include <functional>
-#include <optional>
-#include <string_view>
-#include <cstdint>
-#include <numeric>
-#include <span>
-#include <cstddef>
 #include <memory>
+#include <numeric>
+#include <optional>
+#include <span>
 #include <stdexcept>
+#include <string_view>
 #include <type_traits>
 #include <urd/elements/view.hpp>
 #include <utility>
-#include <vector>
 #include <variant>
+#include <vector>
 
 namespace tyr::planning
 {
@@ -72,10 +72,8 @@ namespace
 template<TaskKind Kind>
 NodeBuilder<Kind> node_of(StateBuilderHandle<Kind> state, ygg::float_t metric)
 {
-    auto node = NodeBuilder<Kind>();
-    node.state = std::move(state);
-    node.metric = metric;
-    return node;
+    // Its state as given: a default-made node would make a state builder of its own first.
+    return NodeBuilder<Kind> { std::move(state), metric };
 }
 
 /// The metric of a registered state of `repository` (its auxiliary value from the task's initial one).
@@ -109,7 +107,8 @@ void extend_successor(AxiomEvaluator<Kind>& axiom_evaluator, const std::type_ide
 }
 
 template<TaskKind Kind>
-NodeBuilder<Kind> register_successor(StateRepository<Kind>& repository, const std::type_identity_t<NodeBuilderView<Kind>>& node, SuccessorState<Kind>& successor_state)
+NodeBuilder<Kind>
+register_successor(StateRepository<Kind>& repository, const std::type_identity_t<NodeBuilderView<Kind>>& node, SuccessorState<Kind>& successor_state)
 {
     auto& state = *successor_state.state;
     const auto metric = evaluate_successor_metric(repository, state, successor_state.auxiliary_value);
@@ -156,10 +155,10 @@ LabeledNodeBuilder<Kind> get_labeled_node(const StateRepository<Kind>& repositor
 
 template<TaskKind Kind>
 PlanBuilder<DeterministicTag, Kind> replay_plan(const urd::data<Node<Kind>>& initial,
-                              std::span<const formalism::ActionRowView> actions,
-                              SuccessorGenerator<Kind>& generator,
-                              StateRepository<Kind>& states,
-                              AxiomEvaluator<Kind>& axioms)
+                                                std::span<const formalism::ActionRowView> actions,
+                                                SuccessorGenerator<Kind>& generator,
+                                                StateRepository<Kind>& states,
+                                                AxiomEvaluator<Kind>& axioms)
 {
     auto plan = PlanBuilder<DeterministicTag, Kind>();
     plan.start_node = get_node(states, initial);
@@ -178,7 +177,6 @@ PlanBuilder<DeterministicTag, Kind> replay_plan(const urd::data<Node<Kind>>& ini
     }
     return plan;
 }
-
 
 namespace
 {
@@ -318,7 +316,7 @@ bool check_over_all(SuccessorGenerator<Kind>& generator, const StateRepository<K
 
 /// Calls `visit` with each outcome of `successor` (a general successor's are its distributions') that did not fail.
 template<NatureEnvironment E, TaskKind Kind, typename Visit>
-void for_each_outcome(SuccessorBuilder<E, Kind>& successor, Visit&& visit)
+void for_each_outcome(SuccessorBuilder<E, Kind>& successor, Visit visit)
 {
     if constexpr (std::same_as<E, GeneralTag>)
     {
@@ -333,6 +331,15 @@ void for_each_outcome(SuccessorBuilder<E, Kind>& successor, Visit&& visit)
             if (!outcome->failed)
                 visit(*outcome);
     }
+}
+
+/// The action binding `transition` applies or starts (a transition of another kind has none).
+template<TaskKind Kind>
+const ActionBindingView<Kind>& binding_of(const TransitionLabel<Kind>& transition)
+{
+    if (!transition.binding.has_value())
+        throw std::invalid_argument("generate_successor: an application and a start have an action binding.");
+    return *transition.binding;
 }
 }
 
@@ -349,13 +356,13 @@ bool generate_successor(SuccessorGenerator<Kind>& generator,
         if (transition.kind != TransitionKind::APPLY)
             throw std::invalid_argument("generate_successor<DeterministicTag>: a temporal transition (a durative action's start or end, timed "
                                         "initial literals) has no deterministic successor yet.");
-        out.auxiliary_value = generator.generate_successor_state(node, transition.binding.value(), *out.state, out.delta);
+        out.auxiliary_value = generator.generate_successor_state(node, binding_of<Kind>(transition), *out.state, out.delta);
         return true;
     }
     else
     {
         if (transition.kind == TransitionKind::APPLY || transition.kind == TransitionKind::START)
-            generator.template generate_successor<E>(node, transition.binding.value(), out);
+            generator.template generate_successor<E>(node, binding_of<Kind>(transition), out);
         else if (transition.kind == TransitionKind::END)
             generator.template generate_end_successor<E>(node, transition.open, out);
         else
@@ -480,45 +487,44 @@ std::vector<OwnedLabeledNodeBuilderView<Kind>> get_successors(SuccessorGenerator
     check_repository(repository, node);
     auto result = std::vector<OwnedLabeledNodeBuilderView<Kind>> {};
     auto builder = formalism::Builder {};
-    for_each_successor<DeterministicTag>(
-        generator,
-        node,
-        [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor)
-        {
-            auto labeled = LabeledNodeBuilder<Kind> {};
-            const auto binding = transition.binding.value();
-            if (intern)
-            {
-                find_successor(repository, node, successor);
-                extend_successor(axiom_evaluator, node, successor);
-                labeled.node = register_successor(repository, node, successor);
-                urd::store(labeled.label, intern_action_binding(generator, builder, binding));
-            }
-            else
-            {
-                extend_successor(axiom_evaluator, node, successor);
-                labeled.node = successor_node(node, successor);
-                if constexpr (std::same_as<Kind, GroundTag>)
-                {
-                    // A ground binding is its ground action's row, interned already.
-                    urd::store(labeled.label, binding);
-                }
-                else
-                {
-                    // A borrowed binding, kept as a row of the label's own.
-                    using Row = ygg::Row<formalism::Action<LiftedTag>>;
-                    auto& row = urd::builder_of(labeled.label,
-                                                [&repository]() -> urd::built_child<Row, StateRepository<Kind>>
-                                                { return ygg::formalism::checkout<Row>(repository.builders()); });
-                    urd::store(row.relation, action_of(binding));
-                    row.values.clear();
-                    for (const auto value : binding.values())
-                        row.values.push_back(value);
-                }
-            }
-            result.emplace_back(std::move(labeled), &repository);
-            return true;
-        });
+    for_each_successor<DeterministicTag>(generator,
+                                         node,
+                                         [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor)
+                                         {
+                                             auto labeled = LabeledNodeBuilder<Kind> {};
+                                             const auto binding = transition.binding.value();
+                                             if (intern)
+                                             {
+                                                 find_successor(repository, node, successor);
+                                                 extend_successor(axiom_evaluator, node, successor);
+                                                 labeled.node = register_successor(repository, node, successor);
+                                                 urd::store(labeled.label, intern_action_binding(generator, builder, binding));
+                                             }
+                                             else
+                                             {
+                                                 extend_successor(axiom_evaluator, node, successor);
+                                                 labeled.node = successor_node(node, successor);
+                                                 if constexpr (std::same_as<Kind, GroundTag>)
+                                                 {
+                                                     // A ground binding is its ground action's row, interned already.
+                                                     urd::store(labeled.label, binding);
+                                                 }
+                                                 else
+                                                 {
+                                                     // A borrowed binding, kept as a row of the label's own.
+                                                     using Row = ygg::Row<formalism::Action<LiftedTag>>;
+                                                     auto& row = urd::builder_of(labeled.label,
+                                                                                 [&repository]() -> urd::built_child<Row, StateRepository<Kind>>
+                                                                                 { return ygg::formalism::checkout<Row>(repository.builders()); });
+                                                     urd::store(row.relation, action_of(binding));
+                                                     row.values.clear();
+                                                     for (const auto value : binding.values())
+                                                         row.values.push_back(value);
+                                                 }
+                                             }
+                                             result.emplace_back(std::move(labeled), &repository);
+                                             return true;
+                                         });
     return result;
 }
 
@@ -535,93 +541,165 @@ void intern_label(StateRepository<Kind>& repository, formalism::Builder& builder
     urd::store(binding, repository.get_task()->get_repository()->insert(urd::child_record(binding, *scratch)).first);
 }
 
-template std::vector<OwnedLabeledNodeBuilderView<GroundTag>>
-get_successors<DeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&, StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, const NodeBuilderView<GroundTag>&, bool);
-template std::vector<OwnedLabeledNodeBuilderView<LiftedTag>>
-get_successors<DeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, bool);
+template std::vector<OwnedLabeledNodeBuilderView<GroundTag>> get_successors<DeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                                                                         StateRepository<GroundTag>&,
+                                                                                                         AxiomEvaluator<GroundTag>&,
+                                                                                                         const NodeBuilderView<GroundTag>&,
+                                                                                                         bool);
+template std::vector<OwnedLabeledNodeBuilderView<LiftedTag>> get_successors<DeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                                                                         StateRepository<LiftedTag>&,
+                                                                                                         AxiomEvaluator<LiftedTag>&,
+                                                                                                         const NodeBuilderView<LiftedTag>&,
+                                                                                                         bool);
 template void require_environment<DeterministicTag, GroundTag>(const SuccessorGenerator<GroundTag>&);
-template bool generate_successor<DeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&, const NodeBuilderView<GroundTag>&, const TransitionLabel<GroundTag>&, SuccessorState<GroundTag>&);
+template bool generate_successor<DeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                              const NodeBuilderView<GroundTag>&,
+                                                              const TransitionLabel<GroundTag>&,
+                                                              SuccessorState<GroundTag>&);
 template bool for_each_successor<DeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
-                                                const NodeBuilderView<GroundTag>&,
-                                                const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorState<GroundTag>&)>&,
-                                                const SuccessorOptions<GroundTag>&);
+                                                              const NodeBuilderView<GroundTag>&,
+                                                              const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorState<GroundTag>&)>&,
+                                                              const SuccessorOptions<GroundTag>&);
 template void require_environment<NondeterministicTag, GroundTag>(const SuccessorGenerator<GroundTag>&);
-template bool generate_successor<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&, const NodeBuilderView<GroundTag>&, const TransitionLabel<GroundTag>&, SuccessorBuilder<NondeterministicTag, GroundTag>&);
-template bool for_each_successor<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
-                                                const NodeBuilderView<GroundTag>&,
-                                                const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorBuilder<NondeterministicTag, GroundTag>&)>&,
-                                                const SuccessorOptions<GroundTag>&);
+template bool generate_successor<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                                 const NodeBuilderView<GroundTag>&,
+                                                                 const TransitionLabel<GroundTag>&,
+                                                                 SuccessorBuilder<NondeterministicTag, GroundTag>&);
+template bool for_each_successor<NondeterministicTag, GroundTag>(
+    SuccessorGenerator<GroundTag>&,
+    const NodeBuilderView<GroundTag>&,
+    const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorBuilder<NondeterministicTag, GroundTag>&)>&,
+    const SuccessorOptions<GroundTag>&);
 template void find_outcomes<NondeterministicTag, GroundTag>(StateRepository<GroundTag>&, SuccessorBuilder<NondeterministicTag, GroundTag>&);
 template void register_outcomes<NondeterministicTag, GroundTag>(StateRepository<GroundTag>&, SuccessorBuilder<NondeterministicTag, GroundTag>&);
-template bool extend_outcomes<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&, const StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, SuccessorBuilder<NondeterministicTag, GroundTag>&);
+template bool extend_outcomes<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                              const StateRepository<GroundTag>&,
+                                                              AxiomEvaluator<GroundTag>&,
+                                                              SuccessorBuilder<NondeterministicTag, GroundTag>&);
 template std::vector<OwnedSuccessorBuilderView<NondeterministicTag, GroundTag>>
-get_successors<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&, StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, const NodeBuilderView<GroundTag>&, bool);
+get_successors<NondeterministicTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                               StateRepository<GroundTag>&,
+                                               AxiomEvaluator<GroundTag>&,
+                                               const NodeBuilderView<GroundTag>&,
+                                               bool);
 template void intern_label<NondeterministicTag, GroundTag>(StateRepository<GroundTag>&, formalism::Builder&, SuccessorBuilder<NondeterministicTag, GroundTag>&);
 template void require_environment<ProbabilisticTag, GroundTag>(const SuccessorGenerator<GroundTag>&);
-template bool generate_successor<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&, const NodeBuilderView<GroundTag>&, const TransitionLabel<GroundTag>&, SuccessorBuilder<ProbabilisticTag, GroundTag>&);
-template bool for_each_successor<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+template bool generate_successor<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                              const NodeBuilderView<GroundTag>&,
+                                                              const TransitionLabel<GroundTag>&,
+                                                              SuccessorBuilder<ProbabilisticTag, GroundTag>&);
+template bool
+for_each_successor<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&,
                                                 const NodeBuilderView<GroundTag>&,
                                                 const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorBuilder<ProbabilisticTag, GroundTag>&)>&,
                                                 const SuccessorOptions<GroundTag>&);
 template void find_outcomes<ProbabilisticTag, GroundTag>(StateRepository<GroundTag>&, SuccessorBuilder<ProbabilisticTag, GroundTag>&);
 template void register_outcomes<ProbabilisticTag, GroundTag>(StateRepository<GroundTag>&, SuccessorBuilder<ProbabilisticTag, GroundTag>&);
-template bool extend_outcomes<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&, const StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, SuccessorBuilder<ProbabilisticTag, GroundTag>&);
-template std::vector<OwnedSuccessorBuilderView<ProbabilisticTag, GroundTag>>
-get_successors<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&, StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, const NodeBuilderView<GroundTag>&, bool);
+template bool extend_outcomes<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                           const StateRepository<GroundTag>&,
+                                                           AxiomEvaluator<GroundTag>&,
+                                                           SuccessorBuilder<ProbabilisticTag, GroundTag>&);
+template std::vector<OwnedSuccessorBuilderView<ProbabilisticTag, GroundTag>> get_successors<ProbabilisticTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                                                                                         StateRepository<GroundTag>&,
+                                                                                                                         AxiomEvaluator<GroundTag>&,
+                                                                                                                         const NodeBuilderView<GroundTag>&,
+                                                                                                                         bool);
 template void intern_label<ProbabilisticTag, GroundTag>(StateRepository<GroundTag>&, formalism::Builder&, SuccessorBuilder<ProbabilisticTag, GroundTag>&);
 template void require_environment<GeneralTag, GroundTag>(const SuccessorGenerator<GroundTag>&);
-template bool generate_successor<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&, const NodeBuilderView<GroundTag>&, const TransitionLabel<GroundTag>&, SuccessorBuilder<GeneralTag, GroundTag>&);
+template bool generate_successor<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                        const NodeBuilderView<GroundTag>&,
+                                                        const TransitionLabel<GroundTag>&,
+                                                        SuccessorBuilder<GeneralTag, GroundTag>&);
 template bool for_each_successor<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&,
-                                                const NodeBuilderView<GroundTag>&,
-                                                const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorBuilder<GeneralTag, GroundTag>&)>&,
-                                                const SuccessorOptions<GroundTag>&);
+                                                        const NodeBuilderView<GroundTag>&,
+                                                        const std::function<bool(const TransitionLabel<GroundTag>&, SuccessorBuilder<GeneralTag, GroundTag>&)>&,
+                                                        const SuccessorOptions<GroundTag>&);
 template void find_outcomes<GeneralTag, GroundTag>(StateRepository<GroundTag>&, SuccessorBuilder<GeneralTag, GroundTag>&);
 template void register_outcomes<GeneralTag, GroundTag>(StateRepository<GroundTag>&, SuccessorBuilder<GeneralTag, GroundTag>&);
-template bool extend_outcomes<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&, const StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, SuccessorBuilder<GeneralTag, GroundTag>&);
-template std::vector<OwnedSuccessorBuilderView<GeneralTag, GroundTag>>
-get_successors<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&, StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, const NodeBuilderView<GroundTag>&, bool);
+template bool extend_outcomes<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                     const StateRepository<GroundTag>&,
+                                                     AxiomEvaluator<GroundTag>&,
+                                                     SuccessorBuilder<GeneralTag, GroundTag>&);
+template std::vector<OwnedSuccessorBuilderView<GeneralTag, GroundTag>> get_successors<GeneralTag, GroundTag>(SuccessorGenerator<GroundTag>&,
+                                                                                                             StateRepository<GroundTag>&,
+                                                                                                             AxiomEvaluator<GroundTag>&,
+                                                                                                             const NodeBuilderView<GroundTag>&,
+                                                                                                             bool);
 template void intern_label<GeneralTag, GroundTag>(StateRepository<GroundTag>&, formalism::Builder&, SuccessorBuilder<GeneralTag, GroundTag>&);
 template void require_environment<DeterministicTag, LiftedTag>(const SuccessorGenerator<LiftedTag>&);
-template bool generate_successor<DeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, const TransitionLabel<LiftedTag>&, SuccessorState<LiftedTag>&);
+template bool generate_successor<DeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                              const NodeBuilderView<LiftedTag>&,
+                                                              const TransitionLabel<LiftedTag>&,
+                                                              SuccessorState<LiftedTag>&);
 template bool for_each_successor<DeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
-                                                const NodeBuilderView<LiftedTag>&,
-                                                const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorState<LiftedTag>&)>&,
-                                                const SuccessorOptions<LiftedTag>&);
+                                                              const NodeBuilderView<LiftedTag>&,
+                                                              const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorState<LiftedTag>&)>&,
+                                                              const SuccessorOptions<LiftedTag>&);
 template void require_environment<NondeterministicTag, LiftedTag>(const SuccessorGenerator<LiftedTag>&);
-template bool generate_successor<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, const TransitionLabel<LiftedTag>&, SuccessorBuilder<NondeterministicTag, LiftedTag>&);
-template bool for_each_successor<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
-                                                const NodeBuilderView<LiftedTag>&,
-                                                const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorBuilder<NondeterministicTag, LiftedTag>&)>&,
-                                                const SuccessorOptions<LiftedTag>&);
+template bool generate_successor<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                                 const NodeBuilderView<LiftedTag>&,
+                                                                 const TransitionLabel<LiftedTag>&,
+                                                                 SuccessorBuilder<NondeterministicTag, LiftedTag>&);
+template bool for_each_successor<NondeterministicTag, LiftedTag>(
+    SuccessorGenerator<LiftedTag>&,
+    const NodeBuilderView<LiftedTag>&,
+    const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorBuilder<NondeterministicTag, LiftedTag>&)>&,
+    const SuccessorOptions<LiftedTag>&);
 template void find_outcomes<NondeterministicTag, LiftedTag>(StateRepository<LiftedTag>&, SuccessorBuilder<NondeterministicTag, LiftedTag>&);
 template void register_outcomes<NondeterministicTag, LiftedTag>(StateRepository<LiftedTag>&, SuccessorBuilder<NondeterministicTag, LiftedTag>&);
-template bool extend_outcomes<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, SuccessorBuilder<NondeterministicTag, LiftedTag>&);
+template bool extend_outcomes<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                              const StateRepository<LiftedTag>&,
+                                                              AxiomEvaluator<LiftedTag>&,
+                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>&);
 template std::vector<OwnedSuccessorBuilderView<NondeterministicTag, LiftedTag>>
-get_successors<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, bool);
+get_successors<NondeterministicTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                               StateRepository<LiftedTag>&,
+                                               AxiomEvaluator<LiftedTag>&,
+                                               const NodeBuilderView<LiftedTag>&,
+                                               bool);
 template void intern_label<NondeterministicTag, LiftedTag>(StateRepository<LiftedTag>&, formalism::Builder&, SuccessorBuilder<NondeterministicTag, LiftedTag>&);
 template void require_environment<ProbabilisticTag, LiftedTag>(const SuccessorGenerator<LiftedTag>&);
-template bool generate_successor<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, const TransitionLabel<LiftedTag>&, SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
-template bool for_each_successor<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+template bool generate_successor<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                              const NodeBuilderView<LiftedTag>&,
+                                                              const TransitionLabel<LiftedTag>&,
+                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
+template bool
+for_each_successor<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
                                                 const NodeBuilderView<LiftedTag>&,
                                                 const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorBuilder<ProbabilisticTag, LiftedTag>&)>&,
                                                 const SuccessorOptions<LiftedTag>&);
 template void find_outcomes<ProbabilisticTag, LiftedTag>(StateRepository<LiftedTag>&, SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
 template void register_outcomes<ProbabilisticTag, LiftedTag>(StateRepository<LiftedTag>&, SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
-template bool extend_outcomes<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
-template std::vector<OwnedSuccessorBuilderView<ProbabilisticTag, LiftedTag>>
-get_successors<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, bool);
+template bool extend_outcomes<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                           const StateRepository<LiftedTag>&,
+                                                           AxiomEvaluator<LiftedTag>&,
+                                                           SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
+template std::vector<OwnedSuccessorBuilderView<ProbabilisticTag, LiftedTag>> get_successors<ProbabilisticTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                                                                                         StateRepository<LiftedTag>&,
+                                                                                                                         AxiomEvaluator<LiftedTag>&,
+                                                                                                                         const NodeBuilderView<LiftedTag>&,
+                                                                                                                         bool);
 template void intern_label<ProbabilisticTag, LiftedTag>(StateRepository<LiftedTag>&, formalism::Builder&, SuccessorBuilder<ProbabilisticTag, LiftedTag>&);
 template void require_environment<GeneralTag, LiftedTag>(const SuccessorGenerator<LiftedTag>&);
-template bool generate_successor<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, const TransitionLabel<LiftedTag>&, SuccessorBuilder<GeneralTag, LiftedTag>&);
+template bool generate_successor<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                        const NodeBuilderView<LiftedTag>&,
+                                                        const TransitionLabel<LiftedTag>&,
+                                                        SuccessorBuilder<GeneralTag, LiftedTag>&);
 template bool for_each_successor<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
-                                                const NodeBuilderView<LiftedTag>&,
-                                                const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorBuilder<GeneralTag, LiftedTag>&)>&,
-                                                const SuccessorOptions<LiftedTag>&);
+                                                        const NodeBuilderView<LiftedTag>&,
+                                                        const std::function<bool(const TransitionLabel<LiftedTag>&, SuccessorBuilder<GeneralTag, LiftedTag>&)>&,
+                                                        const SuccessorOptions<LiftedTag>&);
 template void find_outcomes<GeneralTag, LiftedTag>(StateRepository<LiftedTag>&, SuccessorBuilder<GeneralTag, LiftedTag>&);
 template void register_outcomes<GeneralTag, LiftedTag>(StateRepository<LiftedTag>&, SuccessorBuilder<GeneralTag, LiftedTag>&);
-template bool extend_outcomes<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, const StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, SuccessorBuilder<GeneralTag, LiftedTag>&);
-template std::vector<OwnedSuccessorBuilderView<GeneralTag, LiftedTag>>
-get_successors<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&, StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, const NodeBuilderView<LiftedTag>&, bool);
+template bool extend_outcomes<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                     const StateRepository<LiftedTag>&,
+                                                     AxiomEvaluator<LiftedTag>&,
+                                                     SuccessorBuilder<GeneralTag, LiftedTag>&);
+template std::vector<OwnedSuccessorBuilderView<GeneralTag, LiftedTag>> get_successors<GeneralTag, LiftedTag>(SuccessorGenerator<LiftedTag>&,
+                                                                                                             StateRepository<LiftedTag>&,
+                                                                                                             AxiomEvaluator<LiftedTag>&,
+                                                                                                             const NodeBuilderView<LiftedTag>&,
+                                                                                                             bool);
 template void intern_label<GeneralTag, LiftedTag>(StateRepository<LiftedTag>&, formalism::Builder&, SuccessorBuilder<GeneralTag, LiftedTag>&);
 
 template formalism::ActionRowView intern_action_binding(SuccessorGenerator<GroundTag>&, formalism::Builder&, ActionBindingView<GroundTag>);
@@ -634,10 +712,10 @@ template NodeBuilder<GroundTag> get_node(const StateRepository<GroundTag>&, urd:
 template NodeBuilder<GroundTag> get_node(const StateRepository<GroundTag>&, const urd::data<Node<GroundTag>>&);
 template LabeledNodeBuilder<GroundTag> get_labeled_node(const StateRepository<GroundTag>&, const urd::data<LabeledNode<GroundTag>>&);
 template PlanBuilder<DeterministicTag, GroundTag> replay_plan(const urd::data<Node<GroundTag>>&,
-                                       std::span<const formalism::ActionRowView>,
-                                       SuccessorGenerator<GroundTag>&,
-                                       StateRepository<GroundTag>&,
-                                       AxiomEvaluator<GroundTag>&);
+                                                              std::span<const formalism::ActionRowView>,
+                                                              SuccessorGenerator<GroundTag>&,
+                                                              StateRepository<GroundTag>&,
+                                                              AxiomEvaluator<GroundTag>&);
 
 template formalism::ActionRowView intern_action_binding(SuccessorGenerator<LiftedTag>&, formalism::Builder&, ActionBindingView<LiftedTag>);
 template bool find_successor(StateRepository<LiftedTag>&, const NodeBuilderView<LiftedTag>&, SuccessorState<LiftedTag>&);
@@ -649,9 +727,9 @@ template NodeBuilder<LiftedTag> get_node(const StateRepository<LiftedTag>&, urd:
 template NodeBuilder<LiftedTag> get_node(const StateRepository<LiftedTag>&, const urd::data<Node<LiftedTag>>&);
 template LabeledNodeBuilder<LiftedTag> get_labeled_node(const StateRepository<LiftedTag>&, const urd::data<LabeledNode<LiftedTag>>&);
 template PlanBuilder<DeterministicTag, LiftedTag> replay_plan(const urd::data<Node<LiftedTag>>&,
-                                       std::span<const formalism::ActionRowView>,
-                                       SuccessorGenerator<LiftedTag>&,
-                                       StateRepository<LiftedTag>&,
-                                       AxiomEvaluator<LiftedTag>&);
+                                                              std::span<const formalism::ActionRowView>,
+                                                              SuccessorGenerator<LiftedTag>&,
+                                                              StateRepository<LiftedTag>&,
+                                                              AxiomEvaluator<LiftedTag>&);
 
 }

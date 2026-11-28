@@ -189,11 +189,7 @@ fmt::formatter<urd::index_view<tf::Action<T>, tf::Repository>>::format(const urd
     auto out = context.out();
     if constexpr (std::same_as<T, LiftedTag>)
     {
-        out = fmt::format_to(out,
-                             "(:action {} :parameters ({}) :precondition {} :effect ",
-                             value.name(),
-                             fmt::join(value.variables(), " "),
-                             value.condition());
+        out = fmt::format_to(out, "(:action {} :parameters ({}) :precondition {} :effect ", value.name(), fmt::join(value.variables(), " "), value.condition());
         out = format_action_effect(out, value);
     }
     else

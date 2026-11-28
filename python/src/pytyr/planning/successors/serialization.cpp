@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include "pytyr/planning/module.hpp"
-
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_repository.hpp"
@@ -38,8 +37,9 @@ void bind_successor_serialization()
 {
     using Repository = StateRepository<Kind>;
     ygg::python::bind_serialization(
-        boost::mp11::mp_list<urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>, Repository, urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>,
-                             urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>> {});
+        boost::mp11::mp_list<
+            urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>, Repository, urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>,
+            urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>> {});
 }
 
 /// The serialization hooks of a task kind's successor views of environment E and its parts' builder views (its outcomes,
@@ -51,11 +51,10 @@ void bind_environment_successor_serialization()
     using Outcome = urd::borrowed_view<OutcomeNode<E, Kind>, Repository, urd::builder<OutcomeNode<E, Kind>, Repository>>;
     if constexpr (std::same_as<E, GeneralTag>)
     {
-        ygg::python::bind_serialization(
-            boost::mp11::mp_list<SuccessorBuilderView<E, Kind>,
-                                 SuccessorRecordView<E, Kind>,
-                                 urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>,
-                                 Outcome> {});
+        ygg::python::bind_serialization(boost::mp11::mp_list<SuccessorBuilderView<E, Kind>,
+                                                             SuccessorRecordView<E, Kind>,
+                                                             urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>,
+                                                             Outcome> {});
     }
     else
     {

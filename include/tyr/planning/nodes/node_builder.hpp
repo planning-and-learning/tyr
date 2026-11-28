@@ -38,7 +38,6 @@ struct builder<::tyr::planning::Node<Kind>, C>
     urd::built_t<ygg::float_t, C> metric;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"state", &builder::state>, urd::field<"metric", &builder::metric>> {}; }
-
 };
 }
 

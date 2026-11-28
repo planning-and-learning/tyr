@@ -19,8 +19,8 @@
 #define TYR_PLANNING_STATES_STORAGES_ATOM_STORAGE_BUILDER_HPP_
 
 #include "tyr/declarations.hpp"
-#include "tyr/planning/states/storages/atom_storage_data.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/storages/atom_storage_data.hpp"
 #include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <cmath>
@@ -48,10 +48,7 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
 
-    static constexpr auto functions() noexcept
-    {
-        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">>> {};
-    }
+    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">>> {}; }
 };
 
 }  // namespace urd

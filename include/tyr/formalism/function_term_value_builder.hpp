@@ -42,7 +42,6 @@ struct builder<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>, C>
     urd::built_t<ygg::float_t, C> value = 0.0;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"fterm", &builder::fterm>, urd::field<"value", &builder::value>> {}; }
-
 };
 
 }  // namespace urd

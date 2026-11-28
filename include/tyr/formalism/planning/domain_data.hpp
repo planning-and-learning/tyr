@@ -98,8 +98,7 @@ struct data<::tyr::formalism::Domain>
                            urd::field<"axioms", &data::axioms, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Domain> key() const noexcept { return urd::key<::tyr::formalism::Domain>(index); }
 };

@@ -96,9 +96,7 @@ def tyr_worker(domain: str) -> list[Parts]:
                 variant = term
                 match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(variant))
                 index = int(match[1]) if match else None
-                args.append(
-                    str(variant) if index is None else index if index < invariant.num_rigid_variables() else -1
-                )
+                args.append(str(variant) if index is None else index if index < invariant.num_rigid_variables() else -1)
             parts.append({"predicate": str(atom.predicate().name()), "args": args})
         result.append(parts)
     return result

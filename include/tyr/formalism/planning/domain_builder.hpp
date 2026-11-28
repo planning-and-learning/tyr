@@ -69,7 +69,6 @@ struct builder<::tyr::formalism::Domain, C>
                            urd::field<"actions", &builder::actions>,
                            urd::field<"axioms", &builder::axioms>> {};
     }
-
 };
 
 }  // namespace urd

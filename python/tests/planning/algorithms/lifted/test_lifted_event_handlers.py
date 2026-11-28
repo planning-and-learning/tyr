@@ -1,10 +1,10 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from typing_extensions import override
-from pytyr import planning
 from python.tests.planning.support.lifted import Node
+from typing_extensions import override
 
+from pytyr import planning
 
 Plan = planning.lifted.deterministic.PlanBuilderView
 

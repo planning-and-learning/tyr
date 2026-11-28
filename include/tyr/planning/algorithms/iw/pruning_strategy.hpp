@@ -46,7 +46,8 @@ public:
             throw std::invalid_argument("NoveltyPruningStrategy(...): max_arity exceeds iw::MaxArity.");
     }
 
-    static std::shared_ptr<NoveltyPruningStrategy<Kind, V>> create(ygg::uint_t max_arity) { return std::make_shared<NoveltyPruningStrategy<Kind, V>>(max_arity); }
+    static std::shared_ptr<NoveltyPruningStrategy<Kind, V>> create(ygg::uint_t max_arity)
+    { return std::make_shared<NoveltyPruningStrategy<Kind, V>>(max_arity); }
 
     [[nodiscard]] PruningStrategyPtr<Kind, V> make_worker(urd::index<Worker>) const override
     {

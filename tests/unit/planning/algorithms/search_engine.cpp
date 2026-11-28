@@ -29,22 +29,22 @@
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/algorithms/iw.hpp"
 #include "tyr/planning/algorithms/iw/event_handler.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/heuristics/heuristic.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
+#include "tyr/planning/heuristics/heuristic.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
-#include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
-#include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <array>
 #include <atomic>
@@ -214,8 +214,7 @@ bool is_at_location(const V& state, const formalism::Repository& repository, std
                                [&](const auto fact_data)
                                {
                                    const auto atom = urd::resolve(urd::data<formalism::FDRFact<formalism::FluentTag>>(fact_data), repository).atom();
-                                   return atom && atom->predicate().name().str() == "at"
-                                          && atom->row().template resolve<tyr::formalism::Object>().size() == 2
+                                   return atom && atom->predicate().name().str() == "at" && atom->row().template resolve<tyr::formalism::Object>().size() == 2
                                           && atom->row().template resolve<tyr::formalism::Object>().back().name().str() == location;
                                });
 }
@@ -426,7 +425,8 @@ public:
     [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<DuplicatePruningStrategy>(); }
 
-    bool should_prune_successor_state(const tyr::planning::StateBuilderView<Kind>&, const tyr::planning::StateBuilderView<Kind>&, bool is_new) override { return !is_new; }
+    bool should_prune_successor_state(const tyr::planning::StateBuilderView<Kind>&, const tyr::planning::StateBuilderView<Kind>&, bool is_new) override
+    { return !is_new; }
 };
 
 template<TaskKind Kind>
@@ -446,7 +446,8 @@ public:
     [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<AlwaysSuccessorPruningStrategy>(); }
 
-    bool should_prune_successor_state(const tyr::planning::StateBuilderView<Kind>&, const tyr::planning::StateBuilderView<Kind>&, bool) override { return true; }
+    bool should_prune_successor_state(const tyr::planning::StateBuilderView<Kind>&, const tyr::planning::StateBuilderView<Kind>&, bool) override
+    { return true; }
 };
 
 template<TaskKind Kind>
@@ -1157,9 +1158,9 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     ASSERT_TRUE(cheap);
     const auto cheap_successors =
         tyr::tests::get_labeled_successor_nodes(*probe.successor_generator, cheap.value(), {}, *probe.repository, *probe.axiom_evaluator);
-    const auto cheap_wait =
-        std::ranges::find_if(cheap_successors,
-                             [&](const auto& successor) { return is_at_location(tyr::tests::built_state(successor.node()), *task->get_repository(), "cheap-wait"); });
+    const auto cheap_wait = std::ranges::find_if(cheap_successors,
+                                                 [&](const auto& successor)
+                                                 { return is_at_location(tyr::tests::built_state(successor.node()), *task->get_repository(), "cheap-wait"); });
     ASSERT_NE(cheap_wait, cheap_successors.end());
 
     auto seed = std::optional<uint64_t> {};

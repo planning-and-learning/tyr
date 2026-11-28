@@ -42,7 +42,6 @@ struct builder<::tyr::formalism::Metric, C>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"optimization_direction", &builder::optimization_direction>, urd::field<"fexpr", &builder::fexpr>> {}; }
-
 };
 
 }  // namespace urd

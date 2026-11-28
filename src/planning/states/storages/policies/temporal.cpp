@@ -18,9 +18,9 @@
 #include "tyr/planning/states/storages/policies/temporal.hpp"
 
 #include "tyr/planning/states/state_data.hpp"
-#include "tyr/planning/states/storages/temporal_storage_data.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
 #include "tyr/planning/states/storages/temporal_parts.hpp"
+#include "tyr/planning/states/storages/temporal_storage_data.hpp"
 
 #include <bit>
 #include <cmath>

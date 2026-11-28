@@ -18,11 +18,11 @@
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
 
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <fmt/ostream.h>
 #include <yggdrasil/core/chrono.hpp>
@@ -46,7 +46,10 @@ public:
                    node);
     }
 
-    void on_generate_transition(const NodeBuilderView<Kind>&, ActionBindingView<Kind> label, const NodeBuilderView<Kind>& succ_node, TransitionOutcome outcome) override
+    void on_generate_transition(const NodeBuilderView<Kind>&,
+                                ActionBindingView<Kind> label,
+                                const NodeBuilderView<Kind>& succ_node,
+                                TransitionOutcome outcome) override
     {
         if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
             return;

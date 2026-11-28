@@ -22,12 +22,12 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <benchmark/benchmark.h>
 #include <iostream>

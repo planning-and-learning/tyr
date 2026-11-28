@@ -4,11 +4,18 @@
 import gc
 from datetime import timedelta
 from typing import Self
+
 import pytest
+from python.tests.planning.support.components import (
+    algorithm_bindings,
+    make_components_ground,
+    make_components_lifted,
+    make_gripper_tasks,
+)
 from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
+
 from pytyr import formalism, planning
-from python.tests.planning.support.components import algorithm_bindings, make_components_ground, make_components_lifted, make_gripper_tasks
 
 
 def _check_lazy_gbfs_relaxed_plan_requests_ground(task: planning.ground.Task) -> None:

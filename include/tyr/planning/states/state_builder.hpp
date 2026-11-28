@@ -46,24 +46,24 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/states/storages/atom_storage_builder.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_data.hpp"
+#include "tyr/planning/states/storages/atom_storage_builder.hpp"
 #include "tyr/planning/states/storages/ground/fact_storage_builder.hpp"
 #include "tyr/planning/states/storages/lifted/fact_storage_builder.hpp"
 #include "tyr/planning/states/storages/numeric_storage_builder.hpp"
 #include "tyr/planning/states/storages/temporal_storage_builder.hpp"
-#include "tyr/planning/states/state_data.hpp"
 
 #include <concepts>
 #include <cstddef>
-#include <stdexcept>
 #include <ranges>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
-#include <urd/elements/handle.hpp>
 #include <urd/elements/concepts.hpp>
+#include <urd/elements/handle.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/elements/view.hpp>
 #include <utility>
@@ -88,8 +88,10 @@ struct builder<::tyr::planning::State<Kind>, C>
     urd::key<::tyr::planning::State<Kind>> index;
     urd::built_only_t<urd::key<::tyr::planning::FactStorage<Kind>>, C> fact_storage = urd::make_owned<urd::builder<::tyr::planning::FactStorage<Kind>, C>>();
     urd::built_only_t<urd::key<::tyr::planning::AtomStorage<Kind>>, C> atom_storage = urd::make_owned<urd::builder<::tyr::planning::AtomStorage<Kind>, C>>();
-    urd::built_only_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage = urd::make_owned<urd::builder<::tyr::planning::NumericStorage<Kind>, C>>();
-    urd::built_only_t<urd::key<::tyr::planning::TemporalStorage<Kind>>, C> temporal_storage = urd::make_owned<urd::builder<::tyr::planning::TemporalStorage<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage =
+        urd::make_owned<urd::builder<::tyr::planning::NumericStorage<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::TemporalStorage<Kind>>, C> temporal_storage =
+        urd::make_owned<urd::builder<::tyr::planning::TemporalStorage<Kind>, C>>();
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 

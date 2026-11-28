@@ -25,33 +25,33 @@
 #include "tyr/formalism/planning/choice_effect_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/outcome_view.hpp"
-#include "tyr/planning/successors/applicability.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/states/state_view.hpp"
-#include "tyr/planning/successors/transition_builder.hpp"
-#include "tyr/planning/successors/successor_builder.hpp"
+#include "tyr/planning/successors/applicability.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/successors/outcome_node_builder.hpp"
+#include "tyr/planning/successors/successor_builder.hpp"
 #include "tyr/planning/successors/successor_generator.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
+#include "tyr/planning/successors/transition_builder.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <stdexcept>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <utility>
-#include <vector>
-#include <variant>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/builder.hpp>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/handle.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <utility>
+#include <variant>
+#include <vector>
+#include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/builder.hpp>
 
 namespace tyr::planning
 {
@@ -267,10 +267,7 @@ GroundOutcomeDistributions::Set build_ground_choices(GroundOutcomeDistributions&
 /// `repository`: equal content, as the search compares states, whatever their builders' representations).
 template<TaskKind Kind, typename Outcome>
 bool same_outcome(const StateRepository<Kind>& repository, const Outcome& lhs, const Outcome& rhs)
-{
-    return lhs.node.metric == rhs.node.metric
-           && equal_unextended(urd::resolve(*lhs.node.state, repository), urd::resolve(*rhs.node.state, repository));
-}
+{ return lhs.node.metric == rhs.node.metric && equal_unextended(urd::resolve(*lhs.node.state, repository), urd::resolve(*rhs.node.state, repository)); }
 
 /// Starts the successor labeled `label` in `out`, a builder of `repository`'s: its label written in place, nothing for
 /// nature to pick from yet (the transition is not applicable unless something is added). What it held earlier goes
@@ -409,8 +406,7 @@ TaskFeatures task_features(const Task<Kind>& task)
     };
     return TaskFeatures { requires_kind(formalism::RequirementKind::NonDeterministic),
                           requires_kind(formalism::RequirementKind::ProbabilisticEffects),
-                          requires_kind(formalism::RequirementKind::DurativeActions)
-                              || requires_kind(formalism::RequirementKind::TimedInitialLiterals) };
+                          requires_kind(formalism::RequirementKind::DurativeActions) || requires_kind(formalism::RequirementKind::TimedInitialLiterals) };
 }
 
 /// Fills `outcome` (an outcome's builder, of any environment) with the node of `apply(builder) -> auxiliary value`, written

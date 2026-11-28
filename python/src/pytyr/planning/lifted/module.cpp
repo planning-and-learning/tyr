@@ -20,9 +20,9 @@
 #include "pytyr/planning/planning.hpp"
 #include "pytyr/planning/programs/lifted/programs.hpp"
 #include "pytyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 
 #include <tyr/planning/programs/lifted/action.hpp>
-#include "tyr/planning/states/state_repository.hpp"
 
 namespace tyr::planning
 {
@@ -34,7 +34,6 @@ void bind_lifted_module_definitions(nb::module_& m)
     bind_lifted_programs(m);
 
     bind_kind_definitions<LiftedTag>(m);
-
 }
 
 }  // namespace tyr::planning

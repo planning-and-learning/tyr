@@ -26,10 +26,10 @@
 #include "tyr/planning/plans/plan_builder.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_delta.hpp"
-#include "tyr/planning/successors/successor_generator.hpp"
 #include "tyr/planning/successors/successor_builder.hpp"
-#include "tyr/planning/successors/successor_view.hpp"
+#include "tyr/planning/successors/successor_generator.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
+#include "tyr/planning/successors/successor_view.hpp"
 
 #include <concepts>
 #include <cstddef>
@@ -37,9 +37,9 @@
 #include <optional>
 #include <span>
 #include <type_traits>
-#include <vector>
 #include <urd/elements/builder.hpp>
 #include <urd/elements/index.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 // The successors of a node, in steps that stay apart. A successor generator, one per task and kind, generates: it writes a
@@ -208,7 +208,8 @@ void extend_successor(AxiomEvaluator<Kind>& axiom_evaluator, const std::type_ide
 /// changes to the state of `node` where that is registered in the same storage), and its metric. The successor state
 /// is consumed: its state becomes the node's. No axiom is evaluated here.
 template<TaskKind Kind>
-NodeBuilder<Kind> register_successor(StateRepository<Kind>& repository, const std::type_identity_t<NodeBuilderView<Kind>>& node, SuccessorState<Kind>& successor_state);
+NodeBuilder<Kind>
+register_successor(StateRepository<Kind>& repository, const std::type_identity_t<NodeBuilderView<Kind>>& node, SuccessorState<Kind>& successor_state);
 
 /// Without interning: the node of a deterministic successor state of `node`, its state as it is (closed under the
 /// axioms by extend_successor, registered nowhere) and its metric. The successor state is consumed.
@@ -241,10 +242,10 @@ LabeledNodeBuilder<Kind> get_labeled_node(const StateRepository<Kind>& repositor
 /// registered.
 template<TaskKind Kind>
 PlanBuilder<DeterministicTag, Kind> replay_plan(const urd::data<Node<Kind>>& initial,
-                              std::span<const formalism::ActionRowView> actions,
-                              SuccessorGenerator<Kind>& generator,
-                              StateRepository<Kind>& states,
-                              AxiomEvaluator<Kind>& axioms);
+                                                std::span<const formalism::ActionRowView> actions,
+                                                SuccessorGenerator<Kind>& generator,
+                                                StateRepository<Kind>& states,
+                                                AxiomEvaluator<Kind>& axioms);
 
 }
 

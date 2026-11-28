@@ -110,7 +110,9 @@ struct TemporalRole
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"kind", &TemporalRole::kind>, urd::field<"variable", &TemporalRole::variable>, urd::field<"timepoint", &TemporalRole::timepoint>> {};
+        return urd::Fields<urd::field<"kind", &TemporalRole::kind>,
+                           urd::field<"variable", &TemporalRole::variable>,
+                           urd::field<"timepoint", &TemporalRole::timepoint>> {};
     }
 
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }

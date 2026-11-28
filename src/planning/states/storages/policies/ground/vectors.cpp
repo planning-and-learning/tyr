@@ -15,15 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/states/storages/policies/ground/vectors.hpp"
 
 #include "../tree_bitset.hpp"
 #include "tyr/planning/states/state_data.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/states/storages/fact_storage_view.hpp"
 #include "tyr/planning/states/storages/numeric_storage_view.hpp"
-#include "tyr/planning/states/storages/policies/ground/vectors.hpp"
 #include "tyr/planning/states/storages/temporal_storage_view.hpp"
-#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/states/successor_hint.hpp"
 
 #include <algorithm>

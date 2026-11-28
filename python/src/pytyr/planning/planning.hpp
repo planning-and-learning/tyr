@@ -18,6 +18,8 @@
 #ifndef TYR_PYTHON_PLANNING_PLANNING_HPP_
 #define TYR_PYTHON_PLANNING_PLANNING_HPP_
 
+#include "pytyr/formalism/conversions.hpp"
+#include "pytyr/module.hpp"
 #include "pytyr/planning/algorithms/search_result.hpp"
 #include "pytyr/planning/algorithms/strategies/goal.hpp"
 #include "pytyr/planning/algorithms/strategies/pruning.hpp"
@@ -31,18 +33,6 @@
 #include "pytyr/planning/successors/successors.hpp"
 
 #include <nanobind/nanobind.h>
-#include <tyr/planning/declarations.hpp>
-#include <tyr/planning/states/worker_state_index.hpp>
-#include <tyr/planning/tasks/ground/task.hpp>
-#include <tyr/planning/tasks/lifted/task.hpp>
-#include <tyr/planning/tasks/task.hpp>
-#include <tyr/planning/heuristics/lmcut.hpp>
-#include <tyr/planning/heuristics/rpg_add.hpp>
-#include <tyr/planning/heuristics/rpg_ff.hpp>
-#include <tyr/planning/heuristics/rpg_max.hpp>
-
-#include "pytyr/formalism/conversions.hpp"
-#include "pytyr/module.hpp"
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
@@ -59,25 +49,30 @@
 #include <tyr/planning/algorithms/iw.hpp>
 #include <tyr/planning/algorithms/iw/novelty_table.hpp>
 #include <tyr/planning/algorithms/iw/pruning_strategy.hpp>
+#include <tyr/planning/algorithms/search_space/search_node.hpp>
 #include <tyr/planning/algorithms/serialized.hpp>
 #include <tyr/planning/algorithms/serialized/event_handler.hpp>
 #include <tyr/planning/algorithms/serialized/statistics.hpp>
 #include <tyr/planning/algorithms/siw.hpp>
 #include <tyr/planning/algorithms/siw/event_handler.hpp>
 #include <tyr/planning/algorithms/siw/statistics.hpp>
+#include <tyr/planning/algorithms/state_routing/dist_hash.hpp>
 #include <tyr/planning/algorithms/statistics.hpp>
 #include <tyr/planning/algorithms/strategies/goal.hpp>
 #include <tyr/planning/algorithms/strategies/pruning.hpp>
-#include <tyr/planning/algorithms/search_space/search_node.hpp>
-#include <tyr/planning/algorithms/state_routing/dist_hash.hpp>
 #include <tyr/planning/axioms/axiom_evaluator.hpp>
-#include <tyr/planning/tasks/ground/task.hpp>
-#include <tyr/planning/tasks/lifted/task.hpp>
+#include <tyr/planning/declarations.hpp>
+#include <tyr/planning/heuristics/lmcut.hpp>
+#include <tyr/planning/heuristics/rpg_add.hpp>
+#include <tyr/planning/heuristics/rpg_ff.hpp>
+#include <tyr/planning/heuristics/rpg_max.hpp>
 #include <tyr/planning/states/state_builder.hpp>
 #include <tyr/planning/states/state_repository.hpp>
 #include <tyr/planning/states/storages/policies/policy.hpp>
-#include <tyr/planning/tasks/task.hpp>
 #include <tyr/planning/states/worker_state_index.hpp>
+#include <tyr/planning/tasks/ground/task.hpp>
+#include <tyr/planning/tasks/lifted/task.hpp>
+#include <tyr/planning/tasks/task.hpp>
 #include <urd/python/bindings.hpp>
 #include <urd/python/sequences/sequence.hpp>
 #include <urd/python/values/dense_set.hpp>

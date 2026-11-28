@@ -18,11 +18,11 @@
 #ifndef TYR_PLANNING_ALGORITHMS_SEARCH_SPACE_PARALLEL_HPP_
 #define TYR_PLANNING_ALGORITHMS_SEARCH_SPACE_PARALLEL_HPP_
 
-#include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/algorithms/search_space/search_node.hpp"
+#include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/states/state_repository.hpp"
-#include "tyr/planning/successors/successors.hpp"
 #include "tyr/planning/states/worker_state_index.hpp"
+#include "tyr/planning/successors/successors.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -85,10 +85,9 @@ struct PlanReconstructionPolicy<ParallelSearch>
 {
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
     static PlanBuilder<DeterministicTag, Kind> extract_total_ordered_plan(WorkerStateIndex<Kind> final_state,
-                                                 std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
-                                                 StateRepository<Kind>& caller_state_repository,
-                                                 AxiomEvaluator<Kind>& caller_axiom_evaluator,
-                                                 CostMode action_cost_mode = CostMode::GENERAL)
+                                                                          std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
+                                                                          StateRepository<Kind>& caller_state_repository,
+                                                                          CostMode action_cost_mode = CostMode::GENERAL)
     {
         auto trajectory = urd::Store<urd::sequence<WorkerStateIndex<Kind>>> {};
         auto current = final_state;
@@ -146,12 +145,12 @@ struct PlanReconstructionPolicy<ParallelSearch>
         }
 
         auto plan = PlanBuilder<DeterministicTag, Kind>();
-        plan.start_node = get_node(caller_state_repository, materialize(trajectory.front(), workers, caller_state_repository, caller_axiom_evaluator));
+        plan.start_node = get_node(caller_state_repository, materialize(trajectory.front(), workers, caller_state_repository));
         plan.labeled_succ_nodes.reserve(labels.size());
         for (size_t i = 0; i < labels.size(); ++i)
-            plan.labeled_succ_nodes.push_back(LabeledNodeBuilder<Kind> {
-                labels[i].index(),
-                get_node(caller_state_repository, materialize(trajectory[i + 1], workers, caller_state_repository, caller_axiom_evaluator)) });
+            plan.labeled_succ_nodes.push_back(
+                LabeledNodeBuilder<Kind> { labels[i].index(),
+                                           get_node(caller_state_repository, materialize(trajectory[i + 1], workers, caller_state_repository)) });
 
         return plan;
     }
@@ -172,10 +171,8 @@ private:
 
     /// A worker's state as a packed node of the caller's repository: the state registered there, and its g value.
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
-    static urd::data<Node<Kind>> materialize(WorkerStateIndex<Kind> state,
-                                             std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
-                                             StateRepository<Kind>& caller_repository,
-                                             AxiomEvaluator<Kind>& caller_axiom_evaluator)
+    static urd::data<Node<Kind>>
+    materialize(WorkerStateIndex<Kind> state, std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers, StateRepository<Kind>& caller_repository)
     {
         const auto& worker = get_worker(state, workers);
         const auto source_state = ::tyr::planning::get_registered_state(worker.state_repository(), state.state);

@@ -99,9 +99,7 @@ def _ground(
 
 
 def _variable_predicates(variables: list[FDRVariableFluent]) -> list[list[str]]:
-    return sorted(
-        sorted(str(atom.predicate().name()) for atom in variable.atoms()) for variable in variables
-    )
+    return sorted(sorted(str(atom.predicate().name()) for atom in variable.atoms()) for variable in variables)
 
 
 def test_grounding_follows_the_order(ferry: Ferry) -> None:

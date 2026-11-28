@@ -24,8 +24,8 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 
-#include <nanobind/stl/shared_ptr.h>
 #include <boost/mp11.hpp>
+#include <nanobind/stl/shared_ptr.h>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/serialization.hpp>
 

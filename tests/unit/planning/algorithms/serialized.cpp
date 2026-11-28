@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "planning/successors/successor_compositions.hpp"
 #include "planning/parser.hpp"
+#include "planning/successors/successor_compositions.hpp"
 #include "tyr/planning/successors/successors.hpp"
 
 #include <algorithm>
@@ -37,6 +37,7 @@
 #include <tyr/planning/algorithms/concepts.hpp>
 #include <tyr/planning/algorithms/iw.hpp>
 #include <tyr/planning/algorithms/iw/event_handler.hpp>
+#include <tyr/planning/algorithms/search_budget.hpp>
 #include <tyr/planning/algorithms/serialized.hpp>
 #include <tyr/planning/algorithms/serialized/event_handler.hpp>
 #include <tyr/planning/algorithms/siw.hpp>
@@ -47,15 +48,14 @@
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/axioms/axiom_evaluator.hpp>
 #include <tyr/planning/declarations.hpp>
-#include <tyr/planning/successors/ground/successor_generator.hpp>
-#include <tyr/planning/tasks/ground/task.hpp>
 #include <tyr/planning/nodes/labeled_node_view.hpp>
-#include <tyr/planning/tasks/lifted/task.hpp>
 #include <tyr/planning/nodes/node_concepts.hpp>
 #include <tyr/planning/nodes/node_view.hpp>
 #include <tyr/planning/plans/plan_view.hpp>
-#include <tyr/planning/algorithms/search_budget.hpp>
 #include <tyr/planning/states/state_repository.hpp>
+#include <tyr/planning/successors/ground/successor_generator.hpp>
+#include <tyr/planning/tasks/ground/task.hpp>
+#include <tyr/planning/tasks/lifted/task.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
@@ -108,13 +108,15 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateBuilderView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateBuilderView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&) override
+    { return false; }
 };
 
 class SatisfiedGoalStrategy : public NeverSatisfiedGoalStrategy
 {
 public:
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateBuilderView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateBuilderView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&) override
+    { return true; }
 };
 
 class StaticallyImpossibleGoalStrategy : public NeverSatisfiedGoalStrategy
@@ -149,7 +151,8 @@ class AlwaysPruningStrategy : public tyr::planning::PruningStrategy<GroundTag>
 public:
     bool should_prune_state(const tyr::planning::StateBuilderView<GroundTag>&) override { return true; }
 
-    bool should_prune_successor_state(const tyr::planning::StateBuilderView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&, bool) override { return true; }
+    bool should_prune_successor_state(const tyr::planning::StateBuilderView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&, bool) override
+    { return true; }
 };
 
 /// The results a scripted solver returns in turn (moved in: a result owns its plan).
@@ -672,8 +675,9 @@ TEST(TyrPlanningSerialized, RejectsNonFiniteSubplanMetrics)
     auto sub_result = tyr::planning::SearchResult<GroundTag> {};
     sub_result.status = tyr::planning::SearchStatus::SOLVED;
     sub_result.goal_node = tyr::tests::packed<GroundTag>(successors.front().node());
-    sub_result.plan = tyr::tests::make_plan<GroundTag>(tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(start), std::numeric_limits<ygg::float_t>::infinity()),
-                                                       { successors.front().pack() });
+    sub_result.plan =
+        tyr::tests::make_plan<GroundTag>(tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(start), std::numeric_limits<ygg::float_t>::infinity()),
+                                         { successors.front().pack() });
 
     auto solver = ScriptedSolver(results_of(std::move(sub_result)), context.task, context.state_repository, context.axiom_evaluator);
     auto options = tyr::planning::serialized::Options<GroundTag> {};
@@ -792,8 +796,7 @@ TEST(TyrPlanningSerialized, FinalGoalUsesNormalizedStartAsStableSeed)
     const auto initial_node = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
-    const auto successor_it =
-        std::ranges::find_if(successors, [&](const auto& successor) { return successor.node().state() != initial_node.state(); });
+    const auto successor_it = std::ranges::find_if(successors, [&](const auto& successor) { return successor.node().state() != initial_node.state(); });
     ASSERT_NE(successor_it, successors.end());
 
     auto sub_result = tyr::planning::SearchResult<GroundTag> {};
@@ -876,10 +879,11 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
                                             labeled_succ_nodes);
     ASSERT_FALSE(labeled_succ_nodes.empty());
 
-    const auto first_labeled_succ_node_it = std::find_if(
-        labeled_succ_nodes.begin(),
-        labeled_succ_nodes.end(),
-        [&](const auto& labeled_succ_node) { return tyr::tests::built_state(labeled_succ_node.node()).pack().index() != tyr::tests::built_state(start_node).pack().index(); });
+    const auto first_labeled_succ_node_it =
+        std::find_if(labeled_succ_nodes.begin(),
+                     labeled_succ_nodes.end(),
+                     [&](const auto& labeled_succ_node)
+                     { return tyr::tests::built_state(labeled_succ_node.node()).pack().index() != tyr::tests::built_state(start_node).pack().index(); });
     ASSERT_NE(first_labeled_succ_node_it, labeled_succ_nodes.end());
     const auto& first_labeled_succ_node = *first_labeled_succ_node_it;
     const auto first_goal_node = first_labeled_succ_node.node();
@@ -914,10 +918,8 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
         tyr::tests::make_plan<GroundTag>(second_start_node,
                                          { tyr::tests::labeled_record<GroundTag>(urd::interned_view(first_labeled_succ_node.label()), repeated_start_node) });
 
-    auto solver = ScriptedSolver(results_of(std::move(first_subresult), std::move(second_subresult)),
-                                 context.task,
-                                 context.state_repository,
-                                 context.axiom_evaluator);
+    auto solver =
+        ScriptedSolver(results_of(std::move(first_subresult), std::move(second_subresult)), context.task, context.state_repository, context.axiom_evaluator);
 
     auto options = tyr::planning::serialized::Options<GroundTag> {};
     options.event_handler = tyr::planning::serialized::DefaultEventHandler<GroundTag>::create();
@@ -953,7 +955,8 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto successor_it =
         std::ranges::find_if(successors,
-                             [&](const auto& successor) { return tyr::tests::built_state(successor.node()).pack().index() != tyr::tests::built_state(initial_node).pack().index(); });
+                             [&](const auto& successor)
+                             { return tyr::tests::built_state(successor.node()).pack().index() != tyr::tests::built_state(initial_node).pack().index(); });
     ASSERT_NE(successor_it, successors.end());
     const auto& successor = *successor_it;
 
@@ -961,27 +964,28 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     const auto foreign_start = tyr::tests::owned_initial_node(*foreign.state_repository, *foreign.axiom_evaluator);
     ASSERT_EQ(tyr::tests::built_state(foreign_start).pack().index(), tyr::tests::built_state(initial_node).pack().index());
     ASSERT_NE(&foreign_start.context(), &initial_node.context());
-    const auto foreign_successor_state = ::tyr::planning::share(*foreign.state_repository, 
-        tyr::planning::register_extended_state(*foreign.state_repository, tyr::tests::built_state(successor.node())));
+    const auto foreign_successor_state =
+        ::tyr::planning::share(*foreign.state_repository,
+                               tyr::planning::register_extended_state(*foreign.state_repository, tyr::tests::built_state(successor.node())));
     ASSERT_NE(&foreign_successor_state.context(), &successor.node().context());
 
     const auto first_goal = tyr::tests::node_of_state<GroundTag>(foreign_successor_state, 1);
     auto first_subresult = tyr::planning::SearchResult<GroundTag> {};
     first_subresult.status = tyr::planning::SearchStatus::SOLVED;
     first_subresult.goal_node = tyr::tests::packed<GroundTag>(first_goal);
-    first_subresult.plan = tyr::tests::make_plan<GroundTag>(foreign_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.label()), first_goal) });
+    first_subresult.plan =
+        tyr::tests::make_plan<GroundTag>(foreign_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.label()), first_goal) });
 
     const auto second_start = tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(first_goal), 0);
     const auto second_goal = tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(foreign_start), 1);
     auto second_subresult = tyr::planning::SearchResult<GroundTag> {};
     second_subresult.status = tyr::planning::SearchStatus::SOLVED;
     second_subresult.goal_node = tyr::tests::packed<GroundTag>(second_goal);
-    second_subresult.plan = tyr::tests::make_plan<GroundTag>(second_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.label()), second_goal) });
+    second_subresult.plan =
+        tyr::tests::make_plan<GroundTag>(second_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.label()), second_goal) });
 
-    auto solver = ScriptedSolver(results_of(std::move(first_subresult), std::move(second_subresult)),
-                                 context.task,
-                                 context.state_repository,
-                                 context.axiom_evaluator);
+    auto solver =
+        ScriptedSolver(results_of(std::move(first_subresult), std::move(second_subresult)), context.task, context.state_repository, context.axiom_evaluator);
     auto options = tyr::planning::serialized::Options<GroundTag> {};
     options.start_node = tyr::tests::packed<GroundTag>(foreign_start);
     options.subgoal_strategy = std::make_shared<NeverSatisfiedGoalStrategy>();

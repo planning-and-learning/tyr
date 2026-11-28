@@ -20,11 +20,11 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/state_view_concepts.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/states/state_view_concepts.hpp"
+#include "tyr/planning/successors/applicability.hpp"
 
 #include <memory>
 #include <urd/elements/index.hpp>

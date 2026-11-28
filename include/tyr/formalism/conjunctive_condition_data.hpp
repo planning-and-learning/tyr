@@ -77,8 +77,7 @@ struct data<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>
                            urd::field<"numeric_constraints", &data::numeric_constraints, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>(index); }
@@ -128,8 +127,7 @@ struct data<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>
     static constexpr auto identifying_members() noexcept
     { return urd::Members<&data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>(index); }

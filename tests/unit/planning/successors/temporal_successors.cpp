@@ -35,9 +35,9 @@ namespace tyr::tests::planning_temporal_successors
 {
 namespace
 {
-const auto work_domain = task_fixture("work/domain.pddl");
+constexpr const char* work_domain = "work/domain.pddl";  // under task_fixture
 
-const auto work_problem = task_fixture("work/work-1.pddl");
+constexpr const char* work_problem = "work/work-1.pddl";  // under task_fixture
 
 /// A transition in a form to compare ground and lifted ones by: its kind, action (name and objects), and the position of
 /// the open action an end ends.
@@ -58,7 +58,8 @@ Label label_of(const Successor& successor)
                                             {
                                                 name = relation.name().str();
                                                 for (std::size_t column = 0; column < relation.arity(); ++column)
-                                                    name += " " + urd::resolve(row.template get<urd::index<formalism::Object>>(column), row.context()).name().str();
+                                                    name +=
+                                                        " " + urd::resolve(row.template get<urd::index<formalism::Object>>(column), row.context()).name().str();
                                             });
                         });
     return { label.kind(), name, label.open() };
@@ -161,8 +162,8 @@ using enum planning::TransitionKind;
 /// goal.
 TEST(TyrTests, TemporalTransitionsStartEndAndProtectOverAll)
 {
-    auto parser = formalism::Parser(work_domain);
-    const auto [layers, goal_depth] = explore_both(parser.parse_task(work_problem), 5);
+    auto parser = formalism::Parser(task_fixture(work_domain));
+    const auto [layers, goal_depth] = explore_both(parser.parse_task(task_fixture(work_problem)), 5);
 
     ASSERT_GE(layers.size(), 2);
     EXPECT_EQ(layers[0], (std::vector<Label> { { START, "block", 0 }, { START, "work o1", 0 }, { START, "work o2", 0 } }));
@@ -218,10 +219,10 @@ void expect_makespan_metric(const planning::TaskPtr<Kind>& task)
     for (const auto* name : { "work o1", "work o2" })
     {
         auto started = step(generator,
-                                  node,
-                                  *state_repository,
-                                  *axiom_evaluator,
-                                  [&](const Label& label) { return std::get<0>(label) == START && std::get<1>(label) == name; });
+                            node,
+                            *state_repository,
+                            *axiom_evaluator,
+                            [&](const Label& label) { return std::get<0>(label) == START && std::get<1>(label) == name; });
         if (!started.has_value())
         {
             ADD_FAILURE() << name << " does not start";
@@ -246,7 +247,7 @@ void expect_makespan_metric(const planning::TaskPtr<Kind>& task)
 TEST(TyrTests, TemporalTransitionsMeasureTheMakespan)
 {
     const auto problem = task_fixture("work/work-2.pddl");
-    auto parser = formalism::Parser(work_domain);
+    auto parser = formalism::Parser(task_fixture(work_domain));
     const auto lifted = planning::Task<LiftedTag>::create(parser.parse_task(problem));
     expect_makespan_metric<LiftedTag>(lifted);
     const auto execution_context = ygg::ExecutionContext::create(1);
@@ -269,10 +270,10 @@ std::vector<double> run(const planning::TaskPtr<Kind>& task, const std::vector<s
     for (const auto& [kind, name] : labels)
     {
         auto next = step(generator,
-                               nodes.back(),
-                               *state_repository,
-                               *axiom_evaluator,
-                               [&](const Label& label) { return std::get<0>(label) == kind && std::get<1>(label) == name; });
+                         nodes.back(),
+                         *state_repository,
+                         *axiom_evaluator,
+                         [&](const Label& label) { return std::get<0>(label) == kind && std::get<1>(label) == name; });
         if (!next.has_value())
             break;
         nodes.push_back(std::move(*next));
@@ -284,7 +285,8 @@ std::vector<double> run(const planning::TaskPtr<Kind>& task, const std::vector<s
 }
 
 /// The metrics of the nodes `run` reaches, ground and lifted (which must agree).
-std::vector<double> run_both(const std::filesystem::path& domain, const std::filesystem::path& problem, const std::vector<std::pair<planning::TransitionKind, std::string>>& labels)
+std::vector<double>
+run_both(const std::filesystem::path& domain, const std::filesystem::path& problem, const std::vector<std::pair<planning::TransitionKind, std::string>>& labels)
 {
     auto parser = formalism::Parser(domain);
     const auto lifted = planning::Task<LiftedTag>::create(parser.parse_task(problem));
@@ -309,22 +311,25 @@ TEST(TyrTests, TemporalTransitionsBoundDurations)
     EXPECT_DOUBLE_EQ(metrics[2], 1);
 }
 
-const auto window_domain = task_fixture("window/domain.pddl");
+constexpr const char* window_domain = "window/domain.pddl";  // under task_fixture
 
-const auto window_problem = task_fixture("window/window-1.pddl");
+constexpr const char* window_problem = "window/window-1.pddl";  // under task_fixture
 
 /// Timed initial literals open and close a window: an action that fits runs inside it (it starts after the opening, its
 /// end before the closing); one that does not fit cannot have the closing after its end.
 TEST(TyrTests, TemporalTransitionsFitTimedInitialLiterals)
 {
-    const auto fits = run_both(window_domain, window_problem, { { TIMED_LITERAL, "" }, { START, "go" }, { END, "go" }, { TIMED_LITERAL, "" } });
+    const auto fits =
+        run_both(task_fixture(window_domain), task_fixture(window_problem), { { TIMED_LITERAL, "" }, { START, "go" }, { END, "go" }, { TIMED_LITERAL, "" } });
     ASSERT_EQ(fits.size(), 5);
     EXPECT_NEAR(fits[1], 5, 1e-9);
     EXPECT_NEAR(fits[3], 7, 1e-9);
     EXPECT_NEAR(fits[4], 10, 1e-9);
 
     // crawl ends at 11 at the earliest: the window cannot close after it.
-    const auto overruns = run_both(window_domain, window_problem, { { TIMED_LITERAL, "" }, { START, "crawl" }, { END, "crawl" }, { TIMED_LITERAL, "" } });
+    const auto overruns = run_both(task_fixture(window_domain),
+                                   task_fixture(window_problem),
+                                   { { TIMED_LITERAL, "" }, { START, "crawl" }, { END, "crawl" }, { TIMED_LITERAL, "" } });
     EXPECT_EQ(overruns.size(), 4);
 }
 

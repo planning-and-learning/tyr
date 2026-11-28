@@ -67,8 +67,7 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
                            urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>> key() const noexcept
     { return urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>>(index); }

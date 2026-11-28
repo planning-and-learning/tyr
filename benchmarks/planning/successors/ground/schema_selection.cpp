@@ -21,16 +21,16 @@
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/planning/axioms/axiom_evaluator.hpp"
+#include "tyr/planning/nodes/labeled_node_view.hpp"
+#include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/successors/action_executor.hpp"
 #include "tyr/planning/successors/applicability.hpp"
-#include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/successors/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <benchmark/benchmark.h>
@@ -72,7 +72,7 @@ struct BenchmarkCase
 Forest make_forest(const tyr::planning::Task<GroundTag>& task)
 {
     auto groups = urd::Store<urd::map<tyr::formalism::ActionView<LiftedTag>, tyr::formalism::ActionViewList<GroundTag>>> {};
-    for (const auto schema : task.get_task().get_domain().actions())
+    for (const auto schema : task.get_task().domain().actions())
         groups.try_emplace(schema);
     for (const auto action : task.get_task().ground_actions())
         groups.at(action.action()).push_back(action);
@@ -154,7 +154,7 @@ try
 
     auto all_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
     tyr::benchmarks::interned_bindings(*generator, builder, node, {}, all_bindings);
-    auto schemas = task->get_task().get_domain().actions();
+    auto schemas = task->get_task().domain().actions();
     const auto selected =
         std::ranges::find_if(schemas,
                              [&](auto schema) { return std::ranges::any_of(all_bindings, [&](auto binding) { return binding.relation() == schema; }); });

@@ -53,7 +53,6 @@ struct builder<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>, C>
                            urd::field<"outcomes", &builder::outcomes>,
                            urd::field<"probabilities", &builder::probabilities>> {};
     }
-
 };
 
 /// The builder of ChoiceEffect: its record's members, each in its built form (urd::built_t).
@@ -71,7 +70,6 @@ struct builder<::tyr::formalism::ChoiceEffect<::tyr::GroundTag>, C>
                            urd::field<"outcomes", &builder::outcomes>,
                            urd::field<"probabilities", &builder::probabilities>> {};
     }
-
 };
 
 }  // namespace urd

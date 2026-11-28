@@ -51,12 +51,12 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/static_state.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <cassert>

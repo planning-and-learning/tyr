@@ -16,7 +16,6 @@
  */
 
 #include "pytyr/planning/module.hpp"
-
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
@@ -32,7 +31,14 @@ namespace tyr::planning
 /// The serialization hooks of a task kind's node and labeled node views, once they are bound.
 template<TaskKind Kind>
 void bind_node_serialization()
-{ ygg::python::bind_serialization(boost::mp11::mp_list<NodeBuilderView<Kind>, NodeRecordView<Kind>, OwnedNodeRecordView<Kind>, LabeledNodeBuilderView<Kind>, LabeledNodeRecordView<Kind>, OwnedLabeledNodeRecordView<Kind>> {}); }
+{
+    ygg::python::bind_serialization(boost::mp11::mp_list<NodeBuilderView<Kind>,
+                                                         NodeRecordView<Kind>,
+                                                         OwnedNodeRecordView<Kind>,
+                                                         LabeledNodeBuilderView<Kind>,
+                                                         LabeledNodeRecordView<Kind>,
+                                                         OwnedLabeledNodeRecordView<Kind>> {});
+}
 
 template void bind_node_serialization<GroundTag>();
 template void bind_node_serialization<LiftedTag>();

@@ -47,15 +47,15 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/storages/fact_storage_view.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/states/storages/numeric_storage_view.hpp"
-#include "tyr/planning/states/storages/temporal_storage_view.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_view_concepts.hpp"
+#include "tyr/planning/states/storages/atom_storage_view.hpp"
+#include "tyr/planning/states/storages/fact_storage_view.hpp"
+#include "tyr/planning/states/storages/numeric_storage_view.hpp"
+#include "tyr/planning/states/storages/temporal_storage_view.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <concepts>
 #include <fmt/base.h>
@@ -161,8 +161,7 @@ public:
     template<::tyr::formalism::FactKind F>
     [[nodiscard]] auto atoms() const noexcept
     {
-        return atom_indices<F>()
-               | std::views::transform([repository = formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
+        return atom_indices<F>() | std::views::transform([repository = formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
     }
 
     template<::tyr::formalism::FactKind F>
@@ -259,20 +258,17 @@ public:
             urd::function<"atoms",
                           static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::StaticTag>(
                               std::declval<::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>>())) (view_mixin::*)(
-                              ::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>) const>(
-                              &view_mixin::template atoms<::tyr::formalism::StaticTag>),
+                              ::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>) const>(&view_mixin::template atoms<::tyr::formalism::StaticTag>),
                           urd::arg<"predicate">>,
             urd::function<"atoms",
                           static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::FluentTag>(
                               std::declval<::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>>())) (view_mixin::*)(
-                              ::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>) const>(
-                              &view_mixin::template atoms<::tyr::formalism::FluentTag>),
+                              ::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>) const>(&view_mixin::template atoms<::tyr::formalism::FluentTag>),
                           urd::arg<"predicate">>,
             urd::function<"atoms",
                           static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::DerivedTag>(
                               std::declval<::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>>())) (view_mixin::*)(
-                              ::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>) const>(
-                              &view_mixin::template atoms<::tyr::formalism::DerivedTag>),
+                              ::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>) const>(&view_mixin::template atoms<::tyr::formalism::DerivedTag>),
                           urd::arg<"predicate">>> {};
         // pack(), where it has it (a builder's view).
         if constexpr (urd::Builder<urd::record_of<V>>)

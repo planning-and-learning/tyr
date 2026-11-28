@@ -52,7 +52,6 @@ struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>, C>
                            urd::field<"numeric_effects", &builder::numeric_effects>,
                            urd::field<"auxiliary_numeric_effect", &builder::auxiliary_numeric_effect>> {};
     }
-
 };
 
 /// The builder of ConjunctiveEffect: its record's members, each in its built form (urd::built_t).
@@ -73,7 +72,6 @@ struct builder<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>, C>
                            urd::field<"numeric_effects", &builder::numeric_effects>,
                            urd::field<"auxiliary_numeric_effect", &builder::auxiliary_numeric_effect>> {};
     }
-
 };
 
 }  // namespace urd

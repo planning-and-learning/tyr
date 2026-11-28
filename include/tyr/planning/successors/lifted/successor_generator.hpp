@@ -21,8 +21,8 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_delta.hpp"
-#include "tyr/planning/successors/successor_builder.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/successor_builder.hpp"
 #include "tyr/planning/successors/successor_generator.hpp"
 
 #include <cstdint>

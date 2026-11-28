@@ -39,7 +39,11 @@ struct data<::tyr::planning::Distribution<Kind>>
 
     data() = default;
 
-    explicit data(urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<::tyr::planning::GeneralTag, Kind>>> outcomes_) : index(), outcomes(std::move(outcomes_)) {}
+    explicit data(urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<::tyr::planning::GeneralTag, Kind>>> outcomes_) :
+        index(),
+        outcomes(std::move(outcomes_))
+    {
+    }
 
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;

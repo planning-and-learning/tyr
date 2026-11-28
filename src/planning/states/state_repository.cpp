@@ -44,16 +44,16 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/state_delta.hpp"
-#include "tyr/planning/states/successor_hint.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/config.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
+#include "tyr/planning/states/successor_hint.hpp"
 #include "tyr/planning/successors/successor_builder.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <atomic>
 #include <cassert>
@@ -64,6 +64,7 @@
 #include <urd/elements/less.hpp>
 #include <urd/repr/records/records.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/formalism/builder_impl.hpp>
@@ -106,7 +107,29 @@ void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>,
 
 void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state) { state.clear(); }
 
+/// A shared state (share): its builder's handle, in a slot of its repository.
+template<TaskKind Kind>
+struct SharedState
+{
+    StateBuilderHandle<Kind> state;
+};
+
 }
+
+}  // namespace tyr::planning
+
+namespace urd
+{
+/// A shared state's slot, given back, gives its state's builder back to its pool.
+template<tyr::TaskKind Kind>
+struct slot_release<tyr::planning::SharedState<Kind>>
+{
+    static void release(tyr::planning::SharedState<Kind>& shared) noexcept { shared.state.reset(); }
+};
+}  // namespace urd
+
+namespace tyr::planning
+{
 
 template<TaskKind Kind>
 struct StateRepository<Kind>::Impl
@@ -115,12 +138,7 @@ struct StateRepository<Kind>::Impl
     /// is a cohort of one; ponytail: it pays the pools' locks, single-threaded pools if that ever shows in a profile).
     struct Storage
     {
-        explicit Storage(const Task<Kind>& task) :
-            identity(next_state_storage_identity<Kind>()),
-            context(task),
-            records()
-        {
-        }
+        explicit Storage(const Task<Kind>& task) : identity(next_state_storage_identity<Kind>()), context(task), records() {}
 
         ygg::uint_t identity;
         StateStorageContext<Kind, StateStoragePolicyTag, true> context;
@@ -149,6 +167,9 @@ struct StateRepository<Kind>::Impl
         /// The builders of states, successors and their parts (StateRepositoryBuilderTypes), and the scratch records
         /// they are interned through.
         StateRepositoryBuilderStorage<Kind> builders;
+        /// The slots of its shared states (share), their control blocks pooled with them. After `builders`: a slot's
+        /// state is a builder of theirs.
+        urd::Store<urd::slots<SharedState<Kind>>> shared_states;
     };
 
     Impl(ygg::uint_t index_, TaskPtr<Kind> task_, bool concurrent_, std::shared_ptr<Storage> storage, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
@@ -463,17 +484,22 @@ StateBuilderHandle<Kind> get_registered_state(const StateRepository<Kind>& repos
 template<TaskKind Kind>
 SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, StateBuilderHandle<Kind> state)
 {
-    // The handle and the repository, held together: the builder goes back to the pool before the repository goes.
-    using Held = std::pair<std::shared_ptr<const StateRepository<Kind>>, StateBuilderHandle<Kind>>;
-    auto held = std::make_shared<Held>(repository.shared_from_this(), std::move(state));
-    auto* const record = held->second.get();
+    // The handle in a slot that keeps the repository alive: the builder goes back to its pool when the slot is given
+    // back (urd::slot_release), before the repository goes.
+    auto held = repository.m_impl->evaluator.shared_states.make_shared(repository.shared_from_this());
+    held->state = std::move(state);
+    auto* const record = held->state.get();
     return SharedStateBuilderView<Kind>(std::shared_ptr<const urd::builder<State<Kind>, StateRepository<Kind>>>(std::move(held), record), &repository);
 }
 
 template StateBuilderHandle<GroundTag> get_state_builder(const StateRepository<GroundTag>&);
 template bool find_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&);
-template bool find_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&, const StateBuilderView<GroundTag>&, const StateDelta&);
-template void register_extended_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&, const StateBuilderView<GroundTag>&, const StateDelta&);
+template bool
+find_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&, const StateBuilderView<GroundTag>&, const StateDelta&);
+template void register_extended_state(StateRepository<GroundTag>&,
+                                      urd::builder<State<GroundTag>, StateRepository<GroundTag>>&,
+                                      const StateBuilderView<GroundTag>&,
+                                      const StateDelta&);
 template void register_extended_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&);
 template StateBuilderHandle<GroundTag> register_extended_state(StateRepository<GroundTag>&, const StateBuilderView<GroundTag>&);
 template StateBuilderHandle<GroundTag> get_initial_state(StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&);
@@ -483,21 +509,26 @@ create_state(StateRepository<GroundTag>&,
              const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>&,
              const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&);
 template StateBuilderHandle<GroundTag> create_state(StateRepository<GroundTag>&,
-                                               AxiomEvaluator<GroundTag>&,
-                                               const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>&,
-                                               const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
-template StateBuilderHandle<GroundTag> create_state(StateRepository<GroundTag>&,
-                                               AxiomEvaluator<GroundTag>&,
-                                               const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>&,
-                                               const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+                                                    AxiomEvaluator<GroundTag>&,
+                                                    const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>&,
+                                                    const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+template StateBuilderHandle<GroundTag>
+create_state(StateRepository<GroundTag>&,
+             AxiomEvaluator<GroundTag>&,
+             const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>&,
+             const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateBuilderHandle<GroundTag> unpack(const StateRepository<GroundTag>&, const urd::data<State<GroundTag>>&);
 template StateBuilderHandle<GroundTag> get_registered_state(const StateRepository<GroundTag>&, urd::index<State<GroundTag>>);
 template SharedStateBuilderView<GroundTag> share(const StateRepository<GroundTag>&, StateBuilderHandle<GroundTag>);
 
 template StateBuilderHandle<LiftedTag> get_state_builder(const StateRepository<LiftedTag>&);
 template bool find_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&);
-template bool find_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&, const StateBuilderView<LiftedTag>&, const StateDelta&);
-template void register_extended_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&, const StateBuilderView<LiftedTag>&, const StateDelta&);
+template bool
+find_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&, const StateBuilderView<LiftedTag>&, const StateDelta&);
+template void register_extended_state(StateRepository<LiftedTag>&,
+                                      urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&,
+                                      const StateBuilderView<LiftedTag>&,
+                                      const StateDelta&);
 template void register_extended_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&);
 template StateBuilderHandle<LiftedTag> register_extended_state(StateRepository<LiftedTag>&, const StateBuilderView<LiftedTag>&);
 template StateBuilderHandle<LiftedTag> get_initial_state(StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&);
@@ -507,17 +538,17 @@ create_state(StateRepository<LiftedTag>&,
              const urd::Store<urd::sequence<urd::data<formalism::FDRFact<formalism::FluentTag>>>>&,
              const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&);
 template StateBuilderHandle<LiftedTag> create_state(StateRepository<LiftedTag>&,
-                                               AxiomEvaluator<LiftedTag>&,
-                                               const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>&,
-                                               const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
-template StateBuilderHandle<LiftedTag> create_state(StateRepository<LiftedTag>&,
-                                               AxiomEvaluator<LiftedTag>&,
-                                               const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>&,
-                                               const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+                                                    AxiomEvaluator<LiftedTag>&,
+                                                    const urd::Store<urd::sequence<formalism::FDRFactView<formalism::FluentTag>>>&,
+                                                    const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+template StateBuilderHandle<LiftedTag>
+create_state(StateRepository<LiftedTag>&,
+             AxiomEvaluator<LiftedTag>&,
+             const urd::Store<urd::sequence<urd::owning_view<formalism::FDRFact<formalism::FluentTag>, formalism::Repository>>>&,
+             const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateBuilderHandle<LiftedTag> unpack(const StateRepository<LiftedTag>&, const urd::data<State<LiftedTag>>&);
 template StateBuilderHandle<LiftedTag> get_registered_state(const StateRepository<LiftedTag>&, urd::index<State<LiftedTag>>);
 template SharedStateBuilderView<LiftedTag> share(const StateRepository<LiftedTag>&, StateBuilderHandle<LiftedTag>);
-
 
 /// The keyed members of the repositories' parts: their states, and their storages' pools.
 using GroundStateRepository = StateRepository<GroundTag>;

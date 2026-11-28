@@ -19,6 +19,7 @@
 #define TYR_PYTHON_PLANNING_ALGORITHMS_STRATEGIES_PRUNING_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/trampoline.h>
@@ -56,10 +57,15 @@ void bind_pruning_strategy(nb::module_& m, const std::string& name)
     nb::class_<T, PyPruningStrategy<Kind>>(m, name.c_str())  //
         .def(nb::init<>())
         .def("make_worker", &T::make_worker, "worker_index"_a)
-        .def("should_prune_state", nb::overload_cast<const StateBuilderView<Kind>&>(&T::should_prune_state), "state"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: StateBuilder.assign).")
+        .def("should_prune_state",
+             nb::overload_cast<const StateBuilderView<Kind>&>(&T::should_prune_state),
+             "state"_a,
+             "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: "
+             "StateBuilder.assign).")
         .def("should_prune_successor_state",
              nb::overload_cast<const StateBuilderView<Kind>&, const StateBuilderView<Kind>&, bool>(&T::should_prune_successor_state),
-             "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: StateBuilder.assign).",
+             "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: "
+             "StateBuilder.assign).",
              "state"_a,
              "succ_state"_a,
              "is_new_succ_state"_a);

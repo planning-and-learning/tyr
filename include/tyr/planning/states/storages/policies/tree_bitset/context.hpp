@@ -20,9 +20,9 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/storages/ground/state_layout.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/tags.hpp"
 #include "tyr/planning/states/storages/policies/tree_bitset/block.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <type_traits>
 #include <urd/memory.hpp>

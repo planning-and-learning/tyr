@@ -38,7 +38,6 @@ struct builder<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>
     urd::built_t<urd::flat_vector<urd::index<Tag>>, ::tyr::formalism::Repository> elements;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &builder::elements>> {}; }
-
 };
 
 }  // namespace urd

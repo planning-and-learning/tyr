@@ -74,8 +74,7 @@ struct data<::tyr::formalism::Rule<::tyr::LiftedTag>>
                            urd::field<"cost", &data::cost>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>>(index); }
 };
@@ -119,8 +118,7 @@ struct data<::tyr::formalism::Rule<::tyr::GroundTag>>
 
     /// Identified by its content: identical ground rules are one rule.
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Rule<::tyr::GroundTag>> key() const noexcept { return urd::key<::tyr::formalism::Rule<::tyr::GroundTag>>(index); }
 };

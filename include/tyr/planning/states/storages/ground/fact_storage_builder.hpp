@@ -23,8 +23,8 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/storages/fact_storage_data.hpp"
 #include "tyr/planning/states/storages/ground/state_layout.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -58,10 +58,7 @@ struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
 
     static constexpr auto functions() noexcept
-    {
-        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"fact">>,
-                              urd::function<"resize", &builder::resize, urd::arg<"size">>> {};
-    }
+    { return urd::Functions<urd::function<"set", &builder::set, urd::arg<"fact">>, urd::function<"resize", &builder::resize, urd::arg<"size">>> {}; }
 };
 
 }  // namespace urd

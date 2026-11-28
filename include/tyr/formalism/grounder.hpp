@@ -176,9 +176,7 @@ std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> eleme
 
 template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
-{
-    return context.destination().insert(*detail::bound_row(element, context), context.builder());
-}
+{ return context.destination().insert(*detail::bound_row(element, context), context.builder()); }
 
 template<FactKind T>
 std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
@@ -276,15 +274,11 @@ std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<Lifted
  */
 template<FactKind F>
 std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
-{
-    return context.destination().find(*detail::bound_row(element, context), context.builder());
-}
+{ return context.destination().find(*detail::bound_row(element, context), context.builder()); }
 
 template<FactKind F>
 std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
-{
-    return context.destination().find(*detail::bound_row(element, context), context.builder());
-}
+{ return context.destination().find(*detail::bound_row(element, context), context.builder()); }
 
 template<FactKind T>
 std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)

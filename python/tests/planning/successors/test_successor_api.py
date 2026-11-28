@@ -1,15 +1,20 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""The README's successor API: the environments, the enumeration and its options, and the axiom step, alike on one task."""
+"""The README's successor API, alike on one task.
+
+The environments, the enumeration and its options, and the axiom step.
+"""
+
+from collections.abc import Sequence
 
 import pytest
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
 
-import pytyr.formalism as formalism
-import pytyr.planning.lifted as lifted
+from pytyr import formalism
+from pytyr.planning import lifted
 
 
 def test_the_three_levels_agree() -> None:
@@ -26,17 +31,15 @@ def test_the_three_levels_agree() -> None:
     # Every step at once: kept, in the general environment each a classical action's one distribution of one outcome.
     general = lifted.general
     simple = general.get_successors(successor_generator, state_repository, axiom_evaluator, initial_node)
-    simple_metrics = sorted(
-        successor.distributions()[0].outcomes()[0].node().metric() for successor in simple
-    )
+    simple_metrics = sorted(successor.distributions()[0].outcomes()[0].node().metric() for successor in simple)
     assert simple
     assert all(len(successor.distributions()) == 1 for successor in simple)
 
     # The steps apart: generated (borrowed, their states not closed under the axioms), then the lookup, the axiom step,
     # registering and the label interned, each a copy.
-    kept = []
+    kept: list[lifted.general.OwnedSuccessorBuilderView] = []
 
-    def visit(transition: lifted.TransitionLabel, successor: general.SuccessorBuilderView) -> bool:
+    def visit(transition: lifted.TransitionLabel, successor: lifted.general.SuccessorBuilderView) -> bool:
         found = general.find_outcomes(state_repository, successor)
         extended = general.extend_outcomes(successor_generator, axiom_evaluator, found)
         assert extended is not None
@@ -51,11 +54,11 @@ def test_the_three_levels_agree() -> None:
     # What a search uses: the deterministic environment, one successor state per transition, registered into a node.
     deterministic = lifted.deterministic
     deterministic.require(successor_generator)
-    metrics = []
+    metrics: list[float] = []
 
-    found_states = []
+    found_states: list[bool] = []
 
-    def visit_state(transition: lifted.TransitionLabel, successor_state: lifted.SuccessorState) -> bool:
+    def visit_state(_transition: lifted.TransitionLabel, successor_state: lifted.SuccessorState) -> bool:
         found_states.append(lifted.find_successor(state_repository, initial_node, successor_state))
         lifted.extend_successor(axiom_evaluator, initial_node, successor_state)
         node = lifted.register_successor(state_repository, initial_node, successor_state)
@@ -69,19 +72,24 @@ def test_the_three_levels_agree() -> None:
 
     # Its options. accept prunes by label, before a successor is generated.
     metrics = []
-    assert deterministic.for_each_successor(successor_generator, initial_node, visit_state, accept=lambda binding: False)
+    assert deterministic.for_each_successor(
+        successor_generator, initial_node, visit_state, accept=lambda _binding: False
+    )
     assert metrics == []
 
     # arrange sees every label and returns the positions to generate, in order: here the last transition only, whose
     # label it keeps (interned) to apply it again below.
-    picked = []
+    picked: list[formalism.RowActionLifted] = []
 
-    def last_only(labels: list[lifted.TransitionLabel]) -> list[int]:
-        picked.append(lifted.intern_action_binding(successor_generator, labels[-1].binding))
+    def last_only(labels: Sequence[lifted.TransitionLabel]) -> list[int]:
+        binding = labels[-1].binding
+        assert binding is not None
+        picked.append(lifted.intern_action_binding(successor_generator, binding))
         return [len(labels) - 1]
 
     assert deterministic.for_each_successor(successor_generator, initial_node, visit_state, arrange=last_only)
-    assert len(metrics) == 1 and metrics[0] in simple_metrics
+    assert len(metrics) == 1
+    assert metrics[0] in simple_metrics
 
     # stop ends the enumeration before the first transition.
     assert not deterministic.for_each_successor(successor_generator, initial_node, visit_state, stop=lambda: True)
@@ -97,6 +105,11 @@ def test_the_three_levels_agree() -> None:
     with pytest.raises(ValueError, match="consumed"):
         lifted.register_successor(state_repository, initial_node, successor_state)
 
+    # A node's record, kept apart from it: what a search takes as its start node.
+    packed = lifted.packed_node(initial_node)
+    assert packed.state().index() == initial_node.state().pack().index()
+    assert packed.metric() == initial_node.metric()
+
     # Every step at once in the deterministic environment: labeled nodes, registered and their labels interned, or
     # (intern=False) their states closed under the axioms and nothing stored.
     interned = deterministic.get_successors(successor_generator, state_repository, axiom_evaluator, initial_node)
@@ -110,7 +123,7 @@ def test_the_three_levels_agree() -> None:
     # The deterministic axiom step without interning.
     metrics = []
 
-    def visit_extended(transition: lifted.TransitionLabel, successor_state: lifted.SuccessorState) -> bool:
+    def visit_extended(_transition: lifted.TransitionLabel, successor_state: lifted.SuccessorState) -> bool:
         lifted.extend_successor(axiom_evaluator, initial_node, successor_state)
         metrics.append(lifted.successor_node(initial_node, successor_state).metric())
         return True
@@ -119,7 +132,7 @@ def test_the_three_levels_agree() -> None:
     assert sorted(metrics) == simple_metrics
 
     # Where nature acts, the axiom step without interning gives the same outcomes.
-    def visit_both(transition: lifted.TransitionLabel, successor: general.SuccessorBuilderView) -> bool:
+    def visit_both(_transition: lifted.TransitionLabel, successor: lifted.general.SuccessorBuilderView) -> bool:
         extended = general.extend_outcomes(successor_generator, axiom_evaluator, successor)
         assert extended is not None
         registered = general.register_outcomes(state_repository, extended)
@@ -129,7 +142,9 @@ def test_the_three_levels_agree() -> None:
         return True
 
     assert general.for_each_successor(successor_generator, initial_node, visit_both)
-    unstored = general.get_successors(successor_generator, state_repository, axiom_evaluator, initial_node, intern=False)
+    unstored = general.get_successors(
+        successor_generator, state_repository, axiom_evaluator, initial_node, intern=False
+    )
     assert len(unstored) == len(simple)
 
     # A classical task fits every environment: under an adversary or chance alone, one outcome per transition.

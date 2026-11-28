@@ -49,9 +49,9 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/programs/axiom.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/tasks/task_utils.hpp"
 #include "yggdrasil/formalism/row_view.hpp"
 

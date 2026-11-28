@@ -53,15 +53,15 @@ TEST(TyrTests, TaskGrounderGroundsProbabilisticChoices) { EXPECT_GT(ground_choic
 
 /// A task whose choices nest both ways: a probabilistic effect in a oneof outcome, and a oneof in a probabilistic outcome
 /// under a forall and when (loki's normal form flattens only nests of one kind).
-const auto mixed_domain = task_fixture("mixed/domain.pddl");
+constexpr const char* mixed_domain = "mixed/domain.pddl";  // under task_fixture
 
-const auto mixed_problem = task_fixture("mixed/mixed-1.pddl");
+constexpr const char* mixed_problem = "mixed/mixed-1.pddl";  // under task_fixture
 
 /// Nested choices are translated scoped into the choices that hold them and grounded per binding of their variables.
 TEST(TyrTests, TaskGrounderGroundsNestedChoices)
 {
-    auto parser = tyr::formalism::Parser(mixed_domain);
-    const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(parser.parse_task(mixed_problem));
+    auto parser = tyr::formalism::Parser(task_fixture(mixed_domain));
+    const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(parser.parse_task(task_fixture(mixed_problem)));
     const auto action = lifted->get_domain().get_domain().actions()[0];
     ASSERT_EQ(action.choices().size(), 1);
     const auto outcomes = action.choices()[0].outcomes();

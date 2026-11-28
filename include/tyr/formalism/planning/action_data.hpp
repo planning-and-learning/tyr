@@ -95,8 +95,7 @@ struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
             Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects, &data::choices, &data::temporal_part> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Action<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::Action<::tyr::LiftedTag>>(index); }
@@ -146,8 +145,7 @@ struct data<::tyr::formalism::Action<::tyr::GroundTag>>
                            urd::field<"temporal_part", &data::temporal_part>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Action<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::Action<::tyr::GroundTag>>(index); }

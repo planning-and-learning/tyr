@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include "tyr/formalism/planning/formatter.hpp"
+
 #include "tyr/planning/algorithms/iw/statistics.hpp"
 #include "tyr/planning/algorithms/siw/statistics.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
@@ -48,9 +48,7 @@ fmt::format_context::iterator write_state(const State& value, fmt::format_contex
         os << ygg::print_indent;
         fmt::print(os, "static atoms = [{}]\n", fmt::join(value.template atoms<::tyr::formalism::StaticTag>(), ", "));
         os << ygg::print_indent;
-        fmt::print(os,
-                   "fluent atoms = [{}]\n",
-                   fmt::join(value.fluent_facts() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
+        fmt::print(os, "fluent atoms = [{}]\n", fmt::join(value.fluent_facts() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
         os << ygg::print_indent;
         fmt::print(os, "derived atoms = [{}]\n", fmt::join(value.template atoms<::tyr::formalism::DerivedTag>(), ", "));
         os << ygg::print_indent;
@@ -166,7 +164,8 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::siw::Statistics<Kind
 }
 
 template<::tyr::TaskKind Kind, typename R>
-fmt::format_context::iterator fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>>::format(
+fmt::format_context::iterator
+fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>>::format(
     const urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>& value,
     fmt::format_context& ctx) const
 {
@@ -179,12 +178,12 @@ fmt::format_context::iterator fmt::formatter<urd::borrowed_view<tyr::planning::P
 
 template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<::tyr::planning::SharedStateBuilderView<Kind>>::format(const ::tyr::planning::StateBuilderView<Kind>& value,
-                                                                                             fmt::format_context& ctx) const
+                                                                                                    fmt::format_context& ctx) const
 { return write_state(value, ctx); }
 
 template<::tyr::TaskKind Kind>
 fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBuilderView<Kind>>::format(const ::tyr::planning::StateBuilderView<Kind>& value,
-                                                                                       fmt::format_context& ctx) const
+                                                                                              fmt::format_context& ctx) const
 { return write_state(value, ctx); }
 
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::GroundTag>>;

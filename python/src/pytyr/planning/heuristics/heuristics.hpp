@@ -19,6 +19,7 @@
 #define TYR_PYTHON_PLANNING_HEURISTICS_HEURISTICS_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/optional.h>
@@ -88,7 +89,8 @@ void bind_heuristic(nb::module_& m, const std::string& name)
             "evaluate",
             [](T& self, const StateBuilderView<Kind>& state) { return self.evaluate(state); },
             "state"_a,
-            "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: StateBuilder.assign).",
+            "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: "
+            "StateBuilder.assign).",
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_relaxed_plan",
              [](const T& self) -> std::optional<urd::Store<urd::set<formalism::ActionRowView>>>

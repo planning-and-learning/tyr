@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import gc
-from pyyggdrasil.execution import ExecutionContext
-from pytyr import formalism, planning
+
 from python.tests.planning.support.components import make_components_ground, make_components_lifted, make_gripper_tasks
+from pyyggdrasil.execution import ExecutionContext
+
+from pytyr import formalism, planning
 
 
 def _check_state_reads_ground(task: planning.ground.Task) -> None:
@@ -121,10 +123,7 @@ def _check_create_state_ground(task: planning.ground.Task) -> None:
     )
     value_recreated_state = state_repository.create_state(
         axiom_evaluator,
-        [
-            formalism.FDRFactFluentData(fact.variable().index(), fact.value())
-            for fact in initial_state.fluent_facts()
-        ],
+        [formalism.FDRFactFluentData(fact.variable().index(), fact.value()) for fact in initial_state.fluent_facts()],
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
     )
 
@@ -153,10 +152,7 @@ def _check_create_state_lifted(task: planning.lifted.Task) -> None:
     )
     value_recreated_state = state_repository.create_state(
         axiom_evaluator,
-        [
-            formalism.FDRFactFluentData(fact.variable().index(), fact.value())
-            for fact in initial_state.fluent_facts()
-        ],
+        [formalism.FDRFactFluentData(fact.variable().index(), fact.value()) for fact in initial_state.fluent_facts()],
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
     )
 

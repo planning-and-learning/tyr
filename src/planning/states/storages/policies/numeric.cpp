@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/states/storages/policies/numeric.hpp"
 
 #include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/storages/numeric_storage_builder.hpp"
 #include "tyr/planning/states/storages/numeric_storage_data.hpp"
-#include "tyr/planning/states/storages/policies/numeric.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
 #include "tyr/planning/states/storages/temporal_storage_builder.hpp"
 #include "tyr/planning/states/successor_hint.hpp"

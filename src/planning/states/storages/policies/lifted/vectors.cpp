@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/states/storages/policies/lifted/vectors.hpp"
 
 #include "tyr/planning/states/state_data.hpp"
-#include "tyr/planning/states/storages/policies/lifted/vectors.hpp"
 #include "tyr/planning/states/successor_hint.hpp"
 
 #include <bit>

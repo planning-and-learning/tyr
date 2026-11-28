@@ -19,14 +19,15 @@
 #define TYR_PYTHON_PLANNING_NODES_NODES_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <nanobind/nanobind.h>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/nodes/labeled_node_view.hpp>
 #include <tyr/planning/nodes/node_view.hpp>
 #include <tyr/planning/states/state_repository.hpp>
+#include <urd/python/bindings.hpp>
 #include <yggdrasil/formalism/row_builder.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
-#include <urd/python/bindings.hpp>
 
 namespace tyr::planning
 {
@@ -34,10 +35,6 @@ namespace tyr::planning
 /// A search node and a labeled node, as records (S4): their records, builders, and views (a builder's borrowed and owned
 /// view, a record's borrowed and owned view: a node handed out on its own is owned), each borrowed view bound before
 /// the owned one, which lends it.
-/// The serialization hooks of a task kind's node and labeled node views (serialization.cpp: its own source, instantiated per kind).
-template<TaskKind Kind>
-void bind_node_serialization();
-
 template<TaskKind Kind>
 void bind_nodes(nb::module_& m)
 {

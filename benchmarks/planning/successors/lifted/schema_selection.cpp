@@ -23,10 +23,10 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <benchmark/benchmark.h>
@@ -112,10 +112,10 @@ try
     const auto node = tyr::planning::get_initial_node(*repository, *evaluator);
     auto expected_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
     tyr::benchmarks::interned_bindings(*generator, builder, node, {}, expected_bindings);
-    const auto schemas = prepared.task->get_task().get_domain().actions();
-    const auto selected = std::ranges::find_if(
-        schemas,
-        [&](auto schema) { return std::ranges::any_of(expected_bindings, [&](auto binding) { return binding.relation() == schema; }); });
+    const auto schemas = prepared.task->get_task().domain().actions();
+    const auto selected =
+        std::ranges::find_if(schemas,
+                             [&](auto schema) { return std::ranges::any_of(expected_bindings, [&](auto binding) { return binding.relation() == schema; }); });
     if (selected == schemas.end())
     {
         state.SkipWithError("No initially applicable schema.");

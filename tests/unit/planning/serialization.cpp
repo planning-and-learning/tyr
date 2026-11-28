@@ -9,10 +9,10 @@
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <boost/json.hpp>

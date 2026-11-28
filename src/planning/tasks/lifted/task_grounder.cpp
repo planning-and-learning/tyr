@@ -53,13 +53,13 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/programs/lifted/ground.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/states/static_state.hpp"
+#include "tyr/planning/successors/applicability.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/tasks/task_utils.hpp"
 
 #include <algorithm>
@@ -613,8 +613,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     // ponytail: invariants are synthesized for instantaneous actions only: a delete at a durative action's start does not
     // balance an add at its end (another action may add in between). Its tasks get a binary variable per atom; synthesize
     // over start and end snap actions to get their mutex groups back.
-    const auto durative =
-        std::ranges::any_of(planning_domain.get_domain().actions(), [](const auto action) { return action.temporal_part().has_value(); });
+    const auto durative = std::ranges::any_of(planning_domain.get_domain().actions(), [](const auto action) { return action.temporal_part().has_value(); });
     // Likewise a timed initial literal makes atoms true whatever an invariant's balance.
     if (options.disable_invariant_synthesis || durative || !task.timed_literals().empty())
     {

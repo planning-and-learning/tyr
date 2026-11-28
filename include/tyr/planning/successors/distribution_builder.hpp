@@ -37,7 +37,6 @@ struct builder<::tyr::planning::Distribution<Kind>, C>
     urd::built_only_t<urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<::tyr::planning::GeneralTag, Kind>>>, C> outcomes;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"outcomes", &builder::outcomes>> {}; }
-
 };
 }
 

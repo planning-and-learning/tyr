@@ -1,7 +1,7 @@
 #include "serialization_fixtures.hpp"
+#include "tyr/planning/plans/plan_view.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/plans/plan_view.hpp"
 
 #include <gtest/gtest.h>
 

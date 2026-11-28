@@ -37,8 +37,7 @@ ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(formalism::RuleView<LiftedTag>
     unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().body(), builder, repository).first),
     binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().body(), builder, repository).first),
     conflicting_overapproximation_condition(
-        create_overapproximation_conflicting_conjunctive_condition(get_rule().body().arity() == 1 ? 1 : 2, get_rule().body(), builder, repository)
-            .first),
+        create_overapproximation_conflicting_conjunctive_condition(get_rule().body().arity() == 1 ? 1 : 2, get_rule().body(), builder, repository).first),
     hyperedge_condition(create_hyperedge_conjunctive_condition(conflicting_overapproximation_condition, builder, repository).first),
     static_consistency_graph(unary_overapproximation_condition, binary_overapproximation_condition, hyperedge_condition, std::move(compatibility_graph))
 {

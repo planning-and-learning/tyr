@@ -81,8 +81,9 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto make_task = [&]
     {
-        const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(tyr::tests::task_fixture("borrowed-state/domain.pddl"))
-                                                                            .parse_task(tyr::tests::task_fixture("borrowed-state/borrowed-state-problem.pddl")));
+        const auto lifted =
+            tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(tyr::tests::task_fixture("borrowed-state/domain.pddl"))
+                                                            .parse_task(tyr::tests::task_fixture("borrowed-state/borrowed-state-problem.pddl")));
         return lifted->instantiate_ground_task(*execution_context).task;
     };
     const auto task = make_task();
@@ -120,8 +121,8 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
 
     source.clear();
     EXPECT_TRUE(std::ranges::equal(retained.fluent_fact_index_values(), initial.fluent_fact_index_values()));
-    EXPECT_TRUE(std::ranges::equal(retained.template atom_indices<::tyr::formalism::DerivedTag>(),
-                                   initial.template atom_indices<::tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(retained.template atom_indices<::tyr::formalism::DerivedTag>(), initial.template atom_indices<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(std::ranges::equal(retained.template fterm_index_values<tyr::formalism::FluentTag>(),
                                    initial.template fterm_index_values<tyr::formalism::FluentTag>()));
 }
@@ -129,8 +130,9 @@ TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
 TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
 {
     const auto execution_context = ygg::ExecutionContext::create(1);
-    const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(tyr::tests::task_fixture("mutex-membership/domain.pddl"))
-                                                                        .parse_task(tyr::tests::task_fixture("mutex-membership/mutex-membership-problem.pddl")));
+    const auto lifted =
+        tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(tyr::tests::task_fixture("mutex-membership/domain.pddl"))
+                                                        .parse_task(tyr::tests::task_fixture("mutex-membership/mutex-membership-problem.pddl")));
     const auto task = lifted->instantiate_ground_task(*execution_context).task;
     ASSERT_TRUE(task);
     auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::GroundTag>>(task, execution_context);

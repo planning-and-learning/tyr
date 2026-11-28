@@ -18,9 +18,9 @@
 #ifndef TYR_PLANNING_ALGORITHMS_SEARCH_SPACE_SEQUENTIAL_HPP_
 #define TYR_PLANNING_ALGORITHMS_SEARCH_SPACE_SEQUENTIAL_HPP_
 
-#include "tyr/planning/nodes/node_concepts.hpp"
-#include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/algorithms/search_space/search_node.hpp"
+#include "tyr/planning/algorithms/utils.hpp"
+#include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/successors/successors.hpp"
 
 #include <algorithm>
@@ -63,10 +63,10 @@ NodeRecordList<Kind> extract_node_trajectory(const urd::Store<urd::sequence<Sear
 /// reproduces the next node, labeled by its binding, interned (the only bindings a search interns).
 template<TaskKind Kind>
 PlanBuilder<DeterministicTag, Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
-                               StateRepository<Kind>& state_repository,
-                               AxiomEvaluator<Kind>& axiom_evaluator,
-                               SuccessorGenerator<Kind>& successor_generator,
-                               CostMode action_cost_mode = CostMode::GENERAL)
+                                                 StateRepository<Kind>& state_repository,
+                                                 AxiomEvaluator<Kind>& axiom_evaluator,
+                                                 SuccessorGenerator<Kind>& successor_generator,
+                                                 CostMode action_cost_mode = CostMode::GENERAL)
 {
     assert(!node_trajectory.empty());
 
@@ -91,8 +91,8 @@ PlanBuilder<DeterministicTag, Kind> extract_plan(const NodeRecordList<Kind>& nod
                 successor.metric = compute_successor_g_value(cur_view.metric(), successor.metric, action_cost_mode);
                 if (!urd::EqualTo<> {}(urd::resolve(successor, std::as_const(state_repository)).pack(), node_trajectory[i]))
                     return true;
-                next = LabeledNodeBuilder<Kind> { intern_action_binding(successor_generator, builder, transition.binding.value()).index(),
-                                                  std::move(successor) };
+                next =
+                    LabeledNodeBuilder<Kind> { intern_action_binding(successor_generator, builder, transition.binding.value()).index(), std::move(successor) };
                 return false;
             });
         assert(next.has_value());
@@ -104,12 +104,12 @@ PlanBuilder<DeterministicTag, Kind> extract_plan(const NodeRecordList<Kind>& nod
 
 template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
 inline PlanBuilder<DeterministicTag, Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
-                                                    const urd::data<Node<Kind>>& final_node,
-                                                    const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
-                                                    StateRepository<Kind>& state_repository,
-                                                    AxiomEvaluator<Kind>& axiom_evaluator,
-                                                    SuccessorGenerator<Kind>& successor_generator,
-                                                    CostMode action_cost_mode = CostMode::GENERAL)
+                                                                      const urd::data<Node<Kind>>& final_node,
+                                                                      const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
+                                                                      StateRepository<Kind>& state_repository,
+                                                                      AxiomEvaluator<Kind>& axiom_evaluator,
+                                                                      SuccessorGenerator<Kind>& successor_generator,
+                                                                      CostMode action_cost_mode = CostMode::GENERAL)
 {
     const auto node_trajectory = extract_node_trajectory<Kind>(search_nodes, final_search_node, final_node);
     return extract_plan(node_trajectory, state_repository, axiom_evaluator, successor_generator, action_cost_mode);
@@ -120,12 +120,12 @@ struct PlanReconstructionPolicy<SequentialSearch>
 {
     template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
     static PlanBuilder<DeterministicTag, Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
-                                                 const urd::data<Node<Kind>>& final_node,
-                                                 const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
-                                                 StateRepository<Kind>& state_repository,
-                                                 AxiomEvaluator<Kind>& axiom_evaluator,
-                                                 SuccessorGenerator<Kind>& successor_generator,
-                                                 CostMode action_cost_mode = CostMode::GENERAL)
+                                                                          const urd::data<Node<Kind>>& final_node,
+                                                                          const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
+                                                                          StateRepository<Kind>& state_repository,
+                                                                          AxiomEvaluator<Kind>& axiom_evaluator,
+                                                                          SuccessorGenerator<Kind>& successor_generator,
+                                                                          CostMode action_cost_mode = CostMode::GENERAL)
     {
         return planning::extract_total_ordered_plan(final_search_node,
                                                     final_node,

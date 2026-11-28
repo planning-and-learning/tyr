@@ -3,10 +3,12 @@
 
 import gc
 from pathlib import Path
+
 from pypddl.formalism import ParserOptions
+from python.tests.planning.support.lifted import lifted_task
+
 from pytyr import datalog, formalism, planning
 from pytyr.formalism import Parser
-from python.tests.planning.support.lifted import lifted_task
 
 
 def test_lifted_datalog_workspaces_own_independent_repositories() -> None:

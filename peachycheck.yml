@@ -4,4 +4,4 @@ ENABLE_LINTERS: [PYTHON_RUFF, PYTHON_RUFF_FORMAT, PYTHON_PYRIGHT, CPP_CLANG_TIDY
 # nanobind's. The downstream package's extension is built only by its packaging test, against the
 # installed wheel, so no build here has a compile command for it. Neither has the state storage policy the build does
 # not choose (TYR_STATE_STORAGE_POLICY: TreeBitset; the vectors policy's pools).
-CPP_CLANG_TIDY_FILTER_REGEX_EXCLUDE: '^(python/src/module\.cpp|python/tests/downstream/minimal_downstream_package/src/downstream_tyr_user/_downstream_tyr\.cpp|src/planning/(ground|lifted)/state_storage/vectors\.cpp|include/tyr/planning/(ground/|lifted/)?state_storage/vectors\.hpp)$'
+CPP_CLANG_TIDY_FILTER_REGEX_EXCLUDE: '^(python/src/module\.cpp|python/tests/downstream/minimal_downstream_package/src/downstream_tyr_user/_downstream_tyr\.cpp|src/planning/states/storages/policies/(ground|lifted)/vectors\.cpp|include/tyr/planning/states/storages/policies/((ground|lifted)/)?vectors\.hpp)$'

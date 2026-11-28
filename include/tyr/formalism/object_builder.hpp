@@ -41,7 +41,6 @@ struct builder<::tyr::formalism::Object, C>
     urd::built_t<urd::flat_string, C> name;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &builder::name>> {}; }
-
 };
 
 }  // namespace urd

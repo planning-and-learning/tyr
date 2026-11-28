@@ -130,12 +130,10 @@ def test_parsed_domain_exposes_symbol_metadata() -> None:
     domain = parser.get_domain().get_domain()
 
     static_predicates = [
-        (int(predicate.index()), predicate.name(), predicate.arity())
-        for predicate in domain.static_predicates()
+        (int(predicate.index()), predicate.name(), predicate.arity()) for predicate in domain.static_predicates()
     ]
     fluent_predicates = [
-        (int(predicate.index()), predicate.name(), predicate.arity())
-        for predicate in domain.fluent_predicates()
+        (int(predicate.index()), predicate.name(), predicate.arity()) for predicate in domain.fluent_predicates()
     ]
 
     for _, _, arity in static_predicates + fluent_predicates:

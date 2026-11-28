@@ -36,11 +36,13 @@ struct data<::tyr::planning::Plan<::tyr::planning::DeterministicTag, Kind>>
     urd::flat_vector<urd::data<::tyr::planning::LabeledNode<Kind>>> labeled_succ_nodes;
 
     data() = default;
+
     data(urd::data<::tyr::planning::Node<Kind>> start_node_, urd::flat_vector<urd::data<::tyr::planning::LabeledNode<Kind>>> labeled_succ_nodes_) :
         start_node(start_node_),
         labeled_succ_nodes(std::move(labeled_succ_nodes_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;

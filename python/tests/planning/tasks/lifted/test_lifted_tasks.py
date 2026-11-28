@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from pypddl.formalism import ParserOptions
-from pyyggdrasil.execution import ExecutionContext
-from pytyr import formalism, planning
-from pytyr.formalism import Parser
 from python.tests.planning.support.lifted import GRIPPER, Node
+from pyyggdrasil.execution import ExecutionContext
+
+from pytyr import planning
+from pytyr.formalism import Parser
 
 
 def test_a_lifted_task_leaves_its_formalism_task_usable() -> None:
@@ -35,7 +36,7 @@ def test_lifted_tasks_of_one_formalism_task_write_into_their_own_layers() -> Non
     # The successor of each transition, generated and registered (a borrowed binding is valid only during its callback).
     successors: list[Node] = []
 
-    def visit(transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState) -> bool:
+    def visit(_transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState) -> bool:
         planning.lifted.find_successor(state_repository, initial, successor_state)
         planning.lifted.extend_successor(axiom_evaluator, initial, successor_state)
         successors.append(planning.lifted.register_successor(state_repository, initial, successor_state))

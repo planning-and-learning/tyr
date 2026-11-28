@@ -50,7 +50,6 @@ struct builder<::tyr::planning::match_tree::AtomSelectorNode<Tag>, C>
                            urd::field<"false_child", &builder::false_child>,
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
-
 };
 
 }  // namespace urd

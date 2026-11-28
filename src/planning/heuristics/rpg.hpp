@@ -198,7 +198,8 @@ protected:
     }
 
     template<typename V>
-    ygg::float_t compute_result(const V&) const { return get_goal_cost(); }
+    ygg::float_t compute_result(const V&) const
+    { return get_goal_cost(); }
 
     void set_action_binding_cost(formalism::ActionRowView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>

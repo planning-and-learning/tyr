@@ -1,10 +1,11 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from python.tests.planning.support.ground import StateBuilderView, ground_task
 from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
+
 from pytyr import planning
-from python.tests.planning.support.ground import StateBuilderView, ground_task
 
 
 def test_pruning_strategy_subclasses_can_call_super_constructor() -> None:
@@ -44,7 +45,7 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
 
         @override
         def is_dynamic_goal_satisfied(self, seed_state: StateBuilderView, state: StateBuilderView) -> bool:
-            self.saw_state = isinstance(state, planning.ground.StateBuilderView)
+            self.saw_state = type(state) is planning.ground.StateBuilderView
             return False
 
     goal_strategy = PythonGoalStrategy()

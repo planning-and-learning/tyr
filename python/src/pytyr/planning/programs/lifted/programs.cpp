@@ -19,6 +19,7 @@
 // source compiles both (brokkr's template rule T5).
 
 #include "pytyr/planning/programs/lifted/programs.hpp"
+
 #include "../../lifted/module.hpp"
 #include "pytyr/module.hpp"
 
@@ -31,8 +32,8 @@
 #include <tyr/formalism/planning/planning_task.hpp>
 #include <tyr/formalism/predicate_view.hpp>
 #include <tyr/formalism/repository.hpp>
-#include <tyr/planning/programs/lifted/action.hpp>
 #include <tyr/planning/programs/axiom.hpp>
+#include <tyr/planning/programs/lifted/action.hpp>
 #include <tyr/planning/programs/lifted/ground.hpp>
 #include <tyr/planning/programs/rpg.hpp>
 #include <urd/python/sequences/sequence.hpp>

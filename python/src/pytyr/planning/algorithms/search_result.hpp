@@ -19,6 +19,7 @@
 #define TYR_PYTHON_PLANNING_ALGORITHMS_SEARCH_RESULT_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/optional.h>

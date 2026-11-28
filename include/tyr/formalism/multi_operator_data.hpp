@@ -54,7 +54,8 @@ struct data<::tyr::formalism::MultiOperator<T, O>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"operands", &data::operands, urd::sorted>> {}; }
+    static constexpr auto fields() noexcept
+    { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"operands", &data::operands, urd::sorted>> {}; }
 
     static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 

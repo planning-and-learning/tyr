@@ -22,14 +22,14 @@
 #include "concepts.hpp"
 #include "engine.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/planning/algorithms/search_space/sequential.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/algorithms/search_space/sequential.hpp"
 #include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/states/worker_state_index.hpp"
 #include "tyr/planning/successors/successor_generator.hpp"
 #include "tyr/planning/successors/successors.hpp"
-#include "tyr/planning/states/worker_state_index.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -257,7 +257,8 @@ public:
     void for_each(Callback&& callback)
     { std::forward<Callback>(callback)(m_worker); }
 
-    std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
+    std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal,
+                                                                                                            const OptionsT<SearchPolicy>& options)
     {
         auto& worker = get(goal.worker);
         const auto& search_node = worker.get_search_node(goal.state);
@@ -269,7 +270,8 @@ public:
                                                                                            *worker.axiom_evaluator,
                                                                                            *worker.successor_generator,
                                                                                            options.cost_mode);
-        return { OwnedPlanBuilderView<DeterministicTag, Kind>(std::move(plan), worker.state_repository.get()), OwnedNodeRecordView<Kind>(node, worker.state_repository.get()) };
+        return { OwnedPlanBuilderView<DeterministicTag, Kind>(std::move(plan), worker.state_repository.get()),
+                 OwnedNodeRecordView<Kind>(node, worker.state_repository.get()) };
     }
 
 private:

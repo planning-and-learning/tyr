@@ -18,7 +18,6 @@
 #ifndef TYR_PLANNING_ALGORITHMS_SERIALIZED_HPP_
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_HPP_
 
-#include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/algorithms/serialized/event_handler.hpp"
 #include "tyr/planning/algorithms/serialized/statistics.hpp"
@@ -26,6 +25,7 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
 #include "tyr/planning/successors/successors.hpp"
 
@@ -77,7 +77,8 @@ OwnedNodeRecordView<Kind> kept(const NodeBuilderView<Kind>& node)
 
 /// The plan from `start` through `steps` (records of `repository`), unpacked from `repository`.
 template<TaskKind Kind>
-OwnedPlanBuilderView<DeterministicTag, Kind> make_plan(const StateRepository<Kind>& repository, const urd::data<Node<Kind>>& start, const LabeledNodeRecordList<Kind>& steps)
+OwnedPlanBuilderView<DeterministicTag, Kind>
+make_plan(const StateRepository<Kind>& repository, const urd::data<Node<Kind>>& start, const LabeledNodeRecordList<Kind>& steps)
 {
     auto plan = PlanBuilder<DeterministicTag, Kind>();
     plan.start_node = get_node(repository, start);
@@ -103,7 +104,10 @@ SearchResult<Kind> make_empty_result(const OwnedNodeRecordView<Kind>& start_node
 }
 
 template<TaskKind Kind, SolverConcept<Kind> Solver>
-void append_plan(Solver& solver, const PlanBuilderView<DeterministicTag, Kind>& subplan, OwnedNodeRecordView<Kind>& current_node, LabeledNodeRecordList<Kind>& labeled_succ_nodes)
+void append_plan(Solver& solver,
+                 const PlanBuilderView<DeterministicTag, Kind>& subplan,
+                 OwnedNodeRecordView<Kind>& current_node,
+                 LabeledNodeRecordList<Kind>& labeled_succ_nodes)
 {
     auto previous_metric = solver.normalize_start_node(kept(subplan.start_node())).metric();
     auto cumulative_metric = current_node.metric();
@@ -115,7 +119,8 @@ void append_plan(Solver& solver, const PlanBuilderView<DeterministicTag, Kind>& 
         cumulative_metric = ygg::FloatTolerance<ygg::float_t>::canonicalize(cumulative_metric + step_cost);
         if (!std::isfinite(cumulative_metric))
             throw std::runtime_error("serialized::find_solution(...): cumulative plan metric is not finite.");
-        current_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(normalized_succ_node.state().index(), cumulative_metric), &normalized_succ_node.context());
+        current_node =
+            OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(normalized_succ_node.state().index(), cumulative_metric), &normalized_succ_node.context());
         labeled_succ_nodes.emplace_back(urd::interned_view(labeled_succ_node.label()).index(), record_of<Kind>(current_node));
         previous_metric = normalized_succ_node.metric();
     }

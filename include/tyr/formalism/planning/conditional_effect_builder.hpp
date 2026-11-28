@@ -49,7 +49,6 @@ struct builder<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>, C>
         return urd::
             Fields<urd::field<"variables", &builder::variables>, urd::field<"condition", &builder::condition>, urd::field<"effect", &builder::effect>> {};
     }
-
 };
 
 /// The builder of ConditionalEffect: its record's members, each in its built form (urd::built_t).
@@ -61,7 +60,6 @@ struct builder<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>, C>
     urd::built_t<urd::index<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>, C> effect;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &builder::condition>, urd::field<"effect", &builder::effect>> {}; }
-
 };
 
 }  // namespace urd

@@ -26,13 +26,13 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/heuristics/goal_count.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
 #include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <barrier>
 #include <concepts>
@@ -167,8 +167,10 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
         EXPECT_EQ(source_successors[i].label(), nested_successors[i].label());
     }
 
-    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().label())), worker->ground_action(urd::interned_view(worker_successors.front().label())));
-    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().label())), nested->ground_action(urd::interned_view(nested_successors.front().label())));
+    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().label())),
+              worker->ground_action(urd::interned_view(worker_successors.front().label())));
+    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().label())),
+              nested->ground_action(urd::interned_view(nested_successors.front().label())));
     EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), ::tyr::planning::num_states(*worker_state_repository));
     EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), ::tyr::planning::num_states(*nested_state_repository));
 
@@ -338,8 +340,10 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(first_successor.metric(), second_successor.metric());
     EXPECT_EQ(::tyr::planning::num_states(*first_repository), 2);
     EXPECT_EQ(::tyr::planning::num_states(*second_repository), 2);
-    EXPECT_EQ(::tyr::planning::share(*first_repository, ::tyr::planning::get_registered_state(*first_repository, tyr::tests::built_state(first_successor).pack().index())),
-              ::tyr::planning::share(*second_repository, ::tyr::planning::get_registered_state(*second_repository, tyr::tests::built_state(second_successor).pack().index())));
+    EXPECT_EQ(::tyr::planning::share(*first_repository,
+                                     ::tyr::planning::get_registered_state(*first_repository, tyr::tests::built_state(first_successor).pack().index())),
+              ::tyr::planning::share(*second_repository,
+                                     ::tyr::planning::get_registered_state(*second_repository, tyr::tests::built_state(second_successor).pack().index())));
 }
 }
 

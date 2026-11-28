@@ -71,8 +71,7 @@ struct data<::tyr::formalism::RuleBody<::tyr::GroundTag>>
                            urd::field<"numeric_constraints", &data::numeric_constraints, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::RuleBody<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::RuleBody<::tyr::GroundTag>>(index); }

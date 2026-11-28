@@ -45,12 +45,12 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
-#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/successors/ground/match_tree/declarations.hpp"
 #include "tyr/planning/successors/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/successors/ground/match_tree/repository.hpp"
-#include "tyr/planning/states/state_builder.hpp"
 
 #include <algorithm>
 #include <cassert>

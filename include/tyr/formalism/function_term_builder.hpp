@@ -29,13 +29,13 @@
 #include <concepts>
 #include <type_traits>
 #include <urd/elements/builder.hpp>
-#include <yggdrasil/formalism/row_builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/index.hpp>
 #include <variant>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_builder.hpp>
 
 namespace urd
 {
@@ -51,7 +51,6 @@ struct builder<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>, C>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"parameters", &builder::parameters>, urd::field<"function", &builder::function>, urd::field<"terms", &builder::terms>> {}; }
-
 };
 
 /// The builder of FunctionTerm: its record's members, each in its built form (urd::built_t).
@@ -62,7 +61,6 @@ struct builder<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>, C>
     urd::built_t<urd::key<::tyr::formalism::Function<F>, ygg::Row<::tyr::formalism::Function<F>>>, C> row;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &builder::row>> {}; }
-
 };
 
 }  // namespace urd

@@ -17,10 +17,11 @@
 
 #include "tyr/planning/heuristics/goal_count.hpp"
 
+#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/states/state_view.hpp"
 #include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/states/state_view.hpp"
 
 namespace tyr::planning
 {

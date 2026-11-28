@@ -40,7 +40,6 @@ struct builder<::tyr::formalism::Parameters, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Variable>>, C> variables;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variables", &builder::variables>> {}; }
-
 };
 
 }  // namespace urd

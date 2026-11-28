@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/states/storages/policies/tree_bitset/fact.hpp"
 
 #include "../tree_bitset.hpp"
 #include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/storages/fact_storage_data.hpp"
 #include "tyr/planning/states/storages/ground/fact_storage_builder.hpp"
 #include "tyr/planning/states/storages/lifted/fact_storage_builder.hpp"
-#include "tyr/planning/states/storages/policies/tree_bitset/fact.hpp"
 #include "tyr/planning/states/successor_hint.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"

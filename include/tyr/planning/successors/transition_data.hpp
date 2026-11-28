@@ -37,13 +37,15 @@ template<>
 struct data<::tyr::planning::Transition>
 {
     urd::key<::tyr::planning::Transition> index;
-    ::tyr::planning::TransitionKind kind;
+    ::tyr::planning::TransitionKind kind {};
     urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>> binding;
-    std::uint32_t open;
+    std::uint32_t open { 0 };
 
     data() = default;
 
-    data(::tyr::planning::TransitionKind kind_, urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>> binding_, std::uint32_t open_) :
+    data(::tyr::planning::TransitionKind kind_,
+         const urd::flat_optional<urd::key<::tyr::formalism::Action<::tyr::LiftedTag>, ygg::Row<::tyr::formalism::Action<::tyr::LiftedTag>>>>& binding_,
+         std::uint32_t open_) :
         index(),
         kind(kind_),
         binding(binding_),

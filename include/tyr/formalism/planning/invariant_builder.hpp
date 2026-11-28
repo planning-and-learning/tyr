@@ -49,7 +49,6 @@ struct builder<::tyr::formalism::Invariant, C>
                            urd::field<"num_counted_variables", &builder::num_counted_variables>,
                            urd::field<"atoms", &builder::atoms>> {};
     }
-
 };
 
 }  // namespace urd

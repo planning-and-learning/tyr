@@ -41,8 +41,11 @@ struct builder<::tyr::formalism::BinaryOperator<T, O>, C>
     urd::built_t<::tyr::formalism::FunctionExpression<T>, C> right_operand;
 
     static constexpr auto fields() noexcept
-    { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"left_operand", &builder::left_operand>, urd::field<"right_operand", &builder::right_operand>> {}; }
-
+    {
+        return urd::Fields<urd::field<"operation", &builder::operation>,
+                           urd::field<"left_operand", &builder::left_operand>,
+                           urd::field<"right_operand", &builder::right_operand>> {};
+    }
 };
 
 }  // namespace urd

@@ -23,8 +23,8 @@
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_builder.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/state_view.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/successors/distribution_data.hpp"
 #include "tyr/planning/successors/outcome_node_data.hpp"
 #include "tyr/planning/successors/successor_data.hpp"
@@ -185,6 +185,9 @@ public:
 
 private:
     friend class ygg::formalism::KeyedRepository<StateRepository>;
+    /// share() draws the slot of a shared state from its Impl.
+    template<TaskKind K>
+    friend SharedStateBuilderView<K> share(const StateRepository<K>& repository, StateBuilderHandle<K> state);
 
     /// Its own parts as read; written into, likewise: its Impl's stores (state_repository.cpp).
     [[nodiscard]] OwnParts<false> own_parts() const;
@@ -196,10 +199,7 @@ private:
 extern template class StateRepository<GroundTag>;
 extern template class StateRepository<LiftedTag>;
 
-/// A state builder of `repository`'s storage, its storages' builders checked out with it, emptied for its task: what a
-/// state is written into. It goes back with its handle, which the repository must outlive.
-template<TaskKind Kind>
-StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& repository);
+// get_state_builder, unpack, get_registered_state and share are declared in tyr/planning/declarations.hpp.
 
 /// The lookup: whether a state with the identity of `state` (a builder of `repository`: its fluent facts, numeric values
 /// and temporal part) is registered already. If so, `state` is given that state's index and its derived atoms (the
@@ -253,24 +253,10 @@ StateBuilderHandle<Kind> create_state(StateRepository<Kind>& repository,
                                       const urd::Store<urd::sequence<FactView>>& fluent_facts,
                                       const urd::Store<urd::sequence<formalism::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
 
-/// A state record unpacked into a state builder, its storages read through `repository`'s generic unpack_built: a
-/// registered one's (its index not set here) or one held outside, packed in its storage but not registered.
-template<TaskKind Kind>
-StateBuilderHandle<Kind> unpack(const StateRepository<Kind>& repository, const urd::data<State<Kind>>& packed);
-
-/// A registered state unpacked into a state builder (its index set).
-template<TaskKind Kind>
-StateBuilderHandle<Kind> get_registered_state(const StateRepository<Kind>& repository, urd::index<State<Kind>> state_index);
-
 /// The number of states `repository`'s storage holds (its generic size of State<Kind>).
 template<TaskKind Kind>
 [[nodiscard]] std::size_t num_states(const StateRepository<Kind>& repository)
 { return repository.template size<State<Kind>>(); }
-
-/// A state held by its handle, shared: released with its last copy, keeping `repository` alive meanwhile (a state held
-/// where nothing else keeps its repository, as in Python).
-template<TaskKind Kind>
-[[nodiscard]] SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, StateBuilderHandle<Kind> state);
 
 }
 

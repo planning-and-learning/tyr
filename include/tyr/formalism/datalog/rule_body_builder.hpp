@@ -53,7 +53,6 @@ struct builder<::tyr::formalism::RuleBody<::tyr::GroundTag>, C>
                            urd::field<"derived_literals", &builder::derived_literals>,
                            urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
     }
-
 };
 
 }  // namespace urd

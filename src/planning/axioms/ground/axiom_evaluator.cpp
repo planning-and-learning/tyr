@@ -16,6 +16,9 @@
  */
 
 #include "../axiom_evaluator_impl.hpp"
+#include "tyr/datalog/ground/contexts/program.hpp"
+#include "tyr/datalog/ground/workspaces/program.hpp"
+#include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
@@ -43,15 +46,12 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/programs/axiom.hpp"
-#include "tyr/planning/tasks/task_utils.hpp"
-#include "tyr/datalog/ground/contexts/program.hpp"
-#include "tyr/datalog/ground/workspaces/program.hpp"
-#include "tyr/datalog/solver.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/successors/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
-#include "tyr/planning/states/state_builder.hpp"
-#include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/tasks/task_utils.hpp"
 #include "yggdrasil/formalism/row_view.hpp"
 
 #include <atomic>

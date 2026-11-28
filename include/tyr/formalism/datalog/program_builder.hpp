@@ -73,7 +73,6 @@ struct builder<::tyr::formalism::Program<T>, C>
                            urd::field<"goal", &builder::goal>,
                            urd::field<"rules", &builder::rules>> {};
     }
-
 };
 
 }  // namespace urd

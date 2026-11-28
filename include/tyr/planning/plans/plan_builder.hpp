@@ -38,7 +38,6 @@ struct builder<::tyr::planning::Plan<::tyr::planning::DeterministicTag, Kind>, C
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"start_node", &builder::start_node>, urd::field<"labeled_succ_nodes", &builder::labeled_succ_nodes>> {}; }
-
 };
 }
 

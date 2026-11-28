@@ -20,9 +20,9 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
+#include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/state_builder.hpp"
-#include "tyr/planning/algorithms/state_routing/dist_hash_concepts.hpp"
 #include "tyr/planning/states/state_view.hpp"
 
 #include <boost/hash2/xxhash.hpp>

@@ -31,7 +31,8 @@ inline formalism::Parser make_test_parser(const std::filesystem::path& domain_fi
 { return formalism::Parser(domain_file, parser_options); }
 
 /// A task fixture file: tests/support/data/planning/tasks/<path>.
-inline std::filesystem::path task_fixture(const std::filesystem::path& path) { return std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/tasks" / path; }
+inline std::filesystem::path task_fixture(const std::filesystem::path& path)
+{ return std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/tasks" / path; }
 
 }
 

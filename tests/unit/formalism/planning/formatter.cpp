@@ -5,6 +5,7 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <boost/json.hpp>
 #include <filesystem>

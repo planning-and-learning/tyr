@@ -22,8 +22,8 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
 
 namespace tyr::planning
 {

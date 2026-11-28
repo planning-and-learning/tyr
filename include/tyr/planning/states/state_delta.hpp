@@ -21,8 +21,8 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
-#include "tyr/planning/successors/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/successors/applicability_decl.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/index.hpp>

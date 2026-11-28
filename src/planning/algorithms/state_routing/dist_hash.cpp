@@ -18,11 +18,11 @@
 #include "tyr/planning/algorithms/state_routing/dist_hash.hpp"
 
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/lmcut.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <stdexcept>

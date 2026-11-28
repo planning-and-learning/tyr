@@ -53,14 +53,15 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_builder.hpp"
+#include "tyr/planning/states/state_delta.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/successors/action_executor.hpp"
 #include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/successors/applicability_lifted.hpp"
-#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/states/state_builder.hpp"
-#include "tyr/planning/states/state_delta.hpp"
 
 #include <algorithm>
 #include <array>
@@ -111,7 +112,8 @@ void process_effects(Effects effects,
             {
                 const auto fterm = numeric_effect.fterm().index();
                 const auto operand = evaluate(numeric_effect.fexpr(), state_context);
-                successor_state_builder.set(fterm, formalism::apply(numeric_effect.operation(), value_so_far(successor_state_builder, state_context, fterm), operand));
+                successor_state_builder.set(fterm,
+                                            formalism::apply(numeric_effect.operation(), value_so_far(successor_state_builder, state_context, fterm), operand));
                 tmp_numeric_writes.push_back(fterm);
             }
 
@@ -138,8 +140,7 @@ void apply_lifted_effect(formalism::ConditionalEffectView<LiftedTag> cond_effect
     for (const auto literal : effect.literals())
     {
         const auto fact = fdr_context.get_fact(ground(literal.atom(), grounder_context).first);
-        (literal.polarity() ? tmp_add_effects : tmp_del_effects)
-            .push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.variable(), fact.value()));
+        (literal.polarity() ? tmp_add_effects : tmp_del_effects).push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.variable(), fact.value()));
     }
 
     for (const auto numeric_effect : effect.numeric_effects())

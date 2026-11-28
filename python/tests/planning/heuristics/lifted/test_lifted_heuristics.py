@@ -1,10 +1,11 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from python.tests.planning.support.lifted import StateBuilderView, lifted_task
 from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
+
 from pytyr import formalism, planning
-from python.tests.planning.support.lifted import StateBuilderView, lifted_task
 
 
 def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() -> None:

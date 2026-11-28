@@ -135,14 +135,14 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert dictionaries.serialize(start) == "v0"
     assert sys.getrefcount(start) > references
     (step,) = plan.labeled_succ_nodes()
-    assert [atom.predicate().name() for atom in plan.start_node().state().fluent_atoms()] == [
-        "start"
-    ]
+    assert [atom.predicate().name() for atom in plan.start_node().state().fluent_atoms()] == ["start"]
     assert [atom.predicate().name() for atom in step.node().state().fluent_atoms()] == ["done"]
     assert dictionaries.serialize(step.node()) == "v1"
-    assert dictionaries.serialize(step.label()) == "a0"
+    label = step.label()
+    assert isinstance(label, formalism.RowActionLifted)
+    assert dictionaries.serialize(label) == "a0"
     assert dictionaries.table(formalism.RowActionLifted) == [{"relation": "A0", "values": []}]
-    assert dictionaries.table(formalism.ActionLifted) == [{"name": step.label().relation().name()}]
+    assert dictionaries.table(formalism.ActionLifted) == [{"name": label.relation().name()}]
     assert list(formalism.RowActionLifted.Fields.__members__) == list(
         _rows(dictionaries.table(formalism.RowActionLifted))[0]
     )
@@ -154,7 +154,8 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert states[0]["fact_storage"] != states[1]["fact_storage"]
     assert states[0]["numeric_storage"] != states[1]["numeric_storage"]
     # The start state's derived atom and numeric value 3, the goal state's none and 2.
-    assert [len(row["indices"]) for row in _rows(dictionaries.table(module.AtomStorageBuilderView))] == [1, 0]
+    atom_rows = _rows(dictionaries.table(module.AtomStorageBuilderView))
+    assert [len(indices) for row in atom_rows if isinstance(indices := row["indices"], list)] == [1, 0]
     assert _rows(dictionaries.table(module.NumericStorageBuilderView)) == [{"values": [3.0]}, {"values": [2.0]}]
     tables = dictionaries.tables()
     assert tables["visited"] == {"prefix": "s", "rows": states}

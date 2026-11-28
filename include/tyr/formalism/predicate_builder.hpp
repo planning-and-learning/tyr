@@ -41,7 +41,6 @@ struct builder<::tyr::formalism::Predicate<T>, C>
     urd::built_t<ygg::uint_t, C> arity = 0;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &builder::name>, urd::field<"arity", &builder::arity>> {}; }
-
 };
 
 }  // namespace urd

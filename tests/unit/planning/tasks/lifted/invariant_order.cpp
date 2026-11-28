@@ -193,11 +193,7 @@ TEST(TyrPlanningInvariantOrderTest, DisabledInvariantSynthesisIgnoresTheOrder)
 
 TEST(TyrPlanningInvariantOrderTest, ViolatedInstanceStaysSingle)
 {
-    auto ferry = parse(ferry_domain(),
-                       [](formalism::Parser& parser)
-                       {
-                           return parser.parse_task(task_fixture("ferry/ferry-two-positions.pddl"));
-                       });
+    auto ferry = parse(ferry_domain(), [](formalism::Parser& parser) { return parser.parse_task(task_fixture("ferry/ferry-two-positions.pddl")); });
     auto& lifted = ferry.lifted;
     const auto invariants = FerryInvariants(ferry.invariants);
 

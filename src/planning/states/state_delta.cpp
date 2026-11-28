@@ -17,9 +17,9 @@
 
 #include "tyr/planning/states/state_delta.hpp"
 
+#include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/storages/ground/fact_storage_builder.hpp"
 #include "tyr/planning/states/storages/lifted/fact_storage_builder.hpp"
-#include "tyr/planning/states/state_builder.hpp"
 
 #include <algorithm>
 #include <cstddef>

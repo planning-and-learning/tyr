@@ -1,7 +1,7 @@
 #include "tyr/planning/successors/applicability.hpp"
 
-#include "planning/successors/applicability_schema.hpp"
 #include "planning/parser.hpp"
+#include "planning/successors/applicability_schema.hpp"
 #include "planning/successors/successor_compositions.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
@@ -13,21 +13,21 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/programs/lifted/action.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 #include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/programs/lifted/action.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/static_state.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 
 #include <algorithm>
 #include <array>
@@ -132,8 +132,8 @@ void expect_pairwise_conditional_effect_successor(const tyr::planning::TaskPtr<K
 
 TEST(TyrPlanningApplicabilityTest, EffectFamiliesUseGroundedTargetsAndNeverShrink)
 {
-    auto lifted_task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(kEffectValidityDomain)
-                                                                  .parse_task(kEffectValidityProblem));
+    auto lifted_task =
+        tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(task_fixture(kEffectValidityDomain)).parse_task(task_fixture(kEffectValidityProblem)));
 
     expect_effect_validity_successors(lifted_task);
 
@@ -143,8 +143,8 @@ TEST(TyrPlanningApplicabilityTest, EffectFamiliesUseGroundedTargetsAndNeverShrin
 
 TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 {
-    const auto task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(kEffectValidityDomain)
-                                                                 .parse_task(kEffectValidityProblem));
+    const auto task =
+        tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(task_fixture(kEffectValidityDomain)).parse_task(task_fixture(kEffectValidityProblem)));
     const auto generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, ygg::ExecutionContext::create(1));
     const auto& action_program = generator->get_action_program();
     const auto global_program = action_program.get_datalog_program().get_program();
@@ -177,10 +177,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
         const auto& program = schema.program;
         // Each schema program is a record of the action program's layer (the global program's may sit in a layer below it).
         EXPECT_EQ(&program.context(), &action_program.get_datalog_program().get_program_repository());
-        EXPECT_TRUE(
-            std::ranges::equal(program.template predicates<formalism::StaticTag>(), global_program.template predicates<formalism::StaticTag>()));
-        EXPECT_TRUE(
-            std::ranges::equal(program.template predicates<formalism::FluentTag>(), global_program.template predicates<formalism::FluentTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.template predicates<formalism::StaticTag>(), global_program.template predicates<formalism::StaticTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.template predicates<formalism::FluentTag>(), global_program.template predicates<formalism::FluentTag>()));
         EXPECT_TRUE(std::ranges::equal(program.template functions<formalism::StaticTag>(), global_program.template functions<formalism::StaticTag>()));
         EXPECT_TRUE(std::ranges::equal(program.template functions<formalism::FluentTag>(), global_program.template functions<formalism::FluentTag>()));
         EXPECT_TRUE(std::ranges::equal(program.objects(), global_program.objects()));
@@ -197,8 +195,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 
 TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAcrossStates)
 {
-    auto task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(task_fixture("toggle/domain.pddl"))
-                                                           .parse_task(task_fixture("toggle/toggle-problem.pddl")));
+    auto task = tyr::planning::Task<LiftedTag>::create(
+        tyr::formalism::Parser(task_fixture("toggle/domain.pddl")).parse_task(task_fixture("toggle/toggle-problem.pddl")));
     ASSERT_TRUE(task->has_axioms());
     auto execution_context = ygg::ExecutionContext::create(1);
     auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<LiftedTag>>(task, execution_context);
@@ -281,8 +279,8 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
 
 TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
 {
-    const auto source = tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(task_fixture("static-copy/domain.pddl"))
-                                                                   .parse_task(task_fixture("static-copy/static-copy-problem.pddl")));
+    const auto source = tyr::planning::Task<LiftedTag>::create(
+        tyr::formalism::Parser(task_fixture("static-copy/domain.pddl")).parse_task(task_fixture("static-copy/static-copy-problem.pddl")));
     auto destination = std::make_shared<tyr::formalism::Repository>(source->get_domain().get_repository().get());
     auto builder = tyr::formalism::Builder {};
     ASSERT_EQ(source->get_task().atoms<formalism::StaticTag>().size(), 1);
@@ -307,9 +305,8 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
 
 TEST(TyrPlanningApplicabilityTest, PairwiseStaticCompatibilityRestrictsQuantifiedConditionalEffects)
 {
-    auto lifted_task =
-        tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(kPairwiseConditionalEffectDomain)
-                                                   .parse_task(kPairwiseConditionalEffectProblem));
+    auto lifted_task = tyr::planning::Task<LiftedTag>::create(
+        tyr::formalism::Parser(task_fixture(kPairwiseConditionalEffectDomain)).parse_task(task_fixture(kPairwiseConditionalEffectProblem)));
     auto execution_context = ygg::ExecutionContext::create(1);
     // The static facts allow only b for ?y in the ground action of apply(a), and only b is marked.
     expect_pairwise_conditional_effect_successor(lifted_task);

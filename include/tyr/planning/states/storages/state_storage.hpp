@@ -23,8 +23,8 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/states/storages/policies/config.hpp"
-#include "tyr/planning/tasks/task.hpp"
 #include "tyr/planning/states/storages/temporal_parts.hpp"
+#include "tyr/planning/tasks/task.hpp"
 
 #include <algorithm>
 #include <cmath>

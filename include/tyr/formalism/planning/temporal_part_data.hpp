@@ -87,8 +87,7 @@ struct data<::tyr::formalism::TemporalPart<T>>
                            urd::field<"end_choices", &data::end_choices>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::TemporalPart<T>> key() const noexcept { return urd::key<::tyr::formalism::TemporalPart<T>>(index); }
 };

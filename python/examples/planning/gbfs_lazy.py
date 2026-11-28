@@ -34,8 +34,8 @@ from pytyr.planning.lifted import (
     LabeledNodeBuilder,
     LabeledNodeBuilderView,
     NodeBuilderView,
-    OwnedNodeBuilderView,
     NodeData,
+    OwnedNodeBuilderView,
     StateIndex,
     StateRepository,
     SuccessorGenerator,
@@ -75,14 +75,17 @@ def labeled_successor_nodes(
 ) -> list[LabeledNode]:
     """The successors of `node`, each registered and labeled by its action binding.
 
-    The search is deterministic: one successor state per transition (the `deterministic` environment). The lookup gives a
-    state that is registered already its index and derived atoms, the axiom step closes any other under the axioms, and
-    register_successor registers it. The binding is interned: a transition's binding is borrowed, valid only during its
-    callback.
+    The search is deterministic: one successor state per transition (the `deterministic` environment). The lookup gives
+    a state that is registered already its index and derived atoms, the axiom step closes any other under the axioms,
+    and register_successor registers it. The binding is interned: a transition's binding is borrowed, valid only during
+    its callback.
     """
     successors: list[LabeledNode] = []
 
     def visit(transition: TransitionLabel, successor_state: SuccessorState) -> bool:
+        if transition.binding is None:
+            message = "A transition without an action binding (a temporal end or timed literals) is not supported."
+            raise ValueError(message)
         binding = intern_action_binding(successor_generator, transition.binding)
         find_successor(state_repository, node, successor_state)
         extend_successor(axiom_evaluator, node, successor_state)
@@ -159,7 +162,6 @@ def find_solution(
 
     if not goal_strategy.is_static_goal_satisfied(task):
         return SearchResult(SearchStatus.UNSOLVABLE)
-
 
     initial_node = get_initial_node(state_repository, axiom_evaluator)
     initial_state = initial_node.state()

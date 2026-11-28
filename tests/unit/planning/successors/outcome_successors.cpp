@@ -15,13 +15,13 @@
 #include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
-#include <ranges>
-#include <span>
 #include <cstddef>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
+#include <ranges>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -71,7 +71,9 @@ std::vector<Summary> initial_successors(const planning::TaskPtr<Kind>& task)
                                                 {
                                                     summary.label = relation.name().str();
                                                     for (std::size_t column = 0; column < relation.arity(); ++column)
-                                                        summary.label += " " + urd::resolve(row.template get<urd::index<formalism::Object>>(column), row.context()).name().str();
+                                                        summary.label +=
+                                                            " "
+                                                            + urd::resolve(row.template get<urd::index<formalism::Object>>(column), row.context()).name().str();
                                                 });
                             });
         for (const auto distribution : successor.distributions())
@@ -89,17 +91,17 @@ std::vector<Summary> initial_successors(const planning::TaskPtr<Kind>& task)
         generator,
         initial_node,
         [&](const planning::TransitionLabel<Kind>& /*transition*/, planning::SuccessorBuilder<planning::GeneralTag, Kind>& successor)
-                                 {
-                                     // After the three steps (its states closed and registered), the same successor.
-                                     const auto built = summarize(urd::resolve(std::as_const(successor), std::as_const(*state_repository)));
-                                     planning::find_outcomes(*state_repository, successor);
-                                     EXPECT_TRUE(planning::extend_outcomes(generator, *state_repository, *axiom_evaluator, successor));
-                                     planning::register_outcomes(*state_repository, successor);
-                                     summarize(urd::resolve(std::as_const(successor), std::as_const(*state_repository)));
-                                     EXPECT_EQ(result[result.size() - 2], result.back());
-                                     result.pop_back();
-                                     return built;
-                                 });
+        {
+            // After the three steps (its states closed and registered), the same successor.
+            const auto built = summarize(urd::resolve(std::as_const(successor), std::as_const(*state_repository)));
+            planning::find_outcomes(*state_repository, successor);
+            EXPECT_TRUE(planning::extend_outcomes(generator, *state_repository, *axiom_evaluator, successor));
+            planning::register_outcomes(*state_repository, successor);
+            summarize(urd::resolve(std::as_const(successor), std::as_const(*state_repository)));
+            EXPECT_EQ(result[result.size() - 2], result.back());
+            result.pop_back();
+            return built;
+        });
     std::ranges::sort(result);
     return result;
 }
@@ -168,17 +170,17 @@ TEST(TyrTests, OutcomeSuccessorsOfProbabilisticEffects)
     EXPECT_GT(chances, 0);
 }
 
-const auto mixed_domain = task_fixture("mixed/domain.pddl");
+constexpr const char* mixed_domain = "mixed/domain.pddl";  // under task_fixture
 
-const auto mixed_problem = task_fixture("mixed/mixed-1.pddl");
+constexpr const char* mixed_problem = "mixed/mixed-1.pddl";  // under task_fixture
 
 /// Nested choices of both kinds flatten into a set of distributions: the first outcome is one distribution (0.3 / 0.7);
 /// the second has, per block, a probabilistic effect whose nonempty outcome is a oneof (two strategies each), the blocks
 /// independent: 2 x 2 distributions of 4 joint outcomes each, some of them merged (equal states).
 TEST(TyrTests, OutcomeSuccessorsOfNestedChoices)
 {
-    auto parser = formalism::Parser(mixed_domain);
-    const auto successors = both_successors(parser.parse_task(mixed_problem));
+    auto parser = formalism::Parser(task_fixture(mixed_domain));
+    const auto successors = both_successors(parser.parse_task(task_fixture(mixed_problem)));
     ASSERT_EQ(successors.size(), 2);
     expect_distributions_sum_to_one(successors);
     for (const auto& successor : successors)
@@ -237,8 +239,8 @@ TEST(TyrTests, EnvironmentsFollowATasksEffects)
     EXPECT_TRUE(fits<planning::ProbabilisticTag>(probabilistic));
     EXPECT_TRUE(fits<planning::GeneralTag>(probabilistic));
 
-    auto parser = formalism::Parser(mixed_domain);
-    const auto mixed = planning::Task<LiftedTag>::create(parser.parse_task(mixed_problem));
+    auto parser = formalism::Parser(task_fixture(mixed_domain));
+    const auto mixed = planning::Task<LiftedTag>::create(parser.parse_task(task_fixture(mixed_problem)));
     EXPECT_TRUE(features_of(mixed).oneof);
     EXPECT_TRUE(features_of(mixed).probabilistic);
     EXPECT_FALSE(fits<planning::DeterministicTag>(mixed));

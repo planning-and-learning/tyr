@@ -2,9 +2,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import gc
+
 import pytest
+from python.tests.planning.support.components import (
+    GroundSuccessors,
+    LiftedSuccessors,
+    interned_label,
+    make_components_ground,
+    make_components_lifted,
+    make_gripper_tasks,
+)
+
 from pytyr import formalism, planning
-from python.tests.planning.support.components import GroundSuccessors, LiftedSuccessors, make_components_ground, make_components_lifted, make_gripper_tasks
 
 
 def _check_packed_nodes_ground(task: planning.ground.Task) -> None:
@@ -29,7 +38,9 @@ def _check_packed_nodes_ground(task: planning.ground.Task) -> None:
     assert packed_labeled.node == packed
     assert repr(packed) == str(packed)
     assert repr(packed_labeled) == str(packed_labeled)
-    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
+    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(
+        state_repository
+    )
 
     del initial_node, successor, successors, node, labeled, state_repository, axiom_evaluator, successor_generator
     gc.collect()
@@ -63,7 +74,9 @@ def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
     assert packed_labeled.node == packed
     assert repr(packed) == str(packed)
     assert repr(packed_labeled) == str(packed_labeled)
-    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(
+        state_repository
+    )
 
     del initial_node, successor, successors, node, labeled, state_repository, axiom_evaluator, successor_generator
     gc.collect()
@@ -78,7 +91,9 @@ def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
 def _check_packed_node_keeps_its_state_repository_alive_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_ground(task)
     initial_node = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
-    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(state_repository)
+    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(
+        state_repository
+    )
     state_text = str(initial_node.state())
     del initial_node, state_repository, axiom_evaluator, successor_generator
     gc.collect()
@@ -89,7 +104,9 @@ def _check_packed_node_keeps_its_state_repository_alive_ground(task: planning.gr
 def _check_packed_node_keeps_its_state_repository_alive_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_lifted(task)
     initial_node = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
-    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(state_repository)
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(
+        state_repository
+    )
     state_text = str(initial_node.state())
     del initial_node, state_repository, axiom_evaluator, successor_generator
     gc.collect()
@@ -103,8 +120,10 @@ def _first_successor_label_ground(task: planning.ground.Task, *, packed: bool) -
     labeled = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
         initial_node
     )[0]
-    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
-    label = plan.labeled_succ_nodes()[0].label() if packed else labeled.label()
+    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(
+        state_repository
+    )
+    label = interned_label(plan.labeled_succ_nodes()[0] if packed else labeled)
     return label, str(label)
 
 
@@ -114,8 +133,10 @@ def _first_successor_label_lifted(task: planning.lifted.Task, *, packed: bool) -
     labeled = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
         initial_node
     )[0]
-    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
-    label = plan.labeled_succ_nodes()[0].label() if packed else labeled.label()
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(
+        state_repository
+    )
+    label = interned_label(plan.labeled_succ_nodes()[0] if packed else labeled)
     return label, str(label)
 
 
@@ -159,30 +180,31 @@ def _check_labeled_node_plan_construction_ground(task: planning.ground.Task) -> 
     assert labeled_successor_nodes
     first_labeled_successor = labeled_successor_nodes[0]
     assert type(first_labeled_successor.label()) is formalism.RowActionLifted
+    label = interned_label(first_labeled_successor)
     assert (
-        GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, first_labeled_successor.label()
-        )
+        GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(start_node, label)
         == first_labeled_successor.node()
     )
     assert (
         GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, successor_generator.ground_action(first_labeled_successor.label())
+            start_node, successor_generator.ground_action(label)
         )
         == first_labeled_successor.node()
     )
 
     labeled_node = planning.ground.LabeledNodeBuilder(
-        label=first_labeled_successor.label(),
+        label=label,
         node=first_labeled_successor.node(),
     ).view(state_repository)
-    plan = planning.ground.deterministic.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(state_repository)
+    plan = planning.ground.deterministic.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(
+        state_repository
+    )
 
     assert plan.length() == 1
     assert not plan.empty()
     assert plan.cost() == labeled_node.node().metric()
     assert plan.start_node().state().pack() == start_node.state().pack()
-    assert plan.labeled_succ_nodes()[0].label() == labeled_node.label()
+    assert interned_label(plan.labeled_succ_nodes()[0]) == interned_label(labeled_node)
     assert plan.labeled_succ_nodes()[0].node().state().pack() == labeled_node.node().state().pack()
 
 
@@ -196,30 +218,31 @@ def _check_labeled_node_plan_construction_lifted(task: planning.lifted.Task) -> 
     assert labeled_successor_nodes
     first_labeled_successor = labeled_successor_nodes[0]
     assert type(first_labeled_successor.label()) is formalism.RowActionLifted
+    label = interned_label(first_labeled_successor)
     assert (
-        LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, first_labeled_successor.label()
-        )
+        LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(start_node, label)
         == first_labeled_successor.node()
     )
     assert (
         LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, successor_generator.ground_action(first_labeled_successor.label())
+            start_node, successor_generator.ground_action(label)
         )
         == first_labeled_successor.node()
     )
 
     labeled_node = planning.lifted.LabeledNodeBuilder(
-        label=first_labeled_successor.label(),
+        label=label,
         node=first_labeled_successor.node(),
     ).view(state_repository)
-    plan = planning.lifted.deterministic.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(state_repository)
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(
+        state_repository
+    )
 
     assert plan.length() == 1
     assert not plan.empty()
     assert plan.cost() == labeled_node.node().metric()
     assert plan.start_node().state().pack() == start_node.state().pack()
-    assert plan.labeled_succ_nodes()[0].label() == labeled_node.label()
+    assert interned_label(plan.labeled_succ_nodes()[0]) == interned_label(labeled_node)
     assert plan.labeled_succ_nodes()[0].node().state().pack() == labeled_node.node().state().pack()
 
 

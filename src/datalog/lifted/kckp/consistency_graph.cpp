@@ -447,8 +447,7 @@ static auto constraint_terms_of(formalism::RuleBodyView<LiftedTag> element)
 static details::MutableLiterals literals_of(formalism::RuleBodyView<LiftedTag> element)
 {
     auto result = details::MutableLiterals {};
-    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
-                                          { result.template get<F>() = literals_of(element.template literals<F>(), element.arity()); });
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { result.template get<F>() = literals_of(element.template literals<F>(), element.arity()); });
     return result;
 }
 

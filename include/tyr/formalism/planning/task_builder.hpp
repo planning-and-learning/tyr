@@ -83,7 +83,6 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
                            urd::field<"axioms", &builder::axioms>,
                            urd::field<"timed_literals", &builder::timed_literals>> {};
     }
-
 };
 
 /// The builder of Task: its record's members, each in its built form (urd::built_t).
@@ -134,7 +133,6 @@ struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
                            urd::field<"ground_actions", &builder::ground_actions>,
                            urd::field<"ground_axioms", &builder::ground_axioms>> {};
     }
-
 };
 
 }  // namespace urd

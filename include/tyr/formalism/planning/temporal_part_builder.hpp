@@ -57,7 +57,6 @@ struct builder<::tyr::formalism::TemporalPart<T>, C>
                            urd::field<"end_effects", &builder::end_effects>,
                            urd::field<"end_choices", &builder::end_choices>> {};
     }
-
 };
 
 }  // namespace urd

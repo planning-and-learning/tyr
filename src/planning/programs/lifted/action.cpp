@@ -197,12 +197,10 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::ProgramView<Lif
     const auto reads_predicate = [&]<typename F>(formalism::PredicateView<F> predicate)
     {
         // Negative literals also need the complete relation to check absence.
-        return std::ranges::any_of(rules,
-                                   [&](auto rule)
-                                   {
-                                       return std::ranges::any_of(rule.body().template literals<F>(),
-                                                                  [&](auto literal) { return literal.atom().predicate() == predicate; });
-                                   });
+        return std::ranges::any_of(
+            rules,
+            [&](auto rule)
+            { return std::ranges::any_of(rule.body().template literals<F>(), [&](auto literal) { return literal.atom().predicate() == predicate; }); });
     };
     // The program lists the task's fluent and derived predicates (and its own derived ones, which no state holds).
     for (const auto predicate : program.predicates<formalism::FluentTag>())

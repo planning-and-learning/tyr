@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
@@ -294,8 +293,8 @@ fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Rule<T>, tf::Re
                                                                                                    fmt::format_context& context) const
 {
     const auto body = value.body();
-    const auto has_body = !body.static_literals().empty() || !body.fluent_literals().empty() || !body.derived_literals().empty()
-                          || !body.numeric_constraints().empty();
+    const auto has_body =
+        !body.static_literals().empty() || !body.fluent_literals().empty() || !body.derived_literals().empty() || !body.numeric_constraints().empty();
     auto out = write_joined(context.out(), value.fluent_heads(), ", ");
     if (!value.fluent_heads().empty() && !value.derived_heads().empty())
         out = fmt::format_to(out, ", ");

@@ -47,7 +47,6 @@ struct builder<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>, C>
                            urd::field<"true_child", &builder::true_child>,
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
-
 };
 
 }  // namespace urd

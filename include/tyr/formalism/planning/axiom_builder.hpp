@@ -27,12 +27,12 @@
 #include "tyr/formalism/variable_builder.hpp"
 
 #include <urd/elements/builder.hpp>
-#include <yggdrasil/formalism/row_builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_builder.hpp>
 
 namespace urd
 {
@@ -48,7 +48,6 @@ struct builder<::tyr::formalism::Axiom<::tyr::LiftedTag>, C>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"variables", &builder::variables>, urd::field<"body", &builder::body>, urd::field<"head", &builder::head>> {}; }
-
 };
 
 /// The builder of Axiom: its record's members, each in its built form (urd::built_t).

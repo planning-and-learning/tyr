@@ -73,8 +73,9 @@ TEST(TyrPlanningLiftedStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto make_task = [&]
     {
-        const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(tyr::tests::task_fixture("borrowed-state/domain.pddl"))
-                                                                            .parse_task(tyr::tests::task_fixture("borrowed-state/borrowed-state-problem.pddl")));
+        const auto lifted =
+            tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::Parser(tyr::tests::task_fixture("borrowed-state/domain.pddl"))
+                                                            .parse_task(tyr::tests::task_fixture("borrowed-state/borrowed-state-problem.pddl")));
         return lifted;
     };
     const auto task = make_task();
@@ -112,8 +113,8 @@ TEST(TyrPlanningLiftedStateTest, BuilderRegistrationRetainsClosureAndReusesOwned
 
     source.clear();
     EXPECT_TRUE(std::ranges::equal(retained.fluent_fact_index_values(), initial.fluent_fact_index_values()));
-    EXPECT_TRUE(std::ranges::equal(retained.template atom_indices<::tyr::formalism::DerivedTag>(),
-                                   initial.template atom_indices<::tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(retained.template atom_indices<::tyr::formalism::DerivedTag>(), initial.template atom_indices<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(std::ranges::equal(retained.template fterm_index_values<tyr::formalism::FluentTag>(),
                                    initial.template fterm_index_values<tyr::formalism::FluentTag>()));
 }

@@ -26,35 +26,35 @@
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/heuristics/heuristic.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/state_repository.hpp"
-#include "tyr/planning/successors/successors.hpp"
 #include "tyr/planning/states/worker_state_index.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
-#include <functional>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <random>
+#include <span>
 #include <stdexcept>
 #include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
-#include <span>
 #include <vector>
 #include <yggdrasil/core/portable_shuffle.hpp>
 
@@ -129,7 +129,6 @@ public:
         ygg::float_t g_value;
         bool is_goal;
     };
-
 
     struct WorkerData
     {
@@ -454,8 +453,10 @@ private:
     }
 
     template<typename EvaluateHeuristic>
-    AcceptanceResult
-    accept_successor(WorkerData& worker, const NodeBuilderView<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
+    AcceptanceResult accept_successor(WorkerData& worker,
+                                      const NodeBuilderView<Kind>& source_node,
+                                      const RoutedSuccessor& routed_successor,
+                                      EvaluateHeuristic&& evaluate_heuristic)
     {
         const auto successor_node = NodeBuilderView<Kind>(&routed_successor.node, worker.state_repository.get());
         const auto successor_state = successor_node.state();
@@ -496,14 +497,7 @@ private:
         {
             const auto binding = transition.binding.value();
             auto metadata = worker.search.make_successor_metadata(worker.index, node, binding);
-            return m_execution.route(*this,
-                                     worker,
-                                     node,
-                                     std::move(successor.state),
-                                     successor.delta,
-                                     successor.auxiliary_value,
-                                     binding,
-                                     std::move(metadata))
+            return m_execution.route(*this, worker, node, std::move(successor.state), successor.delta, successor.auxiliary_value, binding, std::move(metadata))
                    != AcceptanceResult::TERMINAL;
         };
         for_each_successor<DeterministicTag>(*worker.successor_generator, node, std::ref(route), options);

@@ -47,16 +47,17 @@ void register_initial_successor_tables(ygg::serialization::Dictionaries& diction
     dictionaries.template register_table<urd::borrowed_view<planning::Transition, Repository, urd::builder<planning::Transition, Repository>>>("labels", "L");
     dictionaries.template register_table<formalism::ActionRowView>("bindings", "B");
     dictionaries.template register_table<
-        urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>, Repository, urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>>("built_bindings",
-                                                                                                                                                "b");
+        urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>, Repository, urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>>(
+        "built_bindings",
+        "b");
     dictionaries.template register_table<formalism::ActionView<LiftedTag>>("actions", "A", Indices { "name" });
     dictionaries.template register_table<formalism::ObjectView>("objects", "o", Indices { "name" });
     dictionaries.template register_table<urd::borrowed_view<planning::Distribution<Kind>, Repository, urd::builder<planning::Distribution<Kind>, Repository>>>(
         "distributions",
         "D");
-    dictionaries.template register_table<urd::borrowed_view<planning::OutcomeNode<planning::GeneralTag, Kind>, Repository, urd::builder<planning::OutcomeNode<planning::GeneralTag, Kind>, Repository>>>(
-        "outcomes",
-        "O");
+    dictionaries.template register_table<urd::borrowed_view<planning::OutcomeNode<planning::GeneralTag, Kind>,
+                                                            Repository,
+                                                            urd::builder<planning::OutcomeNode<planning::GeneralTag, Kind>, Repository>>>("outcomes", "O");
     dictionaries.template register_table<planning::NodeBuilderView<Kind>>("nodes", "N");
     // A state and its storages, built (as the generator writes them).
     dictionaries.template register_table<planning::StateBuilderView<Kind>>("states", "s");

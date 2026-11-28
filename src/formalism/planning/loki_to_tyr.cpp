@@ -1596,9 +1596,8 @@ urd::index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
     auto metric = checkout<Metric>(builder);
 
     urd::build_member(metric->fexpr, translate_grounded(element.expression(), builder, context), context);
-    metric->optimization_direction = element.optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
-                                         OptimizationDirection::Minimize :
-                                         OptimizationDirection::Maximize;
+    metric->optimization_direction = element.optimization_direction() == loki::formalism::OptimizationDirection::Minimize ? OptimizationDirection::Minimize :
+                                                                                                                            OptimizationDirection::Maximize;
 
     return context.insert(*metric, builder).first.index();
 }

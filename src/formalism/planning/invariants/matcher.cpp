@@ -159,8 +159,7 @@ void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& res
             if (pattern.terms.size() != atom.terms.size())
                 continue;
 
-            auto sigma =
-                match_invariant_against_ground_atom(data.invariant().num_rigid_variables(), data.invariant().num_counted_variables(), pattern, atom);
+            auto sigma = match_invariant_against_ground_atom(data.invariant().num_rigid_variables(), data.invariant().num_counted_variables(), pattern, atom);
             if (!sigma.has_value())
                 continue;
 

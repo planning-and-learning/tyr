@@ -153,10 +153,7 @@ formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository>
 }
 
 urd::flat_string create_applicability_name(formalism::AxiomView<LiftedTag> axiom)
-{
-    return urd::flat_string { std::string { "@" } + axiom.head().predicate().name().str() + std::string("_")
-                              + std::to_string(axiom.index().value) };
-}
+{ return urd::flat_string { std::string { "@" } + axiom.head().predicate().name().str() + std::string("_") + std::to_string(axiom.index().value) }; }
 
 std::optional<formalism::LiteralView<GroundTag, formalism::FluentTag>>
 create_fact_literal(formalism::FDRFactView<formalism::FluentTag> fact,

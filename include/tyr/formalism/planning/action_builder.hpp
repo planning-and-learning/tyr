@@ -29,13 +29,13 @@
 #include "tyr/formalism/variable_builder.hpp"
 
 #include <urd/elements/builder.hpp>
-#include <yggdrasil/formalism/row_builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_builder.hpp>
 
 namespace urd
 {
@@ -97,7 +97,6 @@ struct builder<::tyr::formalism::Action<::tyr::GroundTag>, C>
                            urd::field<"choices", &builder::choices>,
                            urd::field<"temporal_part", &builder::temporal_part>> {};
     }
-
 };
 
 }  // namespace urd

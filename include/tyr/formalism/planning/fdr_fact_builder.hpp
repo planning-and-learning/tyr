@@ -40,7 +40,6 @@ struct builder<::tyr::formalism::FDRFact<T>, C>
     urd::built_t<::tyr::formalism::FDRValue, C> value;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &builder::variable>, urd::field<"value", &builder::value>> {}; }
-
 };
 
 }  // namespace urd

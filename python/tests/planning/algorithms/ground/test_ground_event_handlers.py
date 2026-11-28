@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from typing_extensions import override
-from pytyr import planning
 
+from pytyr import planning
 
 Node = planning.ground.OwnedNodeBuilderView | planning.ground.NodeBuilderView
 

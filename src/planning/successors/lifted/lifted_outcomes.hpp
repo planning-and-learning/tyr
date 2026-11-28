@@ -150,7 +150,7 @@ private:
                     distributions.push_operand(distributions.product(picked, nested));
                 }
                 const auto set = choice.probabilities().empty() ? distributions.union_of_operands(operands) :
-                                                                      distributions.mixture_of_operands(operands, choice.probabilities());
+                                                                  distributions.mixture_of_operands(operands, choice.probabilities());
                 result = distributions.product(result, set);
             }
             m_instances.resize(base);

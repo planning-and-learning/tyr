@@ -41,7 +41,6 @@ struct builder<::tyr::formalism::FDRVariable<T>, C>
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>>, C> atoms;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &builder::atoms>> {}; }
-
 };
 
 }  // namespace urd

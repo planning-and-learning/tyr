@@ -24,10 +24,10 @@
 #include "tyr/planning/nodes/node_builder.hpp"
 
 #include <urd/elements/builder.hpp>
-#include <yggdrasil/formalism/row_builder.hpp>
 #include <urd/elements/children.hpp>
 #include <urd/elements/index.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_builder.hpp>
 
 namespace urd
 {
@@ -39,7 +39,6 @@ struct builder<::tyr::planning::LabeledNode<Kind>, C>
     urd::built_t<urd::data<::tyr::planning::Node<Kind>>, C> node;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &builder::label>, urd::field<"node", &builder::node>> {}; }
-
 };
 }
 

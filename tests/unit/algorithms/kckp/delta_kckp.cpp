@@ -27,10 +27,10 @@
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/programs/lifted/action.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/tasks/task_utils.hpp"
 
 #include <algorithm>
@@ -97,8 +97,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     const auto& rules = program.get_const_program_workspace().engine.rules;
     for (ygg::uint_t i = 0; i < program_view.rules().size(); ++i)
     {
-        const auto is_pick =
-            action_program.get_predicate_to_action_mapping().at(program_view.rules()[i].derived_heads().front().predicate()).name() == "pick";
+        const auto is_pick = action_program.get_predicate_to_action_mapping().at(program_view.rules()[i].derived_heads().front().predicate()).name() == "pick";
 
         if (is_pick)
         {

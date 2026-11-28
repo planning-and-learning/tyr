@@ -22,10 +22,10 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/states/state_repository.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <filesystem>
 #include <gtest/gtest.h>

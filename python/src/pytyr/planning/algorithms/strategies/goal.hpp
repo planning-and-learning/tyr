@@ -19,6 +19,7 @@
 #define TYR_PYTHON_PLANNING_ALGORITHMS_STRATEGIES_GOAL_HPP_
 
 #include "pytyr/planning/module.hpp"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/trampoline.h>
@@ -59,7 +60,12 @@ void bind_goal_strategy(nb::module_& m, const std::string& name)
         .def(nb::init<>())
         .def("make_worker", &T::make_worker, "worker_index"_a)
         .def("is_static_goal_satisfied", &T::is_static_goal_satisfied, "task"_a)
-        .def("is_dynamic_goal_satisfied", &T::is_dynamic_goal_satisfied, "seed_state"_a, "state"_a, "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: StateBuilder.assign).");
+        .def("is_dynamic_goal_satisfied",
+             &T::is_dynamic_goal_satisfied,
+             "seed_state"_a,
+             "state"_a,
+             "A search calls it with views it owns, valid during the call: keep one by copying it (a registered state: state.pack(); a state: "
+             "StateBuilder.assign).");
 }
 
 template<TaskKind Kind>

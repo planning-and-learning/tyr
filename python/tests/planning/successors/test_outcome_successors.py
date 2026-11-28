@@ -15,8 +15,9 @@ Summary = tuple[str, tuple[int, ...], list[tuple[int, float]]]
 
 
 def _summary(successor: ground.general.SuccessorBuilderView | lifted.general.SuccessorBuilderView) -> Summary:
-    """A successor's action binding (its action's name and objects) and, per distribution, its size and probability sum."""
+    """A successor's action binding (its action's name and objects) and each distribution's size and probability sum."""
     binding = successor.label().binding()
+    assert binding is not None
     sizes = sorted(
         (len(distribution.outcomes()), float(sum(outcome.probability() for outcome in distribution.outcomes())))
         for distribution in successor.distributions()
@@ -39,7 +40,7 @@ def _summaries(module: ModuleType, task: ground.Task | lifted.Task) -> list[Summ
     result: list[Summary] = []
 
     def collect(
-        transition: ground.TransitionLabel | lifted.TransitionLabel,
+        _transition: ground.TransitionLabel | lifted.TransitionLabel,
         successor: ground.general.SuccessorBuilderView | lifted.general.SuccessorBuilderView,
     ) -> bool:
         summary = _summary(successor)
@@ -68,13 +69,18 @@ def test_successors_are_distributions(name: str) -> None:
 
 
 def _environment_outcomes(environment: ModuleType, module: ModuleType, task: ground.Task | lifted.Task) -> list[int]:
-    """The number of outcomes of each successor of the task's initial node in an environment whose successors hold them."""
+    """The number of outcomes of each successor of the task's initial node.
+
+    The environment is one whose successors hold them.
+    """
     execution = ExecutionContext(1)
     repository = module.StateRepository(task)
     evaluator = module.AxiomEvaluator(task, execution)
     generator = module.SuccessorGenerator(task, execution)
     environment.require(generator)
-    successors = environment.get_successors(generator, repository, evaluator, module.get_initial_node(repository, evaluator))
+    successors = environment.get_successors(
+        generator, repository, evaluator, module.get_initial_node(repository, evaluator)
+    )
     return sorted(len(successor.outcomes()) for successor in successors)
 
 
@@ -105,7 +111,8 @@ def test_environments_follow_a_tasks_effects() -> None:
     assert outcomes == _environment_outcomes(
         ground.nondeterministic, ground, oneof.instantiate_ground_task(ExecutionContext(1)).task
     )
-    assert outcomes and outcomes[-1] > 1
+    assert outcomes
+    assert outcomes[-1] > 1
 
     # Chance's outcomes: their probabilities sum to 1.
     repository = lifted.StateRepository(probabilistic)

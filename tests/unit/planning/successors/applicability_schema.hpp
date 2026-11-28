@@ -11,24 +11,24 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/successors/applicability.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/programs/lifted/action.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
-#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 #include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
+#include "tyr/planning/programs/lifted/action.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/static_state.hpp"
+#include "tyr/planning/successors/applicability.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
 #include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
+#include "tyr/planning/tasks/lifted/task_grounder_decl.hpp"
 
 #include <algorithm>
 #include <array>
@@ -51,13 +51,13 @@
 namespace tyr::tests
 {
 
-inline const std::filesystem::path kEffectValidityDomain = task_fixture("effect-validity/domain.pddl");
+inline constexpr const char* kEffectValidityDomain = "effect-validity/domain.pddl";  // under task_fixture
 
-inline const std::filesystem::path kEffectValidityProblem = task_fixture("effect-validity/effect-validity-problem.pddl");
+inline constexpr const char* kEffectValidityProblem = "effect-validity/effect-validity-problem.pddl";  // under task_fixture
 
-inline const std::filesystem::path kPairwiseConditionalEffectDomain = task_fixture("pairwise-conditional-effect/domain.pddl");
+inline constexpr const char* kPairwiseConditionalEffectDomain = "pairwise-conditional-effect/domain.pddl";  // under task_fixture
 
-inline const std::filesystem::path kPairwiseConditionalEffectProblem = task_fixture("pairwise-conditional-effect/pairwise-conditional-effect-problem.pddl");
+inline constexpr const char* kPairwiseConditionalEffectProblem = "pairwise-conditional-effect/pairwise-conditional-effect-problem.pddl";  // under task_fixture
 
 template<TaskKind Kind, bool Building = false>
 void expect_schema_queries_match_filtered_successors()
@@ -66,8 +66,8 @@ void expect_schema_queries_match_filtered_successors()
     SCOPED_TRACE(Building ? "builder source" : "registered source");
     const auto make_lifted_task = []
     {
-        return tyr::planning::Task<LiftedTag>::create(tyr::formalism::Parser(kEffectValidityDomain)
-                                                          .parse_task(task_fixture("effect-validity/schema-successors.pddl")));
+        return tyr::planning::Task<LiftedTag>::create(
+            tyr::formalism::Parser(task_fixture(kEffectValidityDomain)).parse_task(task_fixture("effect-validity/schema-successors.pddl")));
     };
     const auto count_action_bindings = [](const auto& task)
     {
@@ -221,10 +221,8 @@ void expect_schema_queries_match_filtered_successors()
         const auto left = tyr::tests::built_state(lhs);
         const auto right = tyr::tests::built_state(rhs);
         return lhs.metric() == rhs.metric() && std::ranges::equal(left.fluent_fact_index_values(), right.fluent_fact_index_values())
-               && std::ranges::equal(left.template atom_indices<::tyr::formalism::DerivedTag>(),
-                                     right.template atom_indices<::tyr::formalism::DerivedTag>())
-               && std::ranges::equal(left.template fterm_index_values<formalism::FluentTag>(),
-                                     right.template fterm_index_values<formalism::FluentTag>());
+               && std::ranges::equal(left.template atom_indices<::tyr::formalism::DerivedTag>(), right.template atom_indices<::tyr::formalism::DerivedTag>())
+               && std::ranges::equal(left.template fterm_index_values<formalism::FluentTag>(), right.template fterm_index_values<formalism::FluentTag>());
     };
     const auto num_action_bindings = count_action_bindings(task);
     const auto states_before_streaming = ::tyr::planning::num_states(*state_repository);
@@ -241,7 +239,8 @@ void expect_schema_queries_match_filtered_successors()
                                                     *axiom_evaluator,
                                                     [&](const auto& successor)
                                                     {
-                                                        static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::OwnedNodeBuilderView<Kind>>);
+                                                        static_assert(
+                                                            std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::OwnedNodeBuilderView<Kind>>);
                                                         if (successor_storage)
                                                         {
                                                             EXPECT_EQ(&tyr::tests::built_state(successor).numeric_storage().values(), successor_storage);
@@ -301,8 +300,7 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_EQ(::tyr::planning::num_states(*state_repository), num_states);
         EXPECT_TRUE(owned->index.is_none());
     }
-    const auto same_successor = [&](const auto& lhs, const auto& rhs)
-    { return lhs.label() == rhs.label() && same_node(lhs.node(), rhs.node()); };
+    const auto same_successor = [&](const auto& lhs, const auto& rhs) { return lhs.label() == rhs.label() && same_node(lhs.node(), rhs.node()); };
     ASSERT_EQ(all_successors.size(), 4);
     auto schemas = tyr::formalism::ActionViewList<LiftedTag> {};
     for (const auto& action_list : { task->get_domain().get_domain().actions(), task->get_task().domain().actions() })
@@ -506,8 +504,7 @@ void expect_schema_queries_match_filtered_successors()
                 if (action.name().str() == "dormant")
                 {
                     EXPECT_TRUE(std::ranges::none_of(task->get_task().ground_actions(),
-                                                     [&](const auto ground_action)
-                                                     { return ground_action.row().relation().index() == action.index(); }));
+                                                     [&](const auto ground_action) { return ground_action.row().relation().index() == action.index(); }));
                 }
             }
         }

@@ -67,8 +67,7 @@ struct data<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>(index); }
@@ -111,8 +110,7 @@ struct data<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>(index); }

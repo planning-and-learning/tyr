@@ -17,7 +17,6 @@
 
 #include "tyr/datalog/lifted/kckp/workspaces/program.hpp"
 
-
 #include <fmt/ostream.h>
 #include <iostream>
 

@@ -71,8 +71,7 @@ struct data<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>>
                            urd::field<"probabilities", &data::probabilities>> {};
     }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::cista_members_of<data>(); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>>(index); }

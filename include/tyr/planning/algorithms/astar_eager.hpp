@@ -18,9 +18,9 @@
 #ifndef TYR_PLANNING_ALGORITHMS_ASTAR_EAGER_HPP_
 #define TYR_PLANNING_ALGORITHMS_ASTAR_EAGER_HPP_
 
+#include "tyr/planning/algorithms/search_budget.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/algorithms/search_budget.hpp"
 
 #include <cstddef>
 #include <cstdint>

@@ -21,17 +21,17 @@
 #include "pytyr/planning/module.hpp"
 #include "pytyr/planning/plans/plans.hpp"
 #include "pytyr/planning/successors/successors.hpp"
+
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
-#include <cstdint>
-#include <span>
-#include <cstddef>
-#include <vector>
-#include <optional>
 #include <nanobind/stl/vector.h>
+#include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -45,6 +45,7 @@
 #include <tyr/planning/successors/successors.hpp>
 #include <urd/python/bindings.hpp>
 #include <utility>
+#include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning
@@ -126,9 +127,9 @@ void bind_deterministic_environment(nb::module_& m)
            const NodeBuilderView<Kind>& node,
            const nb::typed<nb::callable, bool(TransitionLabel<Kind>, SuccessorState<Kind>&)>& callback,
            std::optional<formalism::ActionView<LiftedTag>> action,
-           std::optional<nb::typed<nb::callable, bool(ActionBindingView<Kind>)>> accept,
-           std::optional<nb::typed<nb::callable, std::vector<std::size_t>(std::vector<TransitionLabel<Kind>>)>> arrange,
-           std::optional<nb::typed<nb::callable, bool()>> stop)
+           const std::optional<nb::typed<nb::callable, bool(ActionBindingView<Kind>)>>& accept,
+           const std::optional<nb::typed<nb::callable, std::vector<std::size_t>(std::vector<TransitionLabel<Kind>>)>>& arrange,
+           const std::optional<nb::typed<nb::callable, bool()>>& stop)
         {
             return tyr::planning::for_each_successor<DeterministicTag>(
                 generator,
@@ -165,8 +166,7 @@ void bind_deterministic_environment(nb::module_& m)
         "binding"_a);
     m.def(
         "generate_successor",
-        [](T& generator, const NodeBuilderView<Kind>& node, formalism::ActionRowBuilderView binding)
-        { return successor_state_of(generator, node, binding); },
+        [](T& generator, const NodeBuilderView<Kind>& node, formalism::ActionRowBuilderView binding) { return successor_state_of(generator, node, binding); },
         "generator"_a,
         "node"_a,
         "binding"_a);
@@ -209,9 +209,9 @@ void bind_nature_environment(nb::module_& m)
            const NodeBuilderView<Kind>& node,
            const nb::typed<nb::callable, bool(TransitionLabel<Kind>, SuccessorBuilderView<E, Kind>)>& callback,
            std::optional<formalism::ActionView<LiftedTag>> action,
-           std::optional<nb::typed<nb::callable, bool(ActionBindingView<Kind>)>> accept,
-           std::optional<nb::typed<nb::callable, std::vector<std::size_t>(std::vector<TransitionLabel<Kind>>)>> arrange,
-           std::optional<nb::typed<nb::callable, bool()>> stop)
+           const std::optional<nb::typed<nb::callable, bool(ActionBindingView<Kind>)>>& accept,
+           const std::optional<nb::typed<nb::callable, std::vector<std::size_t>(std::vector<TransitionLabel<Kind>>)>>& arrange,
+           const std::optional<nb::typed<nb::callable, bool()>>& stop)
         {
             return tyr::planning::for_each_successor<E>(
                 generator,
@@ -298,8 +298,9 @@ void bind_nature_environment(nb::module_& m)
         "successor"_a);
     m.def(
         "extend_outcomes",
-        [](T& generator, AxiomEvaluator<Kind>& axiom_evaluator, const SuccessorBuilderView<E, Kind>& successor)
-            -> std::optional<OwnedSuccessorBuilderView<E, Kind>>
+        [](T& generator,
+           AxiomEvaluator<Kind>& axiom_evaluator,
+           const SuccessorBuilderView<E, Kind>& successor) -> std::optional<OwnedSuccessorBuilderView<E, Kind>>
         {
             auto extended = urd::clone(successor).release();
             if (!tyr::planning::extend_outcomes(generator, successor.context(), axiom_evaluator, extended))
@@ -361,10 +362,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             [](T& self, const NodeBuilderView<Kind>& node, formalism::ActionRowBuilderView binding) { return self.check_action_binding(node, binding); },
             "node"_a,
             "binding"_a)
-        .def(
-            "validate_action_binding",
-            [](T& self, ActionBindingView<Kind> binding) { self.validate_action_binding(binding); },
-            "binding"_a);
+        .def("validate_action_binding", [](T& self, ActionBindingView<Kind> binding) { self.validate_action_binding(binding); }, "binding"_a);
 
     cls.def("ground_action", &T::ground_action, "binding"_a);
 
@@ -429,8 +427,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
         "binding"_a);
     m.def(
         "get_initial_node",
-        [](StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator)
-        { return tyr::planning::get_initial_node(repository, axiom_evaluator); },
+        [](StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator) { return tyr::planning::get_initial_node(repository, axiom_evaluator); },
         "repository"_a,
         "axiom_evaluator"_a);
     m.def(
@@ -445,6 +442,8 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
         { return OwnedNodeBuilderView<Kind>(tyr::planning::get_node(repository, node), &repository); },
         "repository"_a,
         "node"_a);
+    // A node's record through its repository, kept apart from the node: what a search takes as its start node.
+    m.def("packed_node", [](const NodeBuilderView<Kind>& node) { return OwnedNodeRecordView<Kind>(node.pack(), &node.context()); }, "node"_a);
 
     // An environment each: what nature does once a transition is chosen.
     auto deterministic = m.def_submodule("deterministic", "One successor state per transition.");

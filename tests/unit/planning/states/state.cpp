@@ -6,29 +6,28 @@
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/axioms/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/states/storages/fact_storage_view.hpp"
-#include "tyr/planning/successors/ground/successor_generator.hpp"
-#include "tyr/planning/tasks/ground/task.hpp"
 #include "tyr/planning/nodes/labeled_node_view.hpp"
-#include "tyr/planning/successors/lifted/successor_generator.hpp"
-#include "tyr/planning/tasks/lifted/task.hpp"
 #include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
-#include "tyr/planning/states/storages/numeric_storage_view.hpp"
 #include "tyr/planning/plans/plan_view.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/states/state_builder.hpp"
 #include "tyr/planning/states/state_data.hpp"
 #include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/states/state_repository.hpp"
-#include "tyr/planning/states/storages/policies/policy.hpp"
 #include "tyr/planning/states/state_view.hpp"
 #include "tyr/planning/states/state_view_concepts.hpp"
-#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/states/storages/atom_storage_view.hpp"
 #include "tyr/planning/states/storages/fact_storage_view.hpp"
+#include "tyr/planning/states/storages/numeric_storage_view.hpp"
+#include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/successors/ground/successor_generator.hpp"
+#include "tyr/planning/successors/lifted/successor_generator.hpp"
+#include "tyr/planning/successors/successors.hpp"
+#include "tyr/planning/tasks/ground/task.hpp"
+#include "tyr/planning/tasks/lifted/task.hpp"
 
 #include <algorithm>
 #include <barrier>
@@ -41,8 +40,8 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-#include <urd/elements/clone.hpp>
 #include <urd/elements/children.hpp>
+#include <urd/elements/clone.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -95,8 +94,7 @@ struct StateWithMutableAtoms : StateWithoutMetadata<tyr::planning::SharedStateBu
 
 using StateKinds = boost::mp11::mp_list<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
-static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
-              { return (std::totally_ordered<tyr::planning::StateView<Kinds>> && ...); }(StateKinds {}));
+static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>) { return (std::totally_ordered<tyr::planning::StateView<Kinds>> && ...); }(StateKinds {}));
 static_assert(
     []<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
     {
@@ -156,9 +154,9 @@ static_assert(
     {
         return ((urd::ReadsAs<decltype(std::declval<const tyr::planning::NodeBuilderView<Kinds>&>().state()), tyr::planning::State<Kinds>>
                  && std::same_as<decltype(std::declval<const tyr::planning::OwnedNodeRecordView<Kinds>&>().state()), tyr::planning::StateView<Kinds>>
-                 && Packable<tyr::planning::NodeBuilderView<Kinds>> && Packable<tyr::planning::OwnedNodeBuilderView<Kinds>> && Packable<tyr::planning::OwnedLabeledNodeBuilderView<Kinds>>
-                 && !Packable<tyr::planning::OwnedNodeRecordView<Kinds>> && !Packable<tyr::planning::OwnedLabeledNodeRecordView<Kinds>>
-                 && std::is_trivially_copyable_v<urd::data<tyr::planning::Node<Kinds>>>
+                 && Packable<tyr::planning::NodeBuilderView<Kinds>> && Packable<tyr::planning::OwnedNodeBuilderView<Kinds>>
+                 && Packable<tyr::planning::OwnedLabeledNodeBuilderView<Kinds>> && !Packable<tyr::planning::OwnedNodeRecordView<Kinds>>
+                 && !Packable<tyr::planning::OwnedLabeledNodeRecordView<Kinds>> && std::is_trivially_copyable_v<urd::data<tyr::planning::Node<Kinds>>>
                  && std::is_trivially_copyable_v<urd::data<tyr::planning::LabeledNode<Kinds>>> && !std::copy_constructible<tyr::planning::NodeBuilder<Kinds>>
                  && std::move_constructible<tyr::planning::NodeBuilder<Kinds>> && std::equality_comparable<tyr::planning::NodeBuilderView<Kinds>>
                  && std::equality_comparable<tyr::planning::OwnedNodeRecordView<Kinds>>)
@@ -359,11 +357,11 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_EQ(&state.context(), &registered.context());
     EXPECT_EQ(&*state.context().get_task(), &*registered.context().get_task());
     EXPECT_EQ(state.formalism_repository(), registered.formalism_repository());
-    EXPECT_TRUE(std::ranges::equal(state.template atom_indices<::tyr::formalism::StaticTag>(),
-                                   registered.template atom_indices<::tyr::formalism::StaticTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(state.template atom_indices<::tyr::formalism::StaticTag>(), registered.template atom_indices<::tyr::formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.fluent_fact_index_values(), registered.fluent_fact_index_values()));
-    EXPECT_TRUE(std::ranges::equal(state.template atom_indices<::tyr::formalism::DerivedTag>(),
-                                   registered.template atom_indices<::tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(state.template atom_indices<::tyr::formalism::DerivedTag>(), registered.template atom_indices<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template fterm_index_values<::tyr::formalism::StaticTag>(),
                                    registered.template fterm_index_values<::tyr::formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template fterm_index_values<::tyr::formalism::FluentTag>(),
@@ -405,10 +403,10 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     check_filtered.template operator()<formalism::StaticTag>();
     check_filtered.template operator()<formalism::FluentTag>();
     check_filtered.template operator()<formalism::DerivedTag>();
-    EXPECT_TRUE(std::ranges::equal(state.template fterm_values<::tyr::formalism::StaticTag>(),
-                                   registered.template fterm_values<::tyr::formalism::StaticTag>()));
-    EXPECT_TRUE(std::ranges::equal(state.template fterm_values<::tyr::formalism::FluentTag>(),
-                                   registered.template fterm_values<::tyr::formalism::FluentTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(state.template fterm_values<::tyr::formalism::StaticTag>(), registered.template fterm_values<::tyr::formalism::StaticTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(state.template fterm_values<::tyr::formalism::FluentTag>(), registered.template fterm_values<::tyr::formalism::FluentTag>()));
     for (const auto atom : registered.template atoms<formalism::StaticTag>())
     {
         EXPECT_EQ(state.test(atom.index()), registered.test(atom));
@@ -422,8 +420,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         EXPECT_TRUE(registered.test(fact.atom().value()));
         EXPECT_EQ(fact.atom_index(), fact.atom().value().index());
         const auto unassigned =
-            urd::resolve(urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>(fact.variable().index(), tyr::formalism::FDRValue::none()),
-                         fact.context());
+            urd::resolve(urd::data<tyr::formalism::FDRFact<formalism::FluentTag>>(fact.variable().index(), tyr::formalism::FDRValue::none()), fact.context());
         EXPECT_FALSE(unassigned.atom_index());
         EXPECT_FALSE(unassigned.atom());
     }
@@ -545,7 +542,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     const auto successors = tyr::tests::get_labeled_successor_nodes(*generator, initial, {}, *repository, *axioms);
     ASSERT_EQ(successors.size(), 2);
     const auto cheap = std::ranges::find_if(successors, [](const auto& next) { return urd::interned_view(next.label()).relation().name().str() == "cheap"; });
-    const auto expensive = std::ranges::find_if(successors, [](const auto& next) { return urd::interned_view(next.label()).relation().name().str() == "expensive"; });
+    const auto expensive =
+        std::ranges::find_if(successors, [](const auto& next) { return urd::interned_view(next.label()).relation().name().str() == "expensive"; });
     ASSERT_NE(cheap, successors.end());
     ASSERT_NE(expensive, successors.end());
     EXPECT_EQ(tyr::tests::built_state(cheap->node()), tyr::tests::built_state(expensive->node()));
@@ -588,7 +586,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         const auto duplicate = ::tyr::planning::share(*repository, std::move(builder));
         EXPECT_EQ(duplicate, state);
         EXPECT_EQ(derived_names(duplicate), derived_names(state));
-        EXPECT_EQ(derived_names(::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, duplicate.pack().index()))), derived_names(state));
+        EXPECT_EQ(derived_names(::tyr::planning::share(*repository, ::tyr::planning::get_registered_state(*repository, duplicate.pack().index()))),
+                  derived_names(state));
 
         // A copy of its record, held outside the repository (not registered), unpacks to the same state without an index.
         const auto held = *(*repository)[state.pack().index()];
@@ -710,7 +709,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         const auto expect_same_node = [](const auto& actual, const auto& expected)
         {
             EXPECT_EQ(actual.metric(), expected.metric());
-            EXPECT_TRUE(std::ranges::equal(tyr::tests::built_state(actual).fluent_fact_index_values(), tyr::tests::built_state(expected).fluent_fact_index_values()));
+            EXPECT_TRUE(
+                std::ranges::equal(tyr::tests::built_state(actual).fluent_fact_index_values(), tyr::tests::built_state(expected).fluent_fact_index_values()));
             EXPECT_TRUE(std::ranges::equal(tyr::tests::built_state(actual).template atom_indices<::tyr::formalism::DerivedTag>(),
                                            tyr::tests::built_state(expected).template atom_indices<::tyr::formalism::DerivedTag>()));
             EXPECT_TRUE(std::ranges::equal(tyr::tests::built_state(actual).template fterm_index_values<::tyr::formalism::FluentTag>(),
@@ -734,7 +734,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         ASSERT_EQ(labeled.size(), 2);
         ASSERT_EQ(labeled.size(), expected.size());
         ASSERT_EQ(nodes.size(), expected.size());
-        EXPECT_NE(&tyr::tests::built_state(labeled[0].node()).numeric_storage().values(), &tyr::tests::built_state(labeled[1].node()).numeric_storage().values());
+        EXPECT_NE(&tyr::tests::built_state(labeled[0].node()).numeric_storage().values(),
+                  &tyr::tests::built_state(labeled[1].node()).numeric_storage().values());
         for (size_t i = 0; i < expected.size(); ++i)
         {
             EXPECT_EQ(labeled[i].label(), expected[i].label());
@@ -780,7 +781,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                                                          *axioms,
                                                          [&](const auto& next)
                                                          {
-                                                             static_assert(std::same_as<std::remove_cvref_t<decltype(next)>, tyr::planning::OwnedNodeBuilderView<Kind>>);
+                                                             static_assert(
+                                                                 std::same_as<std::remove_cvref_t<decltype(next)>, tyr::planning::OwnedNodeBuilderView<Kind>>);
                                                              expect_same_node(next, expected.at(visited++).node());
                                                              return false;
                                                          }));
@@ -825,7 +827,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     EXPECT_EQ(tyr::tests::built_state(plan.labeled_succ_nodes()[0].node()).pack(), tyr::tests::built_state(cheap->node()).pack());
     EXPECT_EQ(urd::interned_view(plan.labeled_succ_nodes()[1].label()), *raise);
     EXPECT_EQ(tyr::tests::built_state(plan.labeled_succ_nodes()[1].node()).pack(), tyr::tests::built_state(raised).pack());
-    EXPECT_EQ(plan.goal_node(), tyr::planning::NodeBuilderView<Kind>(raised));
+    EXPECT_EQ(plan.goal_node(), static_cast<const tyr::planning::NodeBuilderView<Kind>&>(raised));  // read as the borrowed view
     // Its record: its nodes' keys and metrics, read through the same repository.
     const auto record = plan.pack();
     const auto packed_plan = tyr::planning::PlanRecordView<tyr::planning::DeterministicTag, Kind>(&record, repository.get());
