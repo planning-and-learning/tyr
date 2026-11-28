@@ -76,7 +76,7 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
     const auto count_action_bindings = [&]
     {
         auto result = size_t { 0 };
-        for (const auto action : task->get_domain().get_domain().get_actions())
+        for (const auto action : task->get_domain().get_domain().actions())
             result += task->get_repository()->template size<ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>>(action.index());
         return result;
     };
@@ -89,11 +89,11 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
 
     ASSERT_EQ(successor_nodes.size(), successors.size());
     for (size_t i = 0; i < successors.size(); ++i)
-        EXPECT_EQ(successor_nodes[i], successors[i].get_node());
+        EXPECT_EQ(successor_nodes[i], successors[i].node());
 
     auto action_names = urd::Store<urd::sequence<std::string>> {};
     for (const auto& successor : successors)
-        action_names.push_back(urd::interned_view(successor.get_label()).get_relation().get_name().str());
+        action_names.push_back(urd::interned_view(successor.label()).relation().name().str());
 
     std::ranges::sort(action_names);
     EXPECT_EQ(action_names, (urd::Store<urd::sequence<std::string>> { "quantified", "valid" }));
@@ -102,12 +102,12 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
 template<TaskKind Kind>
 bool has_marked_object(const tyr::planning::StateBuilderView<Kind>& state, std::string_view object_name)
 {
-    return std::ranges::any_of(state.get_fluent_facts(),
+    return std::ranges::any_of(state.fluent_facts(),
                                [&](const auto& fact)
                                {
-                                   const auto atom = fact.get_atom();
-                                   return atom && atom->get_predicate().get_name().str() == "marked"
-                                          && atom->get_row().template resolve<tyr::formalism::Object>()[0].get_name().str() == object_name;
+                                   const auto atom = fact.atom();
+                                   return atom && atom->predicate().name().str() == "marked"
+                                          && atom->row().template resolve<tyr::formalism::Object>()[0].name().str() == object_name;
                                });
 }
 
@@ -122,7 +122,7 @@ void expect_pairwise_conditional_effect_successor(const tyr::planning::TaskPtr<K
     const auto bindings = tyr::tests::get_applicable_action_bindings(*successor_generator, initial_node, {});
 
     ASSERT_EQ(bindings.size(), 1);
-    EXPECT_EQ(successor_generator->ground_action(bindings.front()).get_effects().size(), 1);
+    EXPECT_EQ(successor_generator->ground_action(bindings.front()).effects().size(), 1);
 
     const auto successor = tyr::tests::get_successor_node(*successor_generator, initial_node, bindings.front(), *state_repository, *axiom_evaluator);
     EXPECT_TRUE(has_marked_object(tyr::tests::built_state(successor), "b"));
@@ -148,21 +148,21 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, ygg::ExecutionContext::create(1));
     const auto& action_program = generator->get_action_program();
     const auto global_program = action_program.get_datalog_program().get_program();
-    const auto global_rules = global_program.get_rules();
+    const auto global_rules = global_program.rules();
     const auto& schemas = action_program.get_schema_programs();
-    ASSERT_EQ(schemas.size(), task->get_task().get_domain().get_actions().size());
+    ASSERT_EQ(schemas.size(), task->get_task().domain().actions().size());
 
     // Each schema program has its action rule and the rules of its conditional effects.
     const auto& action_mapping = action_program.get_predicate_to_action_mapping();
     const auto& effect_mapping = action_program.get_conditional_effect_to_predicate_mapping();
     const auto rule_of = [&](auto predicate)
-    { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_derived_heads().front().get_predicate() == predicate; }); };
+    { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.derived_heads().front().predicate() == predicate; }); };
     auto expected_rules = urd::Store<urd::map<formalism::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::RuleView<LiftedTag>>>>> {};
     auto num_rules = static_cast<size_t>(0);
     for (const auto& [predicate, action] : action_mapping)
     {
         expected_rules[action].push_back(rule_of(predicate));
-        for (const auto effect : action.get_effects())
+        for (const auto effect : action.effects())
             if (const auto it = effect_mapping.find(std::pair(action, effect)); it != effect_mapping.end())
                 expected_rules[action].push_back(rule_of(it->second));
         num_rules += expected_rules[action].size();
@@ -172,26 +172,26 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 
     for (const auto& [action, rules] : expected_rules)
     {
-        SCOPED_TRACE(action.get_name().str());
+        SCOPED_TRACE(action.name().str());
         const auto& schema = schemas.at(action);
         const auto& program = schema.program;
         // Each schema program is a record of the action program's layer (the global program's may sit in a layer below it).
         EXPECT_EQ(&program.context(), &action_program.get_datalog_program().get_program_repository());
         EXPECT_TRUE(
-            std::ranges::equal(program.template get_predicates<formalism::StaticTag>(), global_program.template get_predicates<formalism::StaticTag>()));
+            std::ranges::equal(program.template predicates<formalism::StaticTag>(), global_program.template predicates<formalism::StaticTag>()));
         EXPECT_TRUE(
-            std::ranges::equal(program.template get_predicates<formalism::FluentTag>(), global_program.template get_predicates<formalism::FluentTag>()));
-        EXPECT_TRUE(std::ranges::equal(program.template get_functions<formalism::StaticTag>(), global_program.template get_functions<formalism::StaticTag>()));
-        EXPECT_TRUE(std::ranges::equal(program.template get_functions<formalism::FluentTag>(), global_program.template get_functions<formalism::FluentTag>()));
-        EXPECT_TRUE(std::ranges::equal(program.get_objects(), global_program.get_objects()));
-        const auto schema_rules = schema.program.get_rules();
+            std::ranges::equal(program.template predicates<formalism::FluentTag>(), global_program.template predicates<formalism::FluentTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.template functions<formalism::StaticTag>(), global_program.template functions<formalism::StaticTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.template functions<formalism::FluentTag>(), global_program.template functions<formalism::FluentTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.objects(), global_program.objects()));
+        const auto schema_rules = schema.program.rules();
         ASSERT_EQ(schema_rules.size(), rules.size());
         for (size_t i = 0; i < rules.size(); ++i)
         {
             EXPECT_EQ(schema_rules[i], rules[i]);
         }
         ASSERT_EQ(schema.strata.data.size(), 1);
-        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front(), program.get_rules(), {}, {}, [](const auto& rule) { return rule.index(); }));
+        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front(), program.rules(), {}, {}, [](const auto& rule) { return rule.index(); }));
     }
 }
 
@@ -206,10 +206,10 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
     auto source = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     const auto& action_program = source->get_action_program();
-    EXPECT_EQ(action_program.get_datalog_program().get_program().get_functions<tyr::formalism::FluentTag>().size(), 4);
+    EXPECT_EQ(action_program.get_datalog_program().get_program().functions<tyr::formalism::FluentTag>().size(), 4);
     for (const auto& [action, schema] : action_program.get_schema_programs())
     {
-        const auto enabling = action.get_name().str() == "enable";
+        const auto enabling = action.name().str() == "enable";
         EXPECT_EQ(schema.inputs.fluent_predicates.size(), enabling ? 1 : 0);
         EXPECT_EQ(schema.inputs.derived_predicates.size(), 1);
         EXPECT_EQ(schema.inputs.fluent_functions.size(), enabling ? 0 : 2);
@@ -217,7 +217,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
     const auto initial_node = tyr::tests::owned_initial_node(*state_repository, *axiom_evaluator);
     const auto bindings = tyr::tests::get_applicable_action_bindings(*source, initial_node, {});
     ASSERT_EQ(bindings.size(), 1);
-    ASSERT_EQ(bindings.front().get_relation().get_name().str(), "enable");
+    ASSERT_EQ(bindings.front().relation().name().str(), "enable");
     const auto enabled_node = tyr::tests::get_successor_node(*source, initial_node, bindings.front(), *state_repository, *axiom_evaluator);
 
     for (const auto& source_node :
@@ -227,33 +227,33 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
         {
             const auto& node = generator == source.get() ? source_node : (source_node == initial_node ? enabled_node : initial_node);
             const auto expected_name = node == initial_node ? "enable" : "disable";
-            for (const auto action : task->get_task().get_domain().get_actions())
+            for (const auto action : task->get_task().domain().actions())
             {
-                SCOPED_TRACE(action.get_name().str());
-                const auto expected_count = action.get_name().str() == expected_name ? 1 : 0;
+                SCOPED_TRACE(action.name().str());
+                const auto expected_count = action.name().str() == expected_name ? 1 : 0;
                 const auto selected_bindings = tyr::tests::get_applicable_action_bindings(*generator, node, { .action = action });
                 const auto selected_successors =
                     tyr::tests::get_labeled_successor_nodes(*generator, node, { .action = action }, *state_repository, *axiom_evaluator);
                 EXPECT_EQ(selected_bindings.size(), expected_count);
                 EXPECT_EQ(selected_successors.size(), expected_count);
                 for (const auto binding : selected_bindings)
-                    EXPECT_EQ(binding.get_relation(), action);
+                    EXPECT_EQ(binding.relation(), action);
                 for (const auto& successor : selected_successors)
                 {
-                    EXPECT_EQ(urd::interned_view(successor.get_label()).get_relation(), action);
+                    EXPECT_EQ(urd::interned_view(successor.label()).relation(), action);
                     auto saw_effect_only = false;
-                    for (const auto& [term, value] : tyr::tests::built_state(successor.get_node()).template get_fterm_values<formalism::FluentTag>())
-                        if (term.get_function().get_name().str() == "effect-only")
+                    for (const auto& [term, value] : tyr::tests::built_state(successor.node()).template fterm_values<formalism::FluentTag>())
+                        if (term.function().name().str() == "effect-only")
                         {
                             saw_effect_only = true;
-                            EXPECT_EQ(value, action.get_name().str() == "disable" ? 8 : 5);
+                            EXPECT_EQ(value, action.name().str() == "disable" ? 8 : 5);
                         }
                     EXPECT_TRUE(saw_effect_only);
                 }
             }
             const auto all_bindings = tyr::tests::get_applicable_action_bindings(*generator, node, {});
             ASSERT_EQ(all_bindings.size(), 1);
-            EXPECT_EQ(all_bindings.front().get_relation().get_name().str(), expected_name);
+            EXPECT_EQ(all_bindings.front().relation().name().str(), expected_name);
         }
     }
 }
@@ -273,9 +273,9 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
     ASSERT_EQ(bindings.size(), 5);
     for (const auto binding : bindings)
     {
-        EXPECT_EQ(binding.get_relation().get_name().str(), "drive");
-        ASSERT_EQ(binding.get_values().size(), 3);
-        EXPECT_NE(binding.get_values()[1], binding.get_values()[2]);
+        EXPECT_EQ(binding.relation().name().str(), "drive");
+        ASSERT_EQ(binding.values().size(), 3);
+        EXPECT_NE(binding.values()[1], binding.values()[2]);
     }
 }
 
@@ -285,10 +285,10 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
                                                                    .parse_task(task_fixture("static-copy/static-copy-problem.pddl")));
     auto destination = std::make_shared<tyr::formalism::Repository>(source->get_domain().get_repository().get());
     auto builder = tyr::formalism::Builder {};
-    ASSERT_EQ(source->get_task().get_atoms<formalism::StaticTag>().size(), 1);
-    ASSERT_EQ(source->get_task().get_goal().get_literals<formalism::StaticTag>().size(), 1);
-    const auto source_present = source->get_task().get_atoms<formalism::StaticTag>()[0];
-    const auto source_absent = source->get_task().get_goal().get_literals<formalism::StaticTag>()[0];
+    ASSERT_EQ(source->get_task().atoms<formalism::StaticTag>().size(), 1);
+    ASSERT_EQ(source->get_task().goal().literals<formalism::StaticTag>().size(), 1);
+    const auto source_present = source->get_task().atoms<formalism::StaticTag>()[0];
+    const auto source_absent = source->get_task().goal().literals<formalism::StaticTag>()[0];
 
     // Reverse insertion order so source and destination atom indices differ.
     const auto absent = destination->view(urd::copy(source_absent, *destination, builder));
@@ -302,7 +302,7 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
     EXPECT_TRUE(tyr::planning::is_statically_applicable(destination->insert(literal).first, static_state));
     EXPECT_TRUE(tyr::planning::is_statically_applicable(absent, static_state));
     EXPECT_TRUE(static_state.test(present));
-    EXPECT_FALSE(static_state.test(absent.get_atom()));
+    EXPECT_FALSE(static_state.test(absent.atom()));
 }
 
 TEST(TyrPlanningApplicabilityTest, PairwiseStaticCompatibilityRestrictsQuantifiedConditionalEffects)

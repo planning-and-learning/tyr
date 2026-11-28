@@ -183,23 +183,23 @@ TaggedFactSets<T>::TaggedFactSets(formalism::PredicateListView<T> predicates,
 template<formalism::FactKind T>
 template<TaskKind K>
 TaggedFactSets<T>::TaggedFactSets(formalism::ProgramView<K> program, const formalism::Repository& repository_) :
-    predicate(program.template get_predicates<T>().size()),
+    predicate(program.template predicates<T>().size()),
     function(),
     repository(&repository_)
 {
     if constexpr (has_function_facts<T>)
-        function.resize(program.template get_functions<T>().size());
+        function.resize(program.template functions<T>().size());
 }
 
 /// Adds the program's facts of kind T: its atoms, and its function values where the kind has them.
 template<formalism::FactKind T, TaskKind K>
 void insert_program_facts(TaggedFactSets<T>& facts, formalism::ProgramView<K> program)
 {
-    for (const auto atom : program.template get_atoms<T>())
-        insert(facts, atom.get_row().index());
+    for (const auto atom : program.template atoms<T>())
+        insert(facts, atom.row().index());
     if constexpr (has_function_facts<T>)
-        for (const auto fterm_value : program.template get_fterm_values<T>())
-            insert(facts, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+        for (const auto fterm_value : program.template fterm_values<T>())
+            insert(facts, fterm_value.fterm().row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.value(), fterm_value.value()));
 }
 
 template<formalism::FactKind T>
@@ -211,9 +211,9 @@ TaggedFactSets<T>::TaggedFactSets(formalism::PredicateListView<T> predicates,
     TaggedFactSets(predicates, functions, repository_)
 {
     for (const auto atom : atoms)
-        insert(*this, atom.get_row().index());
+        insert(*this, atom.row().index());
     for (const auto fterm_value : fterm_values)
-        insert(*this, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+        insert(*this, fterm_value.fterm().row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.value(), fterm_value.value()));
 }
 
 template<typename F>

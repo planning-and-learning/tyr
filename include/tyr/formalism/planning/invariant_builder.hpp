@@ -50,8 +50,6 @@ struct builder<::tyr::formalism::Invariant, C>
                            urd::field<"atoms", &builder::atoms>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::num_rigid_variables, &builder::num_counted_variables, &builder::atoms> {}; }
 };
 
 }  // namespace urd

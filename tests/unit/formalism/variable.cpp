@@ -25,7 +25,7 @@ static_assert(requires(VariableData& data) {
 template<typename View>
 concept VariableViewContract = std::totally_ordered<View> && requires(const View& view) {
     view.index();
-    view.get_name();
+    view.name();
 };
 
 static_assert(VariableViewContract<VariableView>);

@@ -66,7 +66,7 @@ EffectAtomIndex::get_atoms(formalism::ActionView<LiftedTag> action,
     const auto applicability_predicate = m_applicability_predicates.at(action.index());
     auto& groups = m_groups[effect_predicate->second];
     if (!groups.current)
-        rebuild(groups, effect_predicate->second, applicability_predicate, action.get_arity());
+        rebuild(groups, effect_predicate->second, applicability_predicate, action.arity());
 
     const auto row = find_row(applicability_predicate, binding);
     if (!row)

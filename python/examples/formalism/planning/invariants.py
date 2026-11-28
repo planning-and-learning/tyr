@@ -41,21 +41,21 @@ def rigid_parameter_domains_from_task_variable_domains(
 
     A rigid variable's candidates are the objects allowed at every fluent predicate position where it occurs.
     """
-    domains = [set(all_object_indices) for _ in range(inv.get_num_rigid_variables())]
+    domains = [set(all_object_indices) for _ in range(inv.num_rigid_variables())]
 
     fluent_predicate_domains = task_variable_domains.fluent_predicate_domains
 
-    for atom in inv.get_atoms():
-        predicate_domains = fluent_predicate_domains[atom.get_predicate()]
+    for atom in inv.atoms():
+        predicate_domains = fluent_predicate_domains[atom.predicate()]
 
-        for position, term in enumerate(atom.get_terms()):
+        for position, term in enumerate(atom.terms()):
             value = term
 
             if not isinstance(value, ParameterIndex):
                 continue
 
             parameter = int(value)
-            if parameter >= inv.get_num_rigid_variables():
+            if parameter >= inv.num_rigid_variables():
                 continue
 
             allowed_objects = {obj.index() for obj in predicate_domains[position].objects}
@@ -83,7 +83,7 @@ def enumerate_rigid_bindings(
         all_object_indices,
     )
 
-    if inv.get_num_rigid_variables() == 0:
+    if inv.num_rigid_variables() == 0:
         return [ObjectSubstitution()]
 
     if not rigid_domains:
@@ -92,7 +92,7 @@ def enumerate_rigid_bindings(
     result: list[ObjectSubstitution] = []
 
     for assignment in product(*rigid_domains):
-        rho = ObjectSubstitution.from_range(ParameterIndex(0), inv.get_num_rigid_variables())
+        rho = ObjectSubstitution.from_range(ParameterIndex(0), inv.num_rigid_variables())
 
         ok = True
         for parameter, object_index in enumerate(assignment):
@@ -171,7 +171,7 @@ def main() -> None:
 
     # 3. Build invariant match data by substituting all candidate objects
     #    for the rigid variables, constrained by task_variable_domains.
-    all_object_indices = {obj.index() for obj in task.get_task().get_objects()}
+    all_object_indices = {obj.index() for obj in task.get_task().objects()}
 
     invariant_match_data = build_invariant_match_data(
         invariants[:1],  # Use only the first invariant for demonstration purposes.
@@ -187,7 +187,7 @@ def main() -> None:
     matcher = InvariantMatcher(invariant_match_data)
 
     # 5. Apply the matcher on all initial fluent atoms.
-    init_atoms = task.get_task().get_fluent_atoms()
+    init_atoms = task.get_task().fluent_atoms()
 
     query_workspace = InvariantQueryWorkspace()
     query_result = InvariantQueryResult()

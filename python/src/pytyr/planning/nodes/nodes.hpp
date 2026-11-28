@@ -43,9 +43,8 @@ void bind_nodes(nb::module_& m)
 {
     urd::python::bind_data<Node<Kind>>(m);
     urd::python::bind_builder<Node<Kind>, StateRepository<Kind>>(m);
-    urd::python::bind_view<NodeBuilderView<Kind>>(m);
+    urd::python::bind_record_views<Node<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_view<OwnedNodeBuilderView<Kind>>(m);
-    urd::python::bind_view<NodeRecordView<Kind>>(m);
     urd::python::bind_view<OwnedNodeRecordView<Kind>>(m);
     // A label's binding being built (a borrowed binding copied), read through the repository of its labeled node.
     urd::python::bind_view<urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>,
@@ -53,9 +52,8 @@ void bind_nodes(nb::module_& m)
                                               urd::builder<ygg::Row<formalism::Action<LiftedTag>>, StateRepository<Kind>>>>(m);
     urd::python::bind_data<LabeledNode<Kind>>(m);
     urd::python::bind_builder<LabeledNode<Kind>, StateRepository<Kind>>(m);
-    urd::python::bind_view<LabeledNodeBuilderView<Kind>>(m);
+    urd::python::bind_record_views<LabeledNode<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_view<OwnedLabeledNodeBuilderView<Kind>>(m);
-    urd::python::bind_view<LabeledNodeRecordView<Kind>>(m);
     urd::python::bind_view<OwnedLabeledNodeRecordView<Kind>>(m);
     bind_node_serialization<Kind>();
 }

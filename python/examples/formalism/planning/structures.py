@@ -27,50 +27,50 @@ def print_domain(formalism_domain: Domain) -> None:
     """Print the predicates, functions, and constants of a domain."""
     # Tyr separates static/fluent/derived predicates to encode semantic meaning directly within the type.
     print("\nStatic predicates:")
-    for predicate in formalism_domain.get_static_predicates():
-        print(predicate.get_name(), predicate.get_arity())
+    for predicate in formalism_domain.static_predicates():
+        print(predicate.name(), predicate.arity())
     print("\nFluent predicates:")
-    for predicate in formalism_domain.get_fluent_predicates():
-        print(predicate.get_name(), predicate.get_arity())
+    for predicate in formalism_domain.fluent_predicates():
+        print(predicate.name(), predicate.arity())
     print("\nDerived predicates:")
-    for predicate in formalism_domain.get_derived_predicates():
-        print(predicate.get_name(), predicate.get_arity())
+    for predicate in formalism_domain.derived_predicates():
+        print(predicate.name(), predicate.arity())
 
     # A similar separation exists for functions
     print("\nStatic functions:")
-    for function in formalism_domain.get_static_functions():
-        print(function.get_name(), function.get_arity())
+    for function in formalism_domain.static_functions():
+        print(function.name(), function.arity())
     print("\nFluent functions:")
-    for function in formalism_domain.get_fluent_functions():
-        print(function.get_name(), function.get_arity())
+    for function in formalism_domain.fluent_functions():
+        print(function.name(), function.arity())
     # There is at most one auxiliary function, i.e., "total-cost" whose value is not stored in a state
     # because it does not affect transitions.
     print("\nAuxiliary function:")
-    print(formalism_domain.get_auxiliary_function())
+    print(formalism_domain.auxiliary_function())
 
     print("\nConstants:")
-    for constant in formalism_domain.get_constants():
-        print(constant.get_name())
+    for constant in formalism_domain.constants():
+        print(constant.name())
 
 
 def print_task(formalism_task: TaskLifted) -> None:
     """Print the initial ground atoms, derived predicates, and axioms of a task."""
     # The separation from above induces a parallel separation for atom, literal, ground atom, and ground literal.
     print("\nStatic initial ground atoms:")
-    for ground_atom in formalism_task.get_static_atoms():
-        print(ground_atom.get_predicate(), ground_atom.get_row().resolve_objects())
+    for ground_atom in formalism_task.static_atoms():
+        print(ground_atom.predicate(), ground_atom.row().resolve_objects())
     print("\nFluent initial ground atoms:")
-    for ground_atom in formalism_task.get_fluent_atoms():
-        print(ground_atom.get_predicate(), ground_atom.get_row().resolve_objects())
+    for ground_atom in formalism_task.fluent_atoms():
+        print(ground_atom.predicate(), ground_atom.row().resolve_objects())
 
     # The task may contain task-specific derived predicates, e.g., miconic-fulladl,
     # resulting from the translation of complicated goal, i.e., non-conjunctions of literals.
     print("\nTask-specific derived predicates:")
-    for predicate in formalism_task.get_derived_predicates():
-        print(predicate.get_name(), predicate.get_arity())
+    for predicate in formalism_task.derived_predicates():
+        print(predicate.name(), predicate.arity())
     # Similarly, the translation of complicated goals will also introduce task-specific axioms.
     print("\nTask-specific axioms:")
-    for axiom in formalism_task.get_axioms():
+    for axiom in formalism_task.axioms():
         print(axiom)
 
 
@@ -100,7 +100,7 @@ def main() -> None:
     formalism_task = planning_task.get_task()
 
     # Ensure that the task is defined over the given input domain
-    if formalism_task.get_domain() != formalism_domain:
+    if formalism_task.domain() != formalism_domain:
         msg = "the task is not defined over the parsed domain"
         raise ValueError(msg)
 

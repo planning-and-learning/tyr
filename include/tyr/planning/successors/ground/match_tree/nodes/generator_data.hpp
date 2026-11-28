@@ -47,9 +47,7 @@ struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &data::elements>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::elements> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::elements> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> key() const noexcept
     { return urd::key<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>(index); }

@@ -36,8 +36,8 @@ concept MultiOperatorContract = std::constructible_from<urd::index<Entity>, ygg:
                                        { data.operation } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>&>;
                                        { data == data } -> std::same_as<bool>;
                                        view.index();
-                                       { view.get_operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
-                                       view.get_args();
+                                       { view.operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
+                                       view.operands();
                                        { view == view } -> std::same_as<bool>;
                                        { view < view } -> std::same_as<bool>;
                                    };
@@ -69,20 +69,20 @@ TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
     {
         auto data = urd::data<Lifted> {};
         data.operation = op;
-        data.args.emplace_back(2.0);
-        data.args.emplace_back(1.0);
-        data.args.emplace_back(1.0);
+        data.operands.emplace_back(2.0);
+        data.operands.emplace_back(1.0);
+        data.operands.emplace_back(1.0);
 
-        EXPECT_FALSE(std::is_sorted(data.args.begin(), data.args.end()));
+        EXPECT_FALSE(std::is_sorted(data.operands.begin(), data.operands.end()));
         const auto [view, inserted] = repository.insert(data);
         EXPECT_TRUE(inserted);
         EXPECT_EQ(data.index, view.index());
-        EXPECT_TRUE(std::is_sorted(data.args.begin(), data.args.end()));
-        ASSERT_EQ(data.args.size(), 3);
-        EXPECT_EQ(data.args[0], data.args[1]);
-        EXPECT_EQ(view.get_args().size(), 3);
+        EXPECT_TRUE(std::is_sorted(data.operands.begin(), data.operands.end()));
+        ASSERT_EQ(data.operands.size(), 3);
+        EXPECT_EQ(data.operands[0], data.operands[1]);
+        EXPECT_EQ(view.operands().size(), 3);
 
-        std::swap(data.args[0], data.args[2]);
+        std::swap(data.operands[0], data.operands[2]);
         data.index = urd::index<Lifted>();
         const auto [duplicate, duplicate_inserted] = repository.insert(data);
         EXPECT_FALSE(duplicate_inserted);

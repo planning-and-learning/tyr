@@ -36,11 +36,11 @@ static_assert(requires(Data& data, const View& view) {
     data.derived_literals;
     data.numeric_constraints;
     view.index();
-    view.get_variables();
-    view.template get_literals<tyr::formalism::StaticTag>();
-    view.template get_literals<tyr::formalism::FluentTag>();
-    view.get_numeric_constraints();
-    view.get_arity();
+    view.variables();
+    view.template literals<tyr::formalism::StaticTag>();
+    view.template literals<tyr::formalism::FluentTag>();
+    view.numeric_constraints();
+    view.arity();
 });
 
 }
@@ -65,9 +65,9 @@ static_assert(requires(Data& data, const View& view) {
     data.derived_literals;
     data.numeric_constraints;
     view.index();
-    view.template get_literals<tyr::formalism::StaticTag>();
-    view.template get_literals<tyr::formalism::FluentTag>();
-    view.get_numeric_constraints();
+    view.template literals<tyr::formalism::StaticTag>();
+    view.template literals<tyr::formalism::FluentTag>();
+    view.numeric_constraints();
 });
 
 }

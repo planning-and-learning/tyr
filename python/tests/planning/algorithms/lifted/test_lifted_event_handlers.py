@@ -6,7 +6,7 @@ from pytyr import planning
 from python.tests.planning.support.lifted import Node
 
 
-Plan = planning.lifted.PlanBuilderView
+Plan = planning.lifted.deterministic.PlanBuilderView
 
 
 IwStatistics = planning.algorithms.iw.lifted.Statistics

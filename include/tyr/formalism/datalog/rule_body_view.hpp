@@ -41,17 +41,17 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_static_literals() const noexcept { return self().template member<&urd::record_of<V>::static_literals>(); }
+    auto static_literals() const noexcept { return self().template member<&urd::record_of<V>::static_literals>(); }
 
-    auto get_fluent_literals() const noexcept { return self().template member<&urd::record_of<V>::fluent_literals>(); }
+    auto fluent_literals() const noexcept { return self().template member<&urd::record_of<V>::fluent_literals>(); }
 
-    auto get_derived_literals() const noexcept { return self().template member<&urd::record_of<V>::derived_literals>(); }
+    auto derived_literals() const noexcept { return self().template member<&urd::record_of<V>::derived_literals>(); }
 
-    auto get_numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
+    auto numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
-    auto get_literals() const noexcept
+    auto literals() const noexcept
     { return self().template member<::tyr::formalism::rule_body_literals_of<F>>(); }
 
     static constexpr auto functions() noexcept { return urd::Functions<> {}; }

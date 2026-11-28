@@ -68,7 +68,7 @@ namespace detail
 /// A packed node's record (its state's key and its metric).
 template<TaskKind Kind, typename V>
 urd::data<Node<Kind>> record_of(const V& node)
-{ return urd::data<Node<Kind>>(node.get_state().index(), node.get_metric()); }
+{ return urd::data<Node<Kind>>(node.state().index(), node.metric()); }
 
 /// A node of a plan kept apart from it, packed.
 template<TaskKind Kind>
@@ -77,20 +77,20 @@ OwnedNodeRecordView<Kind> kept(const NodeBuilderView<Kind>& node)
 
 /// The plan from `start` through `steps` (records of `repository`), unpacked from `repository`.
 template<TaskKind Kind>
-OwnedPlanBuilderView<Kind> make_plan(const StateRepository<Kind>& repository, const urd::data<Node<Kind>>& start, const LabeledNodeRecordList<Kind>& steps)
+OwnedPlanBuilderView<DeterministicTag, Kind> make_plan(const StateRepository<Kind>& repository, const urd::data<Node<Kind>>& start, const LabeledNodeRecordList<Kind>& steps)
 {
-    auto plan = PlanBuilder<Kind>();
+    auto plan = PlanBuilder<DeterministicTag, Kind>();
     plan.start_node = get_node(repository, start);
     plan.labeled_succ_nodes.reserve(steps.size());
     for (const auto& step : steps)
         plan.labeled_succ_nodes.push_back(get_labeled_node(repository, step));
-    return OwnedPlanBuilderView<Kind>(std::move(plan), &repository);
+    return OwnedPlanBuilderView<DeterministicTag, Kind>(std::move(plan), &repository);
 }
 
 /// The node a plan ends in, packed.
 template<TaskKind Kind>
-OwnedNodeRecordView<Kind> goal_of(const OwnedPlanBuilderView<Kind>& plan)
-{ return OwnedNodeRecordView<Kind>(plan.get_goal_node().pack(), &plan.context()); }
+OwnedNodeRecordView<Kind> goal_of(const OwnedPlanBuilderView<DeterministicTag, Kind>& plan)
+{ return OwnedNodeRecordView<Kind>(plan.goal_node().pack(), &plan.context()); }
 
 template<TaskKind Kind>
 SearchResult<Kind> make_empty_result(const OwnedNodeRecordView<Kind>& start_node, SearchStatus status)
@@ -103,21 +103,21 @@ SearchResult<Kind> make_empty_result(const OwnedNodeRecordView<Kind>& start_node
 }
 
 template<TaskKind Kind, SolverConcept<Kind> Solver>
-void append_plan(Solver& solver, const PlanBuilderView<Kind>& subplan, OwnedNodeRecordView<Kind>& current_node, LabeledNodeRecordList<Kind>& labeled_succ_nodes)
+void append_plan(Solver& solver, const PlanBuilderView<DeterministicTag, Kind>& subplan, OwnedNodeRecordView<Kind>& current_node, LabeledNodeRecordList<Kind>& labeled_succ_nodes)
 {
-    auto previous_metric = solver.normalize_start_node(kept(subplan.get_start_node())).get_metric();
-    auto cumulative_metric = current_node.get_metric();
+    auto previous_metric = solver.normalize_start_node(kept(subplan.start_node())).metric();
+    auto cumulative_metric = current_node.metric();
 
-    for (const auto& labeled_succ_node : subplan.get_labeled_succ_nodes())
+    for (const auto& labeled_succ_node : subplan.labeled_succ_nodes())
     {
-        const auto normalized_succ_node = solver.normalize_start_node(kept(labeled_succ_node.get_node()));
-        const auto step_cost = normalized_succ_node.get_metric() - previous_metric;
+        const auto normalized_succ_node = solver.normalize_start_node(kept(labeled_succ_node.node()));
+        const auto step_cost = normalized_succ_node.metric() - previous_metric;
         cumulative_metric = ygg::FloatTolerance<ygg::float_t>::canonicalize(cumulative_metric + step_cost);
         if (!std::isfinite(cumulative_metric))
             throw std::runtime_error("serialized::find_solution(...): cumulative plan metric is not finite.");
-        current_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(normalized_succ_node.get_state().index(), cumulative_metric), &normalized_succ_node.context());
-        labeled_succ_nodes.emplace_back(urd::interned_view(labeled_succ_node.get_label()).index(), record_of<Kind>(current_node));
-        previous_metric = normalized_succ_node.get_metric();
+        current_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(normalized_succ_node.state().index(), cumulative_metric), &normalized_succ_node.context());
+        labeled_succ_nodes.emplace_back(urd::interned_view(labeled_succ_node.label()).index(), record_of<Kind>(current_node));
+        previous_metric = normalized_succ_node.metric();
     }
 }
 
@@ -133,7 +133,7 @@ std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<Reache
 {
     for (const auto& reached_subgoal : reached_subgoals)
     {
-        if (reached_subgoal.node.get_state() == node.get_state())
+        if (reached_subgoal.node.state() == node.state())
             return reached_subgoal.plan_position;
     }
 
@@ -145,7 +145,7 @@ std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<Reache
 template<TaskKind Kind>
 bool is_dynamic_goal_satisfied(GoalStrategy<Kind>& strategy, const StateBuilderView<Kind>& seed, const OwnedNodeRecordView<Kind>& node)
 {
-    const auto state = ::tyr::planning::get_registered_state(node.context(), node.get_state().index());
+    const auto state = ::tyr::planning::get_registered_state(node.context(), node.state().index());
     return strategy.is_dynamic_goal_satisfied(seed, urd::resolve(*state, node.context()));
 }
 
@@ -175,7 +175,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
     auto current_start_node = solver.normalize_start_node(options.start_node);
     const auto combined_start_node = current_start_node;
     const auto& state_repository = combined_start_node.context();
-    const auto final_goal_seed_state = ::tyr::planning::get_registered_state(state_repository, combined_start_node.get_state().index());
+    const auto final_goal_seed_state = ::tyr::planning::get_registered_state(state_repository, combined_start_node.state().index());
     const auto final_goal_seed = urd::resolve(*final_goal_seed_state, state_repository);
 
     event_handler->on_start_search();
@@ -288,12 +288,12 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
             result.status = SearchStatus::CYCLE;
             result.plan = detail::make_plan(state_repository, detail::record_of<Kind>(combined_start_node), combined_labeled_succ_nodes);
             result.goal_node = detail::goal_of(*result.plan);
-            result.cycle_range = std::pair<size_t, size_t> { *cycle_begin, result.plan->get_length() };
+            result.cycle_range = std::pair<size_t, size_t> { *cycle_begin, result.plan->length() };
 
             return finalize(std::move(result));
         }
 
-        current_start_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(current_node.get_state().index(), 0), &current_node.context());
+        current_start_node = OwnedNodeRecordView<Kind>(urd::data<Node<Kind>>(current_node.state().index(), 0), &current_node.context());
         reached_subgoals.push_back(detail::ReachedSubgoal<Kind> { current_start_node, combined_labeled_succ_nodes.size() });
     }
 

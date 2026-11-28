@@ -53,7 +53,7 @@ TEST(TyrPlanningTaskTest, TasksOfOneFormalismTaskWriteIntoTheirOwnLayers)
     EXPECT_EQ(first->get_fdr_context()->get_variables().size(), frozen_variables);
 
     // The frozen task's facts, found through a layer.
-    for (const auto atom : formalism_task.get_task().get_atoms<formalism::FluentTag>())
+    for (const auto atom : formalism_task.get_task().atoms<formalism::FluentTag>())
         EXPECT_EQ(std::as_const(*first->get_fdr_context()).get_fact(atom), formalism_task.get_fdr_context()->get_fact(atom));
 
     auto context = ygg::ExecutionContext::create(1);

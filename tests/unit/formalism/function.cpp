@@ -33,8 +33,8 @@ concept FunctionContract = std::constructible_from<urd::index<Entity>, ygg::uint
                                   data.name;
                                   data.arity;
                                   view.index();
-                                  view.get_name();
-                                  view.get_arity();
+                                  view.name();
+                                  view.arity();
                               };
 
 template<typename Repository, typename... Entities>

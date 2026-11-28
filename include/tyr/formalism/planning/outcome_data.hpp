@@ -58,9 +58,7 @@ struct data<::tyr::formalism::Outcome<T>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"effects", &data::effects>, urd::field<"choices", &data::choices>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::effects, &data::choices> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Outcome<T>> key() const noexcept { return urd::key<::tyr::formalism::Outcome<T>>(index); }
 };

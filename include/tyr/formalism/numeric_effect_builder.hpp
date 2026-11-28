@@ -45,7 +45,6 @@ struct builder<::tyr::formalism::NumericEffect<T, F>, C>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"fterm", &builder::fterm>, urd::field<"fexpr", &builder::fexpr>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operation, &builder::fterm, &builder::fexpr> {}; }
 };
 
 }  // namespace urd

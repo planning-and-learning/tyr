@@ -118,7 +118,7 @@ public:
     /// Sized for the predicates of each mutable kind of the program.
     void initialize(formalism::ProgramView<Kind> program)
     {
-        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_achievers.template get<F>().initialize(program.template get_predicates<F>().size()); });
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_achievers.template get<F>().initialize(program.template predicates<F>().size()); });
     }
 
     void clear_achievers() noexcept;

@@ -62,7 +62,7 @@ NodeRecordList<Kind> extract_node_trajectory(const urd::Store<urd::sequence<Sear
 /// The plan along a node trajectory: its start node unpacked, and each step the successor of the applicable binding that
 /// reproduces the next node, labeled by its binding, interned (the only bindings a search interns).
 template<TaskKind Kind>
-PlanBuilder<Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
+PlanBuilder<DeterministicTag, Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
                                StateRepository<Kind>& state_repository,
                                AxiomEvaluator<Kind>& axiom_evaluator,
                                SuccessorGenerator<Kind>& successor_generator,
@@ -70,10 +70,9 @@ PlanBuilder<Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
 {
     assert(!node_trajectory.empty());
 
-    auto plan = PlanBuilder<Kind>();
+    auto plan = PlanBuilder<DeterministicTag, Kind>();
     plan.start_node = get_node(state_repository, node_trajectory.front());
     plan.labeled_succ_nodes.reserve(node_trajectory.size() - 1);
-    auto delta = StateDelta {};
     auto builder = formalism::Builder {};
 
     for (size_t i = 1; i < node_trajectory.size(); ++i)
@@ -81,18 +80,19 @@ PlanBuilder<Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
         const auto& cur_node = plan.labeled_succ_nodes.empty() ? plan.start_node : plan.labeled_succ_nodes.back().node;
         const auto cur_view = urd::resolve(cur_node, std::as_const(state_repository));
         auto next = std::optional<LabeledNodeBuilder<Kind>> {};
-        successor_generator.for_each_applicable_action_binding(
+        for_each_successor<DeterministicTag>(
+            successor_generator,
             cur_view,
-            {},
-            [&](ActionBindingView<Kind> binding)
+            [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor_state)
             {
-                auto state = ::tyr::planning::get_state_builder(state_repository);
-                const auto auxiliary_value = successor_generator.generate_successor_state(cur_view, binding, *state, delta);
-                auto successor = register_successor(state_repository, axiom_evaluator, std::move(state), auxiliary_value, cur_view, delta);
-                successor.metric = compute_successor_g_value(cur_view.get_metric(), successor.metric, action_cost_mode);
+                find_successor(state_repository, cur_view, successor_state);
+                extend_successor(axiom_evaluator, cur_view, successor_state);
+                auto successor = register_successor(state_repository, cur_view, successor_state);
+                successor.metric = compute_successor_g_value(cur_view.metric(), successor.metric, action_cost_mode);
                 if (!urd::EqualTo<> {}(urd::resolve(successor, std::as_const(state_repository)).pack(), node_trajectory[i]))
                     return true;
-                next = LabeledNodeBuilder<Kind> { intern_action_binding(successor_generator, builder, binding).index(), std::move(successor) };
+                next = LabeledNodeBuilder<Kind> { intern_action_binding(successor_generator, builder, transition.binding.value()).index(),
+                                                  std::move(successor) };
                 return false;
             });
         assert(next.has_value());
@@ -103,7 +103,7 @@ PlanBuilder<Kind> extract_plan(const NodeRecordList<Kind>& node_trajectory,
 }
 
 template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
-inline PlanBuilder<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
+inline PlanBuilder<DeterministicTag, Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                                     const urd::data<Node<Kind>>& final_node,
                                                     const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
                                                     StateRepository<Kind>& state_repository,
@@ -119,7 +119,7 @@ template<>
 struct PlanReconstructionPolicy<SequentialSearch>
 {
     template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
-    static PlanBuilder<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
+    static PlanBuilder<DeterministicTag, Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                                  const urd::data<Node<Kind>>& final_node,
                                                  const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
                                                  StateRepository<Kind>& state_repository,

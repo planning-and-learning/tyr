@@ -47,22 +47,22 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] decltype(auto) get_values() const noexcept { return self().template member<&urd::record_of<V>::values>(); }
+    [[nodiscard]] decltype(auto) values() const noexcept { return self().template member<&urd::record_of<V>::values>(); }
 
     [[nodiscard]] ::tyr::formalism::FDRValue get(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
     {
-        assert(static_cast<ygg::uint_t>(index.value) < get_values().size());
-        return ::tyr::formalism::FDRValue(get_values()[static_cast<ygg::uint_t>(index.value)]);
+        assert(static_cast<ygg::uint_t>(index.value) < values().size());
+        return ::tyr::formalism::FDRValue(values()[static_cast<ygg::uint_t>(index.value)]);
     }
 
     /// The number of variables, as resized to the task's.
-    [[nodiscard]] std::size_t num_variables() const noexcept { return get_values().size(); }
+    [[nodiscard]] std::size_t num_variables() const noexcept { return values().size(); }
 
     /// The facts whose value is not none, by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {
         using ::tyr::formalism::FDRValue;
-        const auto* values = &get_values();
+        const auto* values = &self().values();
         return std::views::iota(std::size_t { 0 }, values->size())
                | std::views::filter([values](std::size_t i) { return FDRValue((*values)[i]) != FDRValue::none(); })
                | std::views::transform(
@@ -78,7 +78,7 @@ public:
     /// Each fact's atom, through the repository, which owns its variable.
     [[nodiscard]] auto fluent_atoms() const noexcept
     {
-        return facts() | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
+        return facts() | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).atom_index(); });
     }
 
     static constexpr auto functions() noexcept
@@ -98,18 +98,18 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] decltype(auto) get_indices() const noexcept { return self().template member<&urd::record_of<V>::indices>(); }
+    [[nodiscard]] decltype(auto) indices() const noexcept { return self().template member<&urd::record_of<V>::indices>(); }
 
     [[nodiscard]] ::tyr::formalism::FDRValue get(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    { return ::tyr::formalism::FDRValue(get_indices().contains(static_cast<ygg::uint_t>(index.value))); }
+    { return ::tyr::formalism::FDRValue(indices().contains(static_cast<ygg::uint_t>(index.value))); }
 
     /// One past the last variable set: variables past it are none.
-    [[nodiscard]] std::size_t num_variables() const { return get_indices().significant_words().size_bytes() * CHAR_BIT; }
+    [[nodiscard]] std::size_t num_variables() const { return indices().significant_words().size_bytes() * CHAR_BIT; }
 
     /// The facts set (value 1), by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {
-        return urd::transform(get_indices(),
+        return urd::transform(indices(),
                               [](ygg::uint_t i)
                               {
                                   return urd::data<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> {
@@ -122,7 +122,7 @@ public:
     /// Each fact's atom, through the repository, which owns its variable.
     [[nodiscard]] auto fluent_atoms() const noexcept
     {
-        return facts() | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
+        return facts() | std::views::transform([repository = &self().context()](auto fact) { return *urd::resolve(fact, *repository).atom_index(); });
     }
 
     static constexpr auto functions() noexcept

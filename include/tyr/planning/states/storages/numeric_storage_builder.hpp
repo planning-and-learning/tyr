@@ -52,32 +52,12 @@ struct builder<::tyr::planning::NumericStorage<Kind>, C>
                    std::numeric_limits<ygg::float_t>::quiet_NaN());
     }
 
-    /// The value of `term` (NaN where it has none).
-    [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> term) const
-    { return ::tyr::get(static_cast<ygg::uint_t>(term.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
-
-    void clear() { values.clear(); }
-
-    /// Takes the values of a view of a builder of its kind (another state's).
-    void assign(const urd::borrowed_view<::tyr::planning::NumericStorage<Kind>, C, builder>& storage) { values = storage.get_values(); }
-
-    void swap(builder& other) noexcept
-    {
-        std::swap(index, other.index);
-        values.swap(other.values);
-    }
-
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
 
     static constexpr auto functions() noexcept
     {
-        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">, urd::arg<"value">>,
-                              urd::function<"clear", &builder::clear>,
-                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
-                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">, urd::arg<"value">>> {};
     }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

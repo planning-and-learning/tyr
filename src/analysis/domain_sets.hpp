@@ -135,7 +135,7 @@ TmpPredicateDomainMap<T> initialize_predicate_domain_sets(formalism::PredicateLi
     predicate_domain_sets.reserve(predicates.size());
 
     for (const auto predicate : predicates)
-        predicate_domain_sets.emplace(predicate.index(), TmpVariableDomainList(predicate.get_arity()));
+        predicate_domain_sets.emplace(predicate.index(), TmpVariableDomainList(predicate.arity()));
 
     return predicate_domain_sets;
 }
@@ -145,11 +145,11 @@ void insert_into_predicate_domain_sets(formalism::AtomListView<GroundTag, T> ato
 {
     for (const auto atom : atoms)
     {
-        const auto predicate = atom.get_predicate();
+        const auto predicate = atom.predicate();
         auto& variable_domains = predicate_domain_sets.at(predicate.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : atom.get_row().template resolve<formalism::Object>())
+        for (const auto object : atom.row().template resolve<formalism::Object>())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -161,7 +161,7 @@ TmpFunctionDomainMap<T> initialize_function_domain_sets(formalism::FunctionListV
     function_domain_sets.reserve(functions.size());
 
     for (const auto function : functions)
-        function_domain_sets.emplace(function.index(), TmpVariableDomainList(function.get_arity()));
+        function_domain_sets.emplace(function.index(), TmpVariableDomainList(function.arity()));
 
     return function_domain_sets;
 }
@@ -171,12 +171,12 @@ void insert_into_function_domain_sets(formalism::FunctionTermValueListView<Groun
 {
     for (const auto term_value : fterm_values)
     {
-        const auto fterm = term_value.get_fterm();
-        const auto function = fterm.get_function();
+        const auto fterm = term_value.fterm();
+        const auto function = fterm.function();
         auto& variable_domains = function_domain_sets.at(function.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : fterm.get_row().template resolve<formalism::Object>())
+        for (const auto object : fterm.row().template resolve<formalism::Object>())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -248,7 +248,7 @@ struct RestrictPolicy
 
     template<formalism::FactKind T>
     [[nodiscard]] bool should_skip(formalism::LiteralView<LiftedTag, T> literal) const
-    { return !literal.get_polarity(); }
+    { return !literal.polarity(); }
 
     [[nodiscard]] bool should_skip(formalism::FunctionView<formalism::FluentTag>) const { return true; }
 
@@ -333,26 +333,26 @@ void apply_policy(ygg::float_t, Policy&)
 
 template<typename Policy>
 void apply_policy(formalism::UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
-{ apply_policy(element.get_arg(), policy); }
+{ apply_policy(element.operand(), policy); }
 
 template<formalism::OperatorKind O, typename Policy>
 void apply_policy(formalism::BinaryOperatorView<LiftedTag, O> element, Policy& policy)
 {
-    apply_policy(element.get_lhs(), policy);
-    apply_policy(element.get_rhs(), policy);
+    apply_policy(element.left_operand(), policy);
+    apply_policy(element.right_operand(), policy);
 }
 
 template<typename Policy>
 void apply_policy(formalism::MultiOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
 {
-    for (const auto arg : element.get_args())
+    for (const auto arg : element.operands())
         apply_policy(arg, policy);
 }
 
 template<formalism::FactKind T, typename Policy>
 void apply_policy(formalism::AtomView<LiftedTag, T> element, Policy& policy)
 {
-    const auto predicate = element.get_predicate();
+    const auto predicate = element.predicate();
 
     if (policy.should_skip(predicate))
         return;
@@ -373,7 +373,7 @@ void apply_policy(formalism::AtomView<LiftedTag, T> element, Policy& policy)
                 static_assert(false, "Missing case");
             }
         },
-        element.get_terms());
+        element.terms());
 }
 
 template<formalism::FactKind T, typename Policy>
@@ -382,13 +382,13 @@ void apply_policy(formalism::LiteralView<LiftedTag, T> element, Policy& policy)
     if (policy.should_skip(element))
         return;
 
-    apply_policy(element.get_atom(), policy);
+    apply_policy(element.atom(), policy);
 }
 
 template<formalism::FactKind T, typename Policy>
 void apply_policy(formalism::FunctionTermView<LiftedTag, T> element, Policy& policy)
 {
-    const auto function = element.get_function();
+    const auto function = element.function();
 
     if (policy.should_skip(function))
         return;
@@ -409,14 +409,14 @@ void apply_policy(formalism::FunctionTermView<LiftedTag, T> element, Policy& pol
                 static_assert(false, "Missing case");
             }
         },
-        element.get_terms());
+        element.terms());
 }
 
 template<formalism::FactKind T, typename Policy>
 void apply_policy(formalism::NumericEffectView<LiftedTag, T> element, Policy& policy)
 {
-    apply_policy(element.get_fterm(), policy);
-    apply_policy(element.get_fexpr(), policy);
+    apply_policy(element.fterm(), policy);
+    apply_policy(element.fexpr(), policy);
 }
 
 template<typename Policy>

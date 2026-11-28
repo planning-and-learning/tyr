@@ -37,11 +37,11 @@ std::size_t ground_choices(const std::string& family, const std::string& name, b
         return 0;
 
     auto count = std::size_t { 0 };
-    for (const auto action : ground->get_task().get_ground_actions())
-        for (const auto choice : action.get_choices())
+    for (const auto action : ground->get_task().ground_actions())
+        for (const auto choice : action.choices())
         {
             ++count;
-            EXPECT_EQ(choice.get_probabilities().size(), probabilistic ? choice.get_outcomes().size() : 0);
+            EXPECT_EQ(choice.probabilities().size(), probabilistic ? choice.outcomes().size() : 0);
         }
     return count;
 }
@@ -62,40 +62,40 @@ TEST(TyrTests, TaskGrounderGroundsNestedChoices)
 {
     auto parser = tyr::formalism::Parser(mixed_domain);
     const auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(parser.parse_task(mixed_problem));
-    const auto action = lifted->get_domain().get_domain().get_actions()[0];
-    ASSERT_EQ(action.get_choices().size(), 1);
-    const auto outcomes = action.get_choices()[0].get_outcomes();
+    const auto action = lifted->get_domain().get_domain().actions()[0];
+    ASSERT_EQ(action.choices().size(), 1);
+    const auto outcomes = action.choices()[0].outcomes();
     ASSERT_EQ(outcomes.size(), 2);
-    EXPECT_EQ(outcomes[0].get_choices().size(), 1);
-    EXPECT_EQ(outcomes[1].get_choices().size(), 1);
+    EXPECT_EQ(outcomes[0].choices().size(), 1);
+    EXPECT_EQ(outcomes[1].choices().size(), 1);
 
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto ground = lifted->instantiate_ground_task(*execution_context).task;
     ASSERT_TRUE(ground);
-    const auto ground_actions = ground->get_task().get_ground_actions();
+    const auto ground_actions = ground->get_task().ground_actions();
     ASSERT_EQ(ground_actions.size(), 2);
     for (const auto ground_action : ground_actions)
     {
-        ASSERT_EQ(ground_action.get_choices().size(), 1);
-        const auto ground_outcomes = ground_action.get_choices()[0].get_outcomes();
+        ASSERT_EQ(ground_action.choices().size(), 1);
+        const auto ground_outcomes = ground_action.choices()[0].outcomes();
         ASSERT_EQ(ground_outcomes.size(), 2);
         // The first outcome: (q ?x) and a probabilistic effect of two outcomes.
-        EXPECT_EQ(ground_outcomes[0].get_effects().size(), 1);
-        ASSERT_EQ(ground_outcomes[0].get_choices().size(), 1);
-        EXPECT_EQ(ground_outcomes[0].get_choices()[0].get_probabilities().size(), 2);
+        EXPECT_EQ(ground_outcomes[0].effects().size(), 1);
+        ASSERT_EQ(ground_outcomes[0].choices().size(), 1);
+        EXPECT_EQ(ground_outcomes[0].choices()[0].probabilities().size(), 2);
         // The second outcome: one probabilistic effect per binding of ?y, its nonempty outcome a oneof.
-        ASSERT_EQ(ground_outcomes[1].get_choices().size(), 2);
-        for (const auto per_block : ground_outcomes[1].get_choices())
+        ASSERT_EQ(ground_outcomes[1].choices().size(), 2);
+        for (const auto per_block : ground_outcomes[1].choices())
         {
-            ASSERT_EQ(per_block.get_outcomes().size(), 2);
-            EXPECT_EQ(per_block.get_probabilities().size(), 2);
+            ASSERT_EQ(per_block.outcomes().size(), 2);
+            EXPECT_EQ(per_block.probabilities().size(), 2);
             auto nested_oneofs = std::size_t { 0 };
-            for (const auto outcome : per_block.get_outcomes())
-                for (const auto nested : outcome.get_choices())
+            for (const auto outcome : per_block.outcomes())
+                for (const auto nested : outcome.choices())
                 {
                     ++nested_oneofs;
-                    EXPECT_TRUE(nested.get_probabilities().empty());
-                    EXPECT_EQ(nested.get_outcomes().size(), 2);
+                    EXPECT_TRUE(nested.probabilities().empty());
+                    EXPECT_EQ(nested.outcomes().size(), 2);
                 }
             EXPECT_EQ(nested_oneofs, 1);
         }

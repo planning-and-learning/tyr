@@ -100,11 +100,11 @@ void DefaultEventHandler<Kind>::on_end_search(tyr::planning::SearchStatus, const
 }
 
 template<TaskKind Kind>
-void DefaultEventHandler<Kind>::on_solved(const PlanBuilderView<Kind>& plan)
+void DefaultEventHandler<Kind>::on_solved(const PlanBuilderView<DeterministicTag, Kind>& plan)
 {
     if (m_verbosity < 1)
         return;
-    fmt::print("[BRFS] Plan found.\n[BRFS] Plan cost: {}\n[BRFS] Plan length: {}\n{}\n", plan.get_cost(), plan.get_length(), plan);
+    fmt::print("[BRFS] Plan found.\n[BRFS] Plan cost: {}\n[BRFS] Plan length: {}\n{}\n", plan.cost(), plan.length(), plan);
 }
 
 template<TaskKind Kind>

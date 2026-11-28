@@ -54,7 +54,6 @@ struct builder<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>, C>
                            urd::field<"probabilities", &builder::probabilities>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 /// The builder of ChoiceEffect: its record's members, each in its built form (urd::built_t).
@@ -73,7 +72,6 @@ struct builder<::tyr::formalism::ChoiceEffect<::tyr::GroundTag>, C>
                            urd::field<"probabilities", &builder::probabilities>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

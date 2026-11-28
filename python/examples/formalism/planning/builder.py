@@ -137,7 +137,7 @@ def goal(
     facts = [fdr_context.get_fact(repository.insert(atom)[0]) for atom in atoms]
     return tyr.ConjunctiveConditionGroundBuilder(
         positive_facts=[
-            tyr.FDRFactFluentBuilder(variable=fact.get_variable(), value=fact.get_value()) for fact in facts
+            tyr.FDRFactFluentBuilder(variable=fact.variable(), value=fact.value()) for fact in facts
         ]
     )
 

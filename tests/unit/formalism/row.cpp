@@ -66,11 +66,11 @@ concept RowContract =
            index.template get<ygg::Row<Relation>>();
            data.relation;
            data.values;
-           view.get_values();
-           view.get_relation();
+           view.values();
+           view.relation();
            view.template get<urd::index<tyr::formalism::Object>>();
            view.get(0);
-           view.get_relation().index();
+           view.relation().index();
        };
 
 template<typename Repository, typename... Relations>
@@ -108,7 +108,7 @@ TEST(TyrFormalismPlanningCopy, CopiesBindingRelationsAndKeepsTheirValues)
 
     auto builder = tyr::formalism::Builder {};
     const auto copied = destination.view(urd::copy(source_binding, destination, builder));
-    EXPECT_EQ(copied.get_relation(), destination_predicate);
+    EXPECT_EQ(copied.relation(), destination_predicate);
     ASSERT_EQ(copied.template resolve<tyr::formalism::Object>().size(), 1);
     EXPECT_EQ(copied.template resolve<tyr::formalism::Object>()[0], destination_a);
     EXPECT_EQ(urd::copy(source_binding, destination, builder), copied.index());  // interned once
@@ -133,7 +133,7 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     data->values.push_back(a.index().value);
     const auto [binding, inserted] = repository.insert(*data, builder);
     ASSERT_TRUE(inserted);
-    EXPECT_EQ(binding.get_relation(), predicate);
+    EXPECT_EQ(binding.relation(), predicate);
     ASSERT_EQ(binding.template resolve<tyr::formalism::Object>().size(), 2);
     EXPECT_EQ(binding.template resolve<tyr::formalism::Object>()[0], b);
     EXPECT_EQ(binding.template resolve<tyr::formalism::Object>()[1], a);

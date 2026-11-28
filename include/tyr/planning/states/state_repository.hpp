@@ -61,22 +61,29 @@
 namespace tyr::planning
 {
 
+/// The storages of a state, each once: its fluent facts, derived atoms, numeric values and temporal part. The state
+/// repository's keys, pools and builders of them follow this list.
+template<TaskKind Kind>
+using StateStorageTypes = boost::mp11::mp_list<FactStorage<Kind>, AtomStorage<Kind>, NumericStorage<Kind>, TemporalStorage<Kind>>;
+
 /// The builder types read through a state repository (yggdrasil's NamesList): a successor and its parts (a distribution,
 /// an outcome, a transition's label, an action binding's row), a state and its storages. Each before the parts it holds:
 /// a builder that went back to its pool holds its parts until it is checked out again, and a storage's pools are
 /// destroyed in type order (ygg::Family), so the pools of its parts outlive its own.
 template<TaskKind Kind>
 struct StateRepositoryBuilderTypes :
-    ygg::formalism::Builders<Successor<Kind>,
-                             Distribution<Kind>,
-                             OutcomeNode<Kind>,
-                             Transition,
-                             ygg::Row<formalism::Action<LiftedTag>>,
-                             State<Kind>,
-                             FactStorage<Kind>,
-                             AtomStorage<Kind>,
-                             NumericStorage<Kind>,
-                             TemporalStorage<Kind>>
+    boost::mp11::mp_apply<ygg::formalism::Builders,
+                          boost::mp11::mp_append<boost::mp11::mp_list<Successor<NondeterministicTag, Kind>,
+                                                                      Successor<ProbabilisticTag, Kind>,
+                                                                      Successor<GeneralTag, Kind>,
+                                                                      Distribution<Kind>,
+                                                                      OutcomeNode<NondeterministicTag, Kind>,
+                                                                      OutcomeNode<ProbabilisticTag, Kind>,
+                                                                      OutcomeNode<GeneralTag, Kind>,
+                                                                      Transition,
+                                                                      ygg::Row<formalism::Action<LiftedTag>>,
+                                                                      State<Kind>>,
+                                                 StateStorageTypes<Kind>>>
 {
 };
 
@@ -93,7 +100,7 @@ using ConcurrentSymbolStores = ygg::formalism::SymbolStores<true, Ts...>;
 /// pools of their storages (StoragePool: a storage's key is its pool's handle); over its task's formalism repository,
 /// nested read only, through which a state's storages read the task's facts. Its records are read, viewed, found and
 /// inserted, and a state's builder interned (its storages first, into their pools), by the keyed members (operator[],
-/// at, view, find, insert); its domain operations below (register_state: the axiom closure, deltas to a parent) store
+/// at, view, find, insert); its domain operations below (find_state, register_extended_state: deltas to a parent) store
 /// through them.
 template<TaskKind Kind>
 class StateRepository :
@@ -110,8 +117,16 @@ private:
     explicit StateRepository(const TaskPtr<Kind>& task, bool concurrent);
 
 public:
-    /// The kinds of record it stores, each once: its states, and successors and their parts.
-    using SymbolTypes = boost::mp11::mp_list<State<Kind>, Transition, OutcomeNode<Kind>, Distribution<Kind>, Successor<Kind>>;
+    /// The kinds of record it stores, each once: its states, and the successors of each environment and their parts.
+    using SymbolTypes = boost::mp11::mp_list<State<Kind>,
+                                             Transition,
+                                             OutcomeNode<NondeterministicTag, Kind>,
+                                             OutcomeNode<ProbabilisticTag, Kind>,
+                                             OutcomeNode<GeneralTag, Kind>,
+                                             Distribution<Kind>,
+                                             Successor<NondeterministicTag, Kind>,
+                                             Successor<ProbabilisticTag, Kind>,
+                                             Successor<GeneralTag, Kind>>;
     /// Their stores, one per kind (thread-safe, so that workers share them).
     using Symbols = boost::mp11::mp_apply<ConcurrentSymbolStores, SymbolTypes>;
 
@@ -127,25 +142,15 @@ public:
 
     /// The keys of its records (a repository nesting it resolves them here: ygg::formalism::Nests).
     using SymbolKeys = boost::mp11::mp_transform<urd::key, SymbolTypes>;
-    /// The keys it resolves itself: its records', and its states' storages' (each its pool's handle).
-    using KeyTypes = boost::mp11::mp_append<SymbolKeys,
-                                            boost::mp11::mp_list<urd::key<FactStorage<Kind>>,
-                                                                 urd::key<AtomStorage<Kind>>,
-                                                                 urd::key<NumericStorage<Kind>>,
-                                                                 urd::key<TemporalStorage<Kind>>>>;
+    /// The keys of its states' storages (each its pool's handle).
+    using StorageKeys = boost::mp11::mp_transform<urd::key, StateStorageTypes<Kind>>;
+    /// The keys it resolves itself: its records', and its states' storages'.
+    using KeyTypes = boost::mp11::mp_append<SymbolKeys, StorageKeys>;
 
     /// Its own parts' stores and the keys each resolves (ygg::formalism::HeldPart<StateRepository, P>): its records,
-    /// and the pools of its states' fluent facts, derived atoms, numeric values and temporal parts.
-    using PartStores = boost::mp11::mp_list<Symbols,
-                                            StoragePool<FactStorage<Kind>>,
-                                            StoragePool<AtomStorage<Kind>>,
-                                            StoragePool<NumericStorage<Kind>>,
-                                            StoragePool<TemporalStorage<Kind>>>;
-    using PartKeys = boost::mp11::mp_list<SymbolKeys,
-                                          boost::mp11::mp_list<urd::key<FactStorage<Kind>>>,
-                                          boost::mp11::mp_list<urd::key<AtomStorage<Kind>>>,
-                                          boost::mp11::mp_list<urd::key<NumericStorage<Kind>>>,
-                                          boost::mp11::mp_list<urd::key<TemporalStorage<Kind>>>>;
+    /// and a pool per storage of its states.
+    using PartStores = boost::mp11::mp_push_front<boost::mp11::mp_transform<StoragePool, StateStorageTypes<Kind>>, Symbols>;
+    using PartKeys = boost::mp11::mp_push_front<boost::mp11::mp_transform<boost::mp11::mp_list, StorageKeys>, SymbolKeys>;
 
     /// Part P of its own, read (Writable false) or written into.
     template<bool Writable, std::size_t P>
@@ -158,7 +163,7 @@ public:
     /// No layer below it: its workers share its states instead.
     [[nodiscard]] const StateRepository* parent() const noexcept { return nullptr; }
 
-    /// This worker's builder storage: builders checked out of it (ygg::formalism::checkout, ygg::formalism::builder_of)
+    /// This worker's builder storage: builders checked out of it (ygg::formalism::checkout)
     /// are emptied, their buffers kept, so a state or successor written into reused ones allocates nothing once they have
     /// grown; its scratch records intern them (insert(builder, storage)). The repository must outlive its handles.
     StateRepositoryBuilderStorage<Kind>& builders() const;
@@ -196,24 +201,34 @@ extern template class StateRepository<LiftedTag>;
 template<TaskKind Kind>
 StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& repository);
 
-/// Registers `state`, a builder of `repository`, in place, by the repository's generic find and insert: its identifying
-/// storages interned, its record found; closed under the axioms (`axiom_evaluator`) only where it is new (else its
-/// derived atoms read from the stored state); its index set.
+/// The lookup: whether a state with the identity of `state` (a builder of `repository`: its fluent facts, numeric values
+/// and temporal part) is registered already. If so, `state` is given that state's index and its derived atoms (the
+/// axioms' result, read from the stored state), so its axioms need not be evaluated again. The lookup interns the
+/// state's identifying storages; registering it afterwards finds them there.
 template<TaskKind Kind>
-void register_state(StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator, urd::builder<State<Kind>, StateRepository<Kind>>& state);
+bool find_state(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state);
 
-/// Like register_state, `delta` the exact changes from `parent` to `state` (as generating a successor gives them): where
-/// both share storage, each storage pool stores `state`'s as a difference to `parent`'s (a SuccessorHint).
+/// Like find_state, `delta` the exact changes from `parent` to `state` (as generating a successor gives them): where
+/// both share storage and `parent` is registered, each storage pool takes `state`'s as a difference to `parent`'s (a
+/// SuccessorHint).
 template<TaskKind Kind>
-void register_state(StateRepository<Kind>& repository,
-                    AxiomEvaluator<Kind>& axiom_evaluator,
-                    urd::builder<State<Kind>, StateRepository<Kind>>& state,
-                    const StateBuilderView<Kind>& parent,
-                    const StateDelta& delta);
+bool find_state(StateRepository<Kind>& repository,
+                urd::builder<State<Kind>, StateRepository<Kind>>& state,
+                const StateBuilderView<Kind>& parent,
+                const StateDelta& delta);
 
-/// Registers `state`, which already holds its axiom closure, in place.
+/// Registers `state`, a builder of `repository` that holds its axiom closure (its derived atoms), in place: its storages
+/// interned, its record inserted, its index set. No axiom is evaluated here.
 template<TaskKind Kind>
 void register_extended_state(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state);
+
+/// Like register_extended_state, its storages stored as differences to `parent`'s by `delta` where both share storage
+/// and `parent` is registered.
+template<TaskKind Kind>
+void register_extended_state(StateRepository<Kind>& repository,
+                             urd::builder<State<Kind>, StateRepository<Kind>>& state,
+                             const StateBuilderView<Kind>& parent,
+                             const StateDelta& delta);
 
 /// An already extended state of `repository`'s task, copied into a builder of it and registered; the source is read only.
 template<TaskKind Kind>
@@ -232,8 +247,7 @@ create_state(StateRepository<Kind>& repository,
              const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values);
 
 /// The facts as views: borrowed (stored facts, FDRFactView) or owned (a state's, computed on the fly).
-template<TaskKind Kind, typename FactView>
-    requires std::same_as<typename FactView::value_type, formalism::FDRFact<formalism::FluentTag>>
+template<TaskKind Kind, urd::ViewOf<formalism::FDRFact<formalism::FluentTag>> FactView>
 StateBuilderHandle<Kind> create_state(StateRepository<Kind>& repository,
                                       AxiomEvaluator<Kind>& axiom_evaluator,
                                       const urd::Store<urd::sequence<FactView>>& fluent_facts,
@@ -262,12 +276,12 @@ template<TaskKind Kind>
 
 // The keyed members of the repositories' parts (their states and their storages' pools), instantiated once, in
 // src/planning/state_repository.cpp (brokkr's include rule I7).
-YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 0, 5)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 0, 9)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 1, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 2, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 3, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::GroundTag>, 4, 1)
-YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 0, 5)
+YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 0, 9)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 1, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 2, 1)
 YGG_FORMALISM_PART(extern, tyr::planning::StateRepository<tyr::LiftedTag>, 3, 1)

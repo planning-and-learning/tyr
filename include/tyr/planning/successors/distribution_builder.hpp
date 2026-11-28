@@ -29,16 +29,15 @@
 
 namespace urd
 {
-/// The builder of a distribution: its outcomes, each held built (urd::built_child: a builder from the repository's pool).
+/// The builder of a distribution: its outcomes, held only built (urd::built_only_t: builders from the repository's pool).
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::Distribution<Kind>, C>
 {
     urd::key<::tyr::planning::Distribution<Kind>> index;
-    std::vector<urd::built_child<::tyr::planning::OutcomeNode<Kind>, C>> outcomes;
+    urd::built_only_t<urd::flat_vector<urd::index<::tyr::planning::OutcomeNode<::tyr::planning::GeneralTag, Kind>>>, C> outcomes;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"outcomes", &builder::outcomes>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 }
 

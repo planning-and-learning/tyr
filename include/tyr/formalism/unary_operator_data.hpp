@@ -34,11 +34,11 @@ struct data<::tyr::formalism::UnaryOperator<T, O>>
 {
     urd::key<::tyr::formalism::UnaryOperator<T, O>> index;
     O operation = O::Sub;
-    ::tyr::formalism::FunctionExpression<T> arg;
+    ::tyr::formalism::FunctionExpression<T> operand;
 
     data() = default;
 
-    data(O operation_, ::tyr::formalism::FunctionExpression<T> arg_) : index(), operation(operation_), arg(arg_)
+    data(O operation_, ::tyr::formalism::FunctionExpression<T> operand_) : index(), operation(operation_), operand(operand_)
     {
         if (!is_unary(operation))
             throw std::invalid_argument("unary operator must be Sub");
@@ -50,11 +50,9 @@ struct data<::tyr::formalism::UnaryOperator<T, O>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"arg", &data::arg>> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"operand", &data::operand>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::arg> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::arg> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::UnaryOperator<T, O>> key() const noexcept { return urd::key<::tyr::formalism::UnaryOperator<T, O>>(index); }
 };

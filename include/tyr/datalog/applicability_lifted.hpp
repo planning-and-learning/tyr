@@ -121,11 +121,11 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::NumericEffectView<LiftedTa
 template<formalism::FactKind T>
 bool is_applicable(formalism::LiteralView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
-    const auto binding = try_ground_binding(element.get_atom(), context.grounder());
+    const auto binding = try_ground_binding(element.atom(), context.grounder());
     if (!binding)
-        return !element.get_polarity();
+        return !element.polarity();
 
-    return contains(context.fact_sets().template get<T>(), (*binding).index()) == element.get_polarity();
+    return contains(context.fact_sets().template get<T>(), (*binding).index()) == element.polarity();
 }
 
 template<formalism::FactKind T>
@@ -143,13 +143,13 @@ inline bool is_applicable(formalism::BooleanOperatorListView<LiftedTag> elements
 
 inline bool is_applicable(formalism::RuleBodyView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), context)      //
-           && is_applicable(element.template get_literals<formalism::FluentTag>(), context)   //
-           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)  //
-           && is_applicable(element.get_numeric_constraints(), context);
+    return is_applicable(element.template literals<formalism::StaticTag>(), context)      //
+           && is_applicable(element.template literals<formalism::FluentTag>(), context)   //
+           && is_applicable(element.template literals<formalism::DerivedTag>(), context)  //
+           && is_applicable(element.numeric_constraints(), context);
 }
 
-inline bool is_applicable(formalism::RuleView<LiftedTag> element, const ApplicabilityContext& context) { return is_applicable(element.get_body(), context); }
+inline bool is_applicable(formalism::RuleView<LiftedTag> element, const ApplicabilityContext& context) { return is_applicable(element.body(), context); }
 
 }
 

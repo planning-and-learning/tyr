@@ -55,29 +55,13 @@ struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
 
     void resize(size_t size) { values.resize(size, 0); }
 
-    void clear() { values.clear(); }
-
-    /// Takes the values of a view of a builder of its kind (another state's).
-    void assign(const urd::borrowed_view<::tyr::planning::FactStorage<::tyr::GroundTag>, C, builder>& storage) { values = storage.get_values(); }
-
-    void swap(builder& other) noexcept
-    {
-        std::swap(index, other.index);
-        values.swap(other.values);
-    }
-
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
 
     static constexpr auto functions() noexcept
     {
         return urd::Functions<urd::function<"set", &builder::set, urd::arg<"fact">>,
-                              urd::function<"resize", &builder::resize, urd::arg<"size">>,
-                              urd::function<"clear", &builder::clear>,
-                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
-                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+                              urd::function<"resize", &builder::resize, urd::arg<"size">>> {};
     }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

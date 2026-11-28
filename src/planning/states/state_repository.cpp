@@ -58,6 +58,7 @@
 #include <atomic>
 #include <cassert>
 #include <memory>
+#include <optional>
 #include <span>
 #include <type_traits>
 #include <urd/elements/less.hpp>
@@ -87,20 +88,20 @@ ygg::uint_t next_state_storage_identity() noexcept
 
 void insert_initial_fluent_facts(const Task<GroundTag>& task, urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state)
 {
-    for (const auto fact : task.get_task().get_fluent_facts())
+    for (const auto fact : task.get_task().fluent_facts())
         state.set(fact);
 }
 
 void insert_initial_fluent_facts(const Task<LiftedTag>& task, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state)
 {
-    for (const auto atom : task.get_task().template get_atoms<formalism::FluentTag>())
+    for (const auto atom : task.get_task().template atoms<formalism::FluentTag>())
         state.set(task.get_fdr_context()->get_fact(atom));
 }
 
 void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state)
 {
     state.clear();
-    state.resize_fluent_facts(task.get_task().get_fluent_variables().size());
+    state.resize_fluent_facts(task.get_task().fluent_variables().size());
 }
 
 void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state) { state.clear(); }
@@ -256,51 +257,92 @@ template class StateRepository<LiftedTag>;
 namespace
 {
 /// A storage of a state (held built) interned through `repository`'s generic insert_built, as a difference to the
-/// parent's where `hint` gives one.
+/// parent's where `hint` gives one (its part gives its store the hint where the store takes one).
 template<typename S, TaskKind Kind>
 urd::key<S> intern_storage(StateRepository<Kind>& repository, const urd::built_child<S, StateRepository<Kind>>& storage, const SuccessorHint<Kind>* hint)
 {
-    if constexpr (requires { repository.insert_built(*storage, *hint); })
-        if (hint != nullptr)
-            return repository.insert_built(*storage, *hint).first.index();
-    return repository.insert_built(*storage).first.index();
+    if (hint != nullptr)
+        return repository.insert_built(*storage, *hint).first.index();
+    else
+        return repository.insert_built(*storage).first.index();
 }
 
-/// Registers `state` by `repository`'s generic find and insert: its identifying storages interned (as differences to the
-/// parent's where `hint` gives one), its record found by them; `extend` (its axiom closure) only where it is new, its
-/// derived atoms then interned and its record inserted; else its derived atoms read from the stored state.
-template<TaskKind Kind, typename Extend>
-void register_by_identity(StateRepository<Kind>& repository,
-                          urd::builder<State<Kind>, StateRepository<Kind>>& state,
-                          Extend&& extend,
-                          const SuccessorHint<Kind>* hint)
+/// The record of `state`'s identity: its identifying storages interned (as differences to the parent's where `hint`
+/// gives one), its derived atoms not yet.
+template<TaskKind Kind>
+urd::data<State<Kind>>
+intern_identity(StateRepository<Kind>& repository, const urd::builder<State<Kind>, StateRepository<Kind>>& state, const SuccessorHint<Kind>* hint)
 {
-    auto record = urd::data<State<Kind>>(intern_storage(repository, state.fact_storage, hint),
-                                         {},
-                                         intern_storage(repository, state.numeric_storage, hint),
-                                         intern_storage(repository, state.temporal_storage, hint));
-    auto stored = repository.find(record);
+    auto record = urd::data<State<Kind>>();
+    record.fact_storage = intern_storage(repository, state.fact_storage, hint);
+    record.numeric_storage = intern_storage(repository, state.numeric_storage, hint);
+    record.temporal_storage = intern_storage(repository, state.temporal_storage, hint);
+    return record;
+}
+
+/// `state` as the registered state `stored`: its derived atoms read from it, its index set.
+template<TaskKind Kind, typename Stored>
+void take_registered(const StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state, const Stored& stored)
+{
+    repository.unpack_built(repository[stored.index()]->atom_storage, *state.atom_storage);
+    state.set(stored.index());
+}
+
+/// The lookup by identity: whether a state of `state`'s identifying storages is registered; if so, `state` takes it.
+template<TaskKind Kind>
+bool find_by_identity(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state, const SuccessorHint<Kind>* hint)
+{
+    auto record = intern_identity(repository, state, hint);
+    const auto stored = repository.find(record);
     if (!stored)
+        return false;
+    take_registered(repository, state, *stored);
+    return true;
+}
+
+/// Registers `state`, which holds its axiom closure: its storages interned, its record inserted, its index set (a
+/// state registered meanwhile is taken instead).
+// ponytail: after a lookup the identifying storages are interned a second time (found at once, along the changed path
+// with a parent). Measured within noise (A* blind, 26 strips cases); carry the lookup's keys if a profile says otherwise.
+template<TaskKind Kind>
+void insert_by_identity(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state, const SuccessorHint<Kind>* hint)
+{
+    auto record = intern_identity(repository, state, hint);
+    record.atom_storage = intern_storage(repository, state.atom_storage, hint);
+    const auto [inserted_view, inserted] = repository.insert(record);
+    if (inserted)
+        state.set(inserted_view.index());
+    else
+        take_registered(repository, state, inserted_view);
+}
+
+/// The hint of a successor `state` of `parent` by `delta`, where a delta insert applies: it reuses the parent's unchanged
+/// subtrees by their node indices, so the parent's trees must live in this storage and the parent be registered. A
+/// parent from separate storage would need its subtrees inserted here first, which is a full insert.
+template<TaskKind Kind>
+std::optional<SuccessorHint<Kind>> hint_of(const StateRepository<Kind>& repository, const StateBuilderView<Kind>& parent, const StateDelta& delta)
+{
+    if (parent.pack().index().is_none() || !parent.context().shares_storage_with(repository))
+        return std::nullopt;
+    return SuccessorHint<Kind> { &*repository[parent.pack().index()], &parent, &delta };
+}
+
+/// A state registered with every step: looked up, closed under the axioms where it is new, and registered.
+template<TaskKind Kind>
+void register_closed(StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator, urd::builder<State<Kind>, StateRepository<Kind>>& state)
+{
+    if (!find_by_identity(repository, state, static_cast<const SuccessorHint<Kind>*>(nullptr)))
     {
-        std::forward<Extend>(extend)();
-        record.atom_storage = intern_storage(repository, state.atom_storage, hint);
-        const auto [inserted_view, inserted] = repository.insert(record);
-        if (inserted)
-        {
-            state.set(inserted_view.index());
-            return;
-        }
-        stored = inserted_view;
+        axiom_evaluator.compute_extended_state(state, repository);
+        insert_by_identity(repository, state, static_cast<const SuccessorHint<Kind>*>(nullptr));
     }
-    repository.unpack_built(repository[stored->index()]->atom_storage, *state.atom_storage);
-    state.set(stored->index());
 }
 
 template<TaskKind Kind>
 void check_task(const StateRepository<Kind>& repository, const AxiomEvaluator<Kind>& axiom_evaluator)
 {
     if (axiom_evaluator.get_task() != repository.get_task())
-        throw std::invalid_argument("register_state(...): axiom evaluator belongs to a different task.");
+        throw std::invalid_argument("state repository: the axiom evaluator belongs to a different task.");
 }
 }  // namespace
 
@@ -314,34 +356,32 @@ StateBuilderHandle<Kind> get_state_builder(const StateRepository<Kind>& reposito
 }
 
 template<TaskKind Kind>
-void register_state(StateRepository<Kind>& repository, AxiomEvaluator<Kind>& axiom_evaluator, urd::builder<State<Kind>, StateRepository<Kind>>& state)
-{
-    check_task(repository, axiom_evaluator);
-    register_by_identity(repository, state, [&] { axiom_evaluator.compute_extended_state(state, repository); }, static_cast<const SuccessorHint<Kind>*>(nullptr));
-}
+bool find_state(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state)
+{ return find_by_identity(repository, state, static_cast<const SuccessorHint<Kind>*>(nullptr)); }
 
 template<TaskKind Kind>
-void register_state(StateRepository<Kind>& repository,
-                    AxiomEvaluator<Kind>& axiom_evaluator,
-                    urd::builder<State<Kind>, StateRepository<Kind>>& state,
-                    const StateBuilderView<Kind>& parent,
-                    const StateDelta& delta)
+bool find_state(StateRepository<Kind>& repository,
+                urd::builder<State<Kind>, StateRepository<Kind>>& state,
+                const StateBuilderView<Kind>& parent,
+                const StateDelta& delta)
 {
-    check_task(repository, axiom_evaluator);
-    // A delta insert reuses the parent's unchanged subtrees by their node indices, so the parent's trees must live in
-    // this storage. A parent from separate storage would need its subtrees inserted here first, which is a full insert.
-    if (!parent.context().shares_storage_with(repository))
-    {
-        register_state(repository, axiom_evaluator, state);
-        return;
-    }
-    const auto hint = SuccessorHint<Kind> { &*repository[parent.pack().index()], &parent, &delta };
-    register_by_identity(repository, state, [&] { axiom_evaluator.compute_extended_state(state, repository); }, &hint);
+    const auto hint = hint_of(repository, parent, delta);
+    return find_by_identity(repository, state, hint.has_value() ? &*hint : nullptr);
 }
 
 template<TaskKind Kind>
 void register_extended_state(StateRepository<Kind>& repository, urd::builder<State<Kind>, StateRepository<Kind>>& state)
-{ register_by_identity(repository, state, [] {}, static_cast<const SuccessorHint<Kind>*>(nullptr)); }
+{ insert_by_identity(repository, state, static_cast<const SuccessorHint<Kind>*>(nullptr)); }
+
+template<TaskKind Kind>
+void register_extended_state(StateRepository<Kind>& repository,
+                             urd::builder<State<Kind>, StateRepository<Kind>>& state,
+                             const StateBuilderView<Kind>& parent,
+                             const StateDelta& delta)
+{
+    const auto hint = hint_of(repository, parent, delta);
+    insert_by_identity(repository, state, hint.has_value() ? &*hint : nullptr);
+}
 
 template<TaskKind Kind>
 StateBuilderHandle<Kind> register_extended_state(StateRepository<Kind>& repository, const StateBuilderView<Kind>& source)
@@ -361,9 +401,10 @@ StateBuilderHandle<Kind> get_initial_state(StateRepository<Kind>& repository, Ax
     const auto& task = *repository.get_task();
     auto state = get_state_builder(repository);
     insert_initial_fluent_facts(task, *state);
-    for (const auto fterm_value : task.get_task().template get_fterm_values<formalism::FluentTag>())
-        state->set(fterm_value.get_fterm().index(), fterm_value.get_value());
-    register_state(repository, axiom_evaluator, *state);
+    for (const auto fterm_value : task.get_task().template fterm_values<formalism::FluentTag>())
+        state->set(fterm_value.fterm().index(), fterm_value.value());
+    check_task(repository, axiom_evaluator);
+    register_closed(repository, axiom_evaluator, *state);
     return state;
 }
 
@@ -379,12 +420,12 @@ create_state(StateRepository<Kind>& repository,
         state->set(fact);
     for (const auto& [fterm, value] : fterm_values)
         state->set(fterm, value);
-    register_state(repository, axiom_evaluator, *state);
+    check_task(repository, axiom_evaluator);
+    register_closed(repository, axiom_evaluator, *state);
     return state;
 }
 
-template<TaskKind Kind, typename FactView>
-    requires std::same_as<typename FactView::value_type, formalism::FDRFact<formalism::FluentTag>>
+template<TaskKind Kind, urd::ViewOf<formalism::FDRFact<formalism::FluentTag>> FactView>
 StateBuilderHandle<Kind> create_state(StateRepository<Kind>& repository,
                                       AxiomEvaluator<Kind>& axiom_evaluator,
                                       const urd::Store<urd::sequence<FactView>>& fluent_facts,
@@ -395,7 +436,8 @@ StateBuilderHandle<Kind> create_state(StateRepository<Kind>& repository,
         state->set(fact);
     for (const auto& [fterm, value] : fterm_values)
         state->set(fterm.index(), value);
-    register_state(repository, axiom_evaluator, *state);
+    check_task(repository, axiom_evaluator);
+    register_closed(repository, axiom_evaluator, *state);
     return state;
 }
 
@@ -429,8 +471,9 @@ SharedStateBuilderView<Kind> share(const StateRepository<Kind>& repository, Stat
 }
 
 template StateBuilderHandle<GroundTag> get_state_builder(const StateRepository<GroundTag>&);
-template void register_state(StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&);
-template void register_state(StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&, const StateBuilderView<GroundTag>&, const StateDelta&);
+template bool find_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&);
+template bool find_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&, const StateBuilderView<GroundTag>&, const StateDelta&);
+template void register_extended_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&, const StateBuilderView<GroundTag>&, const StateDelta&);
 template void register_extended_state(StateRepository<GroundTag>&, urd::builder<State<GroundTag>, StateRepository<GroundTag>>&);
 template StateBuilderHandle<GroundTag> register_extended_state(StateRepository<GroundTag>&, const StateBuilderView<GroundTag>&);
 template StateBuilderHandle<GroundTag> get_initial_state(StateRepository<GroundTag>&, AxiomEvaluator<GroundTag>&);
@@ -452,8 +495,9 @@ template StateBuilderHandle<GroundTag> get_registered_state(const StateRepositor
 template SharedStateBuilderView<GroundTag> share(const StateRepository<GroundTag>&, StateBuilderHandle<GroundTag>);
 
 template StateBuilderHandle<LiftedTag> get_state_builder(const StateRepository<LiftedTag>&);
-template void register_state(StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&);
-template void register_state(StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&, const StateBuilderView<LiftedTag>&, const StateDelta&);
+template bool find_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&);
+template bool find_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&, const StateBuilderView<LiftedTag>&, const StateDelta&);
+template void register_extended_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&, const StateBuilderView<LiftedTag>&, const StateDelta&);
 template void register_extended_state(StateRepository<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>&);
 template StateBuilderHandle<LiftedTag> register_extended_state(StateRepository<LiftedTag>&, const StateBuilderView<LiftedTag>&);
 template StateBuilderHandle<LiftedTag> get_initial_state(StateRepository<LiftedTag>&, AxiomEvaluator<LiftedTag>&);
@@ -481,14 +525,14 @@ using LiftedStateRepository = StateRepository<LiftedTag>;
 
 }
 
-YGG_FORMALISM_BUILDER(, tyr::planning::StateRepositoryBuilderStorage<tyr::GroundTag>, 10)
-YGG_FORMALISM_BUILDER(, tyr::planning::StateRepositoryBuilderStorage<tyr::LiftedTag>, 10)
-YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 0, 5)
+YGG_FORMALISM_BUILDER(, tyr::planning::StateRepositoryBuilderStorage<tyr::GroundTag>, 14)
+YGG_FORMALISM_BUILDER(, tyr::planning::StateRepositoryBuilderStorage<tyr::LiftedTag>, 14)
+YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 0, 9)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 1, 1)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 2, 1)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 3, 1)
 YGG_FORMALISM_PART(, tyr::planning::GroundStateRepository, 4, 1)
-YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 0, 5)
+YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 0, 9)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 1, 1)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 2, 1)
 YGG_FORMALISM_PART(, tyr::planning::LiftedStateRepository, 3, 1)

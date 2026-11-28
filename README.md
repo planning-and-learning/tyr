@@ -65,43 +65,124 @@ successor_generator = lifted.SuccessorGenerator(task, execution_context)
 
 # The initial node: its state, registered, and its metric value.
 initial_node = lifted.get_initial_node(state_repository, axiom_evaluator)
+```
 
-# Simple: the successors of a node, kept. Each is a transition (its label) with distributions of outcomes, each outcome
-# a registered node with its probability. A classical action has one distribution of one outcome.
-for successor in lifted.get_successors(successor_generator, state_repository, axiom_evaluator, initial_node):
-    label = successor.get_label()
-    for distribution in successor.get_distributions():
-        for outcome in distribution.get_outcomes():
-            node, probability = outcome.get_node(), outcome.get_probability()
+### Simple
 
-# Expert: each successor borrowed during the callback, nothing interned. Keep what you need: a copy as it is
-# (successor.clone()), a copy with its outcome states registered (register_outcomes), or with its label's action
-# binding interned (intern_label).
-kept_successors = []
+One call gives a node's successors with their states closed under the axioms. With interning (the default) the states
+are registered in the state repository and the labels' action bindings are interned; without, nothing is stored.
 
+```py
+deterministic = lifted.deterministic  # a task without oneof and probabilistic effects: each successor is a labeled node
 
-def visit(successor: lifted.SuccessorBuilderView) -> bool:
-    kept_successors.append(lifted.register_outcomes(state_repository, successor))
-    return True  # False stops
+# With interning.
+for labeled_node in deterministic.get_successors(successor_generator, state_repository, axiom_evaluator, initial_node):
+    label, node = labeled_node.label(), labeled_node.node()
+    state_index, metric = node.state().pack().index(), node.metric()
 
+# Without interning: the states are builders of their own, not registered.
+for labeled_node in deterministic.get_successors(
+    successor_generator, state_repository, axiom_evaluator, initial_node, intern=False
+):
+    label, node = labeled_node.label(), labeled_node.node()
+    state, metric = node.state(), node.metric()
 
-lifted.for_each_successor(successor_generator, initial_node, axiom_evaluator, visit)
+# Any task: in the general environment each successor is a transition (its label) with distributions of outcomes, each
+# outcome a node with its probability. An adversary picks a distribution, chance draws an outcome from it. `intern`
+# works the same way.
+for successor in lifted.general.get_successors(successor_generator, state_repository, axiom_evaluator, initial_node):
+    label = successor.label()
+    for distribution in successor.distributions():
+        for outcome in distribution.outcomes():
+            node, probability = outcome.node(), outcome.probability()
+```
 
-# Lowest level, what the search algorithms use: the applicable action bindings (borrowed), one successor state each,
-# from the state repository, with its auxiliary value (the cost term the metric reads) and its changes to the node's
-# state; registering it makes the node, interning the binding its label.
+### Expert
+
+The steps apart, for implementing an algorithm: generating a successor, the axiom step, and interning.
+
+```py
+# A successor function belongs to an environment: what nature does once a transition is chosen. Each environment is a
+# submodule with its functions and its records.
+#   deterministic      nothing: one successor state per transition (what the search algorithms use)
+#   nondeterministic   an adversary picks one of a transition's outcomes (oneof)
+#   probabilistic      chance draws one of a transition's outcomes (probabilistic effects)
+#   general            an adversary picks a distribution, chance draws from it (both, in any nesting)
+# The task's requirements say which fit; require raises ValueError for one that does not.
+deterministic.require(successor_generator)
+
+# Three steps, each its own function. for_each_successor generates: it calls back with each transition's label (its
+# binding borrowed during the callback) and its successor state, not yet closed under the axioms. The axiom step closes a
+# state. Interning stores it.
+
+# With interning: look the state up first. A state is identified by its fluent facts and numeric values; its derived
+# atoms are the axioms' result. If a state with the same identity is interned already, find_successor gives the
+# successor state that state's index and its derived atoms. extend_successor evaluates the axioms only for a state that
+# has no index yet, so a known state is not evaluated again. Registering takes no evaluator.
 labeled_successor_nodes = []
 
 
-def visit_binding(binding: formalism.RowActionLiftedBuilderView) -> bool:
-    successor_state = lifted.generate_successor_state(successor_generator, state_repository, initial_node, binding)
-    node = lifted.register_successor(state_repository, axiom_evaluator, initial_node, successor_state)
-    label = lifted.intern_action_binding(successor_generator, binding)
+def visit_interned(transition: lifted.TransitionLabel, successor_state: lifted.SuccessorState) -> bool:
+    lifted.find_successor(state_repository, initial_node, successor_state)  # the lookup
+    lifted.extend_successor(axiom_evaluator, initial_node, successor_state)  # the axiom step, unless it was found
+    node = lifted.register_successor(state_repository, initial_node, successor_state)  # interning
+    label = lifted.intern_action_binding(successor_generator, transition.binding)
     labeled_successor_nodes.append(lifted.LabeledNodeBuilder(label=label, node=node).view(state_repository))
+    return True  # False stops
+
+
+deterministic.for_each_successor(successor_generator, initial_node, visit_interned)
+
+# Without interning: the axiom step alone. The node's state is a builder of its own, registered nowhere.
+metrics = []
+
+
+def visit(transition: lifted.TransitionLabel, successor_state: lifted.SuccessorState) -> bool:
+    lifted.extend_successor(axiom_evaluator, initial_node, successor_state)
+    node = lifted.successor_node(initial_node, successor_state)
+    metrics.append(node.metric())
     return True
 
 
-lifted.for_each_applicable_action_binding(successor_generator, initial_node, visit_binding)
+deterministic.for_each_successor(successor_generator, initial_node, visit)
+
+# One known transition, without enumerating the node (a plan replayed, a chosen action applied): by its label, or by an
+# action binding, interned or borrowed.
+binding = labeled_successor_nodes[0].label()
+successor_state = deterministic.generate_successor(successor_generator, initial_node, binding)
+
+# Where nature acts, a successor is its label and its outcomes, and the same three steps run over its outcomes:
+# find_outcomes gives each outcome whose state is interned already that state's index and derived atoms, and
+# extend_outcomes evaluates the axioms of the outcomes whose state has no index yet. The axiom step also says whether
+# the transition is applicable: None if every outcome fails, which only a temporal task's can. In the nondeterministic
+# environment an outcome has no probability; in the probabilistic one they sum to 1; the general one has distributions
+# of outcomes. From Python each step gives a copy.
+nondeterministic = lifted.nondeterministic
+interned_successors = []
+
+
+def visit_outcomes_interned(transition: lifted.TransitionLabel, successor: nondeterministic.SuccessorBuilderView) -> bool:
+    found = nondeterministic.find_outcomes(state_repository, successor)  # the lookup
+    extended = nondeterministic.extend_outcomes(successor_generator, axiom_evaluator, found)  # the axiom step
+    if extended is not None:
+        registered = nondeterministic.register_outcomes(state_repository, extended)  # interning
+        interned_successors.append(nondeterministic.intern_label(state_repository, registered))
+    return True
+
+
+nondeterministic.for_each_successor(successor_generator, initial_node, visit_outcomes_interned)
+
+successors = []
+
+
+def visit_outcomes(transition: lifted.TransitionLabel, successor: nondeterministic.SuccessorBuilderView) -> bool:
+    extended = nondeterministic.extend_outcomes(successor_generator, axiom_evaluator, successor)
+    if extended is not None:
+        successors.append(extended)
+    return True
+
+
+nondeterministic.for_each_successor(successor_generator, initial_node, visit_outcomes)
 ```
 
 ## C++ Interface
@@ -130,47 +211,126 @@ auto successor_generator = tyr::planning::SuccessorGenerator<Kind>(task, executi
 
 // The initial node: its state, registered, and its metric value, read through the state repository.
 const auto initial_node = tyr::planning::get_initial_node(*state_repository, axiom_evaluator);
+```
 
-// Simple: the successors of a node, kept. Each is a transition (its label) with distributions of outcomes, each outcome
-// a registered node with its probability. A classical action has one distribution of one outcome.
-for (const auto& successor : tyr::planning::get_successors(successor_generator, *state_repository, axiom_evaluator, initial_node))
+### Simple
+
+One call gives a node's successors with their states closed under the axioms. With interning (the default) the states
+are registered in the state repository and the labels' action bindings are interned; without, nothing is stored.
+
+```cpp
+using namespace tyr::planning;
+
+// A task without oneof and probabilistic effects: each successor is a labeled node. With interning.
+for (const auto& labeled_node : get_successors<DeterministicTag>(successor_generator, *state_repository, axiom_evaluator, initial_node))
 {
-    const auto label = successor.get_label();
-    for (const auto distribution : successor.get_distributions())
-        for (const auto outcome : distribution.get_outcomes())
-        {
-            const auto node = outcome.get_node();
-            const auto probability = outcome.get_probability();
-        }
+    const auto label = labeled_node.label();
+    const auto node = labeled_node.node();
 }
 
-// Expert: each successor written into a builder the callback may take, nothing interned. Keep what you need as it is,
-// register its outcome states (register_outcomes), intern its label's action binding (intern_label, through the
-// reused scratch records of a formalism builder), each optional.
-auto builder = tyr::formalism::Builder {};
-auto kept_successors = std::vector<tyr::planning::SuccessorBuilder<Kind>> {};
-const auto visit = [&](tyr::planning::SuccessorBuilder<Kind>& successor)
+// Without interning: the states are builders of their own, not registered.
+for (const auto& labeled_node : get_successors<DeterministicTag>(successor_generator, *state_repository, axiom_evaluator, initial_node, false))
 {
-    tyr::planning::register_outcomes(*state_repository, successor);
-    tyr::planning::intern_label(*state_repository, builder, successor);
-    kept_successors.push_back(std::move(successor));
+    const auto label = labeled_node.label();
+    const auto node = labeled_node.node();
+}
+
+// Any task: in the general environment each successor is a transition (its label) with distributions of outcomes, each
+// outcome a node with its probability. An adversary picks a distribution, chance draws an outcome from it. `intern`
+// works the same way.
+for (const auto& successor : get_successors<GeneralTag>(successor_generator, *state_repository, axiom_evaluator, initial_node))
+{
+    const auto label = successor.label();
+    for (const auto distribution : successor.distributions())
+        for (const auto outcome : distribution.outcomes())
+        {
+            const auto node = outcome.node();
+            const auto probability = outcome.probability();
+        }
+}
+```
+
+### Expert
+
+The steps apart, for implementing an algorithm: generating a successor, the axiom step, and interning.
+
+```cpp
+// A successor function names its environment as its first template argument: what nature does once a transition is
+// chosen.
+//   DeterministicTag      nothing: one successor state per transition (what the search algorithms use)
+//   NondeterministicTag   an adversary picks one of a transition's outcomes (oneof)
+//   ProbabilisticTag      chance draws one of a transition's outcomes (probabilistic effects)
+//   GeneralTag            an adversary picks a distribution, chance draws from it (both, in any nesting)
+// The task's requirements say which fit; require_environment throws for one that does not.
+require_environment<DeterministicTag>(successor_generator);
+
+// Three steps, each its own function. for_each_successor generates: it calls back with each transition's label (its
+// binding borrowed during the callback) and its successor state, a builder of the state repository not yet closed
+// under the axioms. The axiom step closes a state. Interning stores it.
+
+// With interning: look the state up first. A state is identified by its fluent facts and numeric values; its derived
+// atoms are the axioms' result. If a state with the same identity is interned already, find_successor gives the
+// successor state that state's index and its derived atoms. extend_successor evaluates the axioms only for a state that
+// has no index yet, so a known state is not evaluated again. Registering takes no evaluator.
+auto builder = tyr::formalism::Builder {};
+auto labeled_successor_nodes = LabeledNodeList<Kind> {};
+const auto visit_interned = [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor_state)
+{
+    find_successor(*state_repository, initial_node, successor_state);                  // the lookup
+    extend_successor(axiom_evaluator, initial_node, successor_state);                  // the axiom step, unless it was found
+    auto node = register_successor(*state_repository, initial_node, successor_state);  // interning: takes its state
+    const auto label = intern_action_binding(successor_generator, builder, transition.binding.value());
+    labeled_successor_nodes.push_back(LabeledNodeBuilder<Kind> { label.index(), std::move(node) });
     return true;  // false stops
 };
-tyr::planning::for_each_successor(successor_generator, initial_node, axiom_evaluator, visit);
+for_each_successor<DeterministicTag>(successor_generator, initial_node, visit_interned);
 
-// Lowest level, what the search algorithms use: the applicable action bindings (borrowed), one successor state each,
-// from the state repository, with its auxiliary value (the cost term the metric reads) and its changes to the node's
-// state; registering it makes the node, interning the binding its label.
-auto labeled_successor_nodes = tyr::planning::LabeledNodeList<Kind> {};
-const auto visit_binding = [&](tyr::planning::ActionBindingView<Kind> binding)
+// Without interning: the axiom step alone. The node's state is a builder of its own, registered nowhere.
+auto successor_nodes = std::vector<NodeBuilder<Kind>> {};
+const auto visit = [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor_state)
 {
-    auto successor_state = tyr::planning::generate_successor_state(successor_generator, *state_repository, initial_node, binding);
-    auto node = tyr::planning::register_successor(*state_repository, axiom_evaluator, initial_node, std::move(successor_state));
-    const auto label = tyr::planning::intern_action_binding(successor_generator, builder, binding);
-    labeled_successor_nodes.push_back(tyr::planning::LabeledNodeBuilder<Kind> { label.index(), std::move(node) });
+    extend_successor(axiom_evaluator, initial_node, successor_state);
+    successor_nodes.push_back(successor_node(initial_node, successor_state));  // takes its state
     return true;
 };
-tyr::planning::for_each_applicable_action_binding(successor_generator, initial_node, visit_binding);
+for_each_successor<DeterministicTag>(successor_generator, initial_node, visit);
+
+// One known transition, without enumerating the node (a plan replayed, a chosen action applied).
+const auto apply = [&](const TransitionLabel<Kind>& transition)
+{
+    auto successor_state = SuccessorState<Kind> { get_state_builder(*state_repository), 0, {} };
+    generate_successor<DeterministicTag>(successor_generator, initial_node, transition, successor_state);
+    return successor_state;
+};
+
+// Where nature acts, a successor is its label and its outcomes, written into a builder the callback may take
+// (urd::take), and the same three steps run over its outcomes: find_outcomes gives each outcome whose state is
+// interned already that state's index and derived atoms, and extend_outcomes evaluates the axioms of the outcomes
+// whose state has no index yet. The axiom step also says whether the transition is applicable: false if every
+// outcome fails, which only a temporal task's can. In the nondeterministic environment an outcome has no
+// probability; in the probabilistic one they sum to 1; the general one has distributions of outcomes.
+auto interned_successors = std::vector<SuccessorBuilder<NondeterministicTag, Kind>> {};
+const auto visit_outcomes_interned = [&](const TransitionLabel<Kind>& transition, SuccessorBuilder<NondeterministicTag, Kind>& successor)
+{
+    find_outcomes(*state_repository, successor);                                               // the lookup
+    if (extend_outcomes(successor_generator, *state_repository, axiom_evaluator, successor))   // the axiom step
+    {
+        register_outcomes(*state_repository, successor);                                       // interning
+        intern_label(*state_repository, builder, successor);
+        interned_successors.push_back(urd::take(successor));
+    }
+    return true;
+};
+for_each_successor<NondeterministicTag>(successor_generator, initial_node, visit_outcomes_interned);
+
+auto successors = std::vector<SuccessorBuilder<NondeterministicTag, Kind>> {};
+const auto visit_outcomes = [&](const TransitionLabel<Kind>& transition, SuccessorBuilder<NondeterministicTag, Kind>& successor)
+{
+    if (extend_outcomes(successor_generator, *state_repository, axiom_evaluator, successor))
+        successors.push_back(urd::take(successor));
+    return true;
+};
+for_each_successor<NondeterministicTag>(successor_generator, initial_node, visit_outcomes);
 ```
 
 ## Dependencies

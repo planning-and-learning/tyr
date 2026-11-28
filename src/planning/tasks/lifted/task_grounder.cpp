@@ -109,7 +109,7 @@ RemapStatus classify_literal(formalism::AtomView<GroundTag, T> atom, bool polari
 
 template<formalism::FactKind T>
 RemapStatus classify_literal(formalism::LiteralView<GroundTag, T> literal, const urd::Store<urd::set<formalism::AtomView<GroundTag, T>>>& atoms)
-{ return classify_literal(literal.get_atom(), literal.get_polarity(), atoms); }
+{ return classify_literal(literal.atom(), literal.polarity(), atoms); }
 
 struct RemappedFDRFact
 {
@@ -125,7 +125,7 @@ RemappedFDRFact remap_fdr_fact(formalism::FDRFactView<formalism::FluentTag> fact
 {
     assert(fact.has_value());
 
-    const auto atom = fact.get_atom();
+    const auto atom = fact.atom();
     URD_ASSUME(atom.has_value());  // Asserted above: the fact has a value, hence an atom.
     const auto new_atom = context.destination().view(urd::copy(*atom, context.destination(), context.builder()));
     const auto status = classify_literal(new_atom, polarity, fluent_atoms);
@@ -182,14 +182,14 @@ create_ground_fdr_conjunctive_condition(formalism::ConjunctiveConditionView<Grou
 {
     auto fdr_conj_cond = formalism::checkout<formalism::ConjunctiveCondition<GroundTag>>(context.builder());
 
-    for (const auto literal : element.get_literals<formalism::StaticTag>())
+    for (const auto literal : element.literals<formalism::StaticTag>())
     {
         const auto new_literal = context.destination().view(urd::copy(literal, context.destination(), context.builder()));
         if (!is_statically_applicable(new_literal, static_state))
             return std::nullopt;
     }
 
-    for (const auto literal : element.get_literals<formalism::DerivedTag>())
+    for (const auto literal : element.literals<formalism::DerivedTag>())
     {
         const auto remapped = remap_literal(literal, context, derived_atoms);
 
@@ -204,7 +204,7 @@ create_ground_fdr_conjunctive_condition(formalism::ConjunctiveConditionView<Grou
         urd::append(fdr_conj_cond->derived_literals, *remapped.literal);
     }
 
-    for (const auto fact : element.get_facts<formalism::PositiveTag>())
+    for (const auto fact : element.facts<formalism::PositiveTag>())
     {
         const auto remapped_fdr_fact = remap_fdr_fact(fact, true, fluent_atoms, fdr_context, context);
 
@@ -217,11 +217,11 @@ create_ground_fdr_conjunctive_condition(formalism::ConjunctiveConditionView<Grou
         URD_ASSUME(remapped_fdr_fact.fact.has_value());  // Mapped facts are present.
 
         urd::build_member(fdr_conj_cond->positive_facts.emplace_back(),
-                          urd::make<formalism::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()),
+                          urd::make<formalism::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->variable(), remapped_fdr_fact.fact->value()),
                           context.destination());
     }
 
-    for (const auto fact : element.get_facts<formalism::NegativeTag>())
+    for (const auto fact : element.facts<formalism::NegativeTag>())
     {
         const auto remapped_fdr_fact = remap_fdr_fact(fact, false, fluent_atoms, fdr_context, context);
 
@@ -234,11 +234,11 @@ create_ground_fdr_conjunctive_condition(formalism::ConjunctiveConditionView<Grou
         URD_ASSUME(remapped_fdr_fact.fact.has_value());  // Mapped facts are present.
 
         urd::build_member(fdr_conj_cond->negative_facts.emplace_back(),
-                          urd::make<formalism::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()),
+                          urd::make<formalism::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->variable(), remapped_fdr_fact.fact->value()),
                           context.destination());
     }
 
-    for (const auto numeric_constraint : element.get_numeric_constraints())
+    for (const auto numeric_constraint : element.numeric_constraints())
         urd::append(fdr_conj_cond->numeric_constraints, urd::copy(numeric_constraint, context.destination(), context.builder()));
 
     return context.destination().insert(*fdr_conj_cond, context.builder()).first;
@@ -254,14 +254,14 @@ ground_pruned(formalism::ConjunctiveConditionView<LiftedTag> element,
 {
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<GroundTag>>(context.builder());
 
-    for (const auto literal : element.template get_literals<formalism::StaticTag>())
+    for (const auto literal : element.template literals<formalism::StaticTag>())
     {
         const auto new_literal = ground(literal, context).first;
         if (!is_statically_applicable(new_literal, static_state))
             return std::nullopt;
     }
 
-    for (const auto literal : element.template get_literals<formalism::FluentTag>())
+    for (const auto literal : element.template literals<formalism::FluentTag>())
     {
         const auto new_literal = ground(literal, context).first;
         const auto remapped = remap_literal(new_literal, fluent_atoms);
@@ -274,21 +274,21 @@ ground_pruned(formalism::ConjunctiveConditionView<LiftedTag> element,
 
         URD_ASSUME(remapped.literal.has_value());  // Mapped literals are present.
 
-        const auto new_fact = fdr_context.get_fact(remapped.literal->get_atom());
+        const auto new_fact = fdr_context.get_fact(remapped.literal->atom());
         if (!new_fact)
             return std::nullopt;
 
-        if (literal.get_polarity())
+        if (literal.polarity())
             urd::build_member(conj_cond->positive_facts.emplace_back(),
-                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()),
+                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->variable(), new_fact->value()),
                               context.destination());
         else
             urd::build_member(conj_cond->negative_facts.emplace_back(),
-                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()),
+                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->variable(), new_fact->value()),
                               context.destination());
     }
 
-    for (const auto literal : element.template get_literals<formalism::DerivedTag>())
+    for (const auto literal : element.template literals<formalism::DerivedTag>())
     {
         const auto new_literal = ground(literal, context).first;
         const auto remapped = remap_literal(new_literal, derived_atoms);
@@ -304,7 +304,7 @@ ground_pruned(formalism::ConjunctiveConditionView<LiftedTag> element,
         urd::append(conj_cond->derived_literals, *remapped.literal);
     }
 
-    for (const auto numeric_constraint : element.get_numeric_constraints())
+    for (const auto numeric_constraint : element.numeric_constraints())
         urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, context).first);
 
     return context.destination().insert(*conj_cond, context.builder()).first;
@@ -316,16 +316,15 @@ ground_pruned(formalism::ConjunctiveEffectView<LiftedTag> element,
               formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
               const formalism::FDRContext& fdr)
 {
-    // Fetch and clear
     auto conj_eff = formalism::checkout<formalism::ConjunctiveEffect<GroundTag>>(context.builder());
 
-    for (const auto literal : element.get_literals())
+    for (const auto literal : element.literals())
     {
         // An unreachable atom: deleting it does nothing (the literal goes); adding it cannot happen (the effect goes).
-        const auto new_atom = ground(literal.get_atom(), context).first;
+        const auto new_atom = ground(literal.atom(), context).first;
         if (!fluent_atoms.contains(new_atom))
         {
-            if (literal.get_polarity())
+            if (literal.polarity())
                 return std::nullopt;
             continue;
         }
@@ -334,25 +333,24 @@ ground_pruned(formalism::ConjunctiveEffectView<LiftedTag> element,
         if (!new_fact)
             return std::nullopt;
 
-        if (literal.get_polarity())
+        if (literal.polarity())
             urd::build_member(conj_eff->add_facts.emplace_back(),
-                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()),
+                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->variable(), new_fact->value()),
                               context.destination());
         else
             urd::build_member(conj_eff->del_facts.emplace_back(),
-                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()),
+                              urd::make<formalism::FDRFact<formalism::FluentTag>>(new_fact->variable(), new_fact->value()),
                               context.destination());
     }
-    for (const auto numeric_effect : element.get_numeric_effects())
+    for (const auto numeric_effect : element.numeric_effects())
         urd::append(conj_eff->numeric_effects, ground(numeric_effect, context).first);
-    if (element.get_auxiliary_numeric_effect().has_value())
-        urd::store(conj_eff->auxiliary_numeric_effect, ground(element.get_auxiliary_numeric_effect().value(), context).first);
+    if (element.auxiliary_numeric_effect().has_value())
+        urd::store(conj_eff->auxiliary_numeric_effect, ground(element.auxiliary_numeric_effect().value(), context).first);
 
     // Prune no-op effects
     if (conj_eff->add_facts.empty() && conj_eff->del_facts.empty() && conj_eff->numeric_effects.empty() && !conj_eff->auxiliary_numeric_effect)
         return std::nullopt;  // no-op
 
-    // Canonicalize and Serialize
     return context.destination().insert(*conj_eff, context.builder()).first;
 }
 
@@ -364,23 +362,20 @@ ground_pruned(formalism::ConditionalEffectView<LiftedTag> element,
               formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
               const formalism::FDRContext& fdr_context)
 {
-    // Fetch and clear
     auto cond_effect = formalism::checkout<formalism::ConditionalEffect<GroundTag>>(context.builder());
 
-    // Fill data
-    const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
+    const auto new_condition_or_nullopt = ground_pruned(element.condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_condition_or_nullopt)
         return std::nullopt;
 
     urd::store(cond_effect->condition, *new_condition_or_nullopt);
 
-    const auto new_effect_or_nullopt = ground_pruned(element.get_effect(), fluent_atoms, context, fdr_context);
+    const auto new_effect_or_nullopt = ground_pruned(element.effect(), fluent_atoms, context, fdr_context);
     if (!new_effect_or_nullopt)
         return std::nullopt;
 
     urd::store(cond_effect->effect, *new_effect_or_nullopt);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*cond_effect, context.builder()).first;
 }
 
@@ -395,19 +390,17 @@ std::optional<formalism::ActionView<GroundTag>> ground_pruned(formalism::ActionV
                                                               formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                                                               const formalism::FDRContext& fdr_context)
 {
-    // Fetch and clear
     auto action = formalism::checkout<formalism::Action<GroundTag>>(context.builder());
 
-    // Fill data
     urd::store(action->row, ground(element, context).first);
 
-    const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
+    const auto new_condition_or_nullopt = ground_pruned(element.condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_condition_or_nullopt)
         return std::nullopt;
 
     urd::store(action->condition, *new_condition_or_nullopt);
 
-    for (const auto cond_effect : element.get_effects())
+    for (const auto cond_effect : element.effects())
         for_each_effect_binding(cond_effect,
                                 [&]
                                 {
@@ -420,10 +413,10 @@ std::optional<formalism::ActionView<GroundTag>> ground_pruned(formalism::ActionV
     { return ground_pruned(condition, fluent_atoms, derived_atoms, static_state, context, fdr_context); };
     const auto ground_effect = [&](formalism::ConditionalEffectView<LiftedTag> effect)
     { return ground_pruned(effect, fluent_atoms, derived_atoms, static_state, context, fdr_context); };
-    formalism::ground_choices(element.get_choices(), context, for_each_effect_binding, ground_condition, ground_effect, action->choices);
+    formalism::ground_choices(element.choices(), context, for_each_effect_binding, ground_condition, ground_effect, action->choices);
 
     // A durative action whose over-all or end condition no reachable atoms satisfy can never end.
-    if (const auto temporal_part = element.get_temporal_part(); temporal_part.has_value())
+    if (const auto temporal_part = element.temporal_part(); temporal_part.has_value())
     {
         const auto ground_part = formalism::ground_temporal_part(*temporal_part, context, for_each_effect_binding, ground_condition, ground_effect);
         if (!ground_part)
@@ -434,7 +427,6 @@ std::optional<formalism::ActionView<GroundTag>> ground_pruned(formalism::ActionV
     if (action->effects.empty() && action->choices.empty() && !action->temporal_part)
         return std::nullopt;
 
-    // Canonicalize and Serialize
     return context.destination().insert(*action, context.builder()).first;
 }
 
@@ -445,25 +437,22 @@ std::optional<formalism::AxiomView<GroundTag>> ground_pruned(formalism::AxiomVie
                                                              formalism::GroundingContext<formalism::Builder, formalism::Repository>& context,
                                                              const formalism::FDRContext& fdr_context)
 {
-    // Fetch and clear
     auto axiom = formalism::checkout<formalism::Axiom<GroundTag>>(context.builder());
 
-    // Fill data
     urd::store(axiom->row, ground(element, context).first);
 
-    const auto new_body_or_nullopt = ground_pruned(element.get_body(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
+    const auto new_body_or_nullopt = ground_pruned(element.body(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_body_or_nullopt.has_value())
         return std::nullopt;  // body is false in all reachable states -> axiom is irrelevant
 
     urd::store(axiom->body, *new_body_or_nullopt);
 
-    const auto new_head = ground(element.get_head(), context).first;
+    const auto new_head = ground(element.head(), context).first;
     if (!derived_atoms.contains(new_head))
         return std::nullopt;  // head is false in all reachable states -> axiom is irrelevant
 
     urd::store(axiom->head, new_head);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*axiom, context.builder()).first;
 }
 
@@ -562,15 +551,18 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto grounding_context = formalism::GroundingContext { builder, *repository };
 
-    ground_task->name = task.get_name();
-    urd::store(ground_task->domain, task.get_domain());
-    for (const auto predicate : task.get_derived_predicates())
+    ground_task->name = task.name();
+    ground_task->requirements.clear();
+    for (const auto requirement : task.requirements())
+        ground_task->requirements.push_back(requirement);
+    urd::store(ground_task->domain, task.domain());
+    for (const auto predicate : task.derived_predicates())
         urd::append(ground_task->derived_predicates, urd::copy(predicate, *repository, builder));
-    for (const auto object : task.get_objects())
+    for (const auto object : task.objects())
         urd::append(ground_task->objects, urd::copy(object, *repository, builder));
 
     auto initial_atoms = formalism::AtomViewList<GroundTag, formalism::FluentTag> {};
-    for (const auto atom : task.get_atoms<formalism::FluentTag>())
+    for (const auto atom : task.atoms<formalism::FluentTag>())
         initial_atoms.push_back(repository->view(urd::copy(atom, *repository, builder)));
 
     /**
@@ -597,7 +589,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         }
         for (const auto binding : derived_bindings)
         {
-            if (binding.get_relation().index().value < num_derived_predicates)
+            if (binding.relation().index().value < num_derived_predicates)
             {
                 auto atom = formalism::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
                 urd::store(atom->row, urd::copy(binding, *repository, builder));
@@ -622,9 +614,9 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     // balance an add at its end (another action may add in between). Its tasks get a binary variable per atom; synthesize
     // over start and end snap actions to get their mutex groups back.
     const auto durative =
-        std::ranges::any_of(planning_domain.get_domain().get_actions(), [](const auto action) { return action.get_temporal_part().has_value(); });
+        std::ranges::any_of(planning_domain.get_domain().actions(), [](const auto action) { return action.temporal_part().has_value(); });
     // Likewise a timed initial literal makes atoms true whatever an invariant's balance.
-    if (options.disable_invariant_synthesis || durative || !task.get_timed_literals().empty())
+    if (options.disable_invariant_synthesis || durative || !task.timed_literals().empty())
     {
         fdr_context = std::make_shared<formalism::FDRContext>(fluent_atoms, repository);
     }
@@ -636,7 +628,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     }
 
     auto static_atoms = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::StaticTag>>>();  // the static state's
-    for (const auto atom : task.get_atoms<formalism::StaticTag>())
+    for (const auto atom : task.atoms<formalism::StaticTag>())
     {
         const auto copied = repository->view(urd::copy(atom, *repository, builder));
         urd::append(ground_task->static_atoms, copied);
@@ -647,21 +639,21 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     for (const auto atom : derived_atoms)
         urd::append(ground_task->derived_atoms, urd::copy(atom, *repository, builder));
     auto static_fterm_values = urd::flat_vector<urd::index<formalism::FunctionTermValue<GroundTag, formalism::StaticTag>>>();
-    for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
+    for (const auto fterm_value : task.fterm_values<formalism::StaticTag>())
     {
         const auto copied = repository->view(urd::copy(fterm_value, *repository, builder));
         urd::append(ground_task->static_fterm_values, copied);
         static_fterm_values.push_back(copied.index());
     }
-    for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
+    for (const auto fterm_value : task.fterm_values<formalism::FluentTag>())
         urd::append(ground_task->fluent_fterm_values, urd::copy(fterm_value, *repository, builder));
-    if (task.get_auxiliary_fterm_value().has_value())
-        urd::store(ground_task->auxiliary_fterm_value, urd::copy(task.get_auxiliary_fterm_value().value(), *repository, builder));
-    if (task.get_metric())
-        urd::store(ground_task->metric, urd::copy(task.get_metric().value(), *repository, builder));
-    for (const auto axiom : task.get_axioms())
+    if (task.auxiliary_fterm_value().has_value())
+        urd::store(ground_task->auxiliary_fterm_value, urd::copy(task.auxiliary_fterm_value().value(), *repository, builder));
+    if (task.metric())
+        urd::store(ground_task->metric, urd::copy(task.metric().value(), *repository, builder));
+    for (const auto axiom : task.axioms())
         urd::append(ground_task->axioms, urd::copy(axiom, *repository, builder));
-    for (const auto timed_literal : task.get_timed_literals())
+    for (const auto timed_literal : task.timed_literals())
         urd::append(ground_task->timed_literals, urd::copy(timed_literal, *repository, builder));
 
     /// --- Create FDR variables
@@ -669,17 +661,17 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         urd::append(ground_task->fluent_variables, variable);
 
     /// --- Create FDR fluent facts
-    for (const auto atom : task.get_atoms<formalism::FluentTag>())
+    for (const auto atom : task.atoms<formalism::FluentTag>())
         if (const auto fact = std::as_const(*fdr_context).get_fact(repository->view(urd::copy(atom, *repository, builder))))
             urd::build_member(ground_task->fluent_facts.emplace_back(),
-                              urd::make<formalism::FDRFact<formalism::FluentTag>>(fact->get_variable(), fact->get_value()),
+                              urd::make<formalism::FDRFact<formalism::FluentTag>>(fact->variable(), fact->value()),
                               *repository);
 
     const auto static_state = StaticState(urd::resolve(static_atoms, *repository), urd::resolve(static_fterm_values, *repository));
 
     /// --- Create FDR goal
     const auto goal_or_nullopt =
-        create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, static_state, *fdr_context, grounding_context);
+        create_ground_fdr_conjunctive_condition(task.goal(), fluent_atoms_set, derived_atoms_set, static_state, *fdr_context, grounding_context);
     if (goal_or_nullopt.has_value())
         urd::store(ground_task->goal, *goal_or_nullopt);
     else
@@ -701,7 +693,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         {
             const auto& mapping = ground_program.get_predicate_to_action_mapping();
 
-            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
+            if (const auto it = mapping.find(binding.relation()); it != mapping.end())
             {
                 const auto action = it->second;
 
@@ -741,7 +733,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         {
             const auto& mapping = ground_program.get_predicate_to_axiom_mapping();
 
-            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
+            if (const auto it = mapping.find(binding.relation()); it != mapping.end())
             {
                 workspace.binding.clear();
                 for (const auto object : binding.template get<urd::index<formalism::Object>>())

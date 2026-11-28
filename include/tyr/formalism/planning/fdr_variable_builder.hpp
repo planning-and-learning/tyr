@@ -42,7 +42,6 @@ struct builder<::tyr::formalism::FDRVariable<T>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &builder::atoms>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::atoms> {}; }
 };
 
 }  // namespace urd

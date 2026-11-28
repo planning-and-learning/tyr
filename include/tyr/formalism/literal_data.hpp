@@ -48,9 +48,7 @@ struct data<::tyr::formalism::Literal<T, F>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atom", &data::atom>, urd::field<"polarity", &data::polarity>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::polarity> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atom, &data::polarity> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Literal<T, F>> key() const noexcept { return urd::key<::tyr::formalism::Literal<T, F>>(index); }
 };

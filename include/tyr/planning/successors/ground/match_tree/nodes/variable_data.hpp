@@ -63,9 +63,7 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
                            urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::domain_children, &data::dontcare_child> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variable, &data::domain_children, &data::dontcare_child> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::match_tree::VariableSelectorNode<Tag>> key() const noexcept
     { return urd::key<::tyr::planning::match_tree::VariableSelectorNode<Tag>>(index); }

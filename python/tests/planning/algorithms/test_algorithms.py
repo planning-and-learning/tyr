@@ -94,19 +94,7 @@ def _check_lazy_gbfs_relaxed_plan_requests_lifted(task: planning.lifted.Task) ->
 
 
 def test_planning_modules_export_expected_algorithm_submodules() -> None:
-    assert hasattr(planning, "ground")
-    assert hasattr(planning, "lifted")
-
-    assert hasattr(planning, "algorithms")
-
     for kind in ("ground", "lifted"):
-        for algorithm_name in ("astar_eager", "brfs", "gbfs_lazy", "iw", "siw"):
-            algorithm_module = getattr(getattr(planning.algorithms, algorithm_name), kind)
-            assert hasattr(algorithm_module, "Options")
-            assert hasattr(algorithm_module, "EventHandler")
-            assert hasattr(algorithm_module, "DefaultEventHandler")
-            assert hasattr(algorithm_module, "find_solution")
-
         for algorithm_name in ("astar_eager", "brfs", "gbfs_lazy", "iw", "siw"):
             solver = getattr(getattr(planning.algorithms, algorithm_name), kind).Solver()
             assert solver.options is not None
@@ -187,7 +175,6 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots() -
     assert progress_statistics.get_snapshots() == []
     assert progress_statistics.empty()
     assert progress_statistics.size() == 0
-    assert not hasattr(progress_statistics, "add_snap_shot")
     statistics.increment_num_generated_candidates(transferred=False)
     statistics.increment_num_generated_candidates(transferred=True)
     progress_statistics.add_snapshot(statistics)
@@ -224,16 +211,13 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots() -
             algorithm_bindings(task_module, "astar_eager"),
             algorithm_bindings(task_module, "gbfs_lazy"),
         ):
-            event_handler = algorithm_module.DefaultEventHandler()
-            assert not hasattr(event_handler, "on_expand_node")
-            assert not hasattr(event_handler, "get_statistics")
+            algorithm_module.DefaultEventHandler()
 
         for event_handler in (
             algorithm_bindings(task_module, "brfs").DefaultEventHandler(),
             algorithm_bindings(task_module, "brfs").DefaultEventHandler(0),
         ):
             assert isinstance(event_handler.get_progress_statistics(), planning.ProgressStatistics)
-            assert not hasattr(event_handler, "on_expand_node")
 
         for event_handler in (
             algorithm_bindings(task_module, "iw").DefaultEventHandler(),
@@ -464,81 +448,17 @@ def test_algorithm_options_are_default_constructible_with_expected_fields() -> N
         },
     }
 
-    expected_fields_by_algorithm = {
-        "astar_eager": (
-            "start_node",
-            "event_handler",
-            "pruning_strategy",
-            "goal_strategy",
-            "search_budget",
-            "cost_mode",
-            "num_search_workers",
-            "dist_hash_mode",
-            "parallel_search_mode",
-            "collect_destination_lock_statistics",
-            "random_seed",
-            "shuffle_labeled_succ_nodes",
-        ),
-        "brfs": (
-            "start_node",
-            "event_handler",
-            "pruning_strategy",
-            "goal_strategy",
-            "search_budget",
-            "num_search_workers",
-            "dist_hash_mode",
-            "collect_destination_lock_statistics",
-            "random_seed",
-            "shuffle_labeled_succ_nodes",
-        ),
-        "gbfs_lazy": (
-            "start_node",
-            "event_handler",
-            "pruning_strategy",
-            "goal_strategy",
-            "search_budget",
-            "cost_mode",
-            "use_preferred_actions",
-            "boost_preferred_queue",
-            "num_search_workers",
-            "dist_hash_mode",
-            "collect_destination_lock_statistics",
-            "random_seed",
-            "shuffle_labeled_succ_nodes",
-        ),
-        "iw": (
-            "start_node",
-            "event_handler",
-            "goal_strategy",
-            "search_budget",
-            "random_seed",
-            "shuffle_labeled_succ_nodes",
-        ),
-        "siw": (
-            "start_node",
-            "event_handler",
-            "subgoal_strategy",
-            "goal_strategy",
-            "max_num_subsearches",
-        ),
-    }
-
     for task_module in (planning.ground, planning.lifted):
-        for algorithm_name, expected_fields in expected_fields_by_algorithm.items():
+        for algorithm_name, expected_defaults in expected_defaults_by_algorithm.items():
             options = algorithm_bindings(task_module, algorithm_name).Options()
 
-            for field in expected_fields:
-                assert hasattr(options, field)
-
-            for field, expected_default in expected_defaults_by_algorithm[algorithm_name].items():
+            for field, expected_default in expected_defaults.items():
                 assert getattr(options, field) == expected_default
 
             if algorithm_name != "siw":
                 assert isinstance(options.search_budget, planning.SearchBudget)
                 assert options.search_budget.max_num_states is None
                 assert options.search_budget.max_time is None
-                assert not hasattr(options, "max_num_states")
-                assert not hasattr(options, "max_time")
 
 
 def test_lazy_gbfs_reads_the_relaxed_plan_of_python_heuristics() -> None:

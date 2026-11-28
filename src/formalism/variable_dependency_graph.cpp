@@ -56,7 +56,7 @@ static void insert_literal(LiteralView<LiftedTag, F> literal, details::UnaryDepe
     auto parameters = urd::Store<urd::sequence<ParameterIndex>>(parameters_set.begin(), parameters_set.end());
     std::sort(parameters.begin(), parameters.end());
 
-    if (literal.get_polarity())
+    if (literal.polarity())
         insert_literal_dependencies<F, PositiveTag>(parameters, unary, binary);
     else
         insert_literal_dependencies<F, NegativeTag>(parameters, unary, binary);
@@ -80,20 +80,20 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
 }
 
 VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition) :
-    m_k(condition.get_arity()),
+    m_k(condition.arity()),
     m_unary_dependencies(m_k),
     m_binary_dependencies(m_k)
 {
-    for (const auto literal : condition.get_literals<StaticTag>())
+    for (const auto literal : condition.literals<StaticTag>())
         insert_literal(literal, m_unary_dependencies, m_binary_dependencies);
 
-    for (const auto literal : condition.get_literals<FluentTag>())
+    for (const auto literal : condition.literals<FluentTag>())
         insert_literal(literal, m_unary_dependencies, m_binary_dependencies);
 
-    for (const auto literal : condition.get_literals<DerivedTag>())
+    for (const auto literal : condition.literals<DerivedTag>())
         insert_literal(literal, m_unary_dependencies, m_binary_dependencies);
 
-    for (const auto numeric_constraint : condition.get_numeric_constraints())
+    for (const auto numeric_constraint : condition.numeric_constraints())
         insert_numeric_constraint(numeric_constraint, m_unary_dependencies, m_binary_dependencies);
 }
 }

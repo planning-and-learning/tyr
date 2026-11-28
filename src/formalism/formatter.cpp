@@ -48,19 +48,19 @@ using tyr::LiftedTag;
 
 fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Object, tf::Repository>>::format(const urd::index_view<tf::Object, tf::Repository>& value,
                                                                                                   fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "{}", value.get_name()); }
+{ return fmt::format_to(context.out(), "{}", value.name()); }
 
 fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Variable, tf::Repository>>::format(const urd::index_view<tf::Variable, tf::Repository>& value,
                                                                                                     fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "{}", value.get_name()); }
+{ return fmt::format_to(context.out(), "{}", value.name()); }
 
 template<tf::FactKind F>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::Predicate<F>, tf::Repository>>::format(const urd::index_view<tf::Predicate<F>, tf::Repository>& value,
                                                                           fmt::format_context& context) const
 {
-    auto out = fmt::format_to(context.out(), "({}", value.get_name());
-    for (std::size_t position = 0; position < value.get_arity(); ++position)
+    auto out = fmt::format_to(context.out(), "({}", value.name());
+    for (std::size_t position = 0; position < value.arity(); ++position)
         out = fmt::format_to(out, " ?x{}", position);
     return fmt::format_to(out, ")");
 }
@@ -70,8 +70,8 @@ fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::Function<F>, tf::Repository>>::format(const urd::index_view<tf::Function<F>, tf::Repository>& value,
                                                                          fmt::format_context& context) const
 {
-    auto out = fmt::format_to(context.out(), "({}", value.get_name());
-    for (std::size_t position = 0; position < value.get_arity(); ++position)
+    auto out = fmt::format_to(context.out(), "({}", value.name());
+    for (std::size_t position = 0; position < value.arity(); ++position)
         out = fmt::format_to(out, " ?x{}", position);
     return fmt::format_to(out, ")");
 }
@@ -82,13 +82,13 @@ fmt::formatter<urd::index_view<tf::Atom<T, F>, tf::Repository>>::format(const ur
                                                                         fmt::format_context& context) const
 {
     if constexpr (std::same_as<T, GroundTag>)
-        return fmt::format_to(context.out(), "{}", value.get_row());
+        return fmt::format_to(context.out(), "{}", value.row());
     else
     {
         // A parameter is written as the variable its parameters name at its index.
-        const auto variables = value.get_parameters().get_variables();
-        auto out = fmt::format_to(context.out(), "({}", value.get_predicate().get_name());
-        for (auto term : value.get_terms())
+        const auto variables = value.parameters().variables();
+        auto out = fmt::format_to(context.out(), "({}", value.predicate().name());
+        for (auto term : value.terms())
         {
             if (const auto* parameter = std::get_if<tf::ParameterIndex>(&term))
                 out = fmt::format_to(out, " {}", variables[parameter->value]);
@@ -104,9 +104,9 @@ fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::Literal<T, F>, tf::Repository>>::format(const urd::index_view<tf::Literal<T, F>, tf::Repository>& value,
                                                                            fmt::format_context& context) const
 {
-    if (value.get_polarity())
-        return fmt::format_to(context.out(), "{}", value.get_atom());
-    return fmt::format_to(context.out(), "(not {})", value.get_atom());
+    if (value.polarity())
+        return fmt::format_to(context.out(), "{}", value.atom());
+    return fmt::format_to(context.out(), "(not {})", value.atom());
 }
 
 template<tyr::TaskKind T, tf::FactKind F>
@@ -115,13 +115,13 @@ fmt::formatter<urd::index_view<tf::FunctionTerm<T, F>, tf::Repository>>::format(
                                                                                 fmt::format_context& context) const
 {
     if constexpr (std::same_as<T, GroundTag>)
-        return fmt::format_to(context.out(), "{}", value.get_row());
+        return fmt::format_to(context.out(), "{}", value.row());
     else
     {
         // A parameter is written as the variable its parameters name at its index.
-        const auto variables = value.get_parameters().get_variables();
-        auto out = fmt::format_to(context.out(), "({}", value.get_function().get_name());
-        for (auto term : value.get_terms())
+        const auto variables = value.parameters().variables();
+        auto out = fmt::format_to(context.out(), "({}", value.function().name());
+        for (auto term : value.terms())
         {
             if (const auto* parameter = std::get_if<tf::ParameterIndex>(&term))
                 out = fmt::format_to(out, " {}", variables[parameter->value]);
@@ -136,13 +136,13 @@ template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::FunctionTermValue<T, F>, tf::Repository>>::format(const urd::index_view<tf::FunctionTermValue<T, F>, tf::Repository>& value,
                                                                                      fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "(= {} {})", value.get_fterm(), value.get_value()); }
+{ return fmt::format_to(context.out(), "(= {} {})", value.fterm(), value.value()); }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::UnaryOperator<T, O>, tf::Repository>>::format(const urd::index_view<tf::UnaryOperator<T, O>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "({} {})", value.get_operation(), value.get_arg()); }
+{ return fmt::format_to(context.out(), "({} {})", value.operation(), value.operand()); }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
 fmt::format_context::iterator
@@ -152,10 +152,10 @@ fmt::formatter<urd::index_view<tf::BinaryOperator<T, O>, tf::Repository>>::forma
     // PDDL compares with =, <, <=, > and >=: a != b is (not (= a b)).
     if constexpr (std::same_as<O, tf::BooleanOperatorKind>)
     {
-        if (value.get_operation() == tf::BooleanOperatorKind::Ne)
-            return fmt::format_to(context.out(), "(not (= {} {}))", value.get_lhs(), value.get_rhs());
+        if (value.operation() == tf::BooleanOperatorKind::Ne)
+            return fmt::format_to(context.out(), "(not (= {} {}))", value.left_operand(), value.right_operand());
     }
-    return fmt::format_to(context.out(), "({} {} {})", value.get_operation(), value.get_lhs(), value.get_rhs());
+    return fmt::format_to(context.out(), "({} {} {})", value.operation(), value.left_operand(), value.right_operand());
 }
 
 template<tyr::TaskKind T, tf::OperatorKind O>
@@ -163,8 +163,8 @@ fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::MultiOperator<T, O>, tf::Repository>>::format(const urd::index_view<tf::MultiOperator<T, O>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
 {
-    auto out = fmt::format_to(context.out(), "({}", value.get_operation());
-    for (auto argument : value.get_args())
+    auto out = fmt::format_to(context.out(), "({}", value.operation());
+    for (auto argument : value.operands())
         out = fmt::format_to(out, " {}", argument);
     return fmt::format_to(out, ")");
 }
@@ -173,7 +173,7 @@ template<tyr::TaskKind T, tf::FactKind F>
 fmt::format_context::iterator
 fmt::formatter<urd::index_view<tf::NumericEffect<T, F>, tf::Repository>>::format(const urd::index_view<tf::NumericEffect<T, F>, tf::Repository>& value,
                                                                                  fmt::format_context& context) const
-{ return fmt::format_to(context.out(), "({} {} {})", value.get_operation(), value.get_fterm(), value.get_fexpr()); }
+{ return fmt::format_to(context.out(), "({} {} {})", value.operation(), value.fterm(), value.fexpr()); }
 
 template<tyr::TaskKind T>
 fmt::format_context::iterator
@@ -183,32 +183,32 @@ fmt::formatter<urd::index_view<tf::ConjunctiveCondition<T>, tf::Repository>>::fo
     auto out = fmt::format_to(context.out(), "(and");
     if constexpr (std::same_as<T, LiftedTag>)
     {
-        for (auto literal : value.get_static_literals())
+        for (auto literal : value.static_literals())
             out = fmt::format_to(out, " {}", literal);
-        for (auto literal : value.get_fluent_literals())
+        for (auto literal : value.fluent_literals())
             out = fmt::format_to(out, " {}", literal);
-        for (auto literal : value.get_derived_literals())
+        for (auto literal : value.derived_literals())
             out = fmt::format_to(out, " {}", literal);
-        for (auto constraint : value.get_numeric_constraints())
+        for (auto constraint : value.numeric_constraints())
             out = fmt::format_to(out, " {}", constraint);
     }
     else
     {
-        for (auto literal : value.get_static_literals())
+        for (auto literal : value.static_literals())
             out = fmt::format_to(out, " {}", literal);
-        for (auto literal : value.get_derived_literals())
+        for (auto literal : value.derived_literals())
             out = fmt::format_to(out, " {}", literal);
-        for (auto fact : value.get_positive_facts())
+        for (auto fact : value.positive_facts())
             out = fmt::format_to(out, " {}", fact);
         // A fact that must not hold: its atom false, or, where its variable holds none of its atoms, one of them true.
-        for (auto fact : value.get_negative_facts())
+        for (auto fact : value.negative_facts())
         {
-            if (const auto atom = fact.get_atom(); atom.has_value())
+            if (const auto atom = fact.atom(); atom.has_value())
                 out = fmt::format_to(out, " (not {})", atom.value());
             else
-                out = fmt::format_to(out, " (or {})", fmt::join(fact.get_variable().get_atoms(), " "));
+                out = fmt::format_to(out, " (or {})", fmt::join(fact.variable().atoms(), " "));
         }
-        for (auto constraint : value.get_numeric_constraints())
+        for (auto constraint : value.numeric_constraints())
             out = fmt::format_to(out, " {}", constraint);
     }
     return fmt::format_to(out, ")");
@@ -220,12 +220,12 @@ fmt::format_context::iterator fmt::formatter<ygg::RowView<R, tf::Repository>>::f
 {
     // An axiom or a rule has no name: its binding is its values.
     if constexpr (std::same_as<R, tf::Axiom<LiftedTag>> || std::same_as<R, tyr::formalism::Rule<LiftedTag>>)
-        return fmt::format_to(context.out(), "{}", ygg::values_text<R>(value));
+        return fmt::format_to(context.out(), "{}", ygg::values_text(value));
     else
     {
-        if (value.get_values().empty())
-            return fmt::format_to(context.out(), "({})", value.get_relation().get_name());
-        return fmt::format_to(context.out(), "({} {})", value.get_relation().get_name(), ygg::values_text<R>(value));
+        if (value.values().empty())
+            return fmt::format_to(context.out(), "({})", value.relation().name());
+        return fmt::format_to(context.out(), "({} {})", value.relation().name(), ygg::values_text(value));
     }
 }
 

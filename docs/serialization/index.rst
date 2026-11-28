@@ -72,7 +72,7 @@ Pass ``project`` to define a complete row with your own column names and values:
        "actions",
        "a",
        project=lambda binding: {
-           "name": binding.get_relation().get_name(),
+           "name": binding.relation().name(),
            "objects": binding.resolve_objects(),
        },
    )
@@ -88,7 +88,7 @@ serialize and compose their output.
 
 Register nested types whose selected fields you want to traverse. To represent an entity as text, explicitly return
 ``str(entity)`` from a Python projection or call ``ygg::to_string(entity)`` in a C++ projection. For example, a
-projection can return ``{"condition": str(action.get_condition())}`` without registering the condition. Excluded fields
+projection can return ``{"condition": str(action.condition())}`` without registering the condition. Excluded fields
 are never evaluated or traversed.
 
 Sequences are JSON arrays, pairs are two-element arrays, absent optional values are ``null``, and paths are strings with
@@ -136,7 +136,7 @@ In C++, ``describe_fields`` declares each name and accessor together. For exampl
    template<class Archive>
    void describe_fields(Archive& ar, std::type_identity<tyr::formalism::planning::ObjectView>)
    {
-       ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+       ar.field("name", [](const auto& value) -> decltype(auto) { return (value.name()); });
    }
    }
 

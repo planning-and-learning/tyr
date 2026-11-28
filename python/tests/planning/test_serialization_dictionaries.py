@@ -67,7 +67,7 @@ def test_default_fields_need_no_live_entity() -> None:
 def test_field_enum_selection_validates_the_native_type_before_registration() -> None:
     parser = formalism.Parser(DOMAIN, ParserOptions())
     task = parser.parse_task(PROBLEM, ParserOptions())
-    (atom,) = task.get_task().get_static_atoms()
+    (atom,) = task.get_task().static_atoms()
     dictionaries = Dictionaries()
     with pytest.raises(TypeError):
         dictionaries.register_table(formalism.RowPredicateStatic, "bindings", "b", fields="relation")
@@ -130,19 +130,19 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     dictionaries.register_table(module.NumericStorageBuilderView, "numeric_storages", "n")
     dictionaries.register_table(module.TemporalStorageBuilderView, "temporal_storages", "T")
     assert dictionaries.table(state_type) == []
-    start = plan.get_start_node()
+    start = plan.start_node()
     references = sys.getrefcount(start)
     assert dictionaries.serialize(start) == "v0"
     assert sys.getrefcount(start) > references
-    (step,) = plan.get_labeled_succ_nodes()
-    assert [atom.get_predicate().get_name() for atom in plan.get_start_node().get_state().fluent_atoms()] == [
+    (step,) = plan.labeled_succ_nodes()
+    assert [atom.predicate().name() for atom in plan.start_node().state().fluent_atoms()] == [
         "start"
     ]
-    assert [atom.get_predicate().get_name() for atom in step.get_node().get_state().fluent_atoms()] == ["done"]
-    assert dictionaries.serialize(step.get_node()) == "v1"
-    assert dictionaries.serialize(step.get_label()) == "a0"
+    assert [atom.predicate().name() for atom in step.node().state().fluent_atoms()] == ["done"]
+    assert dictionaries.serialize(step.node()) == "v1"
+    assert dictionaries.serialize(step.label()) == "a0"
     assert dictionaries.table(formalism.RowActionLifted) == [{"relation": "A0", "values": []}]
-    assert dictionaries.table(formalism.ActionLifted) == [{"name": step.get_label().get_relation().get_name()}]
+    assert dictionaries.table(formalism.ActionLifted) == [{"name": step.label().relation().name()}]
     assert list(formalism.RowActionLifted.Fields.__members__) == list(
         _rows(dictionaries.table(formalism.RowActionLifted))[0]
     )
@@ -173,7 +173,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
 def test_registration_errors_and_explicit_native_text() -> None:
     parser = formalism.Parser(DOMAIN, ParserOptions())
     task = lifted.Task(parser.parse_task(PROBLEM, ParserOptions()))
-    term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
+    term = next(iter(task.get_task().static_fterm_values())).fterm()
     dictionaries = Dictionaries()
     with pytest.raises(ValueError, match="prefix must end in a non-digit"):
         dictionaries.register_table(formalism.FunctionTermGroundStatic, "terms", "t0")
@@ -196,7 +196,7 @@ def test_registration_errors_and_explicit_native_text() -> None:
 def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nested: bool) -> None:
     parser = formalism.Parser(DOMAIN, ParserOptions())
     task = parser.parse_task(PROBLEM, ParserOptions())
-    term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
+    term = next(iter(task.get_task().static_fterm_values())).fterm()
     dictionaries = Dictionaries()
     if nested:
         dictionaries.register_table(formalism.FunctionTermGroundStatic, "terms", "t")
@@ -239,8 +239,8 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
 def test_projected_binding_collects_only_selected_output_fields(fields: list[str] | None) -> None:
     parser = formalism.Parser(str(TASKS / "bindings/domain.pddl"), ParserOptions())
     task = parser.parse_task(str(TASKS / "bindings/binding-1.pddl"), ParserOptions())
-    (action,) = parser.get_domain().get_domain().get_actions()
-    (item,) = task.get_task().get_objects()
+    (action,) = parser.get_domain().get_domain().actions()
+    (item,) = task.get_task().objects()
     binding = task.get_repository().insert(formalism.RowActionLiftedData(action.index(), [item.index().value]))[0]
     calls: list[formalism.RowActionLifted] = []
     payload: dict[str, object] = {
@@ -249,13 +249,13 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
     }
 
     # A row holds its objects' indices: the projection hands out the task's objects of them, serialized as references.
-    objects = {obj.index().value: obj for obj in task.get_task().get_objects()}
+    objects = {obj.index().value: obj for obj in task.get_task().objects()}
 
     def project(value: formalism.RowActionLifted) -> dict[str, object]:
         calls.append(value)
         return {
-            "name": value.get_relation().get_name(),
-            "objects": [objects[v] for v in value.get_values()],
+            "name": value.relation().name(),
+            "objects": [objects[v] for v in value.values()],
             "details\0": payload,
         }
 
@@ -383,7 +383,7 @@ def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
     )
     parser = formalism.Parser(domain, None, ParserOptions())
     task = parser.parse_task(problem, None, ParserOptions())
-    atoms = list(task.get_task().get_static_atoms())
+    atoms = list(task.get_task().static_atoms())
     assert len(atoms) >= count * (count - 1)
     holder = _Holder(Dictionaries())
     dictionaries = holder.dictionaries
@@ -392,7 +392,7 @@ def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
     this = weakref.proxy(holder)
 
     def project(atom: formalism.AtomGroundStatic) -> dict[str, object]:
-        return {"objects": [this.dictionaries.serialize(item) for item in atom.get_row().resolve_objects()]}
+        return {"objects": [this.dictionaries.serialize(item) for item in atom.row().resolve_objects()]}
 
     dictionaries.register_table(formalism.AtomGroundStatic, "atoms", "a", project=project)
     dictionaries.register_table(formalism.Object, "objects", "o")

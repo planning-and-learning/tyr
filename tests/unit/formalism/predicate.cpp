@@ -33,8 +33,8 @@ concept PredicateContract = std::constructible_from<urd::index<Entity>, ygg::uin
                                    data.name;
                                    data.arity;
                                    view.index();
-                                   view.get_name();
-                                   view.get_arity();
+                                   view.name();
+                                   view.arity();
                                };
 
 template<typename Repository, typename... Entities>

@@ -22,8 +22,8 @@ def test_planning_task_view_accessors_keep_temporary_owners_alive() -> None:
 
     gc.collect()
 
-    assert lifted_task_view.get_name() == "gripper-2"
-    assert [object_.get_name() for object_ in lifted_task_view.get_objects()] == ["ball1", "ball2", "left", "right"]
+    assert lifted_task_view.name() == "gripper-2"
+    assert [object_.name() for object_ in lifted_task_view.objects()] == ["ball1", "ball2", "left", "right"]
 
     parser = Parser(str(GRIPPER.domain_path), parser_options)
     formalism_task = parser.parse_task(
@@ -41,8 +41,8 @@ def test_planning_task_view_accessors_keep_temporary_owners_alive() -> None:
 
     gc.collect()
 
-    assert ground_task_view.get_name() == "gripper-2"
-    assert [object_.get_name() for object_ in ground_task_view.get_objects()] == ["ball1", "ball2", "left", "right"]
+    assert ground_task_view.name() == "gripper-2"
+    assert [object_.name() for object_ in ground_task_view.objects()] == ["ball1", "ball2", "left", "right"]
 
 
 def test_ground_task_instantiation_result_default_is_explicit_failure() -> None:
@@ -76,4 +76,4 @@ def test_lifted_task_instantiates_ground_task_from_parsed_pddl(
 
     assert result.status == planning.lifted.GroundTaskInstantiationStatus.SUCCESS
     assert isinstance(result.task, planning.ground.Task)
-    assert result.task.get_task().get_name() == "gripper-2"
+    assert result.task.get_task().name() == "gripper-2"

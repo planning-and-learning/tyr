@@ -28,9 +28,16 @@ planning::NodeBuilder<Kind> registered_successor(planning::SuccessorGenerator<Ki
                                                  planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                                  planning::StateDelta& delta)
 {
-    auto state = ::tyr::planning::get_state_builder(repository);
-    const auto auxiliary_value = generator.generate_successor_state(node, binding, *state, delta);
-    return planning::register_successor(repository, axiom_evaluator, std::move(state), auxiliary_value, node, delta);
+    // The caller's delta lends its buffers to the successor state for the three steps.
+    auto successor = planning::SuccessorState<Kind> {};
+    std::swap(successor.delta, delta);
+    successor.state = ::tyr::planning::get_state_builder(repository);
+    successor.auxiliary_value = generator.generate_successor_state(node, binding, *successor.state, successor.delta);
+    planning::find_successor(repository, node, successor);
+    planning::extend_successor(axiom_evaluator, node, successor);
+    auto result = planning::register_successor(repository, node, successor);
+    std::swap(successor.delta, delta);
+    return result;
 }
 
 template<TaskKind Kind, typename Binding>

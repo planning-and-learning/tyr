@@ -101,7 +101,7 @@ try
         auto options = tyr::planning::gbfs_lazy::Options<Kind>();
         const auto initial_node = tyr::planning::get_initial_node(*state_repository, *axiom_evaluator);
         options.start_node = tyr::planning::OwnedNodeRecordView<Kind>(initial_node.pack(), state_repository.get());
-        initial_h_value = heuristic->evaluate(initial_node.get_state());
+        initial_h_value = heuristic->evaluate(initial_node.state());
 
         auto result = tyr::planning::SearchResult<Kind>();
         {
@@ -112,8 +112,8 @@ try
         num_expanded = result.statistics.get_num_expanded();
         num_generated_successors = result.statistics.get_num_generated_successors();
         solved = result.status == tyr::planning::SearchStatus::SOLVED;
-        cost = result.plan ? result.plan->get_cost() : static_cast<ygg::float_t>(0);
-        length = result.plan ? result.plan->get_length() : static_cast<std::size_t>(0);
+        cost = result.plan ? result.plan->cost() : static_cast<ygg::float_t>(0);
+        length = result.plan ? result.plan->length() : static_cast<std::size_t>(0);
 
         benchmark::DoNotOptimize(static_cast<int>(result.status));
         benchmark::DoNotOptimize(initial_h_value);

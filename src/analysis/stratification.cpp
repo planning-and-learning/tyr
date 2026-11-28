@@ -82,9 +82,9 @@ struct RelationVertexMap
 template<TaskKind Kind, typename Function>
 void for_each_head(formalism::RuleView<Kind> rule, Function function)
 {
-    for (const auto head : rule.template get_heads<formalism::FluentTag>())
+    for (const auto head : rule.template heads<formalism::FluentTag>())
         function(head);
-    for (const auto head : rule.template get_heads<formalism::DerivedTag>())
+    for (const auto head : rule.template heads<formalism::DerivedTag>())
         function(head);
 }
 
@@ -93,36 +93,36 @@ void add_body_dependencies(formalism::RuleView<Kind> rule, ygg::uint_t head_vert
 {
     const auto add_literal_dependency = [&](const auto literal)
     {
-        const auto body_vertex = vertices.get_vertex(literal.get_atom().get_predicate().index());
+        const auto body_vertex = vertices.get_vertex(literal.atom().predicate().index());
 
         stratification::EdgeProps ep;
-        ep.kind = literal.get_polarity() ? stratification::EdgeKind::NonStrict : stratification::EdgeKind::Strict;
+        ep.kind = literal.polarity() ? stratification::EdgeKind::NonStrict : stratification::EdgeKind::Strict;
         boost::add_edge(body_vertex, head_vertex, ep, graph);
     };
-    for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
+    for (const auto literal : rule.body().template literals<formalism::FluentTag>())
         add_literal_dependency(literal);
-    for (const auto literal : rule.get_body().template get_literals<formalism::DerivedTag>())
+    for (const auto literal : rule.body().template literals<formalism::DerivedTag>())
         add_literal_dependency(literal);
 
     auto reads = urd::Store<urd::set<formalism::FunctionTermView<Kind, formalism::FluentTag>>> {};
-    for (const auto constraint : rule.get_body().get_numeric_constraints())
+    for (const auto constraint : rule.body().numeric_constraints())
         formalism::collect_fterms(constraint, reads);
     for (const auto term : reads)
     {
         auto ep = stratification::EdgeProps {};
         ep.kind = stratification::EdgeKind::NonStrict;
-        boost::add_edge(vertices.get_vertex(term.get_function().index()), head_vertex, ep, graph);
+        boost::add_edge(vertices.get_vertex(term.function().index()), head_vertex, ep, graph);
     }
 }
 
 template<TaskKind Kind, formalism::FactKind F>
 ygg::uint_t get_head_vertex(formalism::AtomView<Kind, F> head, const RelationVertexMap& vertices)
-{ return vertices.get_vertex(head.get_predicate().index()); }
+{ return vertices.get_vertex(head.predicate().index()); }
 
 template<TaskKind Kind>
 void add_rule_dependencies(formalism::ProgramView<Kind> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
         for_each_head(rule, [&](const auto head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
 }
 
@@ -132,7 +132,7 @@ void bucket_rules_by_stratum(formalism::ProgramView<Kind> program,
                              const urd::Store<urd::sequence<ygg::uint_t>>& relation_stratum,
                              urd::Store<urd::sequence<RuleStratum<Kind>>>& buckets)
 {
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
     {
         auto stratum = std::optional<ygg::uint_t> {};
         for_each_head(rule,
@@ -165,9 +165,9 @@ template<TaskKind Kind>
 RuleStrata<Kind> compute_rule_stratification(formalism::ProgramView<Kind> program)
 {
     const auto vertices = RelationVertexMap {
-        program.template get_predicates<formalism::FluentTag>().size(),
-        program.template get_predicates<formalism::DerivedTag>().size(),
-        program.template get_functions<formalism::FluentTag>().size(),
+        program.template predicates<formalism::FluentTag>().size(),
+        program.template predicates<formalism::DerivedTag>().size(),
+        program.template functions<formalism::FluentTag>().size(),
     };
 
     // 1) dependency graph

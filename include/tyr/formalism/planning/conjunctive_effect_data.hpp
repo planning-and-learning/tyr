@@ -28,6 +28,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -61,15 +62,13 @@ struct data<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"literals", &data::literals>,
-                           urd::field<"numeric_effects", &data::numeric_effects>,
+        return urd::Fields<urd::field<"literals", &data::literals, urd::sorted, urd::unique>,
+                           urd::field<"numeric_effects", &data::numeric_effects, urd::sorted, urd::unique>,
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::LiftedTag>>(index); }
@@ -106,17 +105,14 @@ struct data<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"add_facts", &data::add_facts>,
-                           urd::field<"del_facts", &data::del_facts>,
-                           urd::field<"numeric_effects", &data::numeric_effects>,
+        return urd::Fields<urd::field<"add_facts", &data::add_facts, urd::sorted, urd::unique>,
+                           urd::field<"del_facts", &data::del_facts, urd::sorted, urd::unique>,
+                           urd::field<"numeric_effects", &data::numeric_effects, urd::sorted, urd::unique>,
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveEffect<::tyr::GroundTag>>(index); }

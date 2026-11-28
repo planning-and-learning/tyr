@@ -57,8 +57,6 @@ struct builder<::tyr::formalism::Rule<::tyr::LiftedTag>, C>
                            urd::field<"cost", &builder::cost>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::variables, &builder::body, &builder::fluent_heads, &builder::derived_heads, &builder::cost> {}; }
 };
 
 /// The builder of Rule: its record's members, each in its built form (urd::built_t).
@@ -79,7 +77,6 @@ struct builder<::tyr::formalism::Rule<::tyr::GroundTag>, C>
                            urd::field<"cost", &builder::cost>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

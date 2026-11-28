@@ -33,21 +33,21 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_min_durations() const noexcept { return self().template member<&urd::record_of<V>::min_durations>(); }
+    auto min_durations() const noexcept { return self().template member<&urd::record_of<V>::min_durations>(); }
 
-    auto get_max_durations() const noexcept { return self().template member<&urd::record_of<V>::max_durations>(); }
+    auto max_durations() const noexcept { return self().template member<&urd::record_of<V>::max_durations>(); }
 
-    auto get_end_min_durations() const noexcept { return self().template member<&urd::record_of<V>::end_min_durations>(); }
+    auto end_min_durations() const noexcept { return self().template member<&urd::record_of<V>::end_min_durations>(); }
 
-    auto get_end_max_durations() const noexcept { return self().template member<&urd::record_of<V>::end_max_durations>(); }
+    auto end_max_durations() const noexcept { return self().template member<&urd::record_of<V>::end_max_durations>(); }
 
-    auto get_over_all() const noexcept { return self().template member<&urd::record_of<V>::over_all>(); }
+    auto over_all() const noexcept { return self().template member<&urd::record_of<V>::over_all>(); }
 
-    auto get_end_condition() const noexcept { return self().template member<&urd::record_of<V>::end_condition>(); }
+    auto end_condition() const noexcept { return self().template member<&urd::record_of<V>::end_condition>(); }
 
-    auto get_end_effects() const noexcept { return self().template member<&urd::record_of<V>::end_effects>(); }
+    auto end_effects() const noexcept { return self().template member<&urd::record_of<V>::end_effects>(); }
 
-    auto get_end_choices() const noexcept { return self().template member<&urd::record_of<V>::end_choices>(); }
+    auto end_choices() const noexcept { return self().template member<&urd::record_of<V>::end_choices>(); }
 };
 }  // namespace urd
 

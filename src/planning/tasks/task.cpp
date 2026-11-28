@@ -61,12 +61,12 @@ StaticState::StaticState(formalism::AtomListView<GroundTag, formalism::StaticTag
         m_atoms.insert(atom.index());
 
     for (const auto fterm_value : fterm_values)
-        m_numeric_variables.insert_or_assign(fterm_value.get_fterm().index(), fterm_value.get_value());
+        m_numeric_variables.insert_or_assign(fterm_value.fterm().index(), fterm_value.value());
 }
 
 template<TaskKind Kind>
 StaticState::StaticState(formalism::TaskView<Kind> task) :
-    StaticState(task.template get_atoms<formalism::StaticTag>(), task.template get_fterm_values<formalism::StaticTag>())
+    StaticState(task.template atoms<formalism::StaticTag>(), task.template fterm_values<formalism::StaticTag>())
 {
 }
 
@@ -97,7 +97,7 @@ GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::Exec
 
 // Defined here, not in the header: reading the task's records instantiates the repository's reads, which every source
 // including the header would compile again.
-bool Task<LiftedTag>::has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
+bool Task<LiftedTag>::has_axioms() const noexcept { return !get_task().axioms().empty() || !get_domain().get_domain().axioms().empty(); }
 
 Task<GroundTag>::Task(formalism::PlanningTask<GroundTag> task) :
     m_task(std::move(task)),
@@ -107,6 +107,6 @@ Task<GroundTag>::Task(formalism::PlanningTask<GroundTag> task) :
 {
 }
 
-bool Task<GroundTag>::has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
+bool Task<GroundTag>::has_axioms() const noexcept { return !get_task().ground_axioms().empty(); }
 
 }

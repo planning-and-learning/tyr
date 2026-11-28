@@ -30,9 +30,9 @@ StateLayout<GroundTag>::StateLayout(const Task<GroundTag>& task)
     constexpr auto bits_per_block = static_cast<ygg::uint_t>(urd::bits::bits_per_block_v<ygg::uint_t>);
 
     auto current_bit = ygg::uint_t { 0 };
-    for (const auto variable : task.get_formalism_task().get_task().get_fluent_variables())
+    for (const auto variable : task.get_formalism_task().get_task().fluent_variables())
     {
-        const auto domain_size = static_cast<ygg::uint_t>(variable.get_atoms().size() + 1);
+        const auto domain_size = static_cast<ygg::uint_t>(variable.atoms().size() + 1);
         const auto length = static_cast<ygg::uint_t>(urd::bits::bits_needed(domain_size));
 
         fluent_infos.push_back(VariableInfo {
@@ -45,7 +45,7 @@ StateLayout<GroundTag>::StateLayout(const Task<GroundTag>& task)
     }
 
     fluent_num_blocks = urd::bits::ceil_div(current_bit, bits_per_block);
-    derived_num_bits = static_cast<ygg::uint_t>(task.get_formalism_task().get_task().get_atoms<formalism::DerivedTag>().size());
+    derived_num_bits = static_cast<ygg::uint_t>(task.get_formalism_task().get_task().atoms<formalism::DerivedTag>().size());
 }
 
 }

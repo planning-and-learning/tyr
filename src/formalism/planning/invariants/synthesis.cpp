@@ -69,7 +69,7 @@ InvariantView intern(urd::builder<Invariant, Repository>& invariant, Builder& bu
 std::vector<urd::builder<Invariant, Repository>> synthesize_candidates(DomainView domain, CandidateStorage& storage)
 {
     auto ops = std::vector<ActionView<LiftedTag>>();
-    for (const auto action : domain.get_actions())
+    for (const auto action : domain.actions())
         ops.push_back(action);
 
     // Breadth-first search with a closed list (Helmert 2009, Section 5). A candidate is refined on the first unbalanced
@@ -86,7 +86,7 @@ std::vector<urd::builder<Invariant, Repository>> synthesize_candidates(DomainVie
             queue.push(std::move(candidate));
     };
 
-    for (auto& candidate : make_initial_candidates(domain.get_predicates<FluentTag>(), storage))
+    for (auto& candidate : make_initial_candidates(domain.predicates<FluentTag>(), storage))
         enqueue(std::move(candidate));
 
     auto accepted = std::vector<urd::builder<Invariant, Repository>>();

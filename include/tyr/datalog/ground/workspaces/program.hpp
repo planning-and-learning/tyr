@@ -58,7 +58,7 @@ public:
     explicit GroundRuleDependencies(formalism::ProgramView<GroundTag> program)
     {
         boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
-                                              { precondition_to_rules.template get<F>().initialize(program.template get_predicates<F>().size()); });
+                                              { precondition_to_rules.template get<F>().initialize(program.template predicates<F>().size()); });
     }
 
     /// The rules that wait on the fact, if any.

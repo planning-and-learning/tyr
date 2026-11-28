@@ -33,7 +33,9 @@ namespace tyr::planning
 template<TaskKind Kind>
 void bind_state_serialization()
 {
-    ygg::python::bind_serialization(boost::mp11::mp_list<StateBuilderView<Kind>,
+    ygg::python::bind_serialization(boost::mp11::mp_list<StateView<Kind>,
+                                                         StateBuilderView<Kind>,
+                                                         StateRecordView<Kind>,
                                                          SharedStateBuilderView<Kind>,
                                                          FactStorageBuilderView<Kind>,
                                                          AtomStorageBuilderView<Kind>,

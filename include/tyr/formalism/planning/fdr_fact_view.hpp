@@ -41,22 +41,22 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_variable() const noexcept { return self().template member<&urd::record_of<V>::variable>(); }
+    auto variable() const noexcept { return self().template member<&urd::record_of<V>::variable>(); }
 
-    auto get_value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
+    auto value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
 
-    auto has_value() const noexcept { return get_value() != ::tyr::formalism::FDRValue::none(); }
+    auto has_value() const noexcept { return value() != ::tyr::formalism::FDRValue::none(); }
 
-    auto get_atom_index() const noexcept
-    { return has_value() ? std::make_optional(self().context()[get_variable().index()]->atoms[get_value().value - 1]) : std::nullopt; }
+    auto atom_index() const noexcept
+    { return has_value() ? std::make_optional(self().context()[variable().index()]->atoms[value().value - 1]) : std::nullopt; }
 
-    auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
+    auto atom() const noexcept { return urd::resolve(atom_index(), self().context()); }
 
     static constexpr auto functions() noexcept
     {
         return urd::Functions<urd::function<"has_value", &view_mixin::has_value>,
-                              urd::function<"get_atom_index", &view_mixin::get_atom_index>,
-                              urd::function<"get_atom", &view_mixin::get_atom>> {};
+                              urd::function<"atom_index", &view_mixin::atom_index>,
+                              urd::function<"atom", &view_mixin::atom>> {};
     }
 };
 

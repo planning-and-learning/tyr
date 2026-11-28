@@ -53,7 +53,7 @@ PredicateRowViews binding_views(std::initializer_list<tyr::formalism::AtomView<G
 {
     auto result = PredicateRowViews {};
     for (const auto atom : atoms)
-        result.push_back(atom.get_row());
+        result.push_back(atom.row());
     return result;
 }
 
@@ -242,11 +242,11 @@ TEST(TyrDatalogGroundQueueTest, GroundProgramStoresGroundRules)
 
     const auto program = fixture.program();
 
-    EXPECT_EQ(program.get_rules().size(), 1);
-    EXPECT_EQ(program.get_rules()[0].index(), fixture.ground_rules[0]);
+    EXPECT_EQ(program.rules().size(), 1);
+    EXPECT_EQ(program.rules()[0].index(), fixture.ground_rules[0]);
     // In Datalog: the program's last statement is its rule, a fact without a body, its cost a comment after it.
-    const auto rule_text = fmt::format("{}", program.get_rules()[0]);
-    EXPECT_EQ(rule_text, fmt::format("{}.  % cost {}", program.get_rules()[0].get_fluent_heads()[0], program.get_rules()[0].get_cost()));
+    const auto rule_text = fmt::format("{}", program.rules()[0]);
+    EXPECT_EQ(rule_text, fmt::format("{}.  % cost {}", program.rules()[0].fluent_heads()[0], program.rules()[0].cost()));
     EXPECT_TRUE(fmt::format("{}", program).ends_with(rule_text));
 }
 
@@ -275,8 +275,8 @@ TEST(TyrDatalogGroundQueueTest, NoAnnotationPolicyDerivesFactsWithoutStoringAnno
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, atom.get_row().index()));
-    EXPECT_EQ(ctx.out().annotations().find(atom.get_row().index()), nullptr);
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, atom.row().index()));
+    EXPECT_EQ(ctx.out().annotations().find(atom.row().index()), nullptr);
 }
 
 TEST(TyrDatalogGroundQueueTest, ChainedRulesDeriveFixpoint)
@@ -351,8 +351,8 @@ TEST(TyrDatalogGroundQueueTest, PositiveFluentPreconditionIndexMapsFactToWaiting
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     const auto& dependencies = const_workspace.dependencies;
-    const auto* a_rules = dependencies.find(a.get_row().index());
-    const auto* d_rules = dependencies.find(d.get_row().index());
+    const auto* a_rules = dependencies.find(a.row().index());
+    const auto* d_rules = dependencies.find(d.row().index());
 
     ASSERT_NE(a_rules, nullptr);
     ASSERT_NE(d_rules, nullptr);
@@ -374,7 +374,7 @@ TEST(TyrDatalogGroundQueueTest, InitialFluentFactsSatisfyDynamicUnsatisfiedCount
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     const auto& dependencies = const_workspace.dependencies;
-    const auto* a_rules = dependencies.find(a.get_row().index());
+    const auto* a_rules = dependencies.find(a.row().index());
 
     ASSERT_NE(a_rules, nullptr);
     EXPECT_EQ(rule_indices(*a_rules), (urd::Store<urd::sequence<urd::index<tyr::formalism::Rule<GroundTag>>>>({ fixture.ground_rules[0] })));
@@ -462,7 +462,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateEdgeCost)
     tyr::datalog::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* annotation = ctx.out().annotations().find(a.get_row().index());
+    const auto* annotation = ctx.out().annotations().find(a.row().index());
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 0);
 }
@@ -548,12 +548,12 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsLowestCostBucket)
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(expensive_source.get_row().index(), datalog::BaseAnnotation(static_cast<datalog::Cost>(2)));
+    ctx.out().annotations().insert_or_assign(expensive_source.row().index(), datalog::BaseAnnotation(static_cast<datalog::Cost>(2)));
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, goal_atom.get_row().index()));
-    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, peer_atom.get_row().index()));
-    const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row().index());
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, goal_atom.row().index()));
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, peer_atom.row().index()));
+    const auto* goal_annotation = ctx.out().annotations().find(goal_atom.row().index());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
     EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 2);
@@ -582,7 +582,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    const auto* achievers = ctx.out().annotation_policy().find_achievers(goal.get_row().index());
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(goal.row().index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ(achievers->front().get_rule_key(), cheap.index());
@@ -603,7 +603,7 @@ TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    const auto* annotation = ctx.out().annotations().find(goal.get_row().index());
+    const auto* annotation = ctx.out().annotations().find(goal.row().index());
     ASSERT_NE(annotation, nullptr);
     const auto* witness = std::get_if<datalog::WitnessAnnotation<GroundTag>>(annotation);
     ASSERT_NE(witness, nullptr);
@@ -633,7 +633,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
     tyr::datalog::compute_model(ctx);
 
     EXPECT_EQ(binding_views(ctx), binding_views({ a, b }));
-    const auto* achievers = ctx.out().annotation_policy().find_achievers(b.get_row().index());
+    const auto* achievers = ctx.out().annotation_policy().find_achievers(b.row().index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 2);
     const auto first_key = (*achievers)[0].get_rule_key();
@@ -647,7 +647,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
 {
     auto fixture = GroundQueueFixture();
     const auto head_atom = fixture.fluent_atom("head");
-    const auto head = head_atom.get_row();
+    const auto head = head_atom.row();
     const auto rule = fixture.rule(fixture.condition(), head_atom);
     auto policy = datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>();
 
@@ -688,15 +688,15 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
     auto repository = tyr::formalism::Repository(&source_program.context());
     const auto program = tyr::datalog::remove_statically_inapplicable_rules(source_program, repository);
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
-    EXPECT_EQ(const_workspace.program.get_rules().size(), 2);
+    EXPECT_EQ(const_workspace.program.rules().size(), 2);
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
     auto expected = PredicateRowViews {};
-    for (const auto rule : program.get_rules())
-        expected.push_back(rule.get_fluent_heads().front().get_row());
+    for (const auto rule : program.rules())
+        expected.push_back(rule.fluent_heads().front().row());
     EXPECT_EQ(binding_views(ctx), expected);
     EXPECT_EQ(ctx.out().scheduler().statistics().num_rules_fired, 2);
 }
@@ -710,11 +710,11 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctio
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
-    tyr::datalog::insert(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.get_row().index(), ygg::ClosedInterval<ygg::float_t>(9, 9));
+    tyr::datalog::insert(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.row().index(), ygg::ClosedInterval<ygg::float_t>(9, 9));
 
     ctx.initialize(fixture.initial_fluent_atoms);
 
-    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.get_row().index()),
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets.get<tyr::formalism::FluentTag>(), term.row().index()),
               ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 

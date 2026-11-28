@@ -310,8 +310,8 @@ void LMCutImplementation<Kind>::mark_goal_zone()
         boost::mp11::mp_for_each<datalog::MutableTags>(
             [&]<typename F>(F)
             {
-                for (const auto literal : goal->template get_literals<F>())
-                    if (const auto head = literal.get_atom().get_row(); !seeded && literal.get_polarity() && this->get_predicate_cost(head) == goal_cost)
+                for (const auto literal : goal->template literals<F>())
+                    if (const auto head = literal.atom().row(); !seeded && literal.polarity() && this->get_predicate_cost(head) == goal_cost)
                     {
                         m_goal_zone.template get<F>().insert(head);
                         m_stack.template get<F>().push_back(head);

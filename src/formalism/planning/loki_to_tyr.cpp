@@ -31,7 +31,6 @@
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
@@ -91,21 +90,21 @@ void for_each_duration_bound(loki::formalism::DurativeActionView action, const F
             {
                 if constexpr (std::is_same_v<C, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
                 {
-                    for (const auto nested : part.get_conditions())
+                    for (const auto nested : part.conditions())
                         visit(nested, at_end);
                 }
                 else if constexpr (std::is_same_v<C, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
                 {
-                    visit(part.get_condition(), part.get_time() == loki::formalism::TimeSpecifier::End);
+                    visit(part.condition(), part.time() == loki::formalism::TimeSpecifier::End);
                 }
                 else if constexpr (std::is_same_v<C, NumericConstraint>)
                 {
-                    const auto left = std::holds_alternative<Duration>(part.get_left());
-                    if (!left && !std::holds_alternative<Duration>(part.get_right()))
+                    const auto left = std::holds_alternative<Duration>(part.left());
+                    if (!left && !std::holds_alternative<Duration>(part.right()))
                         throw std::invalid_argument("A duration constraint that does not compare ?duration.");
-                    const auto bound = left ? part.get_right() : part.get_left();
+                    const auto bound = left ? part.right() : part.left();
                     // The comparison as ?duration op bound.
-                    auto comparator = part.get_comparator();
+                    auto comparator = part.comparator();
                     if (!left)
                         comparator = comparator == Comparator::Le ? Comparator::Ge :
                                      comparator == Comparator::Lt ? Comparator::Gt :
@@ -136,8 +135,8 @@ void for_each_duration_bound(loki::formalism::DurativeActionView action, const F
             },
             condition);
     };
-    if (action.get_duration().has_value())
-        visit(action.get_duration().value(), false);
+    if (action.duration().has_value())
+        visit(action.duration().value(), false);
 }
 
 /// Whether every timed part of the condition is timed at `time`.
@@ -147,9 +146,9 @@ bool timed_only_at(loki::formalism::ConditionView condition, loki::formalism::Ti
         [&]<typename ConditionT>(const ConditionT& part)
         {
             if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
-                return std::ranges::all_of(part.get_conditions(), [&](const auto nested) { return timed_only_at(nested, time); });
+                return std::ranges::all_of(part.conditions(), [&](const auto nested) { return timed_only_at(nested, time); });
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
-                return part.get_time() == time;
+                return part.time() == time;
             else
                 return true;
         },
@@ -162,19 +161,88 @@ bool timed_only_at(loki::formalism::ConditionView condition, loki::formalism::Ti
  */
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionSkeletonView function_skeleton)
 {
-    prepare(function_skeleton.get_parameters());
-    prepare(function_skeleton.get_type());
+    prepare(function_skeleton.parameters());
+    prepare(function_skeleton.type());
 }
 
-void LokiToTyrTranslator::prepare(loki::formalism::ObjectView object) { prepare(object.get_types()); }
+void LokiToTyrTranslator::prepare(loki::formalism::ObjectView object) { prepare(object.types()); }
 
-void LokiToTyrTranslator::prepare(loki::formalism::ParameterView parameter) { prepare(parameter.get_variable()); }
+void LokiToTyrTranslator::prepare(loki::formalism::ParameterView parameter) { prepare(parameter.variable()); }
 
-void LokiToTyrTranslator::prepare(loki::formalism::PredicateView predicate) { prepare(predicate.get_parameters()); }
+void LokiToTyrTranslator::prepare(loki::formalism::PredicateView predicate) { prepare(predicate.parameters()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::RequirementView) {}
 
-void LokiToTyrTranslator::prepare(loki::formalism::TypeView type) { prepare(type.get_bases()); }
+namespace
+{
+/// Loki's requirement as tyr's.
+RequirementKind requirement_of(loki::formalism::RequirementKind kind)
+{
+    switch (kind)
+    {
+        case loki::formalism::RequirementKind::Strips:
+            return RequirementKind::Strips;
+        case loki::formalism::RequirementKind::Typing:
+            return RequirementKind::Typing;
+        case loki::formalism::RequirementKind::NegativePreconditions:
+            return RequirementKind::NegativePreconditions;
+        case loki::formalism::RequirementKind::DisjunctivePreconditions:
+            return RequirementKind::DisjunctivePreconditions;
+        case loki::formalism::RequirementKind::Equality:
+            return RequirementKind::Equality;
+        case loki::formalism::RequirementKind::ExistentialPreconditions:
+            return RequirementKind::ExistentialPreconditions;
+        case loki::formalism::RequirementKind::UniversalPreconditions:
+            return RequirementKind::UniversalPreconditions;
+        case loki::formalism::RequirementKind::QuantifiedPreconditions:
+            return RequirementKind::QuantifiedPreconditions;
+        case loki::formalism::RequirementKind::Adl:
+            return RequirementKind::Adl;
+        case loki::formalism::RequirementKind::ConditionalEffects:
+            return RequirementKind::ConditionalEffects;
+        case loki::formalism::RequirementKind::Fluents:
+            return RequirementKind::Fluents;
+        case loki::formalism::RequirementKind::NumericFluents:
+            return RequirementKind::NumericFluents;
+        case loki::formalism::RequirementKind::ActionCosts:
+            return RequirementKind::ActionCosts;
+        case loki::formalism::RequirementKind::DurativeActions:
+            return RequirementKind::DurativeActions;
+        case loki::formalism::RequirementKind::DerivedPredicates:
+            return RequirementKind::DerivedPredicates;
+        case loki::formalism::RequirementKind::NonDeterministic:
+            return RequirementKind::NonDeterministic;
+        case loki::formalism::RequirementKind::ProbabilisticEffects:
+            return RequirementKind::ProbabilisticEffects;
+        case loki::formalism::RequirementKind::DurationInequalities:
+            return RequirementKind::DurationInequalities;
+        case loki::formalism::RequirementKind::TimedInitialLiterals:
+            return RequirementKind::TimedInitialLiterals;
+        case loki::formalism::RequirementKind::Rewards:
+            return RequirementKind::Rewards;
+        case loki::formalism::RequirementKind::Preferences:
+            return RequirementKind::Preferences;
+        case loki::formalism::RequirementKind::Constraints:
+            return RequirementKind::Constraints;
+        case loki::formalism::RequirementKind::Mdp:
+            return RequirementKind::Mdp;
+        case loki::formalism::RequirementKind::TrajectoryFormulas:
+            return RequirementKind::TrajectoryFormulas;
+    }
+    throw std::invalid_argument("invalid loki::formalism::RequirementKind");
+}
+
+/// The requirements a domain or a task declares, as loki set them from what it uses (inferred anew for a translated one).
+template<typename Requirements, typename Out>
+void translate_requirements(Requirements requirements, Out& out)
+{
+    out.clear();
+    for (const auto requirement : requirements)
+        out.push_back(requirement_of(requirement.kind()));
+}
+}
+
+void LokiToTyrTranslator::prepare(loki::formalism::TypeView type) { prepare(type.bases()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::VariableView) {}
 
@@ -189,31 +257,31 @@ void LokiToTyrTranslator::prepare(loki::formalism::TermView term)
 
 void LokiToTyrTranslator::prepare(loki::formalism::AtomView atom)
 {
-    prepare(atom.get_predicate());
-    prepare(atom.get_terms());
+    prepare(atom.predicate());
+    prepare(atom.terms());
 }
 
-void LokiToTyrTranslator::prepare(loki::formalism::LiteralView literal) { prepare(literal.get_atom()); }
+void LokiToTyrTranslator::prepare(loki::formalism::LiteralView literal) { prepare(literal.atom()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>>) {}
 
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> function_expression)
 {
-    prepare(function_expression.get_left());
-    prepare(function_expression.get_right());
+    prepare(function_expression.left());
+    prepare(function_expression.right());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression)
-{ this->prepare(function_expression.get_args()); }
+{ this->prepare(function_expression.args()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression)
-{ this->prepare(function_expression.get_expression()); }
+{ this->prepare(function_expression.expression()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_expression)
 {
-    m_fexpr_functions.insert(function_expression.get_function().get_name().str());
-    prepare(function_expression.get_function());
-    prepare(function_expression.get_terms());
+    m_fexpr_functions.insert(function_expression.function().name().str());
+    prepare(function_expression.function());
+    prepare(function_expression.terms());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::DurationTag>> /*function_expression*/)
@@ -258,21 +326,21 @@ void LokiToTyrTranslator::prepare(loki::formalism::ConditionView condition)
         {
             if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
             {
-                for (const auto& nested : part.get_conditions())
+                for (const auto& nested : part.conditions())
                     prepare(nested);
             }
             else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
             {
-                prepare(part.get_literal());
+                prepare(part.literal());
             }
             else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
             {
-                prepare(part.get_left());
-                prepare(part.get_right());
+                prepare(part.left());
+                prepare(part.right());
             }
             else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::TimedTag>>>)
             {
-                prepare(part.get_condition());
+                prepare(part.condition());
             }
             else
             {
@@ -291,43 +359,43 @@ void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
             {
                 if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::AndTag>>>)
                 {
-                    for (const auto& nested : part.get_effects())
+                    for (const auto& nested : part.effects())
                         prepare_effect(nested);
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::ForallTag>>>)
                 {
-                    prepare(part.get_parameters());
-                    prepare_effect(part.get_effect());
+                    prepare(part.parameters());
+                    prepare_effect(part.effect());
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::WhenTag>>>)
                 {
-                    prepare(part.get_condition());
-                    prepare_effect(part.get_effect());
+                    prepare(part.condition());
+                    prepare_effect(part.effect());
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::LiteralTag>>>)
                 {
-                    const auto literal = part.get_literal();
+                    const auto literal = part.literal();
                     prepare(literal);
-                    m_fluent_predicates.insert(literal.get_atom().get_predicate().get_name().str());
+                    m_fluent_predicates.insert(literal.atom().predicate().name().str());
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>>>)
                 {
-                    m_effect_function_skeletons.insert(part.get_function().get_function().get_name().str());
-                    prepare(part.get_expression());
+                    m_effect_function_skeletons.insert(part.function().function().name().str());
+                    prepare(part.expression());
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::OneOfTag>>>)
                 {
-                    for (const auto& alternative : part.get_effects())
+                    for (const auto& alternative : part.effects())
                         prepare_effect(alternative);
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::ProbabilisticTag>>>)
                 {
-                    for (const auto& alternative : part.get_alternatives())
-                        prepare_effect(alternative.get_effect());
+                    for (const auto& alternative : part.alternatives())
+                        prepare_effect(alternative.effect());
                 }
                 else if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::TimedTag>>>)
                 {
-                    prepare_effect(part.get_effect());
+                    prepare_effect(part.effect());
                 }
                 else
                 {
@@ -342,70 +410,70 @@ void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
 
 void LokiToTyrTranslator::prepare(loki::formalism::ActionView action)
 {
-    prepare(action.get_parameters());
-    prepare(action.get_precondition());
-    prepare(action.get_effect());
+    prepare(action.parameters());
+    prepare(action.precondition());
+    prepare(action.effect());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::DurativeActionView action)
 {
-    prepare(action.get_parameters());
+    prepare(action.parameters());
     for_each_duration_bound(action, [&](bool, bool, bool, loki::formalism::FunctionExpressionView bound) { prepare(bound); });
-    if (action.get_condition().has_value())
-        prepare(action.get_condition().value());
-    if (action.get_effect().has_value())
-        prepare(action.get_effect().value());
+    if (action.condition().has_value())
+        prepare(action.condition().value());
+    if (action.effect().has_value())
+        prepare(action.effect().value());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::AxiomView axiom)
 {
-    prepare(axiom.get_parameters());
-    prepare(axiom.get_head());
-    prepare(axiom.get_condition());
+    prepare(axiom.parameters());
+    prepare(axiom.head());
+    prepare(axiom.condition());
 
-    m_derived_predicates.insert(axiom.get_head().get_atom().get_predicate().get_name().str());
+    m_derived_predicates.insert(axiom.head().atom().predicate().name().str());
 }
 
-void LokiToTyrTranslator::prepare(loki::formalism::InitialFunctionValueView function_value) { prepare(function_value.get_function()); }
+void LokiToTyrTranslator::prepare(loki::formalism::InitialFunctionValueView function_value) { prepare(function_value.function()); }
 
-void LokiToTyrTranslator::prepare(loki::formalism::MetricView metric) { prepare(metric.get_expression()); }
+void LokiToTyrTranslator::prepare(loki::formalism::MetricView metric) { prepare(metric.expression()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::DomainView domain)
 {
     // What tyr does not support yet is rejected, not dropped: planned without it, a task would get wrong plans.
-    if (domain.get_constraints())
+    if (domain.constraints())
         throw std::invalid_argument("tyr does not support domain constraints yet.");
-    m_temporal = !domain.get_durative_actions().empty();
-    prepare(domain.get_requirements());
-    prepare(domain.get_types());
-    prepare(domain.get_constants());
-    prepare(domain.get_predicates());
-    prepare(domain.get_functions());
-    prepare(domain.get_actions());
-    prepare(domain.get_durative_actions());
-    prepare(domain.get_axioms());
+    m_temporal = !domain.durative_actions().empty();
+    prepare(domain.requirements());
+    prepare(domain.types());
+    prepare(domain.constants());
+    prepare(domain.predicates());
+    prepare(domain.functions());
+    prepare(domain.actions());
+    prepare(domain.durative_actions());
+    prepare(domain.axioms());
 }
 
 void LokiToTyrTranslator::prepare(loki::formalism::TaskView problem)
 {
     // What tyr does not support yet is rejected, not dropped: planned without it, a task would get wrong plans.
-    if (!problem.get_initial_effects().empty())
+    if (!problem.initial_effects().empty())
         throw std::invalid_argument("tyr does not support probabilistic initial states yet.");
-    if (problem.get_goal_reward())
+    if (problem.goal_reward())
         throw std::invalid_argument("tyr does not support a goal reward yet.");
-    if (problem.get_constraints())
+    if (problem.constraints())
         throw std::invalid_argument("tyr does not support task constraints yet.");
-    prepare(problem.get_domain());
-    prepare(problem.get_requirements());
-    prepare(problem.get_objects());
-    prepare(problem.get_initial_literals());
-    for (const auto timed_literal : problem.get_timed_initial_literals())
-        prepare(timed_literal.get_literal());
-    prepare(problem.get_initial_function_values());
-    prepare(problem.get_goal());
-    prepare(problem.get_metric());
-    prepare(problem.get_predicates());
-    prepare(problem.get_axioms());
+    prepare(problem.domain());
+    prepare(problem.requirements());
+    prepare(problem.objects());
+    prepare(problem.initial_literals());
+    for (const auto timed_literal : problem.timed_initial_literals())
+        prepare(timed_literal.literal());
+    prepare(problem.initial_function_values());
+    prepare(problem.goal());
+    prepare(problem.metric());
+    prepare(problem.predicates());
+    prepare(problem.axioms());
 }
 
 /**
@@ -435,15 +503,15 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
     auto build_function = [&]<typename Tag>(Tag) -> FunctionViewVariant
     {
         auto function = checkout<Function<Tag>>(builder);
-        function->name = element.get_name();
-        function->arity = element.get_parameters().size();
+        function->name = element.name();
+        function->arity = element.parameters().size();
         return context.insert(*function, builder).first;
     };
 
     // The metric's accumulator: an action's cost (total-cost), or the time elapsed (total-time, of a temporal domain).
-    if (element.get_name() == "total-cost" || (m_temporal && element.get_name() == "total-time"))
+    if (element.name() == "total-cost" || (m_temporal && element.name() == "total-time"))
         return build_function(AuxiliaryTag {});
-    else if (m_effect_function_skeletons.contains(element.get_name().str()))
+    else if (m_effect_function_skeletons.contains(element.name().str()))
         return build_function(FluentTag {});
     else
         return build_function(StaticTag {});
@@ -452,27 +520,27 @@ FunctionViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Funct
 urd::index<Object> LokiToTyrTranslator::translate_common(loki::formalism::ObjectView element, Builder& builder, Repository& context)
 {
     auto object = checkout<Object>(builder);
-    object->name = element.get_name();
+    object->name = element.name();
     return context.insert(*object, builder).first.index();
 }
 
 urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
-{ return translate_common(element.get_variable(), builder, context); }
+{ return translate_common(element.variable(), builder, context); }
 
 PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::PredicateView element, Builder& builder, Repository& context)
 {
     auto build_predicate = [&]<typename Tag>(Tag) -> PredicateViewVariant
     {
         auto predicate = checkout<Predicate<Tag>>(builder);
-        predicate->name = element.get_name();
-        predicate->arity = element.get_parameters().size();
+        predicate->name = element.name();
+        predicate->arity = element.parameters().size();
         return context.insert(*predicate, builder).first;
     };
 
     // A predicate an effect (or a timed initial literal: make_fluent) changes is fluent.
-    if (m_fluent_predicates.count(element.get_name().str()) && !m_derived_predicates.count(element.get_name().str()))
+    if (m_fluent_predicates.count(element.name().str()) && !m_derived_predicates.count(element.name().str()))
         return build_predicate(FluentTag {});
-    else if (m_derived_predicates.count(element.get_name().str()))
+    else if (m_derived_predicates.count(element.name().str()))
         return build_predicate(DerivedTag {});
     else
         return build_predicate(StaticTag {});
@@ -481,7 +549,7 @@ PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::Pred
 urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::VariableView element, Builder& builder, Repository& context)
 {
     auto variable = checkout<Variable>(builder);
-    variable->name = element.get_name();
+    variable->name = element.name();
     return context.insert(*variable, builder).first.index();
 }
 
@@ -491,7 +559,7 @@ namespace
 template<typename T, std::ranges::sized_range Range, typename Translate>
 auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate translate)
 {
-    if (std::ranges::size(terms) != element.get_arity())
+    if (std::ranges::size(terms) != element.arity())
         throw std::invalid_argument("Row value count does not match relation arity.");
 
     auto binding = checkout<ygg::Row<T>>(builder);
@@ -517,7 +585,7 @@ Term LokiToTyrTranslator::translate_lifted(loki::formalism::TermView element, Bu
 
 AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView element, Builder& builder, Repository& context)
 {
-    auto predicate_view_variant = translate_common(element.get_predicate(), builder, context);
+    auto predicate_view_variant = translate_common(element.predicate(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> AtomViewVariant
@@ -527,7 +595,7 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
             auto atom = checkout<Atom<LiftedTag, Tag>>(builder);
             urd::store(atom->parameters, context.insert(*parameters, builder).first);
             urd::store(atom->predicate, predicate);
-            this->translate_lifted(element.get_terms(), builder, context, atom->terms);
+            this->translate_lifted(element.terms(), builder, context, atom->terms);
             return context.insert(*atom, builder).first;
         },
         predicate_view_variant);
@@ -535,14 +603,14 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
 
 LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::LiteralView element, Builder& builder, Repository& context)
 {
-    auto atom_view_variant = translate_lifted(element.get_atom(), builder, context);
+    auto atom_view_variant = translate_lifted(element.atom(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(AtomView<LiftedTag, Tag> atom) -> LiteralViewVariant
         {
             auto literal = checkout<Literal<LiftedTag, Tag>>(builder);
             urd::store(literal->atom, atom);
-            literal->polarity = element.get_polarity();
+            literal->polarity = element.polarity();
             return context.insert(*literal, builder).first;
         },
         atom_view_variant);
@@ -552,7 +620,7 @@ FunctionExpression<LiftedTag>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                       Builder&,
                                       Repository&)
-{ return FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(element.get_value())); }
+{ return FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(element.value())); }
 
 FunctionExpression<LiftedTag>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
@@ -563,12 +631,12 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     {
         auto binary = checkout<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         binary->operation = operation;
-        urd::build_member(binary->lhs, translate_lifted(element.get_left(), builder, context), context);
-        urd::build_member(binary->rhs, translate_lifted(element.get_right(), builder, context), context);
+        urd::build_member(binary->left_operand, translate_lifted(element.left(), builder, context), context);
+        urd::build_member(binary->right_operand, translate_lifted(element.right(), builder, context), context);
         return FunctionExpression<LiftedTag>(context.insert(*binary, builder).first.index());
     };
 
-    switch (element.get_operation())
+    switch (element.operation())
     {
         case loki::formalism::BinaryArithmeticOperator::Add:
             return build_binary_op(ArithmeticOperatorKind::Add);
@@ -592,11 +660,11 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     {
         auto multi = checkout<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
         multi->operation = operation;
-        translate_lifted(element.get_args(), builder, context, multi->args);
+        translate_lifted(element.args(), builder, context, multi->operands);
         return FunctionExpression<LiftedTag>(context.insert(*multi, builder).first.index());
     };
 
-    switch (element.get_operation())
+    switch (element.operation())
     {
         case loki::formalism::MultiArithmeticOperator::Add:
             return build_multi_op(ArithmeticOperatorKind::Add);
@@ -614,7 +682,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 {
     auto minus = checkout<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
     minus->operation = ArithmeticOperatorKind::Sub;
-    urd::build_member(minus->arg, translate_lifted(element.get_expression(), builder, context), context);
+    urd::build_member(minus->operand, translate_lifted(element.expression(), builder, context), context);
     return FunctionExpression<LiftedTag>(context.insert(*minus, builder).first.index());
 }
 
@@ -641,7 +709,7 @@ FunctionExpression<LiftedTag> LokiToTyrTranslator::translate_lifted(loki::formal
 
 FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionTermView element, Builder& builder, Repository& context)
 {
-    auto function_view_variant = translate_common(element.get_function(), builder, context);
+    auto function_view_variant = translate_common(element.function(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(FunctionView<Tag> function) -> FunctionTermViewVariant
@@ -651,7 +719,7 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
             auto fterm = checkout<FunctionTerm<LiftedTag, Tag>>(builder);
             urd::store(fterm->parameters, context.insert(*parameters, builder).first);
             urd::store(fterm->function, function);
-            this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
+            this->translate_lifted(element.terms(), builder, context, fterm->terms);
             return context.insert(*fterm, builder).first;
         },
         function_view_variant);
@@ -666,12 +734,12 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     {
         auto binary = checkout<BinaryOperator<LiftedTag, BooleanOperatorKind>>(builder);
         binary->operation = operation;
-        urd::build_member(binary->lhs, translate_lifted(element.get_left(), builder, context), context);
-        urd::build_member(binary->rhs, translate_lifted(element.get_right(), builder, context), context);
+        urd::build_member(binary->left_operand, translate_lifted(element.left(), builder, context), context);
+        urd::build_member(binary->right_operand, translate_lifted(element.right(), builder, context), context);
         return urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>(context.insert(*binary, builder).first.index());
     };
 
-    switch (element.get_comparator())
+    switch (element.comparator())
     {
         case loki::formalism::BinaryComparator::Eq:
             return build_binary_op(BooleanOperatorKind::Eq);
@@ -716,12 +784,12 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
             {
                 if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
                 {
-                    for (const auto& nested : part.get_conditions())
+                    for (const auto& nested : part.conditions())
                         add(nested);
                 }
                 else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
                 {
-                    insert_literal(translate_lifted(part.get_literal(), builder, context));
+                    insert_literal(translate_lifted(part.literal(), builder, context));
                 }
                 else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
                 {
@@ -731,8 +799,8 @@ urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifte
                 {
                     if (!m_time)
                         throw std::invalid_argument("A timed condition outside a durative action.");
-                    if (part.get_time() == *m_time)
-                        add(part.get_condition());
+                    if (part.time() == *m_time)
+                        add(part.condition());
                 }
                 else
                 {
@@ -750,7 +818,7 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
                                                                Builder& builder,
                                                                Repository& context)
 {
-    auto fterm_view_variant = translate_lifted(element.get_function(), builder, context);
+    auto fterm_view_variant = translate_lifted(element.function(), builder, context);
 
     auto build = [&]<FactKind F>(FunctionTermView<LiftedTag, F> fterm, NumericEffectOperatorKind operation) -> NumericEffectViewVariant
     {
@@ -758,13 +826,13 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
 
         numeric_effect->operation = operation;
         urd::store(numeric_effect->fterm, fterm);
-        urd::build_member(numeric_effect->fexpr, this->translate_lifted(element.get_expression(), builder, context), context);
+        urd::build_member(numeric_effect->fexpr, this->translate_lifted(element.expression(), builder, context), context);
         return context.insert(*numeric_effect, builder).first;
     };
 
     const auto operation = [&]
     {
-        switch (element.get_operation())
+        switch (element.operation())
         {
             case loki::formalism::NumericEffectOperator::Assign:
                 return NumericEffectOperatorKind::Assign;
@@ -786,7 +854,7 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
                                    [&](FunctionTermView<LiftedTag, FluentTag> fterm) { return build(fterm, operation()); },
                                    [&](FunctionTermView<LiftedTag, AuxiliaryTag> fterm)
                                    {
-                                       if (element.get_operation() != loki::formalism::NumericEffectOperator::Increase)
+                                       if (element.operation() != loki::formalism::NumericEffectOperator::Increase)
                                            throw std::runtime_error("Auxiliary numeric effect must use INCREASE operator.");
                                        return build(fterm, NumericEffectOperatorKind::Increase);
                                    } },
@@ -816,13 +884,13 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
         for (const auto part_index : parts)
         {
             const auto part = context.view(part_index);
-            for (const auto literal : part.template get_literals<StaticTag>())
+            for (const auto literal : part.template literals<StaticTag>())
                 condition->static_literals.emplace_back(literal.index());
-            for (const auto literal : part.template get_literals<FluentTag>())
+            for (const auto literal : part.template literals<FluentTag>())
                 condition->fluent_literals.emplace_back(literal.index());
-            for (const auto literal : part.template get_literals<DerivedTag>())
+            for (const auto literal : part.template literals<DerivedTag>())
                 condition->derived_literals.emplace_back(literal.index());
-            for (const auto constraint : part.get_numeric_constraints())
+            for (const auto constraint : part.numeric_constraints())
                 condition->numeric_constraints.emplace_back(constraint.index());
         }
         return context.insert(*condition, builder).first.index();
@@ -856,16 +924,16 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                 const auto effect = context.view(effect_index);
 
                 auto effect_variables = variables;
-                for (const auto variable : effect.get_variables())
+                for (const auto variable : effect.variables())
                     effect_variables.push_back(variable.index());
                 auto parts = conditions;
-                parts.push_back(effect.get_condition().index());
+                parts.push_back(effect.condition().index());
 
                 auto scoped = checkout<ConditionalEffect<LiftedTag>>(builder);
                 for (std::size_t i = scope.action_arity; i < effect_variables.size(); ++i)
                     scoped->variables.emplace_back(effect_variables[i]);
                 urd::build_member(scoped->condition, conjunction(parts, effect_variables), context);
-                urd::build_member(scoped->effect, effect.get_effect().index(), context);
+                urd::build_member(scoped->effect, effect.effect().index(), context);
                 outcome->effects.emplace_back(context.insert(*scoped, builder).first.index());
             }
             for (const auto nested_choice : nested_choices)
@@ -897,9 +965,9 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
             {
                 if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::ForallTag>>>)
                 {
-                    translate_common(subeffect.get_parameters(), builder, context, universal_parameters);
+                    translate_common(subeffect.parameters(), builder, context, universal_parameters);
 
-                    tmp_effect = subeffect.get_effect();
+                    tmp_effect = subeffect.effect();
                 }
             },
             tmp_effect);
@@ -913,20 +981,20 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
         {
             if (!m_time)
                 throw std::invalid_argument("A timed effect outside a durative action.");
-            if (timed->get_time() != *m_time)
+            if (timed->time() != *m_time)
                 return;
-            tmp_effect = timed->get_effect();
+            tmp_effect = timed->effect();
         }
         if (const auto* when = std::get_if<WhenEffect>(&tmp_effect))
         {
-            const auto when_effect = when->get_effect();
+            const auto when_effect = when->effect();
             if (const auto* timed = std::get_if<TimedEffect>(&when_effect))
             {
                 if (!m_time)
                     throw std::invalid_argument("A timed effect outside a durative action.");
-                if (timed->get_time() != *m_time)
+                if (timed->time() != *m_time)
                     return;
-                if (!timed_only_at(when->get_condition(), timed->get_time()))
+                if (!timed_only_at(when->condition(), timed->time()))
                     throw std::invalid_argument("tyr does not support a conditional effect whose condition is timed differently from its effect.");
             }
         }
@@ -943,9 +1011,9 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
 
                     if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::WhenTag>>>)
                     {
-                        auto when_condition = translate_lifted(subeffect.get_condition(), all_parameters, builder, context);
+                        auto when_condition = translate_lifted(subeffect.condition(), all_parameters, builder, context);
 
-                        tmp_effect = subeffect.get_effect();
+                        tmp_effect = subeffect.effect();
 
                         return when_condition;
                     }
@@ -972,29 +1040,29 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
 
             /* 3. Parse effect part */
             if (const auto* timed = std::get_if<TimedEffect>(&tmp_effect))
-                tmp_effect = timed->get_effect();
+                tmp_effect = timed->effect();
             std::visit(
                 [&]<typename SubEffectT>(const SubEffectT& subeffect)
                 {
                     if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::OneOfTag>>>)
                     {
-                        translate_choice(subeffect.get_effects(), universal_parameters, conjunctive_condition, urd::flat_vector<ygg::float_t>());
+                        translate_choice(subeffect.effects(), universal_parameters, conjunctive_condition, urd::flat_vector<ygg::float_t>());
                     }
                     else if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::ProbabilisticTag>>>)
                     {
                         auto alternatives = std::vector<loki::formalism::EffectView>();
                         auto probabilities = urd::flat_vector<ygg::float_t>();
-                        for (const auto alternative : subeffect.get_alternatives())
+                        for (const auto alternative : subeffect.alternatives())
                         {
-                            alternatives.push_back(alternative.get_effect());
-                            probabilities.push_back(alternative.get_probability());
+                            alternatives.push_back(alternative.effect());
+                            probabilities.push_back(alternative.probability());
                         }
                         translate_choice(alternatives, universal_parameters, conjunctive_condition, probabilities);
                     }
                     else if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::LiteralTag>>>)
                     {
                         auto& data_fluent_literals = std::get<1>(effect_data());
-                        const auto literal_view_variant = translate_lifted(subeffect.get_literal(), builder, context);
+                        const auto literal_view_variant = translate_lifted(subeffect.literal(), builder, context);
 
                         std::visit(Overloaded { [](LiteralView<LiftedTag, StaticTag>) { throw std::logic_error("Effect literal cannot be Static!"); },
                                                 [&](LiteralView<LiftedTag, FluentTag> literal) { data_fluent_literals.push_back(literal.index()); },
@@ -1034,15 +1102,15 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
     {
         if (const auto* conjunction = std::get_if<loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::AndTag>>>(&effect))
         {
-            for (const auto& nested_effect : conjunction->get_effects())
+            for (const auto& nested_effect : conjunction->effects())
                 translate_part(nested_effect);
         }
         else if (const auto* timed = std::get_if<loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::TimedTag>>>(&effect))
         {
             if (!m_time)
                 throw std::invalid_argument("A timed effect outside a durative action.");
-            if (timed->get_time() == *m_time)
-                translate_part(timed->get_effect());
+            if (timed->time() == *m_time)
+                translate_part(timed->effect());
         }
         else
         {
@@ -1079,22 +1147,22 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
 urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context)
 {
     auto action = checkout<Action<LiftedTag>>(builder);
-    action->original_arity = element.get_original_arity();
-    action->name = std::string(element.get_name());
-    action->original_name = std::string(element.get_original_name());
+    action->original_arity = element.original_arity();
+    action->name = std::string(element.name());
+    action->original_name = std::string(element.original_name());
 
     // 1. Translate conditions (the parameters: a list of indices the scope map reads, written into the builder)
     auto variables = urd::flat_vector<urd::index<Variable>>();
-    translate_common(element.get_parameters(), builder, context, variables);
+    translate_common(element.parameters(), builder, context, variables);
     urd::build_member(action->variables, variables, context);
 
     ///---------- Push parameters and parse scope -------------
     m_param_map.push_parameters(variables);
     {
         auto conjunctive_condition = urd::index<ConjunctiveCondition<LiftedTag>>();
-        if (element.get_precondition().has_value())
+        if (element.precondition().has_value())
         {
-            conjunctive_condition = translate_lifted(element.get_precondition().value(), variables, builder, context);
+            conjunctive_condition = translate_lifted(element.precondition().value(), variables, builder, context);
         }
         else
         {
@@ -1105,11 +1173,11 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
         urd::build_member(action->condition, conjunctive_condition, context);
 
         // 2. Translate effects
-        if (element.get_effect().has_value())
+        if (element.effect().has_value())
         {
             auto effects = urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>();
             auto choices = urd::flat_vector<urd::index<ChoiceEffect<LiftedTag>>>();
-            translate_lifted(element.get_effect().value(), variables, builder, context, effects, ChoiceScope { variables.size(), {}, &choices });
+            translate_lifted(element.effect().value(), variables, builder, context, effects, ChoiceScope { variables.size(), {}, &choices });
             urd::build_member(action->effects, effects, context);
             urd::build_member(action->choices, choices, context);
         }
@@ -1123,12 +1191,12 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
 urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::DurativeActionView element, Builder& builder, Repository& context)
 {
     auto action = checkout<Action<LiftedTag>>(builder);
-    action->original_arity = element.get_original_arity();
-    action->name = std::string(element.get_name());
-    action->original_name = std::string(element.get_original_name());
+    action->original_arity = element.original_arity();
+    action->name = std::string(element.name());
+    action->original_name = std::string(element.original_name());
 
     auto variables = urd::flat_vector<urd::index<Variable>>();
-    translate_common(element.get_parameters(), builder, context, variables);
+    translate_common(element.parameters(), builder, context, variables);
     urd::build_member(action->variables, variables, context);
 
     // The condition at `time` (empty without one).
@@ -1136,9 +1204,9 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
     {
         m_time = time;
         auto result = urd::index<ConjunctiveCondition<LiftedTag>>();
-        if (element.get_condition().has_value())
+        if (element.condition().has_value())
         {
-            result = translate_lifted(element.get_condition().value(), variables, builder, context);
+            result = translate_lifted(element.condition().value(), variables, builder, context);
         }
         else
         {
@@ -1152,8 +1220,8 @@ urd::index<Action<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formal
     const auto effects_at = [&](loki::formalism::TimeSpecifier time, auto& effects, auto& choices)
     {
         m_time = time;
-        if (element.get_effect().has_value())
-            translate_lifted(element.get_effect().value(), variables, builder, context, effects, ChoiceScope { variables.size(), {}, &choices });
+        if (element.effect().has_value())
+            translate_lifted(element.effect().value(), variables, builder, context, effects, ChoiceScope { variables.size(), {}, &choices });
         m_time.reset();
     };
 
@@ -1202,16 +1270,16 @@ urd::index<Axiom<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formali
     auto axiom = checkout<Axiom<LiftedTag>>(builder);
 
     auto variables = urd::flat_vector<urd::index<Variable>>();  // the scope map reads them
-    translate_common(element.get_parameters(), builder, context, variables);
+    translate_common(element.parameters(), builder, context, variables);
     urd::build_member(axiom->variables, variables, context);
 
     ///---------- Push parameters and parse scope -------------
     m_param_map.push_parameters(variables);
     {
-        urd::build_member(axiom->body, translate_lifted(element.get_condition(), variables, builder, context), context);
-        const auto literal_view_variant = translate_lifted(element.get_head(), builder, context);
+        urd::build_member(axiom->body, translate_lifted(element.condition(), variables, builder, context), context);
+        const auto literal_view_variant = translate_lifted(element.head(), builder, context);
 
-        std::visit(Overloaded { [&](LiteralView<LiftedTag, DerivedTag> literal) { urd::store(axiom->head, literal.get_atom()); },
+        std::visit(Overloaded { [&](LiteralView<LiftedTag, DerivedTag> literal) { urd::store(axiom->head, literal.atom()); },
                                 [](auto) { throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head."); } },
                    literal_view_variant);
     }
@@ -1234,14 +1302,14 @@ urd::index<Object> LokiToTyrTranslator::translate_grounded(loki::formalism::Term
 
 GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Builder& builder, Repository& context)
 {
-    auto predicate_view_variant = translate_common(element.get_predicate(), builder, context);
+    auto predicate_view_variant = translate_common(element.predicate(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> GroundAtomViewVariant
         {
             auto atom = checkout<Atom<GroundTag, Tag>>(builder);
             atom->row =
-                to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
+                to_binding(predicate, element.terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.index();
             return context.insert(*atom, builder).first;
         },
@@ -1260,14 +1328,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Build
 
 GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Builder& builder, Repository& context)
 {
-    auto atom_view_variant = translate_grounded(element.get_atom(), builder, context);
+    auto atom_view_variant = translate_grounded(element.atom(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(AtomView<GroundTag, Tag> atom) -> GroundLiteralViewVariant
         {
             auto literal = checkout<Literal<GroundTag, Tag>>(builder);
             urd::store(literal->atom, atom);
-            literal->polarity = element.get_polarity();
+            literal->polarity = element.polarity();
             return context.insert(*literal, builder).first;
         },
         atom_view_variant);
@@ -1279,7 +1347,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
     auto literal_view_variant = translate_grounded(element, builder, context);
 
     return std::visit(Overloaded { [&](LiteralView<GroundTag, FluentTag> literal) -> GroundLiteralOrFactViewVariant
-                                   { return std::make_pair(fdr_context.get_fact(literal.get_atom()), literal.get_polarity()); },
+                                   { return std::make_pair(fdr_context.get_fact(literal.atom()), literal.polarity()); },
                                    []<FactKind F>(LiteralView<GroundTag, F> literal) -> GroundLiteralOrFactViewVariant { return literal; } },
                       literal_view_variant);
 }
@@ -1288,7 +1356,7 @@ FunctionExpression<GroundTag>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                         Builder&,
                                         Repository&)
-{ return FunctionExpression<GroundTag>(static_cast<ygg::float_t>(element.get_value())); }
+{ return FunctionExpression<GroundTag>(static_cast<ygg::float_t>(element.value())); }
 
 FunctionExpression<GroundTag>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
@@ -1299,12 +1367,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     {
         auto binary = checkout<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         binary->operation = operation;
-        urd::build_member(binary->lhs, translate_grounded(element.get_left(), builder, context), context);
-        urd::build_member(binary->rhs, translate_grounded(element.get_right(), builder, context), context);
+        urd::build_member(binary->left_operand, translate_grounded(element.left(), builder, context), context);
+        urd::build_member(binary->right_operand, translate_grounded(element.right(), builder, context), context);
         return FunctionExpression<GroundTag>(context.insert(*binary, builder).first.index());
     };
 
-    switch (element.get_operation())
+    switch (element.operation())
     {
         case loki::formalism::BinaryArithmeticOperator::Add:
             return build_binary_op(ArithmeticOperatorKind::Add);
@@ -1328,11 +1396,11 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     {
         auto multi = checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(builder);
         multi->operation = operation;
-        translate_grounded(element.get_args(), builder, context, multi->args);
+        translate_grounded(element.args(), builder, context, multi->operands);
         return FunctionExpression<GroundTag>(context.insert(*multi, builder).first.index());
     };
 
-    switch (element.get_operation())
+    switch (element.operation())
     {
         case loki::formalism::MultiArithmeticOperator::Add:
             return build_multi_op(ArithmeticOperatorKind::Add);
@@ -1350,7 +1418,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 {
     auto minus = checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
     minus->operation = ArithmeticOperatorKind::Sub;
-    urd::build_member(minus->arg, translate_grounded(element.get_expression(), builder, context), context);
+    urd::build_member(minus->operand, translate_grounded(element.expression(), builder, context), context);
     return FunctionExpression<GroundTag>(context.insert(*minus, builder).first.index());
 }
 
@@ -1375,14 +1443,14 @@ FunctionExpression<GroundTag> LokiToTyrTranslator::translate_grounded(loki::form
 
 GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionTermView element, Builder& builder, Repository& context)
 {
-    auto function_view_variant = translate_common(element.get_function(), builder, context);
+    auto function_view_variant = translate_common(element.function(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(FunctionView<Tag> function) -> GroundFunctionTermViewVariant
         {
             auto fterm = checkout<FunctionTerm<GroundTag, Tag>>(builder);
             fterm->row =
-                to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
+                to_binding(function, element.terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.index();
             return context.insert(*fterm, builder).first;
         },
@@ -1392,7 +1460,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
 GroundFunctionTermValueViewVariant
 LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueView element, Builder& builder, Repository& context)
 {
-    auto fterm_view_variant = translate_grounded(element.get_function(), builder, context);
+    auto fterm_view_variant = translate_grounded(element.function(), builder, context);
 
     return std::visit(
         [&]<FactKind Tag>(FunctionTermView<GroundTag, Tag> fterm) -> GroundFunctionTermValueViewVariant
@@ -1403,11 +1471,11 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
                 []<typename T>(const T& expression) -> ygg::float_t
                 {
                     if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>>>)
-                        return expression.get_value();
+                        return expression.value();
                     else
                         throw std::runtime_error("Expected numeric initial function value.");
                 },
-                element.get_value());
+                element.value());
             return context.insert(*fterm_value, builder).first;
         },
         fterm_view_variant);
@@ -1422,12 +1490,12 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     {
         auto binary = checkout<BinaryOperator<GroundTag, BooleanOperatorKind>>(builder);
         binary->operation = operation;
-        urd::build_member(binary->lhs, translate_grounded(element.get_left(), builder, context), context);
-        urd::build_member(binary->rhs, translate_grounded(element.get_right(), builder, context), context);
+        urd::build_member(binary->left_operand, translate_grounded(element.left(), builder, context), context);
+        urd::build_member(binary->right_operand, translate_grounded(element.right(), builder, context), context);
         return urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>(context.insert(*binary, builder).first.index());
     };
 
-    switch (element.get_comparator())
+    switch (element.comparator())
     {
         case loki::formalism::BinaryComparator::Eq:
             return build_binary_op(BooleanOperatorKind::Eq);
@@ -1457,7 +1525,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                                 [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
                                 {
                                     urd::build_member((fact.second ? conj_condition->positive_facts : conj_condition->negative_facts).emplace_back(),
-                                                      urd::make<FDRFact<FluentTag>>(fact.first.get_variable(), fact.first.get_value()),
+                                                      urd::make<FDRFact<FluentTag>>(fact.first.variable(), fact.first.value()),
                                                       context);
                                 },
                                 [&](LiteralView<GroundTag, DerivedTag> literal) { urd::append(conj_condition->derived_literals, literal); } },
@@ -1469,14 +1537,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
         {
             if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::AndTag>>>)
             {
-                for (const auto& part : condition.get_conditions())
+                for (const auto& part : condition.conditions())
                 {
                     std::visit(
                         [&]<typename SubConditionT>(const SubConditionT& subcondition)
                         {
                             if constexpr (std::is_same_v<SubConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
                             {
-                                const auto literal_or_fact_view_variant = translate_grounded(subcondition.get_literal(), builder, context, fdr_context);
+                                const auto literal_or_fact_view_variant = translate_grounded(subcondition.literal(), builder, context, fdr_context);
 
                                 insert_literal(literal_or_fact_view_variant);
                             }
@@ -1500,7 +1568,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
             }
             else if constexpr (std::is_same_v<ConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::LiteralTag>>>)
             {
-                const auto index_literal_variant = translate_grounded(condition.get_literal(), builder, context, fdr_context);
+                const auto index_literal_variant = translate_grounded(condition.literal(), builder, context, fdr_context);
 
                 insert_literal(index_literal_variant);
 
@@ -1527,8 +1595,8 @@ urd::index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
 {
     auto metric = checkout<Metric>(builder);
 
-    urd::build_member(metric->fexpr, translate_grounded(element.get_expression(), builder, context), context);
-    metric->optimization_direction = element.get_optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
+    urd::build_member(metric->fexpr, translate_grounded(element.expression(), builder, context), context);
+    metric->optimization_direction = element.optimization_direction() == loki::formalism::OptimizationDirection::Minimize ?
                                          OptimizationDirection::Minimize :
                                          OptimizationDirection::Maximize;
 
@@ -1546,22 +1614,23 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     auto domain = checkout<Domain>(builder);
 
     /* Name */
-    domain->name = element.get_name();
+    domain->name = element.name();
 
     /* Requirements section */
+    translate_requirements(element.requirements(), domain->requirements);
 
     /* Constants section */
-    translate_common(element.get_constants(), builder, *context, domain->constants);
+    translate_common(element.constants(), builder, *context, domain->constants);
 
     /* Predicates section */
-    for (const auto predicate : element.get_predicates())
+    for (const auto predicate : element.predicates())
         std::visit(Overloaded { [&](PredicateView<StaticTag> p) { urd::append(domain->static_predicates, p); },
                                 [&](PredicateView<FluentTag> p) { urd::append(domain->fluent_predicates, p); },
                                 [&](PredicateView<DerivedTag> p) { urd::append(domain->derived_predicates, p); } },
                    translate_common(predicate, builder, *context));
 
     /* Functions section */
-    for (const auto function : element.get_functions())
+    for (const auto function : element.functions())
         std::visit(Overloaded { [&](FunctionView<StaticTag> f) { urd::append(domain->static_functions, f); },
                                 [&](FunctionView<FluentTag> f) { urd::append(domain->fluent_functions, f); },
                                 [&](FunctionView<AuxiliaryTag> f)
@@ -1573,9 +1642,9 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
                    translate_common(function, builder, *context));
 
     /* Structures section */
-    translate_lifted(element.get_actions(), builder, *context, domain->actions);
-    translate_lifted(element.get_durative_actions(), builder, *context, domain->actions);
-    translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
+    translate_lifted(element.actions(), builder, *context, domain->actions);
+    translate_lifted(element.durative_actions(), builder, *context, domain->actions);
+    translate_lifted(element.axioms(), builder, *context, domain->axioms);
 
     return PlanningDomain(context->insert(*domain, builder).first, context, std::move(path));
 }
@@ -1595,47 +1664,48 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     auto fdr_context = std::make_shared<FDRContext>(task_context);
 
     /* Name */
-    task->name = element.get_name();
+    task->name = element.name();
 
     /* Domain */
     urd::store(task->domain, domain.get_domain());
 
     auto task_derived_predicates = urd::Store<urd::set<std::string>, urd::stable_refs> {};
-    for (const auto predicate : domain.get_domain().get_predicates<DerivedTag>())
-        task_derived_predicates.insert(std::string(predicate.get_name()));
+    for (const auto predicate : domain.get_domain().predicates<DerivedTag>())
+        task_derived_predicates.insert(std::string(predicate.name()));
 
     auto insert_task_predicate = [&](const auto& predicate_view_variant)
     {
         std::visit(Overloaded { [&](PredicateView<DerivedTag> p)
                                 {
-                                    if (task_derived_predicates.insert(std::string(p.get_name())).second)
+                                    if (task_derived_predicates.insert(std::string(p.name())).second)
                                         urd::append(task->derived_predicates, p);
                                 },
                                 [](auto) {} },
                    predicate_view_variant);
     };
 
-    for (const auto predicate : element.get_domain().get_predicates())
+    for (const auto predicate : element.domain().predicates())
         insert_task_predicate(translate_common(predicate, builder, *task_context));
 
-    for (const auto predicate : element.get_predicates())
+    for (const auto predicate : element.predicates())
         insert_task_predicate(translate_common(predicate, builder, *task_context));
 
     /* Requirements section */
+    translate_requirements(element.requirements(), task->requirements);
 
     /* Objects section */
-    translate_common(element.get_objects(), builder, *task_context, task->objects);
+    translate_common(element.objects(), builder, *task_context, task->objects);
 
     /* Initial section */
-    for (const auto& literal : element.get_initial_literals())
-        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> l) { urd::append(task->static_atoms, l.get_atom()); },
+    for (const auto& literal : element.initial_literals())
+        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> l) { urd::append(task->static_atoms, l.atom()); },
                                 [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
-                                { urd::append(task->fluent_atoms, fact.first.get_atom().value()); },  // we know it must have a value
+                                { urd::append(task->fluent_atoms, fact.first.atom().value()); },  // we know it must have a value
                                 [](LiteralView<GroundTag, DerivedTag>)
                                 { throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section."); } },
                    translate_grounded(literal, builder, *task_context, *fdr_context));
 
-    for (const auto fterm_value : element.get_initial_function_values())
+    for (const auto fterm_value : element.initial_function_values())
         std::visit(Overloaded { [&](FunctionTermValueView<GroundTag, StaticTag> v) { urd::append(task->static_fterm_values, v); },
                                 [&](FunctionTermValueView<GroundTag, FluentTag> v) { urd::append(task->fluent_fterm_values, v); },
                                 [&](FunctionTermValueView<GroundTag, AuxiliaryTag> v)
@@ -1648,10 +1718,10 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     /* Timed initial literals section: by time. */
     {
         auto timed_literals = std::vector<std::pair<double, urd::index<Literal<GroundTag, FluentTag>>>>();
-        for (const auto timed_literal : element.get_timed_initial_literals())
-            std::visit(Overloaded { [&](LiteralView<GroundTag, FluentTag> literal) { timed_literals.emplace_back(timed_literal.get_time(), literal.index()); },
+        for (const auto timed_literal : element.timed_initial_literals())
+            std::visit(Overloaded { [&](LiteralView<GroundTag, FluentTag> literal) { timed_literals.emplace_back(timed_literal.time(), literal.index()); },
                                     [](auto) { throw std::invalid_argument("A timed initial literal of a static or derived predicate."); } },
-                       translate_grounded(timed_literal.get_literal(), builder, *task_context));
+                       translate_grounded(timed_literal.literal(), builder, *task_context));
         std::ranges::stable_sort(timed_literals, {}, [](const auto& timed_literal) { return timed_literal.first; });
         for (const auto& [time, literal] : timed_literals)
         {
@@ -1664,9 +1734,9 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     /* Goal section */
 
-    if (element.get_goal().has_value())
+    if (element.goal().has_value())
     {
-        urd::build_member(task->goal, translate_grounded(element.get_goal().value(), builder, *task_context, *fdr_context), *task_context);
+        urd::build_member(task->goal, translate_grounded(element.goal().value(), builder, *task_context, *fdr_context), *task_context);
     }
     else
     {
@@ -1676,9 +1746,9 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     }
 
     /* Metric section */
-    if (element.get_metric().has_value())
+    if (element.metric().has_value())
     {
-        urd::build_member(task->metric.emplace(), translate_grounded(element.get_metric().value(), builder, *task_context), *task_context);
+        urd::build_member(task->metric.emplace(), translate_grounded(element.metric().value(), builder, *task_context), *task_context);
     }
     else
     {
@@ -1686,7 +1756,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     }
 
     /* Structures section */
-    translate_lifted(element.get_axioms(), builder, *task_context, task->axioms);
+    translate_lifted(element.axioms(), builder, *task_context, task->axioms);
 
     return PlanningTask<LiftedTag>(task_context->insert(*task, builder).first, std::move(fdr_context), task_context, std::move(domain), std::move(path));
 }

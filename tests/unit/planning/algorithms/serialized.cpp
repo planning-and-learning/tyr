@@ -284,7 +284,7 @@ public:
 
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override { ++num_search_ends; }
 
-    void on_solved(const tyr::planning::PlanBuilderView<GroundTag>&) override {}
+    void on_solved(const tyr::planning::PlanBuilderView<tyr::planning::DeterministicTag, GroundTag>&) override {}
 };
 
 class RecordingIwEventHandler : public tyr::planning::iw::EventHandler<GroundTag>
@@ -461,13 +461,13 @@ TEST(TyrPlanningSerialized, BorrowsNoncopyableReaderAndCopiesEachCustomPayload)
     const auto start = tyr::tests::owned_initial_node(*context.state_repository, *context.axiom_evaluator);
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, start, {}, *context.state_repository, *context.axiom_evaluator);
-    const auto successor = std::ranges::find_if(successors, [&](const auto& candidate) { return candidate.get_node().get_state() != start.get_state(); });
+    const auto successor = std::ranges::find_if(successors, [&](const auto& candidate) { return candidate.node().state() != start.state(); });
     ASSERT_NE(successor, successors.end());
 
     auto first = tyr::planning::SearchResult<GroundTag> {};
     first.status = tyr::planning::SearchStatus::SOLVED;
     first.plan = tyr::tests::make_plan<GroundTag>(start, { successor->pack() });
-    first.goal_node = tyr::tests::packed<GroundTag>(successor->get_node());
+    first.goal_node = tyr::tests::packed<GroundTag>(successor->node());
     first.statistics.increment_num_generated_successors();
     auto second = tyr::planning::SearchResult<GroundTag> {};
     second.status = tyr::planning::SearchStatus::EXHAUSTED;
@@ -571,8 +571,8 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesUsesDefaultStartAndReturnsExhaustedPa
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.goal_node);
     EXPECT_TRUE(result.plan.value().empty());
-    EXPECT_EQ(tyr::tests::built_state(result.plan.value().get_start_node()).pack(), tyr::tests::built_state(initial_node).pack());
-    EXPECT_EQ(result.plan.value().get_start_node().get_metric(), initial_node.get_metric());
+    EXPECT_EQ(tyr::tests::built_state(result.plan.value().start_node()).pack(), tyr::tests::built_state(initial_node).pack());
+    EXPECT_EQ(result.plan.value().start_node().metric(), initial_node.metric());
     EXPECT_EQ(result.goal_node.value(), tyr::tests::packed<GroundTag>(initial_node));
     EXPECT_EQ(event_handler->num_search_starts, 1);
     EXPECT_EQ(event_handler->num_search_ends, 1);
@@ -629,9 +629,9 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesMaterializesCompatibleForeignStart)
     const auto result = tyr::planning::serialized::find_solution(solver, options);
 
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(&result.plan.value().get_start_node().context(), context.state_repository.get());
-    EXPECT_NE(&result.plan.value().get_start_node().context(), &foreign_start.context());
-    EXPECT_EQ(result.plan.value().get_start_node().get_metric(), 7);
+    EXPECT_EQ(&result.plan.value().start_node().context(), context.state_repository.get());
+    EXPECT_NE(&result.plan.value().start_node().context(), &foreign_start.context());
+    EXPECT_EQ(result.plan.value().start_node().metric(), 7);
 }
 
 TEST(TyrPlanningSerialized, RejectsStartFromDifferentTaskBeforeZeroSubsearchShortcut)
@@ -671,7 +671,7 @@ TEST(TyrPlanningSerialized, RejectsNonFiniteSubplanMetrics)
 
     auto sub_result = tyr::planning::SearchResult<GroundTag> {};
     sub_result.status = tyr::planning::SearchStatus::SOLVED;
-    sub_result.goal_node = tyr::tests::packed<GroundTag>(successors.front().get_node());
+    sub_result.goal_node = tyr::tests::packed<GroundTag>(successors.front().node());
     sub_result.plan = tyr::tests::make_plan<GroundTag>(tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(start), std::numeric_limits<ygg::float_t>::infinity()),
                                                        { successors.front().pack() });
 
@@ -793,12 +793,12 @@ TEST(TyrPlanningSerialized, FinalGoalUsesNormalizedStartAsStableSeed)
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto successor_it =
-        std::ranges::find_if(successors, [&](const auto& successor) { return successor.get_node().get_state() != initial_node.get_state(); });
+        std::ranges::find_if(successors, [&](const auto& successor) { return successor.node().state() != initial_node.state(); });
     ASSERT_NE(successor_it, successors.end());
 
     auto sub_result = tyr::planning::SearchResult<GroundTag> {};
     sub_result.status = tyr::planning::SearchStatus::SOLVED;
-    sub_result.goal_node = tyr::tests::packed<GroundTag>(successor_it->get_node());
+    sub_result.goal_node = tyr::tests::packed<GroundTag>(successor_it->node());
     sub_result.plan = tyr::tests::make_plan<GroundTag>(initial_node, { successor_it->pack() });
 
     auto solver = ScriptedSolver(results_of(std::move(sub_result)), context.task, context.state_repository, context.axiom_evaluator);
@@ -856,8 +856,8 @@ TEST(TyrPlanningSerialized, BrfsWrapperMatchesDirectBrfs)
     ASSERT_TRUE(serialized_result.plan);
 
     EXPECT_FALSE(serialized_result.plan.value().empty());
-    EXPECT_EQ(serialized_result.plan.value().get_length(), direct_result.plan.value().get_length());
-    EXPECT_EQ(serialized_result.plan.value().get_cost(), direct_result.plan.value().get_cost());
+    EXPECT_EQ(serialized_result.plan.value().length(), direct_result.plan.value().length());
+    EXPECT_EQ(serialized_result.plan.value().cost(), direct_result.plan.value().cost());
     EXPECT_GE(event_handler->get_statistics().get_num_subsearches(), 1);
     EXPECT_EQ(event_handler->get_statistics().get_search_statistics().size(), event_handler->get_statistics().get_num_subsearches());
     EXPECT_EQ(event_handler->get_statistics().get_solver_statistics().size(), event_handler->get_statistics().get_num_subsearches());
@@ -879,10 +879,10 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     const auto first_labeled_succ_node_it = std::find_if(
         labeled_succ_nodes.begin(),
         labeled_succ_nodes.end(),
-        [&](const auto& labeled_succ_node) { return tyr::tests::built_state(labeled_succ_node.get_node()).pack().index() != tyr::tests::built_state(start_node).pack().index(); });
+        [&](const auto& labeled_succ_node) { return tyr::tests::built_state(labeled_succ_node.node()).pack().index() != tyr::tests::built_state(start_node).pack().index(); });
     ASSERT_NE(first_labeled_succ_node_it, labeled_succ_nodes.end());
     const auto& first_labeled_succ_node = *first_labeled_succ_node_it;
-    const auto first_goal_node = first_labeled_succ_node.get_node();
+    const auto first_goal_node = first_labeled_succ_node.node();
     const auto second_start_node = tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(first_goal_node), 0);
     const auto repeated_start_node = tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(start_node), 1);
 
@@ -912,7 +912,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     second_subresult.goal_node = tyr::tests::packed<GroundTag>(repeated_start_node);
     second_subresult.plan =
         tyr::tests::make_plan<GroundTag>(second_start_node,
-                                         { tyr::tests::labeled_record<GroundTag>(urd::interned_view(first_labeled_succ_node.get_label()), repeated_start_node) });
+                                         { tyr::tests::labeled_record<GroundTag>(urd::interned_view(first_labeled_succ_node.label()), repeated_start_node) });
 
     auto solver = ScriptedSolver(results_of(std::move(first_subresult), std::move(second_subresult)),
                                  context.task,
@@ -930,8 +930,8 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.cycle_range);
     EXPECT_FALSE(result.plan.value().empty());
-    EXPECT_EQ(result.plan.value().get_length(), 2);
-    EXPECT_EQ(result.plan.value().get_cost(), 2);
+    EXPECT_EQ(result.plan.value().length(), 2);
+    EXPECT_EQ(result.plan.value().cost(), 2);
     EXPECT_EQ(result.cycle_range.value().first, 0);
     EXPECT_EQ(result.cycle_range.value().second, 2);
     EXPECT_EQ(result.statistics.get_num_generated_successors(), 2);
@@ -953,7 +953,7 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto successor_it =
         std::ranges::find_if(successors,
-                             [&](const auto& successor) { return tyr::tests::built_state(successor.get_node()).pack().index() != tyr::tests::built_state(initial_node).pack().index(); });
+                             [&](const auto& successor) { return tyr::tests::built_state(successor.node()).pack().index() != tyr::tests::built_state(initial_node).pack().index(); });
     ASSERT_NE(successor_it, successors.end());
     const auto& successor = *successor_it;
 
@@ -962,21 +962,21 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     ASSERT_EQ(tyr::tests::built_state(foreign_start).pack().index(), tyr::tests::built_state(initial_node).pack().index());
     ASSERT_NE(&foreign_start.context(), &initial_node.context());
     const auto foreign_successor_state = ::tyr::planning::share(*foreign.state_repository, 
-        tyr::planning::register_extended_state(*foreign.state_repository, tyr::tests::built_state(successor.get_node())));
-    ASSERT_NE(&foreign_successor_state.context(), &successor.get_node().context());
+        tyr::planning::register_extended_state(*foreign.state_repository, tyr::tests::built_state(successor.node())));
+    ASSERT_NE(&foreign_successor_state.context(), &successor.node().context());
 
     const auto first_goal = tyr::tests::node_of_state<GroundTag>(foreign_successor_state, 1);
     auto first_subresult = tyr::planning::SearchResult<GroundTag> {};
     first_subresult.status = tyr::planning::SearchStatus::SOLVED;
     first_subresult.goal_node = tyr::tests::packed<GroundTag>(first_goal);
-    first_subresult.plan = tyr::tests::make_plan<GroundTag>(foreign_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.get_label()), first_goal) });
+    first_subresult.plan = tyr::tests::make_plan<GroundTag>(foreign_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.label()), first_goal) });
 
     const auto second_start = tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(first_goal), 0);
     const auto second_goal = tyr::tests::node_of_state<GroundTag>(tyr::tests::built_state(foreign_start), 1);
     auto second_subresult = tyr::planning::SearchResult<GroundTag> {};
     second_subresult.status = tyr::planning::SearchStatus::SOLVED;
     second_subresult.goal_node = tyr::tests::packed<GroundTag>(second_goal);
-    second_subresult.plan = tyr::tests::make_plan<GroundTag>(second_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.get_label()), second_goal) });
+    second_subresult.plan = tyr::tests::make_plan<GroundTag>(second_start, { tyr::tests::labeled_record<GroundTag>(urd::interned_view(successor.label()), second_goal) });
 
     auto solver = ScriptedSolver(results_of(std::move(first_subresult), std::move(second_subresult)),
                                  context.task,
@@ -993,10 +993,10 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::CYCLE);
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.cycle_range);
-    EXPECT_EQ(tyr::tests::built_state(result.plan.value().get_start_node()).pack(), tyr::tests::built_state(initial_node).pack());
-    EXPECT_EQ(result.plan.value().get_length(), 2);
-    EXPECT_EQ(tyr::tests::built_state(result.plan.value().get_labeled_succ_nodes()[0].get_node()).pack(), tyr::tests::built_state(successor.get_node()).pack());
-    EXPECT_EQ(tyr::tests::built_state(result.plan.value().get_labeled_succ_nodes()[1].get_node()).pack(), tyr::tests::built_state(initial_node).pack());
+    EXPECT_EQ(tyr::tests::built_state(result.plan.value().start_node()).pack(), tyr::tests::built_state(initial_node).pack());
+    EXPECT_EQ(result.plan.value().length(), 2);
+    EXPECT_EQ(tyr::tests::built_state(result.plan.value().labeled_succ_nodes()[0].node()).pack(), tyr::tests::built_state(successor.node()).pack());
+    EXPECT_EQ(tyr::tests::built_state(result.plan.value().labeled_succ_nodes()[1].node()).pack(), tyr::tests::built_state(initial_node).pack());
     EXPECT_EQ(result.cycle_range.value(), (std::pair<size_t, size_t> { 0, 2 }));
 }
 

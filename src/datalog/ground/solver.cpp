@@ -42,7 +42,7 @@ struct GroundRuleHeads
     template<formalism::FactKind F>
     [[nodiscard]] auto get() const noexcept
     {
-        return rule.template get_heads<F>() | std::views::transform([](auto head) { return head.get_row().index(); });
+        return rule.template heads<F>() | std::views::transform([](auto head) { return head.row().index(); });
     }
 };
 }

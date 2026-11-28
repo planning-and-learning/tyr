@@ -55,18 +55,18 @@ static_assert(requires(Data& data, const View& view) {
     data.goal;
     data.rules;
     view.index();
-    view.template get_predicates<tyr::formalism::StaticTag>();
-    view.template get_predicates<tyr::formalism::FluentTag>();
-    view.template get_functions<tyr::formalism::StaticTag>();
-    view.template get_functions<tyr::formalism::FluentTag>();
-    view.get_objects();
-    view.template get_atoms<tyr::formalism::StaticTag>();
-    view.template get_atoms<tyr::formalism::FluentTag>();
-    view.template get_fterm_values<tyr::formalism::StaticTag>();
-    view.template get_fterm_values<tyr::formalism::FluentTag>();
-    view.get_goal();
-    view.get_rules();
-    view.get_rules();
+    view.template predicates<tyr::formalism::StaticTag>();
+    view.template predicates<tyr::formalism::FluentTag>();
+    view.template functions<tyr::formalism::StaticTag>();
+    view.template functions<tyr::formalism::FluentTag>();
+    view.objects();
+    view.template atoms<tyr::formalism::StaticTag>();
+    view.template atoms<tyr::formalism::FluentTag>();
+    view.template fterm_values<tyr::formalism::StaticTag>();
+    view.template fterm_values<tyr::formalism::FluentTag>();
+    view.goal();
+    view.rules();
+    view.rules();
 });
 
 }
@@ -100,18 +100,18 @@ static_assert(requires(Data& data, const View& view) {
     data.goal;
     data.rules;
     view.index();
-    view.template get_predicates<tyr::formalism::StaticTag>();
-    view.template get_predicates<tyr::formalism::FluentTag>();
-    view.template get_functions<tyr::formalism::StaticTag>();
-    view.template get_functions<tyr::formalism::FluentTag>();
-    view.get_objects();
-    view.template get_atoms<tyr::formalism::StaticTag>();
-    view.template get_atoms<tyr::formalism::FluentTag>();
-    view.template get_fterm_values<tyr::formalism::StaticTag>();
-    view.template get_fterm_values<tyr::formalism::FluentTag>();
-    view.get_goal();
-    view.get_rules();
-    view.get_rules();
+    view.template predicates<tyr::formalism::StaticTag>();
+    view.template predicates<tyr::formalism::FluentTag>();
+    view.template functions<tyr::formalism::StaticTag>();
+    view.template functions<tyr::formalism::FluentTag>();
+    view.objects();
+    view.template atoms<tyr::formalism::StaticTag>();
+    view.template atoms<tyr::formalism::FluentTag>();
+    view.template fterm_values<tyr::formalism::StaticTag>();
+    view.template fterm_values<tyr::formalism::FluentTag>();
+    view.goal();
+    view.rules();
+    view.rules();
 });
 
 TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
@@ -184,10 +184,10 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             intern(urd::data<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>> { retained_term.index(), 3.0 });
 
         auto program_data = urd::data<tyr::formalism::Program<::tyr::GroundTag>> {};
-        program_data.static_predicates = { present.get_predicate().index(), absent.get_predicate().index() };
-        program_data.fluent_predicates = { retained_atom.get_predicate().index(), removed_atom.get_predicate().index() };
-        program_data.static_functions = { static_term.get_function().index() };
-        program_data.fluent_functions = { retained_term.get_function().index(), removed_term.get_function().index() };
+        program_data.static_predicates = { present.predicate().index(), absent.predicate().index() };
+        program_data.fluent_predicates = { retained_atom.predicate().index(), removed_atom.predicate().index() };
+        program_data.static_functions = { static_term.function().index() };
+        program_data.fluent_functions = { retained_term.function().index(), removed_term.function().index() };
         program_data.objects = { object.index() };
         program_data.static_atoms = { present.index() };
         program_data.fluent_atoms = { retained_atom.index() };
@@ -203,13 +203,13 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     ASSERT_TRUE(filtered.has_value());
     EXPECT_GT(retained_predicate_source_index, 0);
     EXPECT_EQ(&filtered->context(), &*destination);
-    ASSERT_EQ(filtered->get_rules().size(), 1);
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().index()).value), retained_predicate_source_index);
-    EXPECT_EQ(filtered->get_rules().front().get_fluent_heads().front().get_predicate().get_name().str(), "retained-predicate");
-    ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);
-    EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
-    ASSERT_TRUE(filtered->get_goal().has_value());
-    EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
+    ASSERT_EQ(filtered->rules().size(), 1);
+    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->rules().front().index()).value), retained_predicate_source_index);
+    EXPECT_EQ(filtered->rules().front().fluent_heads().front().predicate().name().str(), "retained-predicate");
+    ASSERT_EQ(filtered->atoms<tyr::formalism::StaticTag>().size(), 1);
+    EXPECT_EQ(filtered->atoms<tyr::formalism::StaticTag>().front().predicate().name().str(), "present");
+    ASSERT_TRUE(filtered->goal().has_value());
+    EXPECT_EQ(filtered->goal().value().literals<tyr::formalism::FluentTag>().front().atom().predicate().name().str(), "retained-predicate");
     // No rule was added: the layers hold the source's two.
     EXPECT_EQ((destination->size<tyr::formalism::Rule<::tyr::GroundTag>>()), 2);
 }

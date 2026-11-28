@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/state_delta.hpp"
 #include "tyr/planning/successors/successor_builder.hpp"
 #include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/successors/successor_generator.hpp"
@@ -91,32 +92,38 @@ public:
     // Successors with outcomes, over happenings: applying an instantaneous action, starting a durative one, ending an open
     // one, or the next timed initial literals; their times stay flexible within the state's temporal network. An action with
     // oneof or probabilistic effects has several outcomes, a deterministic one a distribution of one. Each is written into
-    // `out` (its earlier contents go): its outcome states into state builders of `node`'s repository, closed under the
-    // axioms, not registered (register_outcomes, tyr/planning/successors/successors.hpp). A transition whose effects conflict
+    // `out` (its earlier contents go): its outcome states into state builders of `node`'s repository, neither closed under
+    // the axioms nor registered (extend_outcomes, register_outcomes: tyr/planning/successors/successors.hpp). A transition whose effects conflict
     // in some joint outcome, or whose outcomes all fail, has no distributions (it is not applicable).
 
-    template<formalism::ActionRowViewConcept Binding>
-    void generate_successor(const Source& node, Binding binding, AxiomEvaluator<GroundTag>& axiom_evaluator, SuccessorBuilder<GroundTag>& out);
+    template<NatureEnvironment E, formalism::ActionRowViewConcept Binding>
+    void generate_successor(const Source& node, Binding binding, SuccessorBuilder<E, GroundTag>& out);
 
     /// The successor of ending the open durative action at position `open` among the node's (no distributions if its end
     /// condition does not hold, or it cannot be scheduled).
-    void generate_end_successor(const Source& node, std::uint32_t open, AxiomEvaluator<GroundTag>& axiom_evaluator, SuccessorBuilder<GroundTag>& out);
+    template<NatureEnvironment E>
+    void generate_end_successor(const Source& node, std::uint32_t open, SuccessorBuilder<E, GroundTag>& out);
 
     /// The successor of the next timed initial literals (no distributions once all happened, or if they cannot be scheduled).
-    void generate_timed_literal_successor(const Source& node, AxiomEvaluator<GroundTag>& axiom_evaluator, SuccessorBuilder<GroundTag>& out);
-
-    /// Calls `callback` with the successor of each applicable happening (the action bindings', the open actions' ends, then
-    /// the next timed initial literals), written into a builder of this generator, valid during the callback (registering its
-    /// outcomes there is supported). Callbacks return true to continue, false to stop; the result is true iff enumeration was
-    /// exhausted. It must not reenter this generator's enumeration.
-    bool for_each_successor(const Source& node, AxiomEvaluator<GroundTag>& axiom_evaluator, const std::function<bool(SuccessorBuilder<GroundTag>&)>& callback);
+    template<NatureEnvironment E>
+    void generate_timed_literal_successor(const Source& node, SuccessorBuilder<E, GroundTag>& out);
 
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(const ygg::ExecutionContextPtr& execution_context) const;
 
     [[nodiscard]] const TaskPtr<GroundTag>& get_task() const noexcept;
+    /// What its task asks of an environment (oneof, probabilistic effects, temporal), computed once.
+    [[nodiscard]] TaskFeatures features() const noexcept;
+
+    /// Whether every open durative action's over-all condition holds in `state`, which is closed under the axioms: what the
+    /// axiom step checks of a temporal outcome (extend_outcomes); true where no action is open.
+    [[nodiscard]] bool over_all_holds(const StateBuilderView<GroundTag>& state);
+
+    /// A delta whose buffers a deterministic enumeration reuses across calls (for_each_successor).
+    [[nodiscard]] StateDelta& scratch_delta() noexcept;
 
 private:
     std::unique_ptr<Impl> m_impl;
+    StateDelta m_scratch_delta;
 };
 
 }

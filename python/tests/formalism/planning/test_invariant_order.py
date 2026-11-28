@@ -31,7 +31,7 @@ InvariantOrder = Callable[[Sequence[Invariant]], list[Invariant]]
 
 
 def _predicate_names(invariant: Invariant) -> set[str]:
-    return {str(atom.get_predicate().get_name()) for atom in invariant.get_atoms()}
+    return {str(atom.predicate().name()) for atom in invariant.atoms()}
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ def _ground(
 
 def _variable_predicates(variables: list[FDRVariableFluent]) -> list[list[str]]:
     return sorted(
-        sorted(str(atom.get_predicate().get_name()) for atom in variable.get_atoms()) for variable in variables
+        sorted(str(atom.predicate().name()) for atom in variable.atoms()) for variable in variables
     )
 
 
@@ -122,7 +122,7 @@ def test_empty_order_gives_one_variable_per_atom(ferry: Ferry) -> None:
 
     result = _ground(formalism_task, [])
 
-    assert all(len(variable.get_atoms()) == 1 for variable in result.task.get_fdr_context().get_variables())
+    assert all(len(variable.atoms()) == 1 for variable in result.task.get_fdr_context().get_variables())
 
 
 def test_options_stay_backward_compatible() -> None:
@@ -135,14 +135,14 @@ def test_options_stay_backward_compatible() -> None:
 def _fact_atoms(facts: list[FDRFactFluentRecordView]) -> list[AtomGroundFluent]:
     atoms: list[AtomGroundFluent] = []
     for fact in facts:
-        atom = fact.get_atom()
+        atom = fact.atom()
         assert atom is not None
         atoms.append(atom)
     return atoms
 
 
 def _atom_text(atom: AtomGroundFluent) -> str:
-    return f"{atom.get_predicate().get_name()}({','.join(str(o.get_name()) for o in atom.get_row().resolve_objects())})"
+    return f"{atom.predicate().name()}({','.join(str(o.name()) for o in atom.row().resolve_objects())})"
 
 
 def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
@@ -151,8 +151,8 @@ def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
         ExecutionContext(1), lifted.GroundTaskInstantiationOptions()
     )
     ground = result.task.get_task()
-    all_atoms = list(ground.get_fluent_atoms())
-    initial_atoms = _fact_atoms(ground.get_fluent_facts())
+    all_atoms = list(ground.fluent_atoms())
+    initial_atoms = _fact_atoms(ground.fluent_facts())
 
     groups = compute_all_mutex_groups(initial_atoms, all_atoms, invariants)
 
@@ -164,13 +164,13 @@ def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
         ["empty-ferry()", "on(car1)", "on(car2)"],
     ]
     assert sorted(
-        (sorted(_predicate_names(invariant)), invariant.get_num_rigid_variables()) for invariant in invariants
+        (sorted(_predicate_names(invariant)), invariant.num_rigid_variables()) for invariant in invariants
     ) == [(["at", "on"], 1), (["at-ferry"], 0), (["empty-ferry", "on"], 0)]
     for group in groups:
         assert group.invariant is not None
         assert group.invariant in invariants
-        assert len(group.objects) == group.invariant.get_num_rigid_variables()
-        assert all(set(group.objects) <= set(atom.get_row().resolve_objects()) for atom in group.atoms)
+        assert len(group.objects) == group.invariant.num_rigid_variables()
+        assert all(set(group.objects) <= set(atom.row().resolve_objects()) for atom in group.atoms)
 
 
 def test_variables_trace_back_to_their_invariant(ferry: Ferry) -> None:
@@ -179,14 +179,14 @@ def test_variables_trace_back_to_their_invariant(ferry: Ferry) -> None:
     order = sorted(invariants, key=lambda invariant: _predicate_names(invariant) != {"empty-ferry", "on"})
     result = _ground(formalism_task, order)
     ground = result.task.get_task()
-    all_atoms = list(ground.get_fluent_atoms())
-    initial_atoms = _fact_atoms(ground.get_fluent_facts())
+    all_atoms = list(ground.fluent_atoms())
+    initial_atoms = _fact_atoms(ground.fluent_facts())
 
     groups = compute_mutex_groups_in_order(initial_atoms, all_atoms, order)
 
     # The same partition as the grounder's variables, each group naming the invariant it instantiates.
     assert _variable_predicates(result.task.get_fdr_context().get_variables()) == sorted(
-        sorted(str(atom.get_predicate().get_name()) for atom in group.atoms) for group in groups
+        sorted(str(atom.predicate().name()) for atom in group.atoms) for group in groups
     )
     assert all(group.invariant is not None for group in groups)
     contents = [
@@ -203,7 +203,7 @@ def test_all_mutex_groups_need_every_atom_in_index_order(ferry: Ferry) -> None:
     result = lifted.Task(formalism_task).instantiate_ground_task(
         ExecutionContext(1), lifted.GroundTaskInstantiationOptions()
     )
-    all_atoms = list(result.task.get_task().get_fluent_atoms())
+    all_atoms = list(result.task.get_task().fluent_atoms())
 
     with pytest.raises(ValueError, match="all_atoms must be the fluent atoms ordered by index"):
         compute_all_mutex_groups([], all_atoms[1:], invariants)

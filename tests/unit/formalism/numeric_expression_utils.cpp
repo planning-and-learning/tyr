@@ -43,51 +43,51 @@ template<typename Operator>
 struct BinaryExpression
 {
     Operator op {};
-    NumericLeaf lhs;
-    NumericLeaf rhs;
+    NumericLeaf left_operand_;
+    NumericLeaf right_operand_;
 
-    [[nodiscard]] auto get_operation() const noexcept { return op; }
+    [[nodiscard]] auto operation() const noexcept { return op; }
 
-    [[nodiscard]] auto get_lhs() const noexcept { return lhs; }
+    [[nodiscard]] auto left_operand() const noexcept { return left_operand_; }
 
-    [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
+    [[nodiscard]] auto right_operand() const noexcept { return right_operand_; }
 };
 
 /// Returns its operator by reference.
 struct ReferenceBooleanExpression
 {
     formalism::BooleanOperatorKind op {};
-    NumericLeaf lhs;
-    NumericLeaf rhs;
+    NumericLeaf left_operand_;
+    NumericLeaf right_operand_;
 
-    [[nodiscard]] const auto& get_operation() const noexcept { return op; }
+    [[nodiscard]] const auto& operation() const noexcept { return op; }
 
-    [[nodiscard]] auto get_lhs() const noexcept { return lhs; }
+    [[nodiscard]] auto left_operand() const noexcept { return left_operand_; }
 
-    [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
+    [[nodiscard]] auto right_operand() const noexcept { return right_operand_; }
 };
 
 struct MultiExpression
 {
     formalism::ArithmeticOperatorKind op {};
-    urd::Store<urd::sequence<NumericLeaf>> args;
+    urd::Store<urd::sequence<NumericLeaf>> operands_;
 
-    [[nodiscard]] auto get_operation() const noexcept { return op; }
+    [[nodiscard]] auto operation() const noexcept { return op; }
 
-    [[nodiscard]] const auto& get_args() const noexcept { return args; }
+    [[nodiscard]] const auto& operands() const noexcept { return operands_; }
 };
 
 struct NumericEffect
 {
     formalism::NumericEffectOperatorKind op {};
     NumericLeaf target;
-    NumericLeaf rhs;
+    NumericLeaf fexpr_;
 
-    [[nodiscard]] auto get_operation() const noexcept { return op; }
+    [[nodiscard]] auto operation() const noexcept { return op; }
 
-    [[nodiscard]] auto get_fterm() const noexcept { return target; }
+    [[nodiscard]] auto fterm() const noexcept { return target; }
 
-    [[nodiscard]] auto get_fexpr() const noexcept { return rhs; }
+    [[nodiscard]] auto fexpr() const noexcept { return fexpr_; }
 };
 
 }

@@ -40,7 +40,7 @@ public:
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
-    void on_solved(const PlanBuilderView<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
+    void on_solved(const PlanBuilderView<DeterministicTag, Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 };
 
 template<TaskKind Kind>

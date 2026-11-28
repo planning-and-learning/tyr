@@ -33,16 +33,16 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
 {
     urd::key<::tyr::formalism::BinaryOperator<T, O>> index;
     O operation {};
-    ::tyr::formalism::FunctionExpression<T> lhs;
-    ::tyr::formalism::FunctionExpression<T> rhs;
+    ::tyr::formalism::FunctionExpression<T> left_operand;
+    ::tyr::formalism::FunctionExpression<T> right_operand;
 
     data() = default;
 
-    data(O operation_, ::tyr::formalism::FunctionExpression<T> lhs_, ::tyr::formalism::FunctionExpression<T> rhs_) :
+    data(O operation_, ::tyr::formalism::FunctionExpression<T> left_operand_, ::tyr::formalism::FunctionExpression<T> right_operand_) :
         index(),
         operation(operation_),
-        lhs(lhs_),
-        rhs(rhs_)
+        left_operand(left_operand_),
+        right_operand(right_operand_)
     {
     }
 
@@ -53,11 +53,9 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>> {}; }
+    { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"left_operand", &data::left_operand>, urd::field<"right_operand", &data::right_operand>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::lhs, &data::rhs> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::lhs, &data::rhs> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::BinaryOperator<T, O>> key() const noexcept { return urd::key<::tyr::formalism::BinaryOperator<T, O>>(index); }
 };

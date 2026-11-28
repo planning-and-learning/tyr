@@ -106,18 +106,18 @@ inline void collect_parameters(TermView element, urd::Store<urd::set<ParameterIn
 template<FactKind F>
 inline void collect_parameters(AtomView<LiftedTag, F> element, urd::Store<urd::set<ParameterIndex>>& result)
 {
-    for (const auto term : element.get_terms())
+    for (const auto term : element.terms())
         collect_parameters(term, result);
 }
 
 template<FactKind F>
 inline void collect_parameters(LiteralView<LiftedTag, F> element, urd::Store<urd::set<ParameterIndex>>& result)
-{ collect_parameters(element.get_atom(), result); }
+{ collect_parameters(element.atom(), result); }
 
 template<FactKind F>
 inline void collect_parameters(FunctionTermView<LiftedTag, F> element, urd::Store<urd::set<ParameterIndex>>& result)
 {
-    for (const auto term : element.get_terms())
+    for (const auto term : element.terms())
         collect_parameters(term, result);
 }
 
@@ -127,18 +127,18 @@ inline void collect_parameters(FunctionExpressionView<LiftedTag> element, urd::S
 }
 
 inline void collect_parameters(UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<ParameterIndex>>& result)
-{ collect_parameters(element.get_arg(), result); }
+{ collect_parameters(element.operand(), result); }
 
 template<OperatorKind O>
 inline void collect_parameters(BinaryOperatorView<LiftedTag, O> element, urd::Store<urd::set<ParameterIndex>>& result)
 {
-    collect_parameters(element.get_lhs(), result);
-    collect_parameters(element.get_rhs(), result);
+    collect_parameters(element.left_operand(), result);
+    collect_parameters(element.right_operand(), result);
 }
 
 inline void collect_parameters(MultiOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<ParameterIndex>>& result)
 {
-    for (const auto arg : element.get_args())
+    for (const auto arg : element.operands())
         collect_parameters(arg, result);
 }
 
@@ -199,22 +199,22 @@ inline size_t max_fterm_arity(ygg::float_t) { return 0; }
 
 template<FactKind F>
 inline size_t max_fterm_arity(FunctionTermView<LiftedTag, F> element)
-{ return element.get_function().get_arity(); }
+{ return element.function().arity(); }
 
 inline size_t max_fterm_arity(FunctionExpressionView<LiftedTag> element)
 {
     return visit([&](auto&& arg) { return max_fterm_arity(arg); }, element);
 }
 
-inline size_t max_fterm_arity(UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element) { return max_fterm_arity(element.get_arg()); }
+inline size_t max_fterm_arity(UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element) { return max_fterm_arity(element.operand()); }
 
 template<OperatorKind O>
 inline size_t max_fterm_arity(BinaryOperatorView<LiftedTag, O> element)
-{ return std::max(max_fterm_arity(element.get_lhs()), max_fterm_arity(element.get_rhs())); }
+{ return std::max(max_fterm_arity(element.left_operand()), max_fterm_arity(element.right_operand())); }
 
 inline size_t max_fterm_arity(MultiOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element)
 {
-    const auto child_fexprs = element.get_args();
+    const auto child_fexprs = element.operands();
 
     return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
                            child_fexprs.end(),

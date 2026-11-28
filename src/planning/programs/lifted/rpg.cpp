@@ -78,20 +78,20 @@ void fill_delete_free_condition(formalism::ActionView<LiftedTag> action,
                                 urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::Repository>& conj_cond)
 {
     // Action parameter may get deleted.
-    for (const auto& variable : action.get_variables())
+    for (const auto& variable : action.variables())
         append_variable(variable, conj_cond);
-    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+    for (const auto literal : action.condition().literals<formalism::StaticTag>())
         urd::append(conj_cond.static_literals, literal);
-    for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
-        if (literal.get_polarity())
+    for (const auto literal : action.condition().literals<formalism::FluentTag>())
+        if (literal.polarity())
             urd::append(conj_cond.fluent_literals, literal);
 
-    for (const auto variable : cond_eff.get_variables())
+    for (const auto variable : cond_eff.variables())
         append_variable(variable, conj_cond);
-    for (const auto literal : cond_eff.get_condition().template get_literals<formalism::StaticTag>())
+    for (const auto literal : cond_eff.condition().template literals<formalism::StaticTag>())
         urd::append(conj_cond.static_literals, literal);
-    for (const auto literal : cond_eff.get_condition().template get_literals<formalism::FluentTag>())
-        if (literal.get_polarity())
+    for (const auto literal : cond_eff.condition().template literals<formalism::FluentTag>())
+        if (literal.polarity())
             urd::append(conj_cond.fluent_literals, literal);
 }
 
@@ -100,7 +100,7 @@ auto create_delete_free_goal(formalism::ConjunctiveConditionView<GroundTag> goal
 {
     auto conj_cond = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder());
 
-    for (const auto fact : goal.get_facts<formalism::PositiveTag>())
+    for (const auto fact : goal.facts<formalism::PositiveTag>())
         if (const auto literal = create_fact_literal(fact, true, context))
             urd::append(conj_cond->fluent_literals, *literal);
 
@@ -119,12 +119,12 @@ auto create_rpg_cond_effect_rule(formalism::ActionView<LiftedTag> action,
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
-    for (const auto variable : new_conj_cond.get_variables())
+    for (const auto variable : new_conj_cond.variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
-    for (const auto literal : cond_eff.get_effect().get_literals())
-        if (literal.get_polarity())  /// ignore delete effects
-            urd::append(rule->fluent_heads, literal.get_atom());
+    for (const auto literal : cond_eff.effect().literals())
+        if (literal.polarity())  /// ignore delete effects
+            urd::append(rule->fluent_heads, literal.atom());
     rule->cost = 1;
 
     return context.destination().insert(*rule, context.builder());
@@ -142,7 +142,7 @@ void translate_action_to_rpg_rules(formalism::ActionView<LiftedTag> action,
     {
         if (!seen.insert(cond_eff).second)
             return;
-        if (std::ranges::any_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
+        if (std::ranges::any_of(cond_eff.effect().literals(), [](const auto literal) { return literal.polarity(); }))
         {
             const auto rule = create_rpg_cond_effect_rule(action, cond_eff, context).first;
 
@@ -161,9 +161,9 @@ auto create_rpg_program(formalism::TaskView<LiftedTag> task, RPGProgram<LiftedTa
 
     translate_task_symbols(task, *program);
 
-    urd::store(program->goal, create_delete_free_goal(task.get_goal(), context).first);
+    urd::store(program->goal, create_delete_free_goal(task.goal(), context).first);
 
-    for (const auto action : task.get_domain().get_actions())
+    for (const auto action : task.domain().actions())
         translate_action_to_rpg_rules(action, *program, context, rule_to_action);
 
     return destination.insert(*program, builder).first;

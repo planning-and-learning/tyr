@@ -26,19 +26,32 @@
 
 #include <urd/elements/view.hpp>
 
-/// An outcome of a transition: its node, its probability and whether it fails.
+/// An outcome an adversary picks: its node and whether it fails.
 template<::tyr::TaskKind Kind, typename V>
-struct urd::view_mixin<::tyr::planning::OutcomeNode<Kind>, V>
+struct urd::view_mixin<::tyr::planning::OutcomeNode<::tyr::planning::NondeterministicTag, Kind>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] auto get_node() const noexcept { return self().template member<&urd::record_of<V>::node>(); }
+    [[nodiscard]] auto node() const noexcept { return self().template member<&urd::record_of<V>::node>(); }
 
-    [[nodiscard]] auto get_probability() const noexcept { return self().template member<&urd::record_of<V>::probability>(); }
+    [[nodiscard]] auto failed() const noexcept { return self().template member<&urd::record_of<V>::failed>(); }
+};
 
-    [[nodiscard]] auto get_failed() const noexcept { return self().template member<&urd::record_of<V>::failed>(); }
+/// An outcome chance draws: its node, its probability and whether it fails.
+template<::tyr::planning::ChanceEnvironment E, ::tyr::TaskKind Kind, typename V>
+struct urd::view_mixin<::tyr::planning::OutcomeNode<E, Kind>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
+public:
+    [[nodiscard]] auto node() const noexcept { return self().template member<&urd::record_of<V>::node>(); }
+
+    [[nodiscard]] auto probability() const noexcept { return self().template member<&urd::record_of<V>::probability>(); }
+
+    [[nodiscard]] auto failed() const noexcept { return self().template member<&urd::record_of<V>::failed>(); }
 };
 
 #endif

@@ -166,9 +166,9 @@ void expect_relaxed_plan_reset_after_dead_end()
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end =
-        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "consume"; });
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.label()).relation().name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
-    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(dead_end->get_node())), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(dead_end->node())), std::numeric_limits<ygg::float_t>::infinity());
     EXPECT_TRUE(heuristic->get_relaxed_plan()->empty());
 }
 
@@ -184,9 +184,9 @@ void expect_builtin_set_goal_reconfigures_evaluator()
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto achieve =
-        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "achieve"; });
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.label()).relation().name().str() == "achieve"; });
     ASSERT_NE(achieve, successors.end());
-    heuristic->set_goal(context.successor_generator->ground_action(urd::interned_view(achieve->get_label())).get_condition());
+    heuristic->set_goal(context.successor_generator->ground_action(urd::interned_view(achieve->label())).condition());
 
     EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 0);
 }
@@ -200,10 +200,10 @@ void expect_worker_snapshots_configured_goal()
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto achieve =
-        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "achieve"; });
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.label()).relation().name().str() == "achieve"; });
     ASSERT_NE(achieve, successors.end());
 
-    heuristic->set_goal(context.successor_generator->ground_action(urd::interned_view(achieve->get_label())).get_condition());
+    heuristic->set_goal(context.successor_generator->ground_action(urd::interned_view(achieve->label())).condition());
     auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
 
     ASSERT_NE(worker.get(), heuristic.get());
@@ -227,9 +227,9 @@ void expect_worker_has_independent_relaxed_plan()
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end =
-        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "consume"; });
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.label()).relation().name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
-    EXPECT_EQ(worker->evaluate(tyr::tests::built_state(dead_end->get_node())), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(worker->evaluate(tyr::tests::built_state(dead_end->node())), std::numeric_limits<ygg::float_t>::infinity());
     EXPECT_TRUE(worker->get_relaxed_plan()->empty());
     EXPECT_FALSE(heuristic->get_relaxed_plan()->empty());
 }
@@ -259,16 +259,16 @@ void expect_alternating_states_replace_previous_model()
     const auto successors =
         tyr::tests::get_labeled_successor_nodes(*context.successor_generator, initial_node, {}, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end =
-        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "consume"; });
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.label()).relation().name().str() == "consume"; });
     const auto goal =
-        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.get_label()).get_relation().get_name().str() == "achieve"; });
+        std::ranges::find_if(successors, [](const auto& successor) { return urd::interned_view(successor.label()).relation().name().str() == "achieve"; });
     ASSERT_NE(dead_end, successors.end());
     ASSERT_NE(goal, successors.end());
 
     EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
-    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(dead_end->get_node())), std::numeric_limits<ygg::float_t>::infinity());
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(dead_end->node())), std::numeric_limits<ygg::float_t>::infinity());
     EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
-    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(goal->get_node())), 0);
+    EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(goal->node())), 0);
     EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
     EXPECT_EQ(heuristic->evaluate(tyr::tests::built_state(initial_node)), 1);
 }

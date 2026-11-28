@@ -46,12 +46,12 @@ namespace
 std::optional<urd::Store<urd::sequence<urd::index<Object>>>>
 extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
 {
-    const auto terms = part.get_terms();
-    const auto objects = atom.get_row().template resolve<::tyr::formalism::Object>();
+    const auto terms = part.terms();
+    const auto objects = atom.row().template resolve<::tyr::formalism::Object>();
     if (terms.size() != objects.size())
         return std::nullopt;
 
-    auto binding = urd::Store<urd::sequence<std::optional<urd::index<Object>>>>(inv.get_num_rigid_variables() + inv.get_num_counted_variables());
+    auto binding = urd::Store<urd::sequence<std::optional<urd::index<Object>>>>(inv.num_rigid_variables() + inv.num_counted_variables());
     for (std::size_t position = 0; position < terms.size(); ++position)
     {
         const auto object = objects[static_cast<std::ptrdiff_t>(position)].index();
@@ -81,8 +81,8 @@ extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, Ato
     }
 
     auto rigid_values = urd::Store<urd::sequence<urd::index<Object>>> {};
-    rigid_values.reserve(inv.get_num_rigid_variables());
-    for (std::size_t i = 0; i < inv.get_num_rigid_variables(); ++i)
+    rigid_values.reserve(inv.num_rigid_variables());
+    for (std::size_t i = 0; i < inv.num_rigid_variables(); ++i)
     {
         const auto& value = binding[i];
         if (!value.has_value())
@@ -127,8 +127,8 @@ struct GroupKey : urd::compared_by_identity<GroupKey>
 
 bool structural_less(AtomView<GroundTag, FluentTag> lhs, AtomView<GroundTag, FluentTag> rhs)
 {
-    const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_row().template resolve<::tyr::formalism::Object>());
-    const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_row().template resolve<::tyr::formalism::Object>());
+    const auto lhs_key = std::tuple(lhs.predicate(), lhs.row().template resolve<::tyr::formalism::Object>());
+    const auto rhs_key = std::tuple(rhs.predicate(), rhs.row().template resolve<::tyr::formalism::Object>());
 
     return urd::Less<std::remove_cvref_t<decltype(lhs_key)>> {}(lhs_key, rhs_key);
 }
@@ -193,8 +193,8 @@ urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<G
 
     auto predicates = urd::Store<urd::sequence<urd::Store<urd::set<PredicateView<FluentTag>>>>>(invariants.size());
     for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
-        for (const auto part : invariants[inv_index].get_atoms())
-            predicates[inv_index].insert(part.get_predicate());
+        for (const auto part : invariants[inv_index].atoms())
+            predicates[inv_index].insert(part.predicate());
 
     auto groups = urd::Store<urd::sequence<InstanceGroup>> {};
     auto group_index = urd::Store<urd::map<GroupKey, size_t>, urd::sorted> {};
@@ -204,12 +204,12 @@ urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<G
         for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
         {
             const auto inv = invariants[inv_index];
-            if (!predicates[inv_index].contains(atom.get_predicate()))
+            if (!predicates[inv_index].contains(atom.predicate()))
                 continue;
 
-            for (const auto part : inv.get_atoms())
+            for (const auto part : inv.atoms())
             {
-                if (part.get_predicate() != atom.get_predicate())
+                if (part.predicate() != atom.predicate())
                     continue;
 
                 auto rigid_values = extract_rigid_values(inv, part, atom);

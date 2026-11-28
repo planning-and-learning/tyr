@@ -36,47 +36,42 @@
 /// A plan: its start node and the labeled nodes that follow it; its length, its cost (its last node's metric) and the
 /// node it ends in.
 template<::tyr::TaskKind Kind, typename V>
-struct urd::view_mixin<::tyr::planning::Plan<Kind>, V>
+struct urd::view_mixin<::tyr::planning::Plan<::tyr::planning::DeterministicTag, Kind>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] auto get_start_node() const noexcept { return self().template member<&urd::record_of<V>::start_node>(); }
+    [[nodiscard]] auto start_node() const noexcept { return self().template member<&urd::record_of<V>::start_node>(); }
 
-    [[nodiscard]] auto get_labeled_succ_nodes() const noexcept { return self().template member<&urd::record_of<V>::labeled_succ_nodes>(); }
+    [[nodiscard]] auto labeled_succ_nodes() const noexcept { return self().template member<&urd::record_of<V>::labeled_succ_nodes>(); }
 
-    [[nodiscard]] std::size_t get_length() const noexcept { return std::ranges::size(get_labeled_succ_nodes()); }
+    [[nodiscard]] std::size_t length() const noexcept { return std::ranges::size(labeled_succ_nodes()); }
 
-    [[nodiscard]] bool empty() const noexcept { return get_length() == 0; }
+    [[nodiscard]] bool empty() const noexcept { return length() == 0; }
 
     /// The node it ends in: its last labeled node's, or its start node.
-    [[nodiscard]] auto get_goal_node() const noexcept
+    [[nodiscard]] auto goal_node() const noexcept
     {
-        const auto steps = get_labeled_succ_nodes();
-        return std::ranges::empty(steps) ? get_start_node() : (*std::ranges::prev(std::ranges::end(steps))).get_node();
+        const auto steps = labeled_succ_nodes();
+        return std::ranges::empty(steps) ? start_node() : (*std::ranges::prev(std::ranges::end(steps))).node();
     }
 
     /// Its last node's metric, 0 where it has no step.
-    [[nodiscard]] ygg::float_t get_cost() const noexcept { return empty() ? ygg::float_t { 0 } : get_goal_node().get_metric(); }
+    [[nodiscard]] ygg::float_t cost() const noexcept { return empty() ? ygg::float_t { 0 } : goal_node().metric(); }
 
-    /// Its record: its nodes' records. A plan's builder's only.
-    [[nodiscard]] urd::data<::tyr::planning::Plan<Kind>> pack() const
-        requires urd::is_builder<urd::record_of<V>>
-    {
-        auto steps = urd::flat_vector<urd::data<::tyr::planning::LabeledNode<Kind>>> {};
-        for (const auto& step : get_labeled_succ_nodes())
-            steps.push_back(step.pack());
-        return urd::data<::tyr::planning::Plan<Kind>>(get_start_node().pack(), std::move(steps));
-    }
+    /// Its record (urd::pack): its nodes' records. A plan's builder's only.
+    [[nodiscard]] urd::data<::tyr::planning::Plan<::tyr::planning::DeterministicTag, Kind>> pack() const
+        requires urd::Builder<urd::record_of<V>>
+    { return urd::pack(self()); }
 
     static constexpr auto functions() noexcept
     {
-        constexpr auto read = urd::Functions<urd::function<"get_length", &view_mixin::get_length>,
+        constexpr auto read = urd::Functions<urd::function<"length", &view_mixin::length>,
                                              urd::function<"empty", &view_mixin::empty>,
-                                             urd::function<"get_goal_node", &view_mixin::get_goal_node>,
-                                             urd::function<"get_cost", &view_mixin::get_cost>> {};
-        if constexpr (urd::is_builder<urd::record_of<V>>)
+                                             urd::function<"goal_node", &view_mixin::goal_node>,
+                                             urd::function<"cost", &view_mixin::cost>> {};
+        if constexpr (urd::Builder<urd::record_of<V>>)
             return urd::Functions<urd::function<"pack", &view_mixin::pack>> {} + read;
         else
             return read;
@@ -85,15 +80,15 @@ public:
 
 /// A plan, as its views (borrowed or owned, of its builder or its record) write it: its actions, one per line.
 template<::tyr::TaskKind Kind, typename R>
-struct fmt::formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char> : ygg::without_format_spec
+struct fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>, char> : ygg::without_format_spec
 {
-    fmt::format_context::iterator format(const urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>& value,
+    fmt::format_context::iterator format(const urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>& value,
                                          fmt::format_context& ctx) const;
 };
 
 template<::tyr::TaskKind Kind, typename R>
-struct fmt::formatter<urd::owning_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char> :
-    fmt::formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>, char>
+struct fmt::formatter<urd::owning_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>, char> :
+    fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>, char>
 {
 };
 

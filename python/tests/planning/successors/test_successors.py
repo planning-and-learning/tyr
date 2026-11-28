@@ -47,9 +47,8 @@ def _continue_callback(_successor: object) -> bool:
 def _check_node_lookup_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_ground(task)
     initial_node = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
-    looked_up_node = planning.ground.get_node(state_repository, initial_node.get_state().pack().index())
+    looked_up_node = planning.ground.get_node(state_repository, initial_node.state().pack().index())
 
-    assert not hasattr(successor_generator, "get_state_repository")
     assert looked_up_node == initial_node
     assert (
         planning.ground.get_node(
@@ -60,7 +59,7 @@ def _check_node_lookup_ground(task: planning.ground.Task) -> None:
     )
     assert (
         planning.ground.get_node(
-            state_repository, planning.ground.get_node(state_repository, initial_node.get_state().pack().index()).pack()
+            state_repository, planning.ground.get_node(state_repository, initial_node.state().pack().index()).pack()
         )
         == initial_node
     )
@@ -69,9 +68,8 @@ def _check_node_lookup_ground(task: planning.ground.Task) -> None:
 def _check_node_lookup_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_lifted(task)
     initial_node = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
-    looked_up_node = planning.lifted.get_node(state_repository, initial_node.get_state().pack().index())
+    looked_up_node = planning.lifted.get_node(state_repository, initial_node.state().pack().index())
 
-    assert not hasattr(successor_generator, "get_state_repository")
     assert looked_up_node == initial_node
     assert (
         planning.lifted.get_node(
@@ -82,7 +80,7 @@ def _check_node_lookup_lifted(task: planning.lifted.Task) -> None:
     )
     assert (
         planning.lifted.get_node(
-            state_repository, planning.lifted.get_node(state_repository, initial_node.get_state().pack().index()).pack()
+            state_repository, planning.lifted.get_node(state_repository, initial_node.state().pack().index()).pack()
         )
         == initial_node
     )
@@ -111,7 +109,7 @@ def _check_action_binding_api_ground(task: planning.ground.Task) -> None:
 
     assert type(binding) is formalism.RowActionLifted
     assert successor_generator.ground_action(binding) == ground_action
-    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().resolve_objects()))
+    assert ground_action.action().arity() == len(list(ground_action.row().resolve_objects()))
     assert binding_successor == ground_action_successor
     packed_binding_successor = (
         GroundSuccessors(successor_generator, state_repository, axiom_evaluator)
@@ -126,7 +124,7 @@ def _check_action_binding_api_ground(task: planning.ground.Task) -> None:
     assert planning.ground.get_node(state_repository, packed_binding_successor) == binding_successor
     assert planning.ground.get_node(state_repository, packed_action_successor) == binding_successor
     assert any(
-        labeled_successor.get_label() == binding and labeled_successor.get_node() == binding_successor
+        labeled_successor.label() == binding and labeled_successor.node() == binding_successor
         for labeled_successor in labeled_successor_nodes
     )
 
@@ -154,7 +152,7 @@ def _check_action_binding_api_lifted(task: planning.lifted.Task) -> None:
 
     assert type(binding) is formalism.RowActionLifted
     assert successor_generator.ground_action(binding) == ground_action
-    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().resolve_objects()))
+    assert ground_action.action().arity() == len(list(ground_action.row().resolve_objects()))
     assert binding_successor == ground_action_successor
     packed_binding_successor = (
         LiftedSuccessors(successor_generator, state_repository, axiom_evaluator)
@@ -169,22 +167,22 @@ def _check_action_binding_api_lifted(task: planning.lifted.Task) -> None:
     assert planning.lifted.get_node(state_repository, packed_binding_successor) == binding_successor
     assert planning.lifted.get_node(state_repository, packed_action_successor) == binding_successor
     assert any(
-        labeled_successor.get_label() == binding and labeled_successor.get_node() == binding_successor
+        labeled_successor.label() == binding and labeled_successor.node() == binding_successor
         for labeled_successor in labeled_successor_nodes
     )
 
 
 def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_ground(task)
-    actions = list(task.get_task().get_domain().get_actions())
+    actions = list(task.get_task().domain().actions())
     initial_node = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
     initial_successors = GroundSuccessors(
         successor_generator, state_repository, axiom_evaluator
     ).labeled_successor_nodes(initial_node)
     picked_node = next(
-        successor.get_node()
+        successor.node()
         for successor in initial_successors
-        if successor.get_label().get_relation().get_original_name() == "pick"
+        if successor.label().relation().original_name() == "pick"
     )
 
     for node in (initial_node, picked_node):
@@ -194,11 +192,11 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
         all_bindings = GroundSuccessors.applicable_action_bindings(successor_generator, node)
         successors = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node)
         packed = [successor.pack() for successor in successors]
-        packed_plan = planning.ground.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+        packed_plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
         assert [
-            (step.get_label(), planning.ground.get_node(state_repository, record.node))
-            for step, record in zip(packed_plan.get_labeled_succ_nodes(), packed, strict=True)
-        ] == [(successor.get_label(), successor.get_node()) for successor in all_successors]
+            (step.label(), planning.ground.get_node(state_repository, record.node))
+            for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
+        ] == [(successor.label(), successor.node()) for successor in all_successors]
         packed_nodes = [
             successor.pack()
             for successor in GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_nodes(
@@ -206,23 +204,23 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
             )
         ]
         assert [planning.ground.get_node(state_repository, successor) for successor in packed_nodes] == [
-            successor.get_node() for successor in all_successors
+            successor.node() for successor in all_successors
         ]
         assert Counter(
             GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_nodes(node)
-        ) == Counter(successor.get_node() for successor in all_successors)
+        ) == Counter(successor.node() for successor in all_successors)
         for action in actions:
             expected = {
-                successor.get_label(): successor.get_node()
+                successor.label(): successor.node()
                 for successor in all_successors
-                if successor.get_label().get_relation() == action
+                if successor.label().relation() == action
             }
             selected = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
                 node, action=action
             )
-            assert {successor.get_label(): successor.get_node() for successor in selected} == expected
+            assert {successor.label(): successor.node() for successor in selected} == expected
             assert set(GroundSuccessors.applicable_action_bindings(successor_generator, node, action)) == {
-                binding for binding in all_bindings if binding.get_relation() == action
+                binding for binding in all_bindings if binding.relation() == action
             }
             assert Counter(
                 GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_nodes(
@@ -231,10 +229,10 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
             ) == Counter(expected.values())
             successors = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node, action=action)
             packed = [successor.pack() for successor in successors]
-            packed_plan = planning.ground.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+            packed_plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
             assert {
-                step.get_label(): planning.ground.get_node(state_repository, record.node)
-                for step, record in zip(packed_plan.get_labeled_succ_nodes(), packed, strict=True)
+                step.label(): planning.ground.get_node(state_repository, record.node)
+                for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
             } == expected
             packed_nodes = [
                 successor.pack()
@@ -245,21 +243,21 @@ def _check_action_schema_successors_ground(task: planning.ground.Task) -> None:
             assert Counter(
                 planning.ground.get_node(state_repository, successor) for successor in packed_nodes
             ) == Counter(expected.values())
-            if action.get_original_name() == "drop":
+            if action.original_name() == "drop":
                 assert bool(expected) == (node == picked_node)
 
 
 def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_lifted(task)
-    actions = list(task.get_task().get_domain().get_actions())
+    actions = list(task.get_task().domain().actions())
     initial_node = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
     initial_successors = LiftedSuccessors(
         successor_generator, state_repository, axiom_evaluator
     ).labeled_successor_nodes(initial_node)
     picked_node = next(
-        successor.get_node()
+        successor.node()
         for successor in initial_successors
-        if successor.get_label().get_relation().get_original_name() == "pick"
+        if successor.label().relation().original_name() == "pick"
     )
 
     for node in (initial_node, picked_node):
@@ -269,11 +267,11 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
         all_bindings = LiftedSuccessors.applicable_action_bindings(successor_generator, node)
         successors = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node)
         packed = [successor.pack() for successor in successors]
-        packed_plan = planning.lifted.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+        packed_plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
         assert [
-            (step.get_label(), planning.lifted.get_node(state_repository, record.node))
-            for step, record in zip(packed_plan.get_labeled_succ_nodes(), packed, strict=True)
-        ] == [(successor.get_label(), successor.get_node()) for successor in all_successors]
+            (step.label(), planning.lifted.get_node(state_repository, record.node))
+            for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
+        ] == [(successor.label(), successor.node()) for successor in all_successors]
         packed_nodes = [
             successor.pack()
             for successor in LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_nodes(
@@ -281,23 +279,23 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
             )
         ]
         assert [planning.lifted.get_node(state_repository, successor) for successor in packed_nodes] == [
-            successor.get_node() for successor in all_successors
+            successor.node() for successor in all_successors
         ]
         assert Counter(
             LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_nodes(node)
-        ) == Counter(successor.get_node() for successor in all_successors)
+        ) == Counter(successor.node() for successor in all_successors)
         for action in actions:
             expected = {
-                successor.get_label(): successor.get_node()
+                successor.label(): successor.node()
                 for successor in all_successors
-                if successor.get_label().get_relation() == action
+                if successor.label().relation() == action
             }
             selected = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
                 node, action=action
             )
-            assert {successor.get_label(): successor.get_node() for successor in selected} == expected
+            assert {successor.label(): successor.node() for successor in selected} == expected
             assert set(LiftedSuccessors.applicable_action_bindings(successor_generator, node, action)) == {
-                binding for binding in all_bindings if binding.get_relation() == action
+                binding for binding in all_bindings if binding.relation() == action
             }
             assert Counter(
                 LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_nodes(
@@ -306,10 +304,10 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
             ) == Counter(expected.values())
             successors = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(node, action=action)
             packed = [successor.pack() for successor in successors]
-            packed_plan = planning.lifted.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
+            packed_plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=successors).view(state_repository)
             assert {
-                step.get_label(): planning.lifted.get_node(state_repository, record.node)
-                for step, record in zip(packed_plan.get_labeled_succ_nodes(), packed, strict=True)
+                step.label(): planning.lifted.get_node(state_repository, record.node)
+                for step, record in zip(packed_plan.labeled_succ_nodes(), packed, strict=True)
             } == expected
             packed_nodes = [
                 successor.pack()
@@ -320,7 +318,7 @@ def _check_action_schema_successors_lifted(task: planning.lifted.Task) -> None:
             assert Counter(
                 planning.lifted.get_node(state_repository, successor) for successor in packed_nodes
             ) == Counter(expected.values())
-            if action.get_original_name() == "drop":
+            if action.original_name() == "drop":
                 assert bool(expected) == (node == picked_node)
 
 
@@ -387,7 +385,7 @@ def _check_labeled_successor_callbacks_ground(
             lambda callback: GroundSuccessors(
                 generator, state_repository, axiom_evaluator
             ).for_each_labeled_successor_node(node, callback),
-            lambda successor: (successor.get_label(), successor.get_node()),
+            lambda successor: (successor.label(), successor.node()),
         )
     else:
         _check_callback_visits(
@@ -395,7 +393,7 @@ def _check_labeled_successor_callbacks_ground(
             lambda callback: GroundSuccessors(
                 generator, state_repository, axiom_evaluator
             ).for_each_labeled_successor_node(node, callback, action=action),
-            lambda successor: (successor.get_label(), successor.get_node()),
+            lambda successor: (successor.label(), successor.node()),
         )
 
 
@@ -412,7 +410,7 @@ def _check_labeled_successor_callbacks_lifted(
             lambda callback: LiftedSuccessors(
                 generator, state_repository, axiom_evaluator
             ).for_each_labeled_successor_node(node, callback),
-            lambda successor: (successor.get_label(), successor.get_node()),
+            lambda successor: (successor.label(), successor.node()),
         )
     else:
         _check_callback_visits(
@@ -420,7 +418,7 @@ def _check_labeled_successor_callbacks_lifted(
             lambda callback: LiftedSuccessors(
                 generator, state_repository, axiom_evaluator
             ).for_each_labeled_successor_node(node, callback, action=action),
-            lambda successor: (successor.get_label(), successor.get_node()),
+            lambda successor: (successor.label(), successor.node()),
         )
 
 
@@ -429,7 +427,7 @@ def _check_successor_callbacks_ground(task: planning.ground.Task, *, labeled: bo
     node = GroundSuccessors(generator, state_repository, axiom_evaluator).initial_node()
     check = _check_labeled_successor_callbacks_ground if labeled else _check_unlabeled_successor_callbacks_ground
 
-    for action in [None, *task.get_task().get_domain().get_actions()]:
+    for action in [None, *task.get_task().domain().actions()]:
         check(generator, node, action, state_repository, axiom_evaluator)
 
     successors = GroundSuccessors(generator, state_repository, axiom_evaluator)
@@ -444,7 +442,7 @@ def _check_successor_callbacks_lifted(task: planning.lifted.Task, *, labeled: bo
     node = LiftedSuccessors(generator, state_repository, axiom_evaluator).initial_node()
     check = _check_labeled_successor_callbacks_lifted if labeled else _check_unlabeled_successor_callbacks_lifted
 
-    for action in [None, *task.get_task().get_domain().get_actions()]:
+    for action in [None, *task.get_task().domain().actions()]:
         check(generator, node, action, state_repository, axiom_evaluator)
 
     successors = LiftedSuccessors(generator, state_repository, axiom_evaluator)

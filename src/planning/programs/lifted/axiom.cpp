@@ -81,20 +81,20 @@ auto create_axiom_rule(formalism::AxiomView<LiftedTag> axiom, formalism::Groundi
     auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(context.builder());
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
-    const auto body = axiom.get_body();
-    for (const auto variable : axiom.get_variables())
+    const auto body = axiom.body();
+    for (const auto variable : axiom.variables())
         urd::append(conj_cond->variables, variable);
-    for (const auto literal : body.get_literals<formalism::StaticTag>())
+    for (const auto literal : body.literals<formalism::StaticTag>())
         urd::append(conj_cond->static_literals, literal);
-    for (const auto literal : body.get_literals<formalism::FluentTag>())
+    for (const auto literal : body.literals<formalism::FluentTag>())
         urd::append(conj_cond->fluent_literals, literal);
-    for (const auto literal : body.get_literals<formalism::DerivedTag>())
+    for (const auto literal : body.literals<formalism::DerivedTag>())
         urd::append(conj_cond->derived_literals, literal);
-    for (const auto numeric_constraint : body.get_numeric_constraints())
+    for (const auto numeric_constraint : body.numeric_constraints())
         urd::append(conj_cond->numeric_constraints, numeric_constraint);
 
     urd::store(rule->body, context.destination().insert(*conj_cond, context.builder()).first);
-    urd::append(rule->derived_heads, axiom.get_head());
+    urd::append(rule->derived_heads, axiom.head());
 
     return context.destination().insert(*rule, context.builder());
 }
@@ -107,9 +107,9 @@ auto create_axiom_program(formalism::TaskView<LiftedTag> task, formalism::Reposi
 
     translate_task_symbols(task, *program);
 
-    for (const auto axiom : task.get_domain().get_axioms())
+    for (const auto axiom : task.domain().axioms())
         urd::append(program->rules, create_axiom_rule(axiom, context).first);
-    for (const auto axiom : task.get_axioms())
+    for (const auto axiom : task.axioms())
         urd::append(program->rules, create_axiom_rule(axiom, context).first);
 
     return repository.insert(*program, builder).first;

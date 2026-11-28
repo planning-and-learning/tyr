@@ -112,8 +112,8 @@ struct SuccessorGenerator<GroundTag>::Impl
         match_tree::MatchTreePtr<formalism::Action<GroundTag>> action_match_tree_prototype;
         ActionMatchTrees schema_match_tree_prototypes;
         ActionBindingMap action_binding_to_ground_action;
-        /// Whether transitions keep a temporal network (is_temporal).
-        bool temporal;
+        /// What the task asks of an environment (task_features); temporal: its transitions keep a temporal network.
+        TaskFeatures features;
     };
 
     struct Evaluator
@@ -171,7 +171,7 @@ struct SuccessorGenerator<GroundTag>::Impl
                 return false;
             if (!accept(action))
                 continue;
-            assert(is_applicable(action.get_condition(), state_context));
+            assert(is_applicable(action.condition(), state_context));
             if (!evaluator.executor.is_applicable_if_fires(action, state_context))
                 continue;
             assert(evaluator.executor.is_applicable(action, state_context));
@@ -219,7 +219,7 @@ struct SuccessorGenerator<GroundTag>::Impl
             auto& scratch = evaluator.checked_binding;
             scratch.relation = action_of(binding).index();
             scratch.values.clear();
-            for (const auto value : binding.get_values())
+            for (const auto value : binding.values())
                 scratch.values.push_back(value);
             const auto row = definition->task->get_repository()->find(scratch);
             if (!row)
@@ -232,12 +232,12 @@ struct SuccessorGenerator<GroundTag>::Impl
     /// outcomes or happenings has no single successor state.
     ygg::float_t generate(const Source& node, formalism::ActionView<GroundTag> action, Builder& out_state, StateDelta& out_delta)
     {
-        if (action.get_temporal_part().has_value())
+        if (action.temporal_part().has_value())
             throw std::invalid_argument("SuccessorGenerator: a durative action happens at its start and its end, within a temporal network: use "
                                         "generate_successor or for_each_successor.");
-        if (!action.get_choices().empty())
+        if (!action.choices().empty())
             throw std::invalid_argument(
-                "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: use generate_successor or for_each_successor.");
+                "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: no deterministic successor (an environment with an adversary or chance gives them).");
         const auto state_context = state_context_of(node);
         return evaluator.executor.apply_action_unregistered(state_context, action, out_state, out_delta);
     }
@@ -249,18 +249,18 @@ struct SuccessorGenerator<GroundTag>::Impl
 SuccessorGenerator<GroundTag>::Impl::Definition::Definition(TaskPtr<GroundTag> task_) :
     task(std::move(task_)),
     action_match_tree_prototype(match_tree::MatchTree<formalism::Action<GroundTag>>::create(
-        formalism::ActionViewList<GroundTag>(task->get_task().get_ground_actions().begin(), task->get_task().get_ground_actions().end()),
+        formalism::ActionViewList<GroundTag>(task->get_task().ground_actions().begin(), task->get_task().ground_actions().end()),
         task->get_repository())),
     action_binding_to_ground_action(),
-    temporal(is_temporal(*task))
+    features(task_features(*task))
 {
     auto schema_actions = urd::Store<urd::map<formalism::ActionView<LiftedTag>, formalism::ActionViewList<GroundTag>>> {};
-    for (const auto action : task->get_task().get_domain().get_actions())
+    for (const auto action : task->get_task().domain().actions())
         schema_actions.try_emplace(action);
-    for (const auto action : task->get_task().get_ground_actions())
+    for (const auto action : task->get_task().ground_actions())
     {
-        action_binding_to_ground_action.emplace(action.get_row(), action);
-        schema_actions.at(action.get_action()).push_back(action);
+        action_binding_to_ground_action.emplace(action.row(), action);
+        schema_actions.at(action.action()).push_back(action);
     }
     for (auto& [schema, actions] : schema_actions)
         schema_match_tree_prototypes.emplace(schema, match_tree::MatchTree<formalism::Action<GroundTag>>::create(std::move(actions), task->get_repository()));
@@ -298,7 +298,7 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     const auto& task = definition->task;
     validate_task(task, node);
     get_schema_match_tree(action);
-    if (objects.size() != action.get_arity())
+    if (objects.size() != action.arity())
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object count does not match action arity.");
 
     const auto indices = objects.base();
@@ -310,8 +310,8 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     if (!std::ranges::all_of(objects, [&](const auto& value) { return target_repository.contains(value); }))
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
 
-    const auto constants = task->get_task().get_domain().get_constants();
-    const auto task_objects = task->get_task().get_objects();
+    const auto constants = task->get_task().domain().constants();
+    const auto task_objects = task->get_task().objects();
     const auto by_index = [](const auto view) { return view.index(); };
     for (const auto object : indices)
         if (!std::ranges::binary_search(constants, object, {}, by_index) && !std::ranges::binary_search(task_objects, object, {}, by_index))
@@ -346,10 +346,10 @@ void SuccessorGenerator<GroundTag>::validate_action_binding(ActionBindingView<Gr
     // Bindings in the grounded task already have validated schemas and objects.
     if (m_impl->definition->action_binding_to_ground_action.contains(binding))
         return;
-    const auto action = binding.get_relation();
+    const auto action = binding.relation();
     m_impl->get_schema_match_tree(action);
     const auto objects = binding.template resolve<formalism::Object>();
-    if (objects.size() != action.get_arity())
+    if (objects.size() != action.arity())
         throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
     if (!std::ranges::all_of(objects, [&](const auto& value) { return repository.contains(value); }))
         throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
@@ -364,8 +364,8 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Sou
     return m_impl->for_each_applicable_action(
         node,
         tree,
-        [&](const auto candidate) { return !filter.accept || filter.accept(candidate.get_row()); },
-        [&](const auto candidate) { return callback(candidate.get_row()); },
+        [&](const auto candidate) { return !filter.accept || filter.accept(candidate.row()); },
+        [&](const auto candidate) { return callback(candidate.row()); },
         [&] { return filter.stop && filter.stop(); });
 }
 
@@ -385,6 +385,8 @@ formalism::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(fo
 
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
+TaskFeatures SuccessorGenerator<GroundTag>::features() const noexcept { return m_impl->definition->features; }
+
 namespace
 {
 using GroundStateBuilder = urd::builder<State<GroundTag>, StateRepository<GroundTag>>;
@@ -395,12 +397,12 @@ void add_choice_reads(Choices choices, Happening& happening)
 {
     for (const auto choice : choices)
     {
-        add_reads(choice.get_condition(), happening.reads, happening.numeric_reads);
-        for (const auto outcome : choice.get_outcomes())
+        add_reads(choice.condition(), happening.reads, happening.numeric_reads);
+        for (const auto outcome : choice.outcomes())
         {
-            for (const auto effect : outcome.get_effects())
-                add_reads(effect.get_condition(), happening.reads, happening.numeric_reads);
-            add_choice_reads(outcome.get_choices(), happening);
+            for (const auto effect : outcome.effects())
+                add_reads(effect.condition(), happening.reads, happening.numeric_reads);
+            add_choice_reads(outcome.choices(), happening);
         }
     }
 }
@@ -410,7 +412,7 @@ template<typename Effects>
 void add_effect_reads(Effects effects, Happening& happening)
 {
     for (const auto effect : effects)
-        add_reads(effect.get_condition(), happening.reads, happening.numeric_reads);
+        add_reads(effect.condition(), happening.reads, happening.numeric_reads);
 }
 
 /// Whether every open durative action's over-all condition holds in `state` (an outcome's).
@@ -419,11 +421,11 @@ bool over_all_holds(Generator& generator, const StateBuilderView<GroundTag>& sta
 {
     const auto& task = *state.context().get_task();
     const auto context = StateContext<GroundTag>(task, state, ygg::float_t { 0 });
-    return std::ranges::all_of(context.temporal_storage().get_parts().open,
+    return std::ranges::all_of(context.temporal_storage().parts().open,
                                [&](const OpenAction& open)
                                {
                                    const auto action = generator.ground_action(urd::resolve(open.action, *task.get_repository()));
-                                   return is_applicable(running_temporal_part(action).get_over_all(), context);
+                                   return is_applicable(running_temporal_part(action).over_all(), context);
                                });
 }
 
@@ -431,7 +433,7 @@ bool over_all_holds(Generator& generator, const StateBuilderView<GroundTag>& sta
 /// and its picks, then adds the happening to the temporal parts (`happening`'s reads given, its writes the effects fired),
 /// its outcome filled by `make(apply, outcome, valid)`; failed where the temporal network becomes inconsistent or an open
 /// over-all condition does not hold. Under (minimize (total-time)), the metric is the makespan.
-template<typename Generator, typename Impl, typename Make>
+template<typename Generator, typename Impl, typename Make, typename Out>
 void ground_transition(Generator& generator,
                        Impl& impl,
                        const NodeBuilderView<GroundTag>& node,
@@ -440,12 +442,12 @@ void ground_transition(Generator& generator,
                        OutcomeRange set,
                        const TemporalStepper::Kind& temporal,
                        Make make,
-                       SuccessorBuilder<GroundTag>& out)
+                       Out& out)
 {
     auto& evaluator = impl.evaluator;
     const auto state_context = state_context_of(node);
     const auto time_metric = minimizes_total_time(*node.context().get_task());
-    generate_successor<GroundTag>(
+    write_successor(
         out,
         node.context(),
         label,
@@ -462,65 +464,65 @@ void ground_transition(Generator& generator,
                     happening.writes.clear();
                     happening.numeric_writes.clear();
                     evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
-                    auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
-                    evaluator.scheduled = !impl.definition->temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
+                    auto makespan = time_metric ? node.metric() : ygg::float_t { 0 };
+                    evaluator.scheduled = !impl.definition->features.temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,
-                [&](const auto& successor_state) { return evaluator.scheduled && over_all_holds(generator, successor_state); });
+                [&evaluator] { return evaluator.scheduled; });
         });
 }
 
 /// The successor of applying the instantaneous `action`, or of starting the durative `action` (none if its duration is not
 /// a nonnegative number).
-template<typename Generator, typename Impl, typename Make>
+template<typename Generator, typename Impl, typename Make, typename Out>
 void action_transition(Generator& generator,
                        Impl& impl,
                        const NodeBuilderView<GroundTag>& node,
                        formalism::ActionView<GroundTag> action,
                        Make make,
-                       SuccessorBuilder<GroundTag>& out)
+                       Out& out)
 {
     const auto state_context = state_context_of(node);
     auto& distributions = impl.evaluator.outcome_distributions;
     auto& happening = impl.evaluator.happening;
     distributions.clear();
     happening.clear();
-    add_reads(action.get_condition(), happening.reads, happening.numeric_reads);
-    add_effect_reads(action.get_effects(), happening);
-    add_choice_reads(action.get_choices(), happening);
-    const auto effects = std::array { action.get_effects() };
-    const auto row = action.get_row();
+    add_reads(action.condition(), happening.reads, happening.numeric_reads);
+    add_effect_reads(action.effects(), happening);
+    add_choice_reads(action.choices(), happening);
+    const auto effects = std::array { action.effects() };
+    const auto row = action.row();
     auto temporal = TemporalStepper::Kind {};
     auto label = urd::data<Transition>(TransitionKind::APPLY, urd::flat_optional<ActionRowKey>(row.index()), 0);
 
-    if (const auto temporal_part = action.get_temporal_part(); temporal_part.has_value())
+    if (const auto temporal_part = action.temporal_part(); temporal_part.has_value())
     {
         label.kind = TransitionKind::START;
-        const auto [min_duration, max_duration] = duration_bounds(temporal_part->get_min_durations(), temporal_part->get_max_durations(), state_context);
+        const auto [min_duration, max_duration] = duration_bounds(temporal_part->min_durations(), temporal_part->max_durations(), state_context);
         if (!(min_duration <= max_duration))
         {
             start_successor(out, node.context(), label);
             return;
         }
         temporal = TemporalStepper::Kind { TransitionKind::START, 0, row.index(), min_duration, max_duration, 0 };
-        add_reads(temporal_part->get_over_all(), happening.over_all, happening.numeric_over_all);
+        add_reads(temporal_part->over_all(), happening.over_all, happening.numeric_over_all);
     }
-    const auto set = build_ground_choices(distributions, action.get_choices(), state_context);
+    const auto set = build_ground_choices(distributions, action.choices(), state_context);
     ground_transition(generator, impl, node, label, effects, set, temporal, make, out);
 }
 
 /// The successor of ending the open durative action at position `open` (none if its end condition does not hold): its end
 /// effects and choices apply, and it reads its over-all condition up to here.
-template<typename Generator, typename Impl, typename Make>
-void end_transition(Generator& generator, Impl& impl, const NodeBuilderView<GroundTag>& node, std::uint32_t open, Make make, SuccessorBuilder<GroundTag>& out)
+template<typename Generator, typename Impl, typename Make, typename Out>
+void end_transition(Generator& generator, Impl& impl, const NodeBuilderView<GroundTag>& node, std::uint32_t open, Make make, Out& out)
 {
     const auto state_context = state_context_of(node);
     const auto& task = *node.context().get_task();
-    const auto row = urd::resolve(state_context.temporal_storage().get_parts().open[open].action, *task.get_repository());
+    const auto row = urd::resolve(state_context.temporal_storage().parts().open[open].action, *task.get_repository());
     const auto label = urd::data<Transition>(TransitionKind::END, urd::flat_optional<ActionRowKey>(row.index()), open);
     const auto temporal_part = running_temporal_part(generator.ground_action(row));
-    if (!is_applicable(temporal_part.get_end_condition(), state_context))
+    if (!is_applicable(temporal_part.end_condition(), state_context))
     {
         start_successor(out, node.context(), label);
         return;
@@ -530,13 +532,13 @@ void end_transition(Generator& generator, Impl& impl, const NodeBuilderView<Grou
     auto& happening = impl.evaluator.happening;
     distributions.clear();
     happening.clear();
-    add_reads(temporal_part.get_end_condition(), happening.reads, happening.numeric_reads);
-    add_reads(temporal_part.get_over_all(), happening.reads, happening.numeric_reads);
-    add_effect_reads(temporal_part.get_end_effects(), happening);
-    add_choice_reads(temporal_part.get_end_choices(), happening);
-    const auto effects = std::array { temporal_part.get_end_effects() };
-    const auto set = build_ground_choices(distributions, temporal_part.get_end_choices(), state_context);
-    const auto [end_min, end_max] = duration_bounds(temporal_part.get_end_min_durations(), temporal_part.get_end_max_durations(), state_context);
+    add_reads(temporal_part.end_condition(), happening.reads, happening.numeric_reads);
+    add_reads(temporal_part.over_all(), happening.reads, happening.numeric_reads);
+    add_effect_reads(temporal_part.end_effects(), happening);
+    add_choice_reads(temporal_part.end_choices(), happening);
+    const auto effects = std::array { temporal_part.end_effects() };
+    const auto set = build_ground_choices(distributions, temporal_part.end_choices(), state_context);
+    const auto [end_min, end_max] = duration_bounds(temporal_part.end_min_durations(), temporal_part.end_max_durations(), state_context);
     if (!(end_min <= end_max))
     {
         start_successor(out, node.context(), label);
@@ -546,72 +548,45 @@ void end_transition(Generator& generator, Impl& impl, const NodeBuilderView<Grou
     ground_transition(generator, impl, node, label, effects, set, temporal, make, out);
 }
 
-/// Fills an outcome by writing the applied state into a state builder of `node`'s repository, closed under the axioms.
-inline auto building(const NodeBuilderView<GroundTag>& node, AxiomEvaluator<GroundTag>& axiom_evaluator)
+/// Fills an outcome by writing the applied state into a state builder of `node`'s repository (not closed under the axioms).
+inline auto building(const NodeBuilderView<GroundTag>& node)
 {
-    return [&node, &axiom_evaluator](auto apply, auto& outcome, auto valid) { return build_outcome(node, axiom_evaluator, outcome, apply, valid); };
+    return [&node](auto apply, auto& outcome, auto scheduled) { return build_outcome(node, outcome, apply, scheduled); };
 }
 }
 
-template<formalism::ActionRowViewConcept Binding>
-void SuccessorGenerator<GroundTag>::generate_successor(const Source& node, Binding binding, AxiomEvaluator<GroundTag>& axiom_evaluator, SuccessorBuilder<GroundTag>& out)
+bool SuccessorGenerator<GroundTag>::over_all_holds(const StateBuilderView<GroundTag>& state) { return ::tyr::planning::over_all_holds(*this, state); }
+
+StateDelta& SuccessorGenerator<GroundTag>::scratch_delta() noexcept { return m_scratch_delta; }
+
+template<NatureEnvironment E, formalism::ActionRowViewConcept Binding>
+void SuccessorGenerator<GroundTag>::generate_successor(const Source& node,
+                                                       Binding binding,
+                                                       SuccessorBuilder<E, GroundTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
-    action_transition(*this, *m_impl, node, m_impl->ground_action_of(binding), building(node, axiom_evaluator), out);
+    action_transition(*this, *m_impl, node, m_impl->ground_action_of(binding), building(node), out);
 }
 
+template<NatureEnvironment E>
 void SuccessorGenerator<GroundTag>::generate_end_successor(const Source& node,
                                                            std::uint32_t open,
-                                                           AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                           SuccessorBuilder<GroundTag>& out)
+                                                           SuccessorBuilder<E, GroundTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
-    end_transition(*this, *m_impl, node, open, building(node, axiom_evaluator), out);
+    end_transition(*this, *m_impl, node, open, building(node), out);
 }
 
+template<NatureEnvironment E>
 void SuccessorGenerator<GroundTag>::generate_timed_literal_successor(const Source& node,
-                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                     SuccessorBuilder<GroundTag>& out)
+                                                                     SuccessorBuilder<E, GroundTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
     timed_literal_transition(
         m_impl->evaluator,
         node,
-        building(node, axiom_evaluator),
-        [&](const auto& state) { return over_all_holds(*this, state); },
+        building(node),
         out);
-}
-
-bool SuccessorGenerator<GroundTag>::for_each_successor(const Source& node,
-                                                       AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                       const std::function<bool(SuccessorBuilder<GroundTag>&)>& callback)
-{
-    validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
-    // One of the node's repository's builders, reused across its successors: back to its pool when this returns.
-    auto checked_out = ygg::formalism::checkout<Successor<GroundTag>>(node.context().builders());
-    auto& successor = *checked_out;
-    const auto exhausted = m_impl->for_each_applicable_action(node,
-                                                              *m_impl->evaluator.action_match_tree,
-                                                              [&](const auto action)
-                                                              {
-                                                                  action_transition(*this, *m_impl, node, action, building(node, axiom_evaluator), successor);
-                                                                  return successor.distributions.empty() || callback(successor);
-                                                              });
-    if (!exhausted)
-        return false;
-    const auto open_count = static_cast<std::uint32_t>(state_context_of(node).temporal_storage().get_parts().open.size());
-    for (std::uint32_t open = 0; open < open_count; ++open)
-    {
-        generate_end_successor(node, open, axiom_evaluator, successor);
-        if (!successor.distributions.empty() && !callback(successor))
-            return false;
-    }
-    generate_timed_literal_successor(node, axiom_evaluator, successor);
-    return successor.distributions.empty() || callback(successor);
 }
 
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::ActionRowView binding);
@@ -621,13 +596,38 @@ SuccessorGenerator<GroundTag>::generate_successor_state(const Source& node, form
 template ygg::float_t
 SuccessorGenerator<GroundTag>::generate_successor_state(const Source& node, formalism::ActionRowBuilderView binding, Builder& out_state, StateDelta& out_delta);
 
-template void SuccessorGenerator<GroundTag>::generate_successor(const Source& node,
-                                                             formalism::ActionRowView binding,
-                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                             SuccessorBuilder<GroundTag>& out);
-template void SuccessorGenerator<GroundTag>::generate_successor(const Source& node,
-                                                             formalism::ActionRowBuilderView binding,
-                                                             AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                             SuccessorBuilder<GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_successor<NondeterministicTag, formalism::ActionRowView>(const Source& node,
+                                                              formalism::ActionRowView binding,
+                                                              SuccessorBuilder<NondeterministicTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_successor<NondeterministicTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                              formalism::ActionRowBuilderView binding,
+                                                              SuccessorBuilder<NondeterministicTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_end_successor<NondeterministicTag>(const Source& node,
+                                                              std::uint32_t open,
+                                                              SuccessorBuilder<NondeterministicTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_timed_literal_successor<NondeterministicTag>(const Source& node,
+                                                              SuccessorBuilder<NondeterministicTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_successor<ProbabilisticTag, formalism::ActionRowView>(const Source& node,
+                                                              formalism::ActionRowView binding,
+                                                              SuccessorBuilder<ProbabilisticTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_successor<ProbabilisticTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                              formalism::ActionRowBuilderView binding,
+                                                              SuccessorBuilder<ProbabilisticTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_end_successor<ProbabilisticTag>(const Source& node,
+                                                              std::uint32_t open,
+                                                              SuccessorBuilder<ProbabilisticTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_timed_literal_successor<ProbabilisticTag>(const Source& node,
+                                                              SuccessorBuilder<ProbabilisticTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_successor<GeneralTag, formalism::ActionRowView>(const Source& node,
+                                                              formalism::ActionRowView binding,
+                                                              SuccessorBuilder<GeneralTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_successor<GeneralTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                              formalism::ActionRowBuilderView binding,
+                                                              SuccessorBuilder<GeneralTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_end_successor<GeneralTag>(const Source& node,
+                                                              std::uint32_t open,
+                                                              SuccessorBuilder<GeneralTag, GroundTag>& out);
+template void SuccessorGenerator<GroundTag>::generate_timed_literal_successor<GeneralTag>(const Source& node,
+                                                              SuccessorBuilder<GeneralTag, GroundTag>& out);
 
 }

@@ -34,9 +34,9 @@ static_assert(requires(ConjunctiveEffectData& data) {
 });
 static_assert(requires(const ConjunctiveEffectView& view) {
     view.index();
-    view.get_literals();
-    view.get_numeric_effects();
-    view.get_auxiliary_numeric_effect();
+    view.literals();
+    view.numeric_effects();
+    view.auxiliary_numeric_effect();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
@@ -65,10 +65,10 @@ static_assert(requires(GroundConjunctiveEffectData& data) {
 });
 static_assert(requires(const GroundConjunctiveEffectView& view) {
     view.index();
-    view.template get_facts<tyr::formalism::PositiveTag>();
-    view.template get_facts<tyr::formalism::NegativeTag>();
-    view.get_numeric_effects();
-    view.get_auxiliary_numeric_effect();
+    view.template facts<tyr::formalism::PositiveTag>();
+    view.template facts<tyr::formalism::NegativeTag>();
+    view.numeric_effects();
+    view.auxiliary_numeric_effect();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });

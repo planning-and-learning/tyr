@@ -128,7 +128,7 @@ inline bool atom_uses_counted(const urd::data<Atom<LiftedTag, FluentTag>>& atom,
 
 inline urd::data<Atom<LiftedTag, FluentTag>> make_initial_atom(PredicateView<FluentTag> predicate, std::size_t counted_position)
 {
-    const auto arity = static_cast<std::size_t>(predicate.get_arity());
+    const auto arity = static_cast<std::size_t>(predicate.arity());
 
     auto result = urd::data<Atom<LiftedTag, FluentTag>>();
     result.predicate = predicate.index();

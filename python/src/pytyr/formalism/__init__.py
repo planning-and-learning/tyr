@@ -269,6 +269,7 @@ from pytyr._pytyr.formalism import (
     ProgramLiftedBuilder as ProgramLiftedBuilder,
     ProgramLiftedData as ProgramLiftedData,
     ProgramLiftedIndex as ProgramLiftedIndex,
+    RequirementKind as RequirementKind,
     Repository as Repository,
     RowActionLifted as RowActionLifted,
     RowActionLiftedBuilderView as RowActionLiftedBuilderView,

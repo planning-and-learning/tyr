@@ -27,8 +27,8 @@
 #include <type_traits>
 #include <urd/elements/view.hpp>
 
-/// A search node: its state (a packed node reads it as its StateView; a node's builder as the view of the form its
-/// child holds: urd::built_view takes the built one out) and its metric.
+/// A search node: its state (a packed node reads it as its StateView; a node's builder as its state builder's view)
+/// and its metric.
 template<::tyr::TaskKind Kind, typename V>
 struct urd::view_mixin<::tyr::planning::Node<Kind>, V>
 {
@@ -36,32 +36,19 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] auto get_state() const noexcept { return self().template member<&urd::record_of<V>::state>(); }
+    [[nodiscard]] auto state() const noexcept { return self().template member<&urd::record_of<V>::state>(); }
 
-    [[nodiscard]] auto get_metric() const noexcept { return self().template member<&urd::record_of<V>::metric>(); }
+    [[nodiscard]] auto metric() const noexcept { return self().template member<&urd::record_of<V>::metric>(); }
 
-    /// Its record: its state's key (an interned state's; a built one's index, a registered state's; none for a state being
-    /// built or a record not interned) and its metric. A node's builder's only (a packed node is its record).
-    [[nodiscard]] urd::data<::tyr::planning::Node<Kind>> pack() const noexcept
-        requires urd::is_builder<urd::record_of<V>>
-    {
-        const auto state = urd::visit_view(get_state(),
-                                           [](const auto& view) -> urd::key<::tyr::planning::State<Kind>>
-                                           {
-                                               using View = std::remove_cvref_t<decltype(view)>;
-                                               if constexpr (std::same_as<View, ::tyr::planning::StateView<Kind>>)
-                                                   return view.index();
-                                               else if constexpr (urd::is_builder<urd::record_of<View>>)
-                                                   return view.pack().index();
-                                               else
-                                                   return {};
-                                           });
-        return urd::data<::tyr::planning::Node<Kind>>(state, get_metric());
-    }
+    /// Its record (urd::pack): its state's key (a registered state's index; none for a state being built) and its
+    /// metric. A node's builder's only (a packed node is its record).
+    [[nodiscard]] urd::data<::tyr::planning::Node<Kind>> pack() const
+        requires urd::Builder<urd::record_of<V>>
+    { return urd::pack(self()); }
 
     static constexpr auto functions() noexcept
     {
-        if constexpr (urd::is_builder<urd::record_of<V>>)
+        if constexpr (urd::Builder<urd::record_of<V>>)
             return urd::Functions<urd::function<"pack", &view_mixin::pack>> {};
         else
             return urd::Functions<> {};

@@ -24,9 +24,9 @@ concept NegativeFactSelectorContract =
            data.fact;
            data.true_child;
            data.dontcare_child;
-           view.get_fact();
-           view.get_true_child();
-           view.get_dontcare_child();
+           view.fact();
+           view.true_child();
+           view.dontcare_child();
        };
 
 using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::Action<::tyr::GroundTag>, tyr::formalism::Axiom<::tyr::GroundTag>>;

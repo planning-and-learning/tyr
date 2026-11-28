@@ -217,12 +217,12 @@ void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<F>& fact_sets,
         for (const auto binding : tyr::datalog::rows(fact_sets, set))
         {
             const auto objects = binding.template resolve<tyr::formalism::Object>();
-            bindings.push_back(AtomBinding { ygg::to_string(objects | std::views::transform([](auto object) { return object.get_name(); })) });
+            bindings.push_back(AtomBinding { ygg::to_string(objects | std::views::transform([](auto object) { return object.name(); })) });
         }
         std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
         const auto predicate = fact_sets.repository->view(urd::index<tyr::formalism::Predicate<F>>(set));
-        result.push_back(PredicateAtoms { predicate.get_name().str(), predicate.get_arity(), std::move(bindings) });
+        result.push_back(PredicateAtoms { predicate.name().str(), predicate.arity(), std::move(bindings) });
     }
 }
 

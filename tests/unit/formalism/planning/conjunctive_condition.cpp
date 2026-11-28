@@ -46,19 +46,19 @@ static_assert(requires(ConjunctiveConditionData& data) {
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const ConjunctiveConditionView& view) {
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::StaticTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template atoms<tyr::formalism::StaticTag>(true))>,
                           tyr::formalism::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::FluentTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template atoms<tyr::formalism::FluentTag>(true))>,
                           tyr::formalism::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::DerivedTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template atoms<tyr::formalism::DerivedTag>(true))>,
                           tyr::formalism::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>;
     view.index();
-    view.get_variables();
-    view.template get_literals<tyr::formalism::StaticTag>();
-    view.template get_literals<tyr::formalism::FluentTag>();
-    view.template get_literals<tyr::formalism::DerivedTag>();
-    view.get_numeric_constraints();
-    view.get_arity();
+    view.variables();
+    view.template literals<tyr::formalism::StaticTag>();
+    view.template literals<tyr::formalism::FluentTag>();
+    view.template literals<tyr::formalism::DerivedTag>();
+    view.numeric_constraints();
+    view.arity();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
@@ -86,18 +86,18 @@ static_assert(requires(GroundConjunctiveConditionData& data) {
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const GroundConjunctiveConditionView& view) {
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::StaticTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template atoms<tyr::formalism::StaticTag>(true))>,
                           tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::FluentTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template atoms<tyr::formalism::FluentTag>(true))>,
                           tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::DerivedTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template atoms<tyr::formalism::DerivedTag>(true))>,
                           tyr::formalism::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>;
     view.index();
-    view.template get_literals<tyr::formalism::StaticTag>();
-    view.template get_literals<tyr::formalism::DerivedTag>();
-    view.template get_facts<tyr::formalism::PositiveTag>();
-    view.template get_facts<tyr::formalism::NegativeTag>();
-    view.get_numeric_constraints();
+    view.template literals<tyr::formalism::StaticTag>();
+    view.template literals<tyr::formalism::DerivedTag>();
+    view.template facts<tyr::formalism::PositiveTag>();
+    view.template facts<tyr::formalism::NegativeTag>();
+    view.numeric_constraints();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
@@ -158,22 +158,22 @@ void expect_condition_atom_projection()
     {
         // Both the condition argument and its container-view wrappers have expired
         // before iteration starts; only the repository must remain alive.
-        auto positive = repository.view(condition.index()).template get_atoms<F>(true);
-        auto negative = repository.view(condition.index()).template get_atoms<F>(false);
+        auto positive = repository.view(condition.index()).template atoms<F>(true);
+        auto negative = repository.view(condition.index()).template atoms<F>(false);
         EXPECT_TRUE(std::ranges::equal(positive, std::array { pair.first }));
         EXPECT_TRUE(std::ranges::equal(negative, std::array { pair.second }));
-        auto filtered_positive = repository.view(condition.index()).template get_atoms<F>(true, pair.first.get_predicate());
-        auto filtered_negative = repository.view(condition.index()).template get_atoms<F>(false, pair.second.get_predicate());
+        auto filtered_positive = repository.view(condition.index()).template atoms<F>(true, pair.first.predicate());
+        auto filtered_negative = repository.view(condition.index()).template atoms<F>(false, pair.second.predicate());
         EXPECT_TRUE(std::ranges::equal(filtered_positive, std::array { pair.first }));
         EXPECT_TRUE(std::ranges::equal(filtered_negative, std::array { pair.second }));
-        auto opposite = condition.template get_atoms<F>(true, pair.second.get_predicate());
+        auto opposite = condition.template atoms<F>(true, pair.second.predicate());
         EXPECT_TRUE(opposite.begin() == opposite.end());
         auto foreign_repository = tyr::formalism::Repository();
         auto foreign_data = urd::data<tyr::formalism::Predicate<F>>(std::string("positive"), 0);
         const auto foreign = foreign_repository.insert(foreign_data).first;
-        ASSERT_EQ(foreign.index(), pair.first.get_predicate().index());
-        ASSERT_NE(foreign, pair.first.get_predicate());
-        auto absent = condition.template get_atoms<F>(true, foreign);
+        ASSERT_EQ(foreign.index(), pair.first.predicate().index());
+        ASSERT_NE(foreign, pair.first.predicate());
+        auto absent = condition.template atoms<F>(true, foreign);
         EXPECT_TRUE(absent.begin() == absent.end());
     };
     check.template operator()<tyr::formalism::StaticTag>(static_atoms);

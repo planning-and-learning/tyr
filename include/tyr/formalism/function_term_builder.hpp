@@ -52,7 +52,6 @@ struct builder<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>, C>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"parameters", &builder::parameters>, urd::field<"function", &builder::function>, urd::field<"terms", &builder::terms>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 /// The builder of FunctionTerm: its record's members, each in its built form (urd::built_t).
@@ -64,7 +63,6 @@ struct builder<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &builder::row>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::row> {}; }
 };
 
 }  // namespace urd

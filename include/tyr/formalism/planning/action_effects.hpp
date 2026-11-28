@@ -53,14 +53,14 @@ void for_each_choice_effect(Choices choices, std::vector<OutcomeStep>& path, F& 
 {
     for (std::size_t c = 0; c < choices.size(); ++c)
     {
-        const auto outcomes = choices[static_cast<std::ptrdiff_t>(c)].get_outcomes();
+        const auto outcomes = choices[static_cast<std::ptrdiff_t>(c)].outcomes();
         for (std::size_t o = 0; o < outcomes.size(); ++o)
         {
             const auto outcome = outcomes[static_cast<std::ptrdiff_t>(o)];
             path.push_back(OutcomeStep { c, o });
-            for (const auto effect : outcome.get_effects())
+            for (const auto effect : outcome.effects())
                 f(effect, OutcomePath(path));
-            for_each_choice_effect(outcome.get_choices(), path, f);
+            for_each_choice_effect(outcome.choices(), path, f);
             path.pop_back();
         }
     }
@@ -76,14 +76,14 @@ template<TaskKind T, typename F>
 void for_each_effect(ActionView<T> action, F f)
 {
     auto path = std::vector<OutcomeStep> {};
-    for (const auto effect : action.get_effects())
+    for (const auto effect : action.effects())
         f(effect, OutcomePath(path));
-    detail::for_each_choice_effect(action.get_choices(), path, f);
-    if (const auto temporal_part = action.get_temporal_part(); temporal_part.has_value())
+    detail::for_each_choice_effect(action.choices(), path, f);
+    if (const auto temporal_part = action.temporal_part(); temporal_part.has_value())
     {
-        for (const auto effect : temporal_part->get_end_effects())
+        for (const auto effect : temporal_part->end_effects())
             f(effect, OutcomePath(path));
-        detail::for_each_choice_effect(temporal_part->get_end_choices(), path, f);
+        detail::for_each_choice_effect(temporal_part->end_choices(), path, f);
     }
 }
 }  // namespace tyr::formalism

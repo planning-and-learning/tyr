@@ -81,6 +81,11 @@ void bind_transition(nb::module_& m)
     urd::python::bind_fields(parts);
     urd::python::bind_index<Transition>(m);
     urd::python::bind_data<Transition>(m);
+    // What a task asks of an environment (SuccessorGenerator.features()).
+    nb::class_<TaskFeatures>(m, "TaskFeatures")
+        .def_ro("oneof", &TaskFeatures::oneof)
+        .def_ro("probabilistic", &TaskFeatures::probabilistic)
+        .def_ro("temporal", &TaskFeatures::temporal);
 }
 }  // namespace
 

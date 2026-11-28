@@ -12,13 +12,13 @@ def _check_repr_matches_str_ground(task: planning.ground.Task) -> None:
     labeled_node = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
         node
     )[0]
-    plan = planning.ground.PlanBuilder(start_node=node, labeled_succ_nodes=[]).view(state_repository)
+    plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=[]).view(state_repository)
 
     assert repr(state) == str(state)
     assert repr(node) == str(node)
     assert repr(labeled_node) == str(labeled_node)
     assert repr(plan) == str(plan)
-    assert plan.get_length() == 0
+    assert plan.length() == 0
     assert plan.empty()
 
 
@@ -29,13 +29,13 @@ def _check_repr_matches_str_lifted(task: planning.lifted.Task) -> None:
     labeled_node = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
         node
     )[0]
-    plan = planning.lifted.PlanBuilder(start_node=node, labeled_succ_nodes=[]).view(state_repository)
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=[]).view(state_repository)
 
     assert repr(state) == str(state)
     assert repr(node) == str(node)
     assert repr(labeled_node) == str(labeled_node)
     assert repr(plan) == str(plan)
-    assert plan.get_length() == 0
+    assert plan.length() == 0
     assert plan.empty()
 
 

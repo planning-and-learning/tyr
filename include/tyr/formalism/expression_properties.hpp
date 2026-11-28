@@ -101,43 +101,43 @@ inline void collect_fterms(const std::variant<Vs...>& element, urd::Store<urd::s
 
 template<TaskKind T, FactKind F>
 inline void collect_fterms(UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
-{ collect_fterms(element.get_arg(), result); }
+{ collect_fterms(element.operand(), result); }
 
 template<TaskKind T, FactKind F, OperatorKind O>
 inline void collect_fterms(BinaryOperatorView<T, O> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
 {
-    collect_fterms(element.get_lhs(), result);
-    collect_fterms(element.get_rhs(), result);
+    collect_fterms(element.left_operand(), result);
+    collect_fterms(element.right_operand(), result);
 }
 
 template<TaskKind T, FactKind F>
 inline void collect_fterms(MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
 {
-    for (const auto& arg : element.get_args())
+    for (const auto& arg : element.operands())
         collect_fterms(arg, result);
 }
 
 template<TaskKind T, FactKind F1, FactKind F2>
 inline void collect_fterms(NumericEffectView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result)
 {
-    collect_fterms(element.get_fterm(), result);
-    collect_fterms(element.get_fexpr(), result);
+    collect_fterms(element.fterm(), result);
+    collect_fterms(element.fexpr(), result);
 }
 
 /// Collects the function terms a numeric effect reads: its expression's, and its target's unless it assigns it.
 template<TaskKind T, typename Result>
 void collect_reads(NumericEffectOperatorView<T, FluentTag> effect, Result& result)
 {
-    collect_fterms(effect.get_fexpr(), result);
-    if (effect.get_operation() != NumericEffectOperatorKind::Assign)
-        collect_fterms(effect.get_fterm(), result);
+    collect_fterms(effect.fexpr(), result);
+    if (effect.operation() != NumericEffectOperatorKind::Assign)
+        collect_fterms(effect.fterm(), result);
 }
 
 /// Collects the function terms the condition's numeric constraints read.
 template<TaskKind T, typename Result>
 void collect_reads(ConjunctiveConditionView<T> condition, Result& result)
 {
-    for (const auto constraint : condition.get_numeric_constraints())
+    for (const auto constraint : condition.numeric_constraints())
         collect_fterms(constraint, result);
 }
 

@@ -159,7 +159,7 @@ public:
     }
 
     static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const NodeBuilderView<Kind>& node, ActionBindingView<Kind>)
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.get_metric() }; }
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.metric() }; }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
     { m_openlist.push(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
@@ -181,9 +181,9 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        const auto source_state = source_node.get_state();
-        const auto successor_state = successor_node.get_state();
-        const auto g_value = successor_node.get_metric();
+        const auto source_state = source_node.state();
+        const auto successor_state = successor_node.state();
+        const auto g_value = successor_node.metric();
         successor_search_node.status = SearchNodeStatus::OPEN;
         successor_search_node.g_value = static_cast<ygg::uint_t>(g_value);
         successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);

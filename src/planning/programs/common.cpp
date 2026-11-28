@@ -58,7 +58,7 @@ namespace tyr::planning
 {
 
 urd::flat_string create_applicability_name(formalism::ActionView<LiftedTag> action)
-{ return urd::flat_string { std::string { "@" } + action.get_name().str() + std::string("_") + std::to_string(action.index().value) }; }
+{ return urd::flat_string { std::string { "@" } + action.name().str() + std::string("_") + std::to_string(action.index().value) }; }
 
 urd::flat_string create_triggered_name(formalism::ActionView<LiftedTag> action, formalism::ConditionalEffectView<LiftedTag> cond_eff)
 { return urd::flat_string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.index().value) }; }
@@ -69,7 +69,7 @@ create_applicability_predicate(formalism::ActionView<LiftedTag> action, formalis
     auto predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
 
     predicate->name = create_applicability_name(action);
-    predicate->arity = action.get_arity();
+    predicate->arity = action.arity();
 
     return context.destination().insert(*predicate, context.builder());
 }
@@ -83,11 +83,11 @@ create_applicability_atom(formalism::ActionView<LiftedTag> action, formalism::Gr
 
     // Its terms are the action's variables, in order: they are its parameters.
     auto parameters = formalism::checkout<formalism::Parameters>(context.builder());
-    for (const auto variable : action.get_condition().get_variables())
+    for (const auto variable : action.condition().variables())
         urd::append(parameters->variables, variable);
     urd::store(atom->parameters, context.destination().insert(*parameters, context.builder()).first);
     urd::store(atom->predicate, applicability_predicate);
-    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
+    for (ygg::uint_t i = 0; i < applicability_predicate.arity(); ++i)
         urd::build_member(atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), context.destination());
 
     return context.destination().insert(*atom, context.builder());
@@ -99,7 +99,7 @@ create_applicability_predicate(formalism::AxiomView<LiftedTag> axiom, formalism:
     auto predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
 
     predicate->name = create_applicability_name(axiom);
-    predicate->arity = axiom.get_body().get_arity();
+    predicate->arity = axiom.body().arity();
 
     return context.destination().insert(*predicate, context.builder());
 }
@@ -113,11 +113,11 @@ create_applicability_atom(formalism::AxiomView<LiftedTag> axiom, formalism::Grou
 
     // Its terms are the axiom's variables, in order: they are its parameters.
     auto parameters = formalism::checkout<formalism::Parameters>(context.builder());
-    for (const auto variable : axiom.get_body().get_variables())
+    for (const auto variable : axiom.body().variables())
         urd::append(parameters->variables, variable);
     urd::store(atom->parameters, context.destination().insert(*parameters, context.builder()).first);
     urd::store(atom->predicate, applicability_predicate);
-    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
+    for (ygg::uint_t i = 0; i < applicability_predicate.arity(); ++i)
         urd::build_member(atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), context.destination());
 
     return context.destination().insert(*atom, context.builder());
@@ -154,7 +154,7 @@ formalism::RepositoryPtr layer_over(std::shared_ptr<const formalism::Repository>
 
 urd::flat_string create_applicability_name(formalism::AxiomView<LiftedTag> axiom)
 {
-    return urd::flat_string { std::string { "@" } + axiom.get_head().get_predicate().get_name().str() + std::string("_")
+    return urd::flat_string { std::string { "@" } + axiom.head().predicate().name().str() + std::string("_")
                               + std::to_string(axiom.index().value) };
 }
 
@@ -163,7 +163,7 @@ create_fact_literal(formalism::FDRFactView<formalism::FluentTag> fact,
                     bool polarity,
                     formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
-    const auto atom = fact.get_atom();
+    const auto atom = fact.atom();
     if (!atom.has_value())
         return std::nullopt;
 
@@ -176,29 +176,29 @@ create_fact_literal(formalism::FDRFactView<formalism::FluentTag> fact,
 template<TaskKind Kind>
 void translate_task_symbols(formalism::TaskView<Kind> task, urd::builder<formalism::Program<Kind>, formalism::Repository>& program)
 {
-    append_dense(program.static_predicates, task.get_domain().template get_predicates<formalism::StaticTag>());
-    append_dense(program.fluent_predicates, task.get_domain().template get_predicates<formalism::FluentTag>());
-    append_dense(program.derived_predicates, task.get_domain().template get_predicates<formalism::DerivedTag>());
-    append_dense(program.derived_predicates, task.get_derived_predicates());
+    append_dense(program.static_predicates, task.domain().template predicates<formalism::StaticTag>());
+    append_dense(program.fluent_predicates, task.domain().template predicates<formalism::FluentTag>());
+    append_dense(program.derived_predicates, task.domain().template predicates<formalism::DerivedTag>());
+    append_dense(program.derived_predicates, task.derived_predicates());
 
-    append_dense(program.static_functions, task.get_domain().template get_functions<formalism::StaticTag>());
-    append_dense(program.fluent_functions, task.get_domain().template get_functions<formalism::FluentTag>());
+    append_dense(program.static_functions, task.domain().template functions<formalism::StaticTag>());
+    append_dense(program.fluent_functions, task.domain().template functions<formalism::FluentTag>());
 
-    append_dense(program.objects, task.get_domain().get_constants());
-    append_dense(program.objects, task.get_objects());
+    append_dense(program.objects, task.domain().constants());
+    append_dense(program.objects, task.objects());
 
-    for (const auto atom : task.template get_atoms<formalism::StaticTag>())
+    for (const auto atom : task.template atoms<formalism::StaticTag>())
         urd::append(program.static_atoms, atom);
-    for (const auto atom : task.template get_atoms<formalism::FluentTag>())
+    for (const auto atom : task.template atoms<formalism::FluentTag>())
         urd::append(program.fluent_atoms, atom);
     // An atom a timed initial literal adds becomes true at its time, whatever the plan does: reachable as an initial one.
-    for (const auto timed_literal : task.get_timed_literals())
-        if (timed_literal.get_literal().get_polarity())
-            urd::append(program.fluent_atoms, timed_literal.get_literal().get_atom());
+    for (const auto timed_literal : task.timed_literals())
+        if (timed_literal.literal().polarity())
+            urd::append(program.fluent_atoms, timed_literal.literal().atom());
 
-    for (const auto fterm_value : task.template get_fterm_values<formalism::StaticTag>())
+    for (const auto fterm_value : task.template fterm_values<formalism::StaticTag>())
         urd::append(program.static_fterm_values, fterm_value);
-    for (const auto fterm_value : task.template get_fterm_values<formalism::FluentTag>())
+    for (const auto fterm_value : task.template fterm_values<formalism::FluentTag>())
         urd::append(program.fluent_fterm_values, fterm_value);
 }
 

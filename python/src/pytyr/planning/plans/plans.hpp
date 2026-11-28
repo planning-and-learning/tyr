@@ -36,12 +36,11 @@ void bind_plan_serialization();
 template<TaskKind Kind>
 void bind_plans(nb::module_& m)
 {
-    urd::python::bind_data<Plan<Kind>>(m);
-    urd::python::bind_builder<Plan<Kind>, StateRepository<Kind>>(m);
-    urd::python::bind_view<PlanBuilderView<Kind>>(m);
-    urd::python::bind_view<OwnedPlanBuilderView<Kind>>(m);
-    urd::python::bind_view<PlanRecordView<Kind>>(m);
-    urd::python::bind_view<OwnedPlanRecordView<Kind>>(m);
+    urd::python::bind_data<Plan<DeterministicTag, Kind>>(m);
+    urd::python::bind_builder<Plan<DeterministicTag, Kind>, StateRepository<Kind>>(m);
+    urd::python::bind_record_views<Plan<DeterministicTag, Kind>, StateRepository<Kind>>(m);
+    urd::python::bind_view<OwnedPlanBuilderView<DeterministicTag, Kind>>(m);
+    urd::python::bind_view<OwnedPlanRecordView<DeterministicTag, Kind>>(m);
     bind_plan_serialization<Kind>();
 }
 

@@ -71,10 +71,8 @@ struct data<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>>
                            urd::field<"probabilities", &data::probabilities>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::variables, &data::condition, &data::outcomes, &data::probabilities> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ChoiceEffect<::tyr::LiftedTag>>(index); }
@@ -113,9 +111,7 @@ struct data<::tyr::formalism::ChoiceEffect<::tyr::GroundTag>>
             Fields<urd::field<"condition", &data::condition>, urd::field<"outcomes", &data::outcomes>, urd::field<"probabilities", &data::probabilities>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::outcomes, &data::probabilities> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ChoiceEffect<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ChoiceEffect<::tyr::GroundTag>>(index); }

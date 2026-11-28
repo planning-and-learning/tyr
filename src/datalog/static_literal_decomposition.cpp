@@ -97,7 +97,7 @@ private:
 
     std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>> compute(StaticLiteral literal)
     {
-        if (!literal.get_polarity())
+        if (!literal.polarity())
             return std::nullopt;
         const auto parameter_set = formalism::collect_parameters(literal);
         auto parameters = urd::Store<urd::sequence<formalism::ParameterIndex>>(parameter_set.begin(), parameter_set.end());
@@ -105,17 +105,17 @@ private:
         const auto arity = parameters.size();
         // Over at most two variables, a literal is exact in the consistency graph unless its atom has constants or repeated
         // variables; those become a literal over its variables.
-        const auto is_plain = literal.get_atom().get_terms().size() == arity;
+        const auto is_plain = literal.atom().terms().size() == arity;
         if (arity == 0 || (arity < 3 && is_plain))
             return std::nullopt;
 
         // The literal's relation over its variables.
         auto pattern = urd::Store<urd::sequence<formalism::Term>> {};
-        for (const auto term : literal.get_atom().get_terms())
+        for (const auto term : literal.atom().terms())
             urd::append(pattern, term);
         auto relation = urd::Store<urd::set<Tuple>> {};
         auto element = urd::Store<urd::sequence<formalism::Term>> {};
-        for (const auto binding : rows(*m_static_facts, literal.get_atom().get_predicate().index().value))
+        for (const auto binding : rows(*m_static_facts, literal.atom().predicate().index().value))
         {
             element.clear();
             for (const auto object : binding.template get<urd::index<formalism::Object>>())
@@ -135,7 +135,7 @@ private:
         if (relation.empty())
             return std::nullopt;
         // The literals that replace it number their variables as it does: they have its atom's parameters.
-        m_parameters = literal.get_atom().get_parameters().index();
+        m_parameters = literal.atom().parameters().index();
         if (arity < 3)
             return urd::Store<urd::sequence<StaticLiteralIndex>> { create_projection_literal(relation, parameters) };
 
@@ -283,17 +283,17 @@ decompose_static_literals(formalism::ProgramView<LiftedTag> program, formalism::
     formalism::list_except_rules(program, *output);
     // The static predicates come first in the repository, as the fact sets require.
     // The program's own static predicates and atoms: the output's, copied within this repository.
-    auto static_facts = TaggedFactSets<formalism::StaticTag>(program.template get_predicates<formalism::StaticTag>(), repository);
-    for (const auto atom : program.template get_atoms<formalism::StaticTag>())
-        insert(static_facts, atom.get_row().index());
+    auto static_facts = TaggedFactSets<formalism::StaticTag>(program.template predicates<formalism::StaticTag>(), repository);
+    for (const auto atom : program.template atoms<formalism::StaticTag>())
+        insert(static_facts, atom.row().index());
     auto decomposer = Decomposer(*output, context, static_facts);
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
     {
         // Only rules of the program are inserted: rule workspaces are indexed by rule.
-        const auto body = rule.get_body();
+        const auto body = rule.body();
         auto condition = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
         auto decomposed = false;
-        for (const auto literal : body.get_literals<formalism::StaticTag>())
+        for (const auto literal : body.literals<formalism::StaticTag>())
         {
             if (const auto& literals = decomposer.decompose(literal))
             {
@@ -312,25 +312,25 @@ decompose_static_literals(formalism::ProgramView<LiftedTag> program, formalism::
             continue;
         }
 
-        for (const auto variable : body.get_variables())
+        for (const auto variable : body.variables())
             urd::append(condition->variables, variable);
-        for (const auto literal : body.get_literals<formalism::FluentTag>())
+        for (const auto literal : body.literals<formalism::FluentTag>())
             urd::append(condition->fluent_literals, literal);
-        for (const auto literal : body.get_literals<formalism::DerivedTag>())
+        for (const auto literal : body.literals<formalism::DerivedTag>())
             urd::append(condition->derived_literals, literal);
-        for (const auto numeric_constraint : body.get_numeric_constraints())
+        for (const auto numeric_constraint : body.numeric_constraints())
             urd::append(condition->numeric_constraints, numeric_constraint);
         const auto new_body = repository.insert(*condition, builder).first;
 
         auto new_rule = formalism::checkout<formalism::Rule<LiftedTag>>(builder);
-        for (const auto variable : new_body.get_variables())
+        for (const auto variable : new_body.variables())
             urd::append(new_rule->variables, variable);
         urd::store(new_rule->body, new_body);
-        for (const auto head : rule.get_heads<formalism::FluentTag>())
+        for (const auto head : rule.heads<formalism::FluentTag>())
             urd::append(new_rule->fluent_heads, head);
-        for (const auto head : rule.get_heads<formalism::DerivedTag>())
+        for (const auto head : rule.heads<formalism::DerivedTag>())
             urd::append(new_rule->derived_heads, head);
-        new_rule->cost = rule.get_cost();
+        new_rule->cost = rule.cost();
         const auto rewritten = repository.insert(*new_rule, builder).first.index();
         urd::append(output->rules, repository.view(rewritten));
         result.rules.emplace(rule.index(), rewritten);

@@ -165,7 +165,9 @@ public:
                            ActionBindingView<Kind> action,
                            SuccessorMetadataT<SearchPolicy> metadata)
     {
-        auto node = register_successor(*worker.state_repository, *worker.axiom_evaluator, std::move(target), auxiliary_value, source, delta);
+        const auto metric = engine.evaluate_successor_metric(*worker.state_repository, *target, auxiliary_value);
+        detail::register_successor_state(*worker.state_repository, *worker.axiom_evaluator, *target, source.state(), delta);
+        auto node = NodeBuilder<Kind> { std::move(target), metric };
         const auto g_value = compute_successor_g_value(metadata.source_g_value, node.metric, engine.m_options->cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
@@ -188,7 +190,7 @@ public:
 
     template<typename Engine, typename WorkerData>
     static bool is_generated_goal(Engine& engine, WorkerData& worker, const RoutedSuccessorT<Engine>&, const StateBuilderView<Kind>& state)
-    { return worker.goal_strategy->is_dynamic_goal_satisfied(engine.start_node().get_state(), state); }
+    { return worker.goal_strategy->is_dynamic_goal_satisfied(engine.start_node().state(), state); }
 
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
@@ -255,7 +257,7 @@ public:
     void for_each(Callback&& callback)
     { std::forward<Callback>(callback)(m_worker); }
 
-    std::pair<OwnedPlanBuilderView<Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
+    std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
         auto& worker = get(goal.worker);
         const auto& search_node = worker.get_search_node(goal.state);
@@ -267,7 +269,7 @@ public:
                                                                                            *worker.axiom_evaluator,
                                                                                            *worker.successor_generator,
                                                                                            options.cost_mode);
-        return { OwnedPlanBuilderView<Kind>(std::move(plan), worker.state_repository.get()), OwnedNodeRecordView<Kind>(node, worker.state_repository.get()) };
+        return { OwnedPlanBuilderView<DeterministicTag, Kind>(std::move(plan), worker.state_repository.get()), OwnedNodeRecordView<Kind>(node, worker.state_repository.get()) };
     }
 
 private:

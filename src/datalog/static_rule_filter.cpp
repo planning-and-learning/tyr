@@ -26,10 +26,10 @@ namespace tyr::datalog
 
 formalism::ProgramView<GroundTag> remove_statically_inapplicable_rules(formalism::ProgramView<GroundTag> program, formalism::Repository& repository)
 {
-    const auto static_fact_sets = TaggedFactSets<formalism::StaticTag>(program.get_predicates<formalism::StaticTag>(),
-                                                                       program.get_functions<formalism::StaticTag>(),
-                                                                       program.get_atoms<formalism::StaticTag>(),
-                                                                       program.get_fterm_values<formalism::StaticTag>(),
+    const auto static_fact_sets = TaggedFactSets<formalism::StaticTag>(program.predicates<formalism::StaticTag>(),
+                                                                       program.functions<formalism::StaticTag>(),
+                                                                       program.atoms<formalism::StaticTag>(),
+                                                                       program.fterm_values<formalism::StaticTag>(),
                                                                        program.context());
     auto mutable_fact_sets = MutableFactSets(program, program.context());
     insert_program_facts(mutable_fact_sets, program);
@@ -39,7 +39,7 @@ formalism::ProgramView<GroundTag> remove_statically_inapplicable_rules(formalism
     auto result = formalism::checkout<formalism::Program<GroundTag>>(builder);
     formalism::list_except_rules(program, *result);
 
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
         if (is_statically_applicable(rule, fact_sets))
             urd::append(result->rules, rule);
 

@@ -37,12 +37,10 @@ template<typename C>
 struct builder<::tyr::formalism::TimedLiteral, C>
 {
     urd::key<::tyr::formalism::TimedLiteral> index;
-    ygg::float_t time = 0;
+    urd::built_t<ygg::float_t, C> time = 0;
     urd::built_t<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C> literal;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"time", &builder::time>, urd::field<"literal", &builder::literal>> {}; }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

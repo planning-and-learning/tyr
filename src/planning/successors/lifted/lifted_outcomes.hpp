@@ -94,10 +94,10 @@ private:
     template<typename F>
     static void for_each_outcome_effect(formalism::OutcomeView<LiftedTag> outcome, F& f)
     {
-        for (const auto effect : outcome.get_effects())
+        for (const auto effect : outcome.effects())
             f(effect);
-        for (const auto choice : outcome.get_choices())
-            for (const auto nested : choice.get_outcomes())
+        for (const auto choice : outcome.choices())
+            for (const auto nested : choice.outcomes())
                 for_each_outcome_effect(nested, f);
     }
 
@@ -113,7 +113,7 @@ private:
         auto result = distributions.unit();
         for (const auto choice : choices)
         {
-            const auto choice_arity = action_arity + choice.get_arity();
+            const auto choice_arity = action_arity + choice.arity();
             const auto objects_of = [&](OutcomeRange range) { return binding_view(range); };
 
             // The instances: the prefixes of the subtree's firing effect bindings that extend the enclosing binding.
@@ -128,7 +128,7 @@ private:
                                             m_instances.push_back(append(binding, choice_arity));
                                         });
             };
-            for (const auto outcome : choice.get_outcomes())
+            for (const auto outcome : choice.outcomes())
                 for_each_outcome_effect(outcome, collect);
             const auto instances = std::span<OutcomeRange>(m_instances).subspan(base);
             const auto less = [&](OutcomeRange a, OutcomeRange b) { return std::ranges::lexicographical_compare(objects_of(a), objects_of(b)); };
@@ -142,15 +142,15 @@ private:
             {
                 const auto instance = m_instances[i];
                 const auto operands = distributions.begin_operands();
-                for (const auto outcome : choice.get_outcomes())
+                for (const auto outcome : choice.outcomes())
                 {
                     // Sequenced: both build into the arena.
-                    const auto nested = build_choices(distributions, action, outcome.get_choices(), instance, binding, for_each_effect_binding);
+                    const auto nested = build_choices(distributions, action, outcome.choices(), instance, binding, for_each_effect_binding);
                     const auto picked = distributions.single(LiftedPick { action, outcome, instance });
                     distributions.push_operand(distributions.product(picked, nested));
                 }
-                const auto set = choice.get_probabilities().empty() ? distributions.union_of_operands(operands) :
-                                                                      distributions.mixture_of_operands(operands, choice.get_probabilities());
+                const auto set = choice.probabilities().empty() ? distributions.union_of_operands(operands) :
+                                                                      distributions.mixture_of_operands(operands, choice.probabilities());
                 result = distributions.product(result, set);
             }
             m_instances.resize(base);

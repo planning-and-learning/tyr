@@ -48,9 +48,7 @@ struct data<::tyr::planning::Node<Kind>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"state", &data::state>, urd::field<"metric", &data::metric>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::state, &data::metric> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 };
 }
 

@@ -32,21 +32,16 @@ def test_lifted_tasks_of_one_formalism_task_write_into_their_own_layers() -> Non
     state_repository = planning.lifted.StateRepository(first)
     successor_generator = planning.lifted.SuccessorGenerator(first, execution_context)
     initial = planning.lifted.get_initial_node(state_repository, axiom_evaluator)
-    # The successor of each binding, generated and registered (a borrowed binding is valid only during its callback).
+    # The successor of each transition, generated and registered (a borrowed binding is valid only during its callback).
     successors: list[Node] = []
 
-    def visit(binding: formalism.RowActionLiftedBuilderView) -> bool:
-        state = state_repository.get_state_builder()
-        delta = planning.StateDelta()
-        auxiliary_value = successor_generator.generate_successor_state(initial, binding, state, delta)
-        successors.append(
-            planning.lifted.register_successor(
-                state_repository, axiom_evaluator, state, auxiliary_value, initial, delta
-            )
-        )
+    def visit(transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState) -> bool:
+        planning.lifted.find_successor(state_repository, initial, successor_state)
+        planning.lifted.extend_successor(axiom_evaluator, initial, successor_state)
+        successors.append(planning.lifted.register_successor(state_repository, initial, successor_state))
         return True
 
-    successor_generator.for_each_applicable_action_binding(initial, visit)
+    planning.lifted.deterministic.for_each_successor(successor_generator, initial, visit)
     assert successors
 
     assert len(first.get_fdr_context().get_variables()) > frozen

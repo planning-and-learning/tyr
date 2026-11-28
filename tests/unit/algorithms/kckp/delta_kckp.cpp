@@ -95,10 +95,10 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag>* pick_workspace = nullptr;
     const auto& rules = program.get_const_program_workspace().engine.rules;
-    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
+    for (ygg::uint_t i = 0; i < program_view.rules().size(); ++i)
     {
         const auto is_pick =
-            action_program.get_predicate_to_action_mapping().at(program_view.get_rules()[i].get_derived_heads().front().get_predicate()).get_name() == "pick";
+            action_program.get_predicate_to_action_mapping().at(program_view.rules()[i].derived_heads().front().predicate()).name() == "pick";
 
         if (is_pick)
         {
@@ -109,10 +109,10 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     }
     ASSERT_NE(pick_workspace, nullptr);
 
-    const auto predicates = program_view.get_predicates<tyr::formalism::FluentTag>();
-    const auto functions = program_view.get_functions<tyr::formalism::FluentTag>();
+    const auto predicates = program_view.predicates<tyr::formalism::FluentTag>();
+    const auto functions = program_view.functions<tyr::formalism::FluentTag>();
     const auto& domains = program.get_domains();
-    const auto num_objects = program_view.get_objects().size();
+    const auto num_objects = program_view.objects().size();
     auto empty_assignments = tyr::datalog::TaggedAssignmentSets<tyr::formalism::FluentTag>(predicates,
                                                                                            functions,
                                                                                            domains.fluent_predicate_domains,
@@ -123,7 +123,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
                                                                                              domains.fluent_predicate_domains,
                                                                                              domains.fluent_function_domains,
                                                                                              num_objects);
-    for (const auto atom : program_view.get_atoms<tyr::formalism::FluentTag>())
+    for (const auto atom : program_view.atoms<tyr::formalism::FluentTag>())
         initial_assignments.predicate.insert(atom);
 
     const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
@@ -222,10 +222,10 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag>* move_workspace = nullptr;
     const auto& rules = program.get_const_program_workspace().engine.rules;
-    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
+    for (ygg::uint_t i = 0; i < program_view.rules().size(); ++i)
     {
-        const auto rule = program_view.get_rules()[i];
-        if (action_program.get_predicate_to_action_mapping().at(rule.get_derived_heads().front().get_predicate()).get_name() != "move")
+        const auto rule = program_view.rules()[i];
+        if (action_program.get_predicate_to_action_mapping().at(rule.derived_heads().front().predicate()).name() != "move")
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
@@ -234,18 +234,18 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     }
     ASSERT_NE(move_workspace, nullptr);
 
-    const auto predicates = program_view.get_predicates<tyr::formalism::FluentTag>();
-    const auto functions = program_view.get_functions<tyr::formalism::FluentTag>();
+    const auto predicates = program_view.predicates<tyr::formalism::FluentTag>();
+    const auto functions = program_view.functions<tyr::formalism::FluentTag>();
     const auto& domains = program.get_domains();
     auto assignments = tyr::datalog::TaggedAssignmentSets<tyr::formalism::FluentTag>(predicates,
                                                                                      functions,
                                                                                      domains.fluent_predicate_domains,
                                                                                      domains.fluent_function_domains,
-                                                                                     program_view.get_objects().size());
+                                                                                     program_view.objects().size());
     auto num_at_robot_atoms = size_t { 0 };
-    for (const auto atom : program_view.get_atoms<tyr::formalism::FluentTag>())
+    for (const auto atom : program_view.atoms<tyr::formalism::FluentTag>())
     {
-        if (atom.get_predicate().get_name() != "at-robot")
+        if (atom.predicate().name() != "at-robot")
             continue;
         assignments.predicate.insert(atom);
         ++num_at_robot_atoms;
@@ -274,7 +274,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
                 {
                     const auto parameter = layout.part_of(vertex);
                     const auto object = urd::index<tyr::formalism::Object>(layout.label(vertex));
-                    binding[parameter] = urd::resolve(object, program.get_program_repository()).get_name().str();
+                    binding[parameter] = urd::resolve(object, program.get_program_repository()).name().str();
                 };
                 insert(edge.src);
                 insert(edge.dst);
@@ -311,14 +311,14 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
 
     // Add a source after target vertices already exist; only its static row is new.
     auto additional = tyr::datalog::ProgramWorkspace<LiftedTag>(program);
-    for (const auto atom : program_view.get_atoms<tyr::formalism::FluentTag>())
+    for (const auto atom : program_view.atoms<tyr::formalism::FluentTag>())
     {
-        if (atom.get_predicate().get_name() != "at-robot")
+        if (atom.predicate().name() != "at-robot")
             continue;
         auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-        binding.relation = atom.get_predicate().index();
-        for (const auto object : program_view.get_objects())
-            if (object.get_name() == "loc-x0-y0")
+        binding.relation = atom.predicate().index();
+        for (const auto object : program_view.objects())
+            if (object.name() == "loc-x0-y0")
                 binding.values.push_back(object.index().value);
         ASSERT_EQ(binding.values.size(), 1);
         assignments.predicate.insert(additional.workspace_repository->insert(binding).first);
@@ -348,10 +348,10 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag>* drive_workspace = nullptr;
     const auto& rules = program.get_const_program_workspace().engine.rules;
-    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
+    for (ygg::uint_t i = 0; i < program_view.rules().size(); ++i)
     {
-        const auto rule = program_view.get_rules()[i];
-        if (action_program.get_predicate_to_action_mapping().at(rule.get_derived_heads().front().get_predicate()).get_name() != "drive")
+        const auto rule = program_view.rules()[i];
+        if (action_program.get_predicate_to_action_mapping().at(rule.derived_heads().front().predicate()).name() != "drive")
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
@@ -360,8 +360,8 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     }
     ASSERT_NE(drive_workspace, nullptr);
 
-    const auto predicates = program_view.get_predicates<tyr::formalism::FluentTag>();
-    const auto functions = program_view.get_functions<tyr::formalism::FluentTag>();
+    const auto predicates = program_view.predicates<tyr::formalism::FluentTag>();
+    const auto functions = program_view.functions<tyr::formalism::FluentTag>();
     const auto& domains = program.get_domains();
     const auto make_assignments = [&]
     {
@@ -369,18 +369,18 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
                                                                              functions,
                                                                              domains.fluent_predicate_domains,
                                                                              domains.fluent_function_domains,
-                                                                             program_view.get_objects().size());
+                                                                             program_view.objects().size());
     };
     auto first_assignments = make_assignments();
     auto second_assignments = make_assignments();
     auto found_truck_1 = false;
     auto found_truck_2 = false;
-    for (const auto atom : program_view.get_atoms<tyr::formalism::FluentTag>())
+    for (const auto atom : program_view.atoms<tyr::formalism::FluentTag>())
     {
-        if (atom.get_predicate().get_name() != "at")
+        if (atom.predicate().name() != "at")
             continue;
 
-        const auto object = atom.get_row().template resolve<tyr::formalism::Object>().front().get_name();
+        const auto object = atom.row().template resolve<tyr::formalism::Object>().front().name();
         if (object == "truck-1")
         {
             first_assignments.predicate.insert(atom);
@@ -420,7 +420,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
             for (ygg::uint_t p = 0; p < clique.size(); ++p)
             {
                 const auto object = urd::index<tyr::formalism::Object>(layout.label(clique[p]));
-                binding[p] = urd::resolve(object, program.get_program_repository()).get_name().str();
+                binding[p] = urd::resolve(object, program.get_program_repository()).name().str();
             }
             result.push_back(std::move(binding));
         };
@@ -493,7 +493,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<LiftedTag>>(task, sequential_context);
     auto state_repository = tyr::planning::StateRepository<LiftedTag>::create(task);
     auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, sequential_context);
-    const auto initial_state = successor_generator->get_initial_node(*state_repository, *axiom_evaluator).get_state();
+    const auto initial_state = successor_generator->get_initial_node(*state_repository, *axiom_evaluator).state();
 
     auto sequential_heuristic = tyr::planning::FFRPGHeuristic<LiftedTag>::create(task, sequential_context);
     auto parallel_heuristic = tyr::planning::FFRPGHeuristic<LiftedTag>::create(task, parallel_context);
@@ -538,7 +538,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
                     objects.push_back(ygg::uint_t(object));
 
                 const auto* annotation = workspace.annotations.find(binding);
-                result.emplace_back(ygg::uint_t(binding.get_relation().index()),
+                result.emplace_back(ygg::uint_t(binding.relation().index()),
                                     std::move(objects),
                                     annotation ? std::optional<tyr::datalog::Cost>(tyr::datalog::get_cost(*annotation)) : std::nullopt);
             }

@@ -94,13 +94,13 @@ ground(AxiomView<LiftedTag> element, GroundingContext<Builder, Repository>& cont
 inline urd::data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
     const auto fact = fdr.get_fact(ground(element, context).first);
-    return urd::make<FDRFact<FluentTag>>(fact.get_variable(), fact.get_value());
+    return urd::make<FDRFact<FluentTag>>(fact.variable(), fact.value());
 }
 
 inline urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
-    auto fact = ground(element.get_atom(), context, fdr);
-    if (!element.get_polarity())
+    auto fact = ground(element.atom(), context, fdr);
+    if (!element.polarity())
         fact.value = FDRValue::none();
 
     return fact;
@@ -109,62 +109,54 @@ inline urd::data<FDRFact<FluentTag>> ground(LiteralView<LiftedTag, FluentTag> el
 inline std::pair<ConjunctiveConditionView<GroundTag>, bool>
 ground(ConjunctiveConditionView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
-    // Fetch and clear
     auto conj_cond = checkout<ConjunctiveCondition<GroundTag>>(context.builder());
 
-    // Fill data
-    for (const auto literal : element.template get_literals<StaticTag>())
+    for (const auto literal : element.template literals<StaticTag>())
         urd::append(conj_cond->static_literals, ground(literal, context).first);
-    for (const auto literal : element.template get_literals<FluentTag>())
+    for (const auto literal : element.template literals<FluentTag>())
     {
-        if (literal.get_polarity())
-            urd::build_member(conj_cond->positive_facts.emplace_back(), ground(literal.get_atom(), context, fdr), context.destination());
+        if (literal.polarity())
+            urd::build_member(conj_cond->positive_facts.emplace_back(), ground(literal.atom(), context, fdr), context.destination());
         else
-            urd::build_member(conj_cond->negative_facts.emplace_back(), ground(literal.get_atom(), context, fdr), context.destination());
+            urd::build_member(conj_cond->negative_facts.emplace_back(), ground(literal.atom(), context, fdr), context.destination());
     }
-    for (const auto literal : element.template get_literals<DerivedTag>())
+    for (const auto literal : element.template literals<DerivedTag>())
         urd::append(conj_cond->derived_literals, ground(literal, context).first);
-    for (const auto numeric_constraint : element.get_numeric_constraints())
+    for (const auto numeric_constraint : element.numeric_constraints())
         urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, context).first);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*conj_cond, context.builder());
 }
 
 inline std::pair<ConjunctiveEffectView<GroundTag>, bool>
 ground(ConjunctiveEffectView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
-    // Fetch and clear
     auto conj_eff = checkout<ConjunctiveEffect<GroundTag>>(context.builder());
 
-    for (const auto literal : element.get_literals())
+    for (const auto literal : element.literals())
     {
-        const auto new_fact = ground(literal.get_atom(), context, fdr);
-        if (literal.get_polarity())
+        const auto new_fact = ground(literal.atom(), context, fdr);
+        if (literal.polarity())
             urd::build_member(conj_eff->add_facts.emplace_back(), new_fact, context.destination());
         else
             urd::build_member(conj_eff->del_facts.emplace_back(), new_fact, context.destination());
     }
-    for (const auto numeric_effect : element.get_numeric_effects())
+    for (const auto numeric_effect : element.numeric_effects())
         urd::append(conj_eff->numeric_effects, ground(numeric_effect, context).first);
-    if (element.get_auxiliary_numeric_effect().has_value())
-        urd::store(conj_eff->auxiliary_numeric_effect, ground(element.get_auxiliary_numeric_effect().value(), context).first);
+    if (element.auxiliary_numeric_effect().has_value())
+        urd::store(conj_eff->auxiliary_numeric_effect, ground(element.auxiliary_numeric_effect().value(), context).first);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*conj_eff, context.builder());
 }
 
 inline std::pair<ConditionalEffectView<GroundTag>, bool>
 ground(ConditionalEffectView<LiftedTag> element, GroundingContext<Builder, Repository>& context, FDRContext& fdr)
 {
-    // Fetch and clear
     auto cond_effect = checkout<ConditionalEffect<GroundTag>>(context.builder());
 
-    // Fill data
-    urd::store(cond_effect->condition, ground(element.get_condition(), context, fdr).first);
-    urd::store(cond_effect->effect, ground(element.get_effect(), context, fdr).first);
+    urd::store(cond_effect->condition, ground(element.condition(), context, fdr).first);
+    urd::store(cond_effect->effect, ground(element.effect(), context, fdr).first);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*cond_effect, context.builder());
 }
 
@@ -173,10 +165,9 @@ inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, Groun
     auto binding = checkout<ygg::Row<Action<LiftedTag>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(action, context));
-    for (ygg::uint_t i = 0; i < action.get_arity(); ++i)
+    for (ygg::uint_t i = 0; i < action.arity(); ++i)
         binding->values.push_back(context.binding()[i].value);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*binding, context.builder());
 }
 
@@ -186,10 +177,10 @@ namespace detail
 template<typename F>
 void for_each_outcome_effect(OutcomeView<LiftedTag> outcome, F& f)
 {
-    for (const auto effect : outcome.get_effects())
+    for (const auto effect : outcome.effects())
         f(effect);
-    for (const auto choice : outcome.get_choices())
-        for (const auto nested : choice.get_outcomes())
+    for (const auto choice : outcome.choices())
+        for (const auto nested : choice.outcomes())
             for_each_outcome_effect(nested, f);
 }
 
@@ -228,8 +219,8 @@ void ground_nested_choices(Choices choices,
 
     for (const auto choice : choices)
     {
-        const auto choice_arity = action_arity + choice.get_arity();
-        const auto outcomes = choice.get_outcomes();
+        const auto choice_arity = action_arity + choice.arity();
+        const auto outcomes = choice.outcomes();
 
         // The ground effects of each outcome per choice binding, in the order of the bindings' objects: a choice binding
         // is drawn where an effect of its outcomes (or of their nested choices) fires.
@@ -244,7 +235,7 @@ void ground_nested_choices(Choices choices,
         for (std::size_t o = 0; o < outcomes.size(); ++o)
         {
             const auto outcome = outcomes[static_cast<std::ptrdiff_t>(o)];
-            for (const auto effect : outcome.get_effects())
+            for (const auto effect : outcome.effects())
             {
                 set_binding(action_binding);
                 for_each_effect_binding(effect,
@@ -267,15 +258,15 @@ void ground_nested_choices(Choices choices,
                                                 static_cast<void>(group());
                                         });
             };
-            for (const auto nested_choice : outcome.get_choices())
-                for (const auto nested_outcome : nested_choice.get_outcomes())
+            for (const auto nested_choice : outcome.choices())
+                for (const auto nested_outcome : nested_choice.outcomes())
                     for_each_outcome_effect(nested_outcome, register_binding);
         }
 
         for (const auto& [choice_binding, outcome_effects] : groups)
         {
             set_binding(choice_binding);
-            const auto condition_or_nullopt = ground_condition(choice.get_condition());
+            const auto condition_or_nullopt = ground_condition(choice.condition());
             if (!condition_or_nullopt)
                 continue;
 
@@ -287,7 +278,7 @@ void ground_nested_choices(Choices choices,
                 auto outcome = checkout<Outcome<GroundTag>>(context.builder());
                 for (const auto effect : outcome_effects[o])
                     urd::append(outcome->effects, effect);
-                ground_nested_choices(outcomes[static_cast<std::ptrdiff_t>(o)].get_choices(),
+                ground_nested_choices(outcomes[static_cast<std::ptrdiff_t>(o)].choices(),
                                       choice_binding,
                                       action_arity,
                                       context,
@@ -300,7 +291,7 @@ void ground_nested_choices(Choices choices,
             }
             if (!changes)
                 continue;
-            for (const auto probability : choice.get_probabilities())
+            for (const auto probability : choice.probabilities())
                 ground_choice->probabilities.push_back(probability);
             urd::append(out, context.destination().insert(*ground_choice, context.builder()).first);
         }
@@ -350,8 +341,8 @@ std::optional<TemporalPartView<GroundTag>> ground_temporal_part(TemporalPartView
                                                                 GroundCondition ground_condition,
                                                                 GroundEffect ground_effect)
 {
-    const auto over_all = ground_condition(element.get_over_all());
-    const auto end_condition = ground_condition(element.get_end_condition());
+    const auto over_all = ground_condition(element.over_all());
+    const auto end_condition = ground_condition(element.end_condition());
     if (!over_all || !end_condition)
         return std::nullopt;
 
@@ -361,20 +352,20 @@ std::optional<TemporalPartView<GroundTag>> ground_temporal_part(TemporalPartView
         for (const auto bound : lifted)
             urd::store(ground_bounds_out.emplace_back(), ground(bound, context));
     };
-    ground_bounds(element.get_min_durations(), part->min_durations);
-    ground_bounds(element.get_max_durations(), part->max_durations);
-    ground_bounds(element.get_end_min_durations(), part->end_min_durations);
-    ground_bounds(element.get_end_max_durations(), part->end_max_durations);
+    ground_bounds(element.min_durations(), part->min_durations);
+    ground_bounds(element.max_durations(), part->max_durations);
+    ground_bounds(element.end_min_durations(), part->end_min_durations);
+    ground_bounds(element.end_max_durations(), part->end_max_durations);
     urd::store(part->over_all, *over_all);
     urd::store(part->end_condition, *end_condition);
-    for (const auto effect : element.get_end_effects())
+    for (const auto effect : element.end_effects())
         for_each_effect_binding(effect,
                                 [&]
                                 {
                                     if (const auto ground_effect_or_nullopt = ground_effect(effect))
                                         urd::append(part->end_effects, *ground_effect_or_nullopt);
                                 });
-    ground_choices(element.get_end_choices(), context, for_each_effect_binding, ground_condition, ground_effect, part->end_choices);
+    ground_choices(element.end_choices(), context, for_each_effect_binding, ground_condition, ground_effect, part->end_choices);
     return context.destination().insert(*part, context.builder()).first;
 }
 
@@ -386,15 +377,15 @@ ground(ActionView<LiftedTag> element, GroundingContext<Builder, Repository>& con
 
     auto action = checkout<Action<GroundTag>>(context.builder());
 
-    action->row.template emplace<0>(binding);
-    urd::store(action->condition, ground(element.get_condition(), context, fdr).first);
+    urd::store(action->row, binding);
+    urd::store(action->condition, ground(element.condition(), context, fdr).first);
 
-    for (const auto cond_effect : element.get_effects())
+    for (const auto cond_effect : element.effects())
         for_each_effect_binding(cond_effect, [&] { urd::append(action->effects, ground(cond_effect, context, fdr).first); });
     const auto ground_condition = [&](ConjunctiveConditionView<LiftedTag> condition) { return std::optional(ground(condition, context, fdr).first); };
     const auto ground_effect = [&](ConditionalEffectView<LiftedTag> effect) { return std::optional(ground(effect, context, fdr).first); };
-    ground_choices(element.get_choices(), context, for_each_effect_binding, ground_condition, ground_effect, action->choices);
-    if (const auto temporal_part = element.get_temporal_part(); temporal_part.has_value())
+    ground_choices(element.choices(), context, for_each_effect_binding, ground_condition, ground_effect, action->choices);
+    if (const auto temporal_part = element.temporal_part(); temporal_part.has_value())
     {
         // Unpruned: its conditions always ground.
         if (const auto ground_part = ground_temporal_part(*temporal_part, context, for_each_effect_binding, ground_condition, ground_effect))
@@ -409,10 +400,9 @@ inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, Groundin
     auto binding = checkout<ygg::Row<Axiom<LiftedTag>>>(context.builder());
 
     urd::store(binding->relation, schema_in_destination(axiom, context));
-    for (ygg::uint_t i = 0; i < axiom.get_body().get_arity(); ++i)
+    for (ygg::uint_t i = 0; i < axiom.body().arity(); ++i)
         binding->values.push_back(context.binding()[i].value);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*binding, context.builder());
 }
 
@@ -427,9 +417,9 @@ ground(AxiomView<LiftedTag> element, GroundingContext<Builder, Repository>& cont
 
     auto axiom = checkout<Axiom<GroundTag>>(context.builder());
 
-    axiom->row.template emplace<0>(binding);
-    urd::store(axiom->body, ground(element.get_body(), context, fdr).first);
-    urd::store(axiom->head, ground(element.get_head(), context).first);
+    urd::store(axiom->row, binding);
+    urd::store(axiom->body, ground(element.body(), context, fdr).first);
+    urd::store(axiom->head, ground(element.head(), context).first);
 
     const auto result = context.destination().insert(*axiom, context.builder());
 

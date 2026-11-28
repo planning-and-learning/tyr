@@ -42,7 +42,6 @@ struct builder<::tyr::formalism::Literal<T, F>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atom", &builder::atom>, urd::field<"polarity", &builder::polarity>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::atom, &builder::polarity> {}; }
 };
 
 }  // namespace urd

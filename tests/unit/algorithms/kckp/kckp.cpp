@@ -46,22 +46,22 @@ using FakeTermView = std::variant<FakeObjectView, ygg::uint_t>;
 
 struct FakeAtomView
 {
-    FakePredicateView predicate;
-    urd::Store<urd::sequence<FakeTermView>> terms;
+    FakePredicateView predicate_;
+    urd::Store<urd::sequence<FakeTermView>> terms_;
 
-    [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
+    [[nodiscard]] FakePredicateView predicate() const noexcept { return predicate_; }
 
-    [[nodiscard]] const auto& get_terms() const noexcept { return terms; }
+    [[nodiscard]] const auto& terms() const noexcept { return terms_; }
 };
 
 struct FakeLiteralView
 {
-    bool polarity;
-    FakeAtomView atom;
+    bool polarity_;
+    FakeAtomView atom_;
 
-    [[nodiscard]] bool get_polarity() const noexcept { return polarity; }
+    [[nodiscard]] bool polarity() const noexcept { return polarity_; }
 
-    [[nodiscard]] const FakeAtomView& get_atom() const noexcept { return atom; }
+    [[nodiscard]] const FakeAtomView& atom() const noexcept { return atom_; }
 };
 
 struct FakeRow
@@ -76,12 +76,12 @@ struct FakeRow
 
 struct FakeGroundAtomView
 {
-    FakePredicateView predicate;
-    FakeRow row;
+    FakePredicateView predicate_;
+    FakeRow row_;
 
-    [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
+    [[nodiscard]] FakePredicateView predicate() const noexcept { return predicate_; }
 
-    [[nodiscard]] const FakeRow& get_row() const noexcept { return row; }
+    [[nodiscard]] const FakeRow& row() const noexcept { return row_; }
 };
 
 FakeTermView parameter(ygg::uint_t index) { return FakeTermView(index); }
@@ -95,7 +95,7 @@ FakeGroundAtomView atom(ygg::uint_t predicate, std::initializer_list<ygg::uint_t
 {
     auto result = FakeGroundAtomView { FakePredicateView { predicate }, {} };
     for (const auto object : objects)
-        result.row.objects.push_back(FakeObjectView { Object(object) });
+        result.row_.objects.push_back(FakeObjectView { Object(object) });
     return result;
 }
 

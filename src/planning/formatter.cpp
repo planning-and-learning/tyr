@@ -37,7 +37,7 @@
 
 namespace
 {
-/// A state's view written: its atoms, facts and numeric values (and its index, where it has one).
+/// A state's view written: its atoms, facts and numeric values.
 template<typename State>
 fmt::format_context::iterator write_state(const State& value, fmt::format_context& ctx)
 {
@@ -45,23 +45,18 @@ fmt::format_context::iterator write_state(const State& value, fmt::format_contex
     os << "State(\n";
     {
         ygg::IndentScope scope(os);
-        if constexpr (requires { value.index(); })
-        {
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.index());
-        }
         os << ygg::print_indent;
-        fmt::print(os, "static atoms = [{}]\n", fmt::join(value.template get_atoms<::tyr::formalism::StaticTag>(), ", "));
+        fmt::print(os, "static atoms = [{}]\n", fmt::join(value.template atoms<::tyr::formalism::StaticTag>(), ", "));
         os << ygg::print_indent;
         fmt::print(os,
                    "fluent atoms = [{}]\n",
-                   fmt::join(value.get_fluent_facts() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
+                   fmt::join(value.fluent_facts() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
         os << ygg::print_indent;
-        fmt::print(os, "derived atoms = [{}]\n", fmt::join(value.template get_atoms<::tyr::formalism::DerivedTag>(), ", "));
+        fmt::print(os, "derived atoms = [{}]\n", fmt::join(value.template atoms<::tyr::formalism::DerivedTag>(), ", "));
         os << ygg::print_indent;
-        fmt::print(os, "static numeric variables = [{}]\n", fmt::join(value.template get_fterm_values<::tyr::formalism::StaticTag>(), ", "));
+        fmt::print(os, "static numeric variables = [{}]\n", fmt::join(value.template fterm_values<::tyr::formalism::StaticTag>(), ", "));
         os << ygg::print_indent;
-        fmt::print(os, "fluent numeric variables = [{}]\n", fmt::join(value.template get_fterm_values<::tyr::formalism::FluentTag>(), ", "));
+        fmt::print(os, "fluent numeric variables = [{}]\n", fmt::join(value.template fterm_values<::tyr::formalism::FluentTag>(), ", "));
     }
 
     os << ygg::print_indent << ")";
@@ -171,13 +166,13 @@ fmt::format_context::iterator fmt::formatter<tyr::planning::siw::Statistics<Kind
 }
 
 template<::tyr::TaskKind Kind, typename R>
-fmt::format_context::iterator fmt::formatter<urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>>::format(
-    const urd::borrowed_view<tyr::planning::Plan<Kind>, tyr::planning::StateRepository<Kind>, R>& value,
+fmt::format_context::iterator fmt::formatter<urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>>::format(
+    const urd::borrowed_view<tyr::planning::Plan<tyr::planning::DeterministicTag, Kind>, tyr::planning::StateRepository<Kind>, R>& value,
     fmt::format_context& ctx) const
 {
     auto out = ctx.out();
-    for (const auto& labeled_node : value.get_labeled_succ_nodes())
-        urd::visit_view(labeled_node.get_label(),
+    for (const auto& labeled_node : value.labeled_succ_nodes())
+        urd::visit_view(labeled_node.label(),
                         [&](const auto& label) { out = fmt::format_to(out, "{}\n", std::make_pair(label, tyr::formalism::PlanFormatting())); });
     return out;
 }
@@ -194,13 +189,13 @@ fmt::format_context::iterator fmt::formatter<::tyr::planning::StateBuilderView<K
 
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::GroundTag>>;
 template struct fmt::formatter<tyr::planning::siw::Statistics<::tyr::GroundTag>>;
-template struct fmt::formatter<tyr::planning::PlanBuilderView<::tyr::GroundTag>>;
-template struct fmt::formatter<tyr::planning::PlanRecordView<::tyr::GroundTag>>;
+template struct fmt::formatter<tyr::planning::PlanBuilderView<tyr::planning::DeterministicTag, ::tyr::GroundTag>>;
+template struct fmt::formatter<tyr::planning::PlanRecordView<tyr::planning::DeterministicTag, ::tyr::GroundTag>>;
 template struct fmt::formatter<::tyr::planning::SharedStateBuilderView<::tyr::GroundTag>>;
 template struct fmt::formatter<::tyr::planning::StateBuilderView<::tyr::GroundTag>>;
 template struct fmt::formatter<tyr::planning::iw::Statistics<::tyr::LiftedTag>>;
 template struct fmt::formatter<tyr::planning::siw::Statistics<::tyr::LiftedTag>>;
-template struct fmt::formatter<tyr::planning::PlanBuilderView<::tyr::LiftedTag>>;
-template struct fmt::formatter<tyr::planning::PlanRecordView<::tyr::LiftedTag>>;
+template struct fmt::formatter<tyr::planning::PlanBuilderView<tyr::planning::DeterministicTag, ::tyr::LiftedTag>>;
+template struct fmt::formatter<tyr::planning::PlanRecordView<tyr::planning::DeterministicTag, ::tyr::LiftedTag>>;
 template struct fmt::formatter<::tyr::planning::SharedStateBuilderView<::tyr::LiftedTag>>;
 template struct fmt::formatter<::tyr::planning::StateBuilderView<::tyr::LiftedTag>>;

@@ -108,7 +108,15 @@ brokkr_install_python_files(
         pytyr/datalog/lifted/__init__.py
         pytyr/planning/__init__.py
         pytyr/planning/ground/__init__.py
+        pytyr/planning/ground/deterministic/__init__.py
+        pytyr/planning/ground/general/__init__.py
+        pytyr/planning/ground/nondeterministic/__init__.py
+        pytyr/planning/ground/probabilistic/__init__.py
         pytyr/planning/lifted/__init__.py
+        pytyr/planning/lifted/deterministic/__init__.py
+        pytyr/planning/lifted/general/__init__.py
+        pytyr/planning/lifted/nondeterministic/__init__.py
+        pytyr/planning/lifted/probabilistic/__init__.py
         pytyr/planning/algorithms/__init__.py
         pytyr/planning/algorithms/astar_eager/__init__.py
         pytyr/planning/algorithms/astar_eager/ground/__init__.py

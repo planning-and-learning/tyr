@@ -78,17 +78,17 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
     // Appends the literals and numeric constraints of a planning condition to a rule's body: the task's records.
     const auto append_condition = [&](auto condition, auto& conj_cond)
     {
-        for (const auto literal : condition.template get_literals<formalism::StaticTag>())
+        for (const auto literal : condition.template literals<formalism::StaticTag>())
             urd::append(conj_cond.static_literals, literal);
-        for (const auto literal : condition.template get_literals<formalism::FluentTag>())
+        for (const auto literal : condition.template literals<formalism::FluentTag>())
             urd::append(conj_cond.fluent_literals, literal);
-        for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
+        for (const auto literal : condition.template literals<formalism::DerivedTag>())
             urd::append(conj_cond.derived_literals, literal);
-        for (const auto numeric_constraint : condition.get_numeric_constraints())
+        for (const auto numeric_constraint : condition.numeric_constraints())
             urd::append(conj_cond.numeric_constraints, numeric_constraint);
     };
 
-    for (const auto action : task.get_domain().get_actions())
+    for (const auto action : task.domain().actions())
     {
         const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -99,9 +99,9 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
 
         // The action's rule: its body is the action's precondition.
         auto rule = formalism::checkout<formalism::Rule<LiftedTag>>(builder);
-        for (const auto variable : action.get_variables())
+        for (const auto variable : action.variables())
             urd::append(rule->variables, variable);
-        urd::store(rule->body, action.get_condition());
+        urd::store(rule->body, action.condition());
         urd::append(rule->derived_heads, create_applicability_atom(action, context).first);
         urd::append(program->rules, repository.insert(*rule, builder).first);
 
@@ -110,24 +110,24 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
         const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> cond_eff)
         {
             // An effect without variables and condition fires with its action.
-            if ((cond_eff.get_variables().empty() && cond_eff.get_condition().empty()) || effect_to_predicate.contains(std::pair(action, cond_eff)))
+            if ((cond_eff.variables().empty() && cond_eff.condition().empty()) || effect_to_predicate.contains(std::pair(action, cond_eff)))
                 return;
-            const auto condition = cond_eff.get_condition();
+            const auto condition = cond_eff.condition();
 
             auto effect_predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(builder);
             effect_predicate->name = create_triggered_name(action, cond_eff);
-            effect_predicate->arity = action.get_arity() + cond_eff.get_arity();
+            effect_predicate->arity = action.arity() + cond_eff.arity();
             const auto new_effect_predicate = repository.insert(*effect_predicate, builder).first;
             urd::append(program->derived_predicates, new_effect_predicate);
 
             auto effect_rule = formalism::checkout<formalism::Rule<LiftedTag>>(builder);
             auto effect_condition = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
-            for (const auto variable : action.get_variables())
+            for (const auto variable : action.variables())
                 urd::append(effect_condition->variables, variable);
-            for (const auto variable : cond_eff.get_variables())
+            for (const auto variable : cond_eff.variables())
                 urd::append(effect_condition->variables, variable);
             urd::build_member(effect_rule->variables, effect_condition->variables, repository);
-            append_condition(action.get_condition(), *effect_condition);
+            append_condition(action.condition(), *effect_condition);
             append_condition(condition, *effect_condition);
             urd::store(effect_rule->body, repository.insert(*effect_condition, builder).first);
 
@@ -136,7 +136,7 @@ auto create_action_program(formalism::TaskView<LiftedTag> task,
             auto effect_atom = formalism::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(builder);
             urd::store(effect_atom->parameters, repository.insert(*effect_parameters, builder).first);
             urd::store(effect_atom->predicate, new_effect_predicate);
-            for (ygg::uint_t i = 0; i < new_effect_predicate.get_arity(); ++i)
+            for (ygg::uint_t i = 0; i < new_effect_predicate.arity(); ++i)
                 urd::build_member(effect_atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), repository);
             urd::append(effect_rule->derived_heads, repository.insert(*effect_atom, builder).first);
 
@@ -166,8 +166,8 @@ auto create_action_datalog_program(const formalism::PlanningTask<LiftedTag>& pla
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
     auto rule_of = urd::Store<urd::map<formalism::PredicateView<formalism::DerivedTag>, urd::index<formalism::Rule<LiftedTag>>>> {};
-    for (const auto rule : program.get_rules())
-        rule_of.emplace(rule.get_derived_heads().front().get_predicate(), rule.index());
+    for (const auto rule : program.rules())
+        rule_of.emplace(rule.derived_heads().front().predicate(), rule.index());
     auto schema = formalism::checkout<formalism::Program<LiftedTag>>(builder);
     formalism::list_except_rules(program, *schema);
     for (const auto& [predicate, action] : mapping)
@@ -193,31 +193,31 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::ProgramView<Lif
     strata(analysis::compute_rule_stratification(program)),
     listeners(analysis::compute_listeners(strata, program.context()))
 {
-    const auto rules = program.get_rules();
+    const auto rules = program.rules();
     const auto reads_predicate = [&]<typename F>(formalism::PredicateView<F> predicate)
     {
         // Negative literals also need the complete relation to check absence.
         return std::ranges::any_of(rules,
                                    [&](auto rule)
                                    {
-                                       return std::ranges::any_of(rule.get_body().template get_literals<F>(),
-                                                                  [&](auto literal) { return literal.get_atom().get_predicate() == predicate; });
+                                       return std::ranges::any_of(rule.body().template literals<F>(),
+                                                                  [&](auto literal) { return literal.atom().predicate() == predicate; });
                                    });
     };
     // The program lists the task's fluent and derived predicates (and its own derived ones, which no state holds).
-    for (const auto predicate : program.get_predicates<formalism::FluentTag>())
+    for (const auto predicate : program.predicates<formalism::FluentTag>())
         if (reads_predicate(predicate))
             inputs.fluent_predicates.insert(predicate);
-    for (const auto predicate : program.get_predicates<formalism::DerivedTag>())
+    for (const auto predicate : program.predicates<formalism::DerivedTag>())
         if (reads_predicate(predicate))
             inputs.derived_predicates.insert(predicate);
 
     for (const auto rule : rules)
     {
         auto function_reads = urd::Store<urd::set<formalism::FunctionTermView<LiftedTag, formalism::FluentTag>>> {};
-        formalism::collect_reads(rule.get_body(), function_reads);
-        for (const auto function : program.get_functions<formalism::FluentTag>())
-            if (std::ranges::any_of(function_reads, [&](auto term) { return term.get_function() == function; }))
+        formalism::collect_reads(rule.body(), function_reads);
+        for (const auto function : program.functions<formalism::FluentTag>())
+            if (std::ranges::any_of(function_reads, [&](auto term) { return term.function() == function; }))
                 inputs.fluent_functions.insert(function);
     }
 }

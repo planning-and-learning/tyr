@@ -30,8 +30,8 @@ concept UnaryOperatorContract = std::constructible_from<urd::index<Entity>, ygg:
                                        { data.operation } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>&>;
                                        { data == data } -> std::same_as<bool>;
                                        view.index();
-                                       { view.get_operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
-                                       view.get_arg();
+                                       { view.operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
+                                       view.operand();
                                        { view == view } -> std::same_as<bool>;
                                        { view < view } -> std::same_as<bool>;
                                    };

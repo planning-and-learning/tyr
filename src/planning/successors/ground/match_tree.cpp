@@ -429,9 +429,9 @@ template<typename Tag>
 void push_result(GeneratorStackEntry<Tag>&, const Node<Tag>&, const Repository<Tag>&)
 { throw std::logic_error("Unexpected case."); }
 
-inline auto get_condition(formalism::AxiomView<GroundTag> el) { return el.get_body(); }
+inline auto get_condition(formalism::AxiomView<GroundTag> el) { return el.body(); }
 
-inline auto get_condition(formalism::ActionView<GroundTag> el) { return el.get_condition(); }
+inline auto get_condition(formalism::ActionView<GroundTag> el) { return el.condition(); }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> atom,
@@ -485,7 +485,7 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(formalism:
 {
     assert(!base.elements.empty());
 
-    const auto domain_size = variable.get_domain_size();
+    const auto domain_size = variable.domain_size();
 
     auto category = [&](ElementView<Tag> e) -> ygg::uint_t
     {
@@ -677,28 +677,28 @@ MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalis
 
         details.try_emplace(element);  //
 
-        for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
+        for (const auto fact : condition.template facts<formalism::PositiveTag>())
         {
-            const auto key = fact.get_variable();
+            const auto key = fact.variable();
             occurrences[key].push_back(element);
-            details[element][key] = fact.get_value();
+            details[element][key] = fact.value();
         }
 
-        for (const auto fact : condition.template get_facts<formalism::NegativeTag>())
+        for (const auto fact : condition.template facts<formalism::NegativeTag>())
         {
-            const auto key = urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value());
+            const auto key = urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.variable(), fact.value());
             occurrences[key].push_back(element);
             details[element][key] = std::monostate {};
         }
 
-        for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
+        for (const auto literal : condition.template literals<formalism::DerivedTag>())
         {
-            const auto key = literal.get_atom().index();
+            const auto key = literal.atom().index();
             occurrences[key].push_back(element);
-            details[element][key] = literal.get_polarity();
+            details[element][key] = literal.polarity();
         }
 
-        for (const auto constraint : condition.get_numeric_constraints())
+        for (const auto constraint : condition.numeric_constraints())
         {
             const auto key = constraint.index();
             occurrences[key].push_back(element);
@@ -828,52 +828,52 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
 
                 if constexpr (std::is_same_v<Handle, urd::index<AtomSelectorNode<Tag>>>)
                 {
-                    const auto holds = state.atom_storage().test(arg.get_atom().index());
+                    const auto holds = state.atom_storage().test(arg.atom().index());
 
-                    if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
+                    if (const auto child = holds ? arg.true_child() : arg.false_child())
                         stack.push(*child);
 
-                    if (const auto child = arg.get_dontcare_child())
+                    if (const auto child = arg.dontcare_child())
                         stack.push(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, urd::index<NumericConstraintSelectorNode<Tag>>>)
                 {
-                    const auto holds = evaluate(arg.get_constraint(), state);
+                    const auto holds = evaluate(arg.constraint(), state);
 
                     if (holds)
-                        if (const auto child = arg.get_true_child())
+                        if (const auto child = arg.true_child())
                             stack.push(*child);
 
-                    if (const auto child = arg.get_dontcare_child())
+                    if (const auto child = arg.dontcare_child())
                         stack.push(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, urd::index<VariableSelectorNode<Tag>>>)
                 {
-                    const auto value = state.fact_storage().get(arg.get_variable().index());
-                    const auto children = arg.get_domain_children();
+                    const auto value = state.fact_storage().get(arg.variable().index());
+                    const auto children = arg.domain_children();
                     assert(value.value < children.size());
 
                     if (const auto child = children[value.value])
                         stack.push(*child);
 
-                    if (const auto child = arg.get_dontcare_child())
+                    if (const auto child = arg.dontcare_child())
                         stack.push(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, urd::index<NegativeFactSelectorNode<Tag>>>)
                 {
-                    const auto fact = arg.get_fact();
-                    const auto holds = state.fact_storage().get(fact.get_variable().index()) != fact.get_value();
+                    const auto fact = arg.fact();
+                    const auto holds = state.fact_storage().get(fact.variable().index()) != fact.value();
 
                     if (holds)
-                        if (const auto child = arg.get_true_child())
+                        if (const auto child = arg.true_child())
                             stack.push(*child);
 
-                    if (const auto child = arg.get_dontcare_child())
+                    if (const auto child = arg.dontcare_child())
                         stack.push(*child);
                 }
                 else if constexpr (std::is_same_v<Handle, urd::index<ElementGeneratorNode<Tag>>>)
                 {
-                    for (const auto element : arg.get_elements())
+                    for (const auto element : arg.elements())
                         out_applicable_elements.push_back(element);
                 }
                 else

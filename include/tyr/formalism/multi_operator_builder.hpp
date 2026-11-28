@@ -38,11 +38,10 @@ struct builder<::tyr::formalism::MultiOperator<T, O>, C>
 {
     urd::key<::tyr::formalism::MultiOperator<T, O>> index;
     urd::built_t<O, C> operation = O::Add;
-    urd::built_t<urd::flat_vector<::tyr::formalism::FunctionExpression<T>>, C> args;
+    urd::built_t<urd::flat_vector<::tyr::formalism::FunctionExpression<T>>, C> operands;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"args", &builder::args>> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"operands", &builder::operands>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operation, &builder::args> {}; }
 };
 
 }  // namespace urd

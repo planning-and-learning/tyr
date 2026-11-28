@@ -42,15 +42,15 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_parameters() const noexcept
+    auto parameters() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::parameters>(); }
 
-    auto get_predicate() const noexcept
+    auto predicate() const noexcept
     {
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
         {
-            return get_row().get_relation();
+            return row().relation();
         }
         else
         {
@@ -58,18 +58,18 @@ public:
         }
     }
 
-    auto get_terms() const noexcept
+    auto terms() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::terms>(); }
 
-    auto get_row() const noexcept
+    auto row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::row>(); }
 
     static constexpr auto functions() noexcept
     {
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
-            return urd::Functions<urd::function<"get_predicate", &view_mixin::get_predicate>> {};
+            return urd::Functions<urd::function<"predicate", &view_mixin::predicate>> {};
         else
             return urd::Functions<> {};
     }

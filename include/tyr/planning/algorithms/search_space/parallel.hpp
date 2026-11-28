@@ -84,7 +84,7 @@ template<>
 struct PlanReconstructionPolicy<ParallelSearch>
 {
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
-    static PlanBuilder<Kind> extract_total_ordered_plan(WorkerStateIndex<Kind> final_state,
+    static PlanBuilder<DeterministicTag, Kind> extract_total_ordered_plan(WorkerStateIndex<Kind> final_state,
                                                  std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers,
                                                  StateRepository<Kind>& caller_state_repository,
                                                  AxiomEvaluator<Kind>& caller_axiom_evaluator,
@@ -108,7 +108,6 @@ struct PlanReconstructionPolicy<ParallelSearch>
 
         auto labels = urd::Store<urd::sequence<formalism::ActionRowView>> {};
         labels.reserve(trajectory.size() - 1);
-        auto delta = StateDelta {};
         auto builder = formalism::Builder {};
 
         for (size_t i = 1; i < trajectory.size(); ++i)
@@ -127,19 +126,18 @@ struct PlanReconstructionPolicy<ParallelSearch>
             source_node.metric = source_search_node.g_value;
             const auto source_view = urd::resolve(source_node, repository);
             auto found = false;
-            generator.for_each_applicable_action_binding(
+            for_each_successor<DeterministicTag>(
+                generator,
                 source_view,
-                {},
-                [&](ActionBindingView<Kind> binding)
+                [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor_state)
                 {
-                    auto state = ::tyr::planning::get_state_builder(repository);
-                    const auto auxiliary_value = generator.generate_successor_state(source_view, binding, *state, delta);
-                    const auto successor =
-                        register_successor(repository, source_worker.axiom_evaluator(), std::move(state), auxiliary_value, source_view, delta);
+                    find_successor(repository, source_view, successor_state);
+                    extend_successor(source_worker.axiom_evaluator(), source_view, successor_state);
+                    const auto successor = register_successor(repository, source_view, successor_state);
                     const auto g_value = compute_successor_g_value(source_search_node.g_value, successor.metric, action_cost_mode);
-                    if (g_value != target_search_node.g_value || !equal_unextended(urd::resolve(successor, repository).get_state(), target_view))
+                    if (g_value != target_search_node.g_value || !equal_unextended(urd::resolve(successor, repository).state(), target_view))
                         return true;
-                    labels.push_back(intern_action_binding(generator, builder, binding));
+                    labels.push_back(intern_action_binding(generator, builder, transition.binding.value()));
                     found = true;
                     return false;
                 });
@@ -147,7 +145,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
                 throw std::logic_error("Plan reconstruction could not reproduce a worker transition.");
         }
 
-        auto plan = PlanBuilder<Kind>();
+        auto plan = PlanBuilder<DeterministicTag, Kind>();
         plan.start_node = get_node(caller_state_repository, materialize(trajectory.front(), workers, caller_state_repository, caller_axiom_evaluator));
         plan.labeled_succ_nodes.reserve(labels.size());
         for (size_t i = 0; i < labels.size(); ++i)

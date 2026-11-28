@@ -95,7 +95,6 @@ void bind_kind_definitions(nb::module_& m)
 {
     bind_states<Kind>(m);
     bind_nodes<Kind>(m);
-    bind_plans<Kind>(m);
     bind_successors<Kind>(m);
     bind_axiom_evaluator<Kind>(m, "AxiomEvaluator");
     bind_state_repository<Kind>(m, "StateRepository");

@@ -67,10 +67,8 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
                            urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>> key() const noexcept
     { return urd::key<::tyr::planning::match_tree::AtomSelectorNode<Tag>>(index); }

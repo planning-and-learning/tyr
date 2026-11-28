@@ -122,10 +122,10 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), 1);
     EXPECT_EQ(tyr::tests::built_state(source_initial).pack().index(), tyr::tests::built_state(worker_initial).pack().index());
     EXPECT_EQ(tyr::tests::built_state(source_initial).pack().index(), tyr::tests::built_state(nested_initial).pack().index());
-    EXPECT_NE(source_initial.get_state(), worker_initial.get_state());
-    EXPECT_NE(source_initial.get_state(), nested_initial.get_state());
-    EXPECT_EQ(source_initial.get_metric(), worker_initial.get_metric());
-    EXPECT_EQ(source_initial.get_metric(), nested_initial.get_metric());
+    EXPECT_NE(source_initial.state(), worker_initial.state());
+    EXPECT_NE(source_initial.state(), nested_initial.state());
+    EXPECT_EQ(source_initial.metric(), worker_initial.metric());
+    EXPECT_EQ(source_initial.metric(), nested_initial.metric());
 
     auto initial_fdr_variable_count = size_t { 0 };
     if constexpr (std::same_as<Kind, LiftedTag>)
@@ -163,12 +163,12 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
     ASSERT_EQ(source_successors.size(), nested_successors.size());
     for (size_t i = 0; i < source_successors.size(); ++i)
     {
-        EXPECT_EQ(source_successors[i].get_label(), worker_successors[i].get_label());
-        EXPECT_EQ(source_successors[i].get_label(), nested_successors[i].get_label());
+        EXPECT_EQ(source_successors[i].label(), worker_successors[i].label());
+        EXPECT_EQ(source_successors[i].label(), nested_successors[i].label());
     }
 
-    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().get_label())), worker->ground_action(urd::interned_view(worker_successors.front().get_label())));
-    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().get_label())), nested->ground_action(urd::interned_view(nested_successors.front().get_label())));
+    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().label())), worker->ground_action(urd::interned_view(worker_successors.front().label())));
+    EXPECT_EQ(source->ground_action(urd::interned_view(source_successors.front().label())), nested->ground_action(urd::interned_view(nested_successors.front().label())));
     EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), ::tyr::planning::num_states(*worker_state_repository));
     EXPECT_EQ(::tyr::planning::num_states(*source_state_repository), ::tyr::planning::num_states(*nested_state_repository));
 
@@ -299,11 +299,11 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     const auto second_initial = second_initial_future.get();
     ASSERT_EQ(::tyr::planning::num_states(*first_repository), 1);
     ASSERT_EQ(::tyr::planning::num_states(*second_repository), 1);
-    EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
+    EXPECT_EQ(first_initial.state(), second_initial.state());
     EXPECT_EQ(tyr::tests::built_state(first_initial).pack(), tyr::tests::built_state(second_initial).pack());
     EXPECT_EQ(urd::Hash<tyr::planning::StateView<Kind>> {}(tyr::tests::built_state(first_initial).pack()),
               urd::Hash<tyr::planning::StateView<Kind>> {}(tyr::tests::built_state(second_initial).pack()));
-    EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
+    EXPECT_EQ(first_initial.metric(), second_initial.metric());
     EXPECT_FALSE(tyr::planning::register_extended_state(*source_repository, tyr::tests::built_state(second_initial))->index.is_none());
 
     auto novelty = tyr::planning::iw::NoveltyPruningStrategy<Kind>::create(0);
@@ -334,8 +334,8 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     const auto second_successor = second_future.get();
 
     EXPECT_EQ(tyr::tests::built_state(first_successor).pack().index(), urd::index<tyr::planning::State<Kind>>(1));
-    EXPECT_EQ(first_successor.get_state(), second_successor.get_state());
-    EXPECT_EQ(first_successor.get_metric(), second_successor.get_metric());
+    EXPECT_EQ(first_successor.state(), second_successor.state());
+    EXPECT_EQ(first_successor.metric(), second_successor.metric());
     EXPECT_EQ(::tyr::planning::num_states(*first_repository), 2);
     EXPECT_EQ(::tyr::planning::num_states(*second_repository), 2);
     EXPECT_EQ(::tyr::planning::share(*first_repository, ::tyr::planning::get_registered_state(*first_repository, tyr::tests::built_state(first_successor).pack().index())),

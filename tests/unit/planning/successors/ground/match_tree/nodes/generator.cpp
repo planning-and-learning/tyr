@@ -19,7 +19,7 @@ concept ElementGeneratorContract =
                 const urd::index_view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.elements;
-           view.get_elements();
+           view.elements();
        };
 
 using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::Action<::tyr::GroundTag>, tyr::formalism::Axiom<::tyr::GroundTag>>;
@@ -49,7 +49,7 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     const auto [view, inserted] = repository.insert(*data, builder);
     EXPECT_TRUE(inserted);
     EXPECT_EQ(&view.context(), &repository);
-    EXPECT_TRUE(view.get_elements().empty());
+    EXPECT_TRUE(view.elements().empty());
 
     const auto [duplicate, duplicate_inserted] = repository.insert(*data, builder);
     EXPECT_FALSE(duplicate_inserted);

@@ -150,7 +150,7 @@ class GoalAsDeadEndHeuristic final : public tyr::planning::Heuristic<Kind>
 public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
-    explicit GoalAsDeadEndHeuristic(tyr::planning::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal()) {}
+    explicit GoalAsDeadEndHeuristic(tyr::planning::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().goal()) {}
 
     void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) override { m_goal = goal; }
 
@@ -210,13 +210,13 @@ private:
 template<typename V>
 bool is_at_location(const V& state, const formalism::Repository& repository, std::string_view location)
 {
-    return std::ranges::any_of(state.get_fluent_fact_index_values(),
+    return std::ranges::any_of(state.fluent_fact_index_values(),
                                [&](const auto fact_data)
                                {
-                                   const auto atom = urd::resolve(urd::data<formalism::FDRFact<formalism::FluentTag>>(fact_data), repository).get_atom();
-                                   return atom && atom->get_predicate().get_name().str() == "at"
-                                          && atom->get_row().template resolve<tyr::formalism::Object>().size() == 2
-                                          && atom->get_row().template resolve<tyr::formalism::Object>().back().get_name().str() == location;
+                                   const auto atom = urd::resolve(urd::data<formalism::FDRFact<formalism::FluentTag>>(fact_data), repository).atom();
+                                   return atom && atom->predicate().name().str() == "at"
+                                          && atom->row().template resolve<tyr::formalism::Object>().size() == 2
+                                          && atom->row().template resolve<tyr::formalism::Object>().back().name().str() == location;
                                });
 }
 
@@ -338,7 +338,7 @@ public:
 
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
 
-    void on_solved(const tyr::planning::PlanBuilderView<Kind>&) override {}
+    void on_solved(const tyr::planning::PlanBuilderView<tyr::planning::DeterministicTag, Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
     { return std::make_unique<ReleasingAStarWorkerEventHandler<Kind>>(m_gate, m_expected); }
@@ -360,7 +360,7 @@ public:
 
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
 
-    void on_solved(const tyr::planning::PlanBuilderView<Kind>&) override {}
+    void on_solved(const tyr::planning::PlanBuilderView<tyr::planning::DeterministicTag, Kind>&) override {}
 };
 
 template<TaskKind Kind>
@@ -382,7 +382,7 @@ class GoalAsThrowingHeuristic final : public tyr::planning::Heuristic<Kind>
 public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
-    explicit GoalAsThrowingHeuristic(tyr::planning::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal()) {}
+    explicit GoalAsThrowingHeuristic(tyr::planning::TaskPtr<Kind> task) : m_task(std::move(task)), m_goal(m_task->get_task().goal()) {}
 
     void set_goal(formalism::ConjunctiveConditionView<GroundTag> goal) override { m_goal = goal; }
 
@@ -506,7 +506,7 @@ class SeedRecordingGoalStrategy final : public tyr::planning::GoalStrategy<Kind>
 
 public:
     SeedRecordingGoalStrategy(const tyr::planning::Task<Kind>& task, SeedIdentity expected_seed) :
-        m_goal(task.get_task().get_goal()),
+        m_goal(task.get_task().goal()),
         m_observations(std::make_shared<Observations>(std::move(expected_seed)))
     {
     }
@@ -587,7 +587,7 @@ void expect_astar_goal_precedes_heuristic(const tyr::planning::TaskPtr<Kind>& ta
                                                                           options);
             ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(result.plan->get_length(), 1);
+            EXPECT_EQ(result.plan->length(), 1);
         });
 }
 
@@ -605,7 +605,7 @@ void expect_sequential_astar_root_layer_statistics(const tyr::planning::TaskPtr<
 
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan.value().get_length(), 3);
+    EXPECT_EQ(result.plan.value().length(), 3);
     ASSERT_EQ(event_handler->snapshots.size(), 3);
 
     const auto expanded = urd::Store<urd::sequence<uint64_t>> { 1, 3, 4 };
@@ -644,7 +644,7 @@ void expect_astar_duplicate_pruning_preserves_open_state(const tyr::planning::Ta
                                                                           options);
             ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(result.plan->get_length(), 3);
+            EXPECT_EQ(result.plan->length(), 3);
         });
 }
 
@@ -669,7 +669,7 @@ void expect_astar_pruned_improvement_preserves_existing_state(const tyr::plannin
                                                                           options);
             ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(result.plan->get_cost(), 101);
+            EXPECT_EQ(result.plan->cost(), 101);
         });
 }
 
@@ -678,7 +678,7 @@ void expect_one_step_goal_result(const tyr::planning::SearchResult<Kind>& result
 {
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan.value().get_length(), 1);
+    EXPECT_EQ(result.plan.value().length(), 1);
     EXPECT_EQ(result.statistics.get_num_generated_successors(), 1);
     EXPECT_EQ(result.statistics.get_num_pruned(), 0);
 }
@@ -747,7 +747,7 @@ void expect_iw_goal_bypasses_novelty_pruning(const tyr::planning::TaskPtr<Kind>&
             const auto result = tyr::planning::iw::find_solution(solver, 1, options);
             ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(result.plan->get_length(), 3);
+            EXPECT_EQ(result.plan->length(), 3);
             const auto solution_arity = event_handler->get_statistics().get_solution_arity();
             ASSERT_TRUE(solution_arity);
             EXPECT_EQ(*solution_arity, 1);
@@ -832,14 +832,14 @@ void expect_foreign_start_handling(const tyr::planning::TaskPtr<Kind>& task, con
                 tyr::planning::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options);
             ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(&result.plan->get_start_node().context(), caller.repository.get());
-            EXPECT_EQ(result.plan->get_start_node().get_metric(), 7);
+            EXPECT_EQ(&result.plan->start_node().context(), caller.repository.get());
+            EXPECT_EQ(result.plan->start_node().metric(), 7);
 
             options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
             const auto immediate_result =
                 tyr::planning::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options);
             ASSERT_TRUE(immediate_result.plan);
-            EXPECT_EQ(&immediate_result.plan->get_start_node().context(), caller.repository.get());
+            EXPECT_EQ(&immediate_result.plan->start_node().context(), caller.repository.get());
         });
 
     auto caller = make_search_context(task);
@@ -1117,7 +1117,7 @@ void expect_sequential_expansion_stops_materializing_after_goal(const tyr::plann
     const auto result = tyr::planning::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan.value().get_length(), 1);
+    EXPECT_EQ(result.plan.value().length(), 1);
     EXPECT_EQ(result.statistics.get_num_registered_states(), 2);
 }
 
@@ -1148,10 +1148,10 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     const auto start_successors = tyr::tests::get_labeled_successor_nodes(*probe.successor_generator, start, {}, *probe.repository, *probe.axiom_evaluator);
     for (const auto& successor : start_successors)
     {
-        if (is_at_location(tyr::tests::built_state(successor.get_node()), *task->get_repository(), "expensive"))
-            expensive = successor.get_node();
-        else if (is_at_location(tyr::tests::built_state(successor.get_node()), *task->get_repository(), "cheap"))
-            cheap = successor.get_node();
+        if (is_at_location(tyr::tests::built_state(successor.node()), *task->get_repository(), "expensive"))
+            expensive = successor.node();
+        else if (is_at_location(tyr::tests::built_state(successor.node()), *task->get_repository(), "cheap"))
+            cheap = successor.node();
     }
     ASSERT_TRUE(expensive);
     ASSERT_TRUE(cheap);
@@ -1159,7 +1159,7 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
         tyr::tests::get_labeled_successor_nodes(*probe.successor_generator, cheap.value(), {}, *probe.repository, *probe.axiom_evaluator);
     const auto cheap_wait =
         std::ranges::find_if(cheap_successors,
-                             [&](const auto& successor) { return is_at_location(tyr::tests::built_state(successor.get_node()), *task->get_repository(), "cheap-wait"); });
+                             [&](const auto& successor) { return is_at_location(tyr::tests::built_state(successor.node()), *task->get_repository(), "cheap-wait"); });
     ASSERT_NE(cheap_wait, cheap_successors.end());
 
     auto seed = std::optional<uint64_t> {};
@@ -1169,7 +1169,7 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
         hash.initialize(tyr::tests::built_state(start));
         const auto expensive_owner = hash.owner(tyr::tests::built_state(expensive.value()), 3);
         const auto cheap_owner = hash.owner(tyr::tests::built_state(cheap.value()), 3);
-        if (expensive_owner != cheap_owner && hash.owner(tyr::tests::built_state(cheap_wait->get_node()), 3) == cheap_owner)
+        if (expensive_owner != cheap_owner && hash.owner(tyr::tests::built_state(cheap_wait->node()), 3) == cheap_owner)
             seed = candidate;
     }
     ASSERT_TRUE(seed);
@@ -1189,8 +1189,8 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
 
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan.value().get_cost(), 4);
-    EXPECT_EQ(result.plan.value().get_length(), 4);
+    EXPECT_EQ(result.plan.value().cost(), 4);
+    EXPECT_EQ(result.plan.value().length(), 4);
     EXPECT_TRUE(gate->transition_seen.load(std::memory_order_relaxed));
     EXPECT_EQ(gate->num_target_evaluations.load(std::memory_order_relaxed), 1);
 }
@@ -1248,7 +1248,7 @@ TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeurist
     {
         auto hash = tyr::planning::DistHash<LiftedTag, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(tyr::tests::built_state(start));
-        if (hash.owner(tyr::tests::built_state(successors.front().get_node()), 3) != hash.owner(tyr::tests::built_state(successors.back().get_node()), 3))
+        if (hash.owner(tyr::tests::built_state(successors.front().node()), 3) != hash.owner(tyr::tests::built_state(successors.back().node()), 3))
             seed = candidate;
     }
     ASSERT_TRUE(seed);
@@ -1377,7 +1377,7 @@ TEST(TyrPlanningSearchEngineTest, HashDistributedPolicyUsesOwnerRepositoriesWith
 
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan.value().get_length(), 1);
+    EXPECT_EQ(result.plan.value().length(), 1);
 }
 
 TEST(TyrPlanningSearchEngineTest, QueuedPreferredBoostAffectsTheNextPop)
@@ -1524,7 +1524,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
     auto policy = Policy(heuristic, options);
     auto execution = Execution(0);
     execution.initialize_best_h(1);
-    auto& search_node = policy.initialize_start(tyr::tests::built_state(start).pack().index(), start.get_metric(), 1);
+    auto& search_node = policy.initialize_start(tyr::tests::built_state(start).pack().index(), start.metric(), 1);
     auto statistics = tyr::planning::Statistics {};
 
     const auto result =

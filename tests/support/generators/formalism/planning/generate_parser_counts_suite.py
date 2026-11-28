@@ -59,29 +59,29 @@ def counts(domain_file: Path, task_file: Path, config: dict[str, bool]) -> dict[
     for key, value in config.items():
         setattr(options, key, value)
     task = Parser(str(domain_file), options).parse_task(str(task_file), options).get_task()
-    domain = task.get_domain()
+    domain = task.domain()
     return {
         "domain": {
-            "constants": len(domain.get_constants()),
-            "static_predicates": len(domain.get_static_predicates()),
-            "fluent_predicates": len(domain.get_fluent_predicates()),
-            "derived_predicates": len(domain.get_derived_predicates()),
-            "static_functions": len(domain.get_static_functions()),
-            "fluent_functions": len(domain.get_fluent_functions()),
-            "has_auxiliary_function": domain.get_auxiliary_function() is not None,
-            "actions": len(domain.get_actions()),
-            "axioms": len(domain.get_axioms()),
+            "constants": len(domain.constants()),
+            "static_predicates": len(domain.static_predicates()),
+            "fluent_predicates": len(domain.fluent_predicates()),
+            "derived_predicates": len(domain.derived_predicates()),
+            "static_functions": len(domain.static_functions()),
+            "fluent_functions": len(domain.fluent_functions()),
+            "has_auxiliary_function": domain.auxiliary_function() is not None,
+            "actions": len(domain.actions()),
+            "axioms": len(domain.axioms()),
         },
         "task": {
-            "objects": len(task.get_objects()),
-            "derived_predicates": len(task.get_derived_predicates()),
-            "static_atoms": len(task.get_static_atoms()),
-            "fluent_atoms": len(task.get_fluent_atoms()),
-            "static_fterm_values": len(task.get_static_fterm_values()),
-            "fluent_fterm_values": len(task.get_fluent_fterm_values()),
-            "has_auxiliary_fterm_value": task.get_auxiliary_fterm_value() is not None,
-            "axioms": len(task.get_axioms()),
-            "has_metric": task.get_metric() is not None,
+            "objects": len(task.objects()),
+            "derived_predicates": len(task.derived_predicates()),
+            "static_atoms": len(task.static_atoms()),
+            "fluent_atoms": len(task.fluent_atoms()),
+            "static_fterm_values": len(task.static_fterm_values()),
+            "fluent_fterm_values": len(task.fluent_fterm_values()),
+            "has_auxiliary_fterm_value": task.auxiliary_fterm_value() is not None,
+            "axioms": len(task.axioms()),
+            "has_metric": task.metric() is not None,
         },
     }
 

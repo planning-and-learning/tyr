@@ -43,6 +43,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <cstdint>
 #include <exception>
 #include <memory>
@@ -53,6 +54,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <span>
 #include <vector>
 #include <yggdrasil/core/portable_shuffle.hpp>
 
@@ -76,6 +78,22 @@ SearchNode& get_or_create_search_node(urd::index<State<Kind>> state_index,
         search_nodes.resize(i + 1, default_node);
 
     return search_nodes[i];
+}
+
+/// The three steps for a successor state `state` of `parent`, in `repository`: the lookup, the axiom step unless a
+/// state of its identity is registered already, registering.
+template<TaskKind Kind>
+void register_successor_state(StateRepository<Kind>& repository,
+                              AxiomEvaluator<Kind>& axiom_evaluator,
+                              urd::builder<State<Kind>, StateRepository<Kind>>& state,
+                              const StateBuilderView<Kind>& parent,
+                              const StateDelta& delta)
+{
+    if (!::tyr::planning::find_state(repository, state, parent, delta))
+    {
+        axiom_evaluator.compute_extended_state(state, repository);
+        ::tyr::planning::register_extended_state(repository, state, parent, delta);
+    }
 }
 
 /// The worker's event handler: one the root handler makes, if there is a root handler.
@@ -112,9 +130,6 @@ public:
         bool is_goal;
     };
 
-    /// A lifted binding copied out of its enumeration callback: a row builder, read through the task's repository.
-    using LiftedBindingBuilder = urd::builder<ygg::Row<formalism::Action<LiftedTag>>, formalism::Repository>;
-    using ShuffledBinding = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::ActionRowView, urd::handle<LiftedBindingBuilder>>;
 
     struct WorkerData
     {
@@ -160,11 +175,6 @@ public:
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
-        /// The applicable bindings of a shuffled expansion, copied (not interned): a ground one its interned row, a lifted one
-        /// into a row builder of the pool.
-        urd::Store<urd::sequence<ShuffledBinding>> shuffled_bindings;
-        urd::Store<urd::slots<LiftedBindingBuilder>> binding_builders;
-        StateDelta successor_delta;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
         Statistics statistics;
@@ -188,6 +198,12 @@ public:
             throw std::invalid_argument("find_solution(...): axiom evaluator belongs to a different task.");
         if (successor_generator.get_task().get() != &task)
             throw std::invalid_argument("find_solution(...): successor generator belongs to a different task.");
+        // A search expands a node deterministically: one successor state per transition.
+        require_environment<DeterministicTag>(successor_generator);
+        // ponytail: a plan's labels are action bindings; temporal tasks join when they are transitions.
+        if (successor_generator.features().temporal)
+            throw std::invalid_argument("find_solution(...): the task is temporal (a durative action or a timed initial literal), which the "
+                                        "search does not expand yet.");
 
         const auto search_start = std::chrono::steady_clock::now();
         ExecutionPolicy::validate(options);
@@ -300,11 +316,11 @@ private:
         if (!root_worker.goal_strategy->is_static_goal_satisfied(*m_task))
             return stop(SearchStatus::UNSOLVABLE);
 
-        const auto start_node_state = start_node().get_state();
+        const auto start_node_state = start_node().state();
         if (root_worker.goal_strategy->is_dynamic_goal_satisfied(start_node_state, start_node_state))
         {
-            m_result.plan.emplace(PlanBuilder<Kind> { get_node(*m_start_node_repository, start_node().pack()), {} }, m_start_node_repository);
-            m_result.goal_node = OwnedNodeRecordView<Kind>(m_result.plan->get_goal_node().pack(), m_start_node_repository);
+            m_result.plan.emplace(PlanBuilder<DeterministicTag, Kind> { get_node(*m_start_node_repository, start_node().pack()), {} }, m_start_node_repository);
+            m_result.goal_node = OwnedNodeRecordView<Kind>(m_result.plan->goal_node().pack(), m_start_node_repository);
             finalize(SearchStatus::SOLVED);
             call_root_event([&](auto& handler) { handler.on_solved(*m_result.plan); });
             return std::move(m_result);
@@ -359,7 +375,7 @@ private:
         }
     }
 
-    std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, start_node().get_state()); }
+    std::pair<urd::index<Worker>, StateBuilderHandle<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, start_node().state()); }
 
     /// The start node, its state registered in the caller's repository.
     [[nodiscard]] NodeBuilderView<Kind> start_node() const noexcept { return NodeBuilderView<Kind>(&m_start_node, m_start_node_repository); }
@@ -442,7 +458,7 @@ private:
     accept_successor(WorkerData& worker, const NodeBuilderView<Kind>& source_node, const RoutedSuccessor& routed_successor, EvaluateHeuristic&& evaluate_heuristic)
     {
         const auto successor_node = NodeBuilderView<Kind>(&routed_successor.node, worker.state_repository.get());
-        const auto successor_state = successor_node.get_state();
+        const auto successor_state = successor_node.state();
         auto& successor_search_node = worker.get_search_node(successor_state.pack().index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
@@ -465,67 +481,32 @@ private:
                                               emit_transition);
     }
 
-    /// Generates the successor of `node` by `binding` (borrowed) and routes it; false when the search stops.
-    bool expand_successor(WorkerData& worker, const NodeBuilderView<Kind>& node, ActionBindingView<Kind> binding)
-    {
-        if (!m_execution.running())
-            return false;
-        auto successor_state = ::tyr::planning::get_state_builder(*worker.state_repository);
-        const auto auxiliary_value = worker.successor_generator->generate_successor_state(node, binding, *successor_state, worker.successor_delta);
-        auto metadata = worker.search.make_successor_metadata(worker.index, node, binding);
-        return m_execution.route(*this, worker, node, std::move(successor_state), worker.successor_delta, auxiliary_value, binding, std::move(metadata))
-                   != AcceptanceResult::TERMINAL
-               && m_execution.running();
-    }
-
-    /// Expands `node`: each applicable binding as the generator hands it out (borrowed, never interned), its successor
-    /// generated and routed within the enumeration; shuffled, the bindings are copied first (not interned).
+    /// Expands `node`: each transition's deterministic successor state as the generator writes it (its binding borrowed,
+    /// never interned), routed within the enumeration; shuffled, the transitions are arranged first.
     void expand_successors(WorkerData& worker, const NodeBuilderView<Kind>& node)
     {
-        auto& generator = *worker.successor_generator;
-        if (!m_options->shuffle_labeled_succ_nodes)
-        {
-            generator.for_each_applicable_action_binding(node, {}, [&](ActionBindingView<Kind> binding) { return expand_successor(worker, node, binding); });
-            return;
-        }
+        auto options = SuccessorOptions<Kind> {};
+        options.stop = [this] { return !m_execution.running(); };
+        if (m_options->shuffle_labeled_succ_nodes)
+            options.arrange = [&worker](std::span<const TransitionLabel<Kind>> /*labels*/, std::vector<std::size_t>& order)
+            { ygg::portable_shuffle(order.begin(), order.end(), worker.rng); };
 
-        auto& shuffled = worker.shuffled_bindings;
-        shuffled.clear();
-        generator.for_each_applicable_action_binding(node,
-                                                     {},
-                                                     [&](ActionBindingView<Kind> binding)
-                                                     {
-                                                         if constexpr (std::same_as<Kind, GroundTag>)
-                                                         {
-                                                             shuffled.push_back(binding);
-                                                         }
-                                                         else
-                                                         {
-                                                             auto copy = worker.binding_builders.make_handle();
-                                                             urd::store(copy->relation, action_of(binding));
-                                                             copy->values.clear();
-                                                             for (const auto value : binding.get_values())
-                                                                 copy->values.push_back(value);
-                                                             shuffled.push_back(std::move(copy));
-                                                         }
-                                                         return true;
-                                                     });
-        ygg::portable_shuffle(shuffled.begin(), shuffled.end(), worker.rng);
-        const auto& repository = *generator.get_task()->get_repository();
-        for (const auto& binding : shuffled)
+        // Passed by reference (std::ref): a std::function of the lambda itself would allocate for its captures.
+        const auto route = [&](const TransitionLabel<Kind>& transition, SuccessorState<Kind>& successor)
         {
-            if constexpr (std::same_as<Kind, GroundTag>)
-            {
-                if (!expand_successor(worker, node, binding))
-                    break;
-            }
-            else
-            {
-                if (!expand_successor(worker, node, urd::resolve(*binding, repository)))
-                    break;
-            }
-        }
-        shuffled.clear();
+            const auto binding = transition.binding.value();
+            auto metadata = worker.search.make_successor_metadata(worker.index, node, binding);
+            return m_execution.route(*this,
+                                     worker,
+                                     node,
+                                     std::move(successor.state),
+                                     successor.delta,
+                                     successor.auxiliary_value,
+                                     binding,
+                                     std::move(metadata))
+                   != AcceptanceResult::TERMINAL;
+        };
+        for_each_successor<DeterministicTag>(*worker.successor_generator, node, std::ref(route), options);
     }
 
     ygg::float_t evaluate_successor_metric(const StateRepository<Kind>& repository,
@@ -536,7 +517,7 @@ private:
     void solve(WorkerData& worker, const NodeBuilderView<Kind>& node)
     {
         const auto goal = WorkerStateIndex<Kind> { worker.index, node.pack().state };
-        if (m_execution.consider_goal(goal, node.get_metric(), SearchPolicy::terminate_on_goal))
+        if (m_execution.consider_goal(goal, node.metric(), SearchPolicy::terminate_on_goal))
             call_worker_event(worker, [&](auto& handler) { handler.on_expand_goal_node(node); });
     }
 

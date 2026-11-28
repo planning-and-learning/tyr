@@ -27,7 +27,7 @@ namespace
                                                                tyr::formalism::FDRFactView<tyr::formalism::FluentTag> fact)
 {
     static_cast<void>(task.get_goal());
-    static_cast<void>(fact.get_atom());
+    static_cast<void>(fact.atom());
 }
 }
 

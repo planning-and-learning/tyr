@@ -36,11 +36,11 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_operation() const noexcept { return self().template member<&urd::record_of<V>::operation>(); }
+    auto operation() const noexcept { return self().template member<&urd::record_of<V>::operation>(); }
 
-    auto get_fterm() const noexcept { return self().template member<&urd::record_of<V>::fterm>(); }
+    auto fterm() const noexcept { return self().template member<&urd::record_of<V>::fterm>(); }
 
-    auto get_fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
+    auto fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
 };
 }  // namespace urd
 

@@ -55,9 +55,7 @@ struct data<::tyr::formalism::Metric>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"optimization_direction", &data::optimization_direction>, urd::field<"fexpr", &data::fexpr>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::optimization_direction, &data::fexpr> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::optimization_direction, &data::fexpr> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Metric> key() const noexcept { return urd::key<::tyr::formalism::Metric>(index); }
 };

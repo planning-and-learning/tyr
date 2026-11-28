@@ -19,10 +19,8 @@
 #define TYR_FORMALISM_INTERNING_HPP_
 
 #include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/grounding_context.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/repository.hpp"
 
 #include <cstddef>
@@ -30,14 +28,12 @@
 #include <yggdrasil/formalism/interning.hpp>
 #include <yggdrasil/formalism/values.hpp>
 
-/// The repository's insert preparation (prepare_for_insert, found by ADL from yggdrasil's insert): a record is made
-/// canonical (canonicalization.hpp and its planning and Datalog counterparts). Included where the repository's members are instantiated
-/// (src/formalism/repository.cpp) and where a grounder needs schema_in_destination; kept out of repository.hpp, so code that only reads or inserts does not
-/// compile the canonicalization.
+/// What the repository's insert preparation needs beside yggdrasil's (prepare_for_insert makes a record canonical: its
+/// fields as they promise, and canonicalization.hpp's overloads). Included where the repository's members are
+/// instantiated (src/formalism/repository.cpp) and where a grounder needs schema_in_destination; kept out of
+/// repository.hpp, so code that only reads or inserts does not compile the canonicalization.
 namespace tyr::formalism
 {
-
-/// A record the repository holds as a symbol is made canonical before it is interned (a row is ygg's).
 
 /// A lifted schema (a predicate, function, action or axiom) as the destination holds it: at the schema's own index. The
 /// ground repository holds every schema it grounds there: in the domain layer it shares with the lifted task, or, for the

@@ -43,7 +43,6 @@ struct builder<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"fterm", &builder::fterm>, urd::field<"value", &builder::value>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::fterm, &builder::value> {}; }
 };
 
 }  // namespace urd

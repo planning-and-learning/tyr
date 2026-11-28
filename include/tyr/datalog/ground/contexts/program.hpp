@@ -114,12 +114,12 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     {
         m_out.facts().reset();
         auto& facts = m_out.facts().fact_sets;
-        for (const auto fterm_value : m_in.program().template get_fterm_values<formalism::FluentTag>())
+        for (const auto fterm_value : m_in.program().template fterm_values<formalism::FluentTag>())
             insert(facts.template get<formalism::FluentTag>(),
-                   fterm_value.get_fterm().get_row().index(),
-                   ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+                   fterm_value.fterm().row().index(),
+                   ygg::ClosedInterval<ygg::float_t>(fterm_value.value(), fterm_value.value()));
         for (const auto atom : fluent_atoms)
-            insert(facts, atom.get_row().index());
+            insert(facts, atom.row().index());
         insert_program_facts(facts.template get<formalism::DerivedTag>(), m_in.program());
         initialize();
     }

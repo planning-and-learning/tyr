@@ -152,14 +152,14 @@ urd::Store<urd::sequence<std::string>> parse_invariant_texts(const boost::json::
 std::string invariant_text(tyr::formalism::InvariantView invariant)
 {
     auto atoms = urd::Store<urd::sequence<std::string>> {};
-    for (const auto atom : invariant.get_atoms())
+    for (const auto atom : invariant.atoms())
     {
         auto terms = urd::Store<urd::sequence<tyr::formalism::Term>> {};
-        for (const auto term : atom.get_terms())
+        for (const auto term : atom.terms())
             terms.push_back(urd::as_member<tyr::formalism::Term>(term));
-        atoms.push_back(atom_text(atom.get_predicate().get_name().view(), terms));
+        atoms.push_back(atom_text(atom.predicate().name().view(), terms));
     }
-    return invariant_text(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));
+    return invariant_text(invariant.num_rigid_variables(), invariant.num_counted_variables(), std::move(atoms));
 }
 
 template<typename Invariants>

@@ -195,7 +195,7 @@ public:
     }
 
     [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const NodeBuilderView<Kind>& node, ActionBindingView<Kind>) const
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.get_metric() }; }
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.metric() }; }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
     {
@@ -216,9 +216,9 @@ public:
                                       EvaluateHeuristic&& evaluate_heuristic,
                                       EmitTransition emit_transition)
     {
-        const auto source_state = source_node.get_state();
-        const auto successor_state = successor_node.get_state();
-        const auto g_value = successor_node.get_metric();
+        const auto source_state = source_node.state();
+        const auto successor_state = successor_node.state();
+        const auto g_value = successor_node.metric();
 
         if (g_value >= successor_search_node.g_value)
         {

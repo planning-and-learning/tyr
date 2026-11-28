@@ -111,8 +111,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
         TaskPtr<LiftedTag> task;
         Program action_program;
-        /// Whether transitions keep a temporal network (is_temporal).
-        bool temporal;
+        /// What the task asks of an environment (task_features); temporal: its transitions keep a temporal network.
+        TaskFeatures features;
         /// The fluent predicates some effect (of an action, an outcome or an end) or timed initial literal adds.
         urd::Store<urd::set<urd::index<formalism::Predicate<formalism::FluentTag>>>> added_predicates;
     };
@@ -175,7 +175,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     {
         if (is_registered(node))
             return { static_cast<const void*>(&node.context()), static_cast<ygg::uint_t>(node.pack().state.value) };
-        return { static_cast<const void*>(&state_context_of(node).numeric_storage().get_values()), std::numeric_limits<ygg::uint_t>::max() };
+        return { static_cast<const void*>(&state_context_of(node).numeric_storage().values()), std::numeric_limits<ygg::uint_t>::max() };
     }
 
     /// Forgets the facts of a state builder after single-binding work, since the builder can change.
@@ -210,7 +210,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     bool validate_binding_objects(formalism::ActionView<LiftedTag> action, Objects objects)
     {
         get_schema_evaluator(action);
-        if (objects.size() != action.get_arity())
+        if (objects.size() != action.arity())
             throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
         const auto indices = objects.base();
         const auto& target_repository = *definition->task->get_repository();
@@ -275,30 +275,30 @@ template<typename Effects, typename Choices, typename Added>
 void add_added_predicates(Effects effects, Choices choices, Added& added)
 {
     for (const auto effect : effects)
-        for (const auto literal : effect.get_effect().get_literals())
-            if (literal.get_polarity())
-                added.insert(literal.get_atom().get_predicate().index());
+        for (const auto literal : effect.effect().literals())
+            if (literal.polarity())
+                added.insert(literal.atom().predicate().index());
     for (const auto choice : choices)
-        for (const auto outcome : choice.get_outcomes())
-            add_added_predicates(outcome.get_effects(), outcome.get_choices(), added);
+        for (const auto outcome : choice.outcomes())
+            add_added_predicates(outcome.effects(), outcome.choices(), added);
 }
 }
 
 SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) :
     task(std::move(task_)),
     action_program(task->get_formalism_task()),
-    temporal(is_temporal(*task)),
+    features(task_features(*task)),
     added_predicates()
 {
-    for (const auto action : task->get_task().get_domain().get_actions())
+    for (const auto action : task->get_task().domain().actions())
     {
-        add_added_predicates(action.get_effects(), action.get_choices(), added_predicates);
-        if (const auto temporal_part = action.get_temporal_part(); temporal_part.has_value())
-            add_added_predicates(temporal_part->get_end_effects(), temporal_part->get_end_choices(), added_predicates);
+        add_added_predicates(action.effects(), action.choices(), added_predicates);
+        if (const auto temporal_part = action.temporal_part(); temporal_part.has_value())
+            add_added_predicates(temporal_part->end_effects(), temporal_part->end_choices(), added_predicates);
     }
-    for (const auto timed_literal : task->get_task().get_timed_literals())
-        if (timed_literal.get_literal().get_polarity())
-            added_predicates.insert(timed_literal.get_literal().get_atom().get_predicate().index());
+    for (const auto timed_literal : task->get_task().timed_literals())
+        if (timed_literal.literal().polarity())
+            added_predicates.insert(timed_literal.literal().atom().predicate().index());
 }
 
 SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
@@ -390,9 +390,9 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         formalism::GroundingContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.scratch_objects };
     const auto& mapping = definition->action_program.get_predicate_to_action_mapping();
 
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
     {
-        const auto predicate = rule.get_derived_heads().front().get_predicate();
+        const auto predicate = rule.derived_heads().front().predicate();
         const auto it = mapping.find(predicate);
         if (it == mapping.end())
             continue;  // A conditional effect's rule.
@@ -412,7 +412,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
             if (!accept(scratch_binding))
                 continue;
 
-            assert(is_applicable(schema.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
+            assert(is_applicable(schema.condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
 
             // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
@@ -434,19 +434,19 @@ template<formalism::ActionRowViewConcept Binding>
 ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node, Binding binding, Builder& out_state, StateDelta& out_delta)
 {
     evaluator.workspace.binding.clear();
-    for (const auto value : binding.get_values())
+    for (const auto value : binding.values())
         evaluator.workspace.binding.push_back(ygg::decode_value<urd::index<formalism::Object>>(value));
 
     auto grounder_context =
         formalism::GroundingContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = state_context_of(node);
     const auto action = action_of(binding);
-    if (action.get_temporal_part().has_value())
+    if (action.temporal_part().has_value())
         throw std::invalid_argument("SuccessorGenerator: a durative action happens at its start and its end, within a temporal network: use "
                                     "generate_successor or for_each_successor.");
-    if (!action.get_choices().empty())
+    if (!action.choices().empty())
         throw std::invalid_argument(
-            "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: use generate_successor or for_each_successor.");
+            "SuccessorGenerator: an action with oneof or probabilistic effects has several outcomes: no deterministic successor (an environment with an adversary or chance gives them).");
 
     require_action_facts(node, action);
     const auto auxiliary_value = evaluator.executor.apply_action_unregistered(
@@ -512,7 +512,7 @@ ActionBindingStatus SuccessorGenerator<LiftedTag>::Impl::check_action_binding(co
     }
     auto grounder = formalism::GroundingContext { workspace.planning_builder, *task->get_repository(), evaluator.checked_objects };
     const auto state = state_context_of(node);
-    if (!is_applicable(action.get_condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))
+    if (!is_applicable(action.condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))
         return ActionBindingStatus::INAPPLICABLE;
     require_action_facts(node, action);
     const auto applicable = evaluator.executor.is_applicable_if_fires(
@@ -568,12 +568,12 @@ formalism::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fo
                                                           *m_impl->definition->task->get_repository(),
                                                           m_impl->evaluator.workspace.binding };
     // Without a state, an effect has every completed binding that the static consistency graph of its rule allows.
-    const auto action = binding.get_relation();
+    const auto action = binding.relation();
     const auto objects =
         urd::flat_vector<urd::index<formalism::Object>>(m_impl->evaluator.workspace.binding.begin(), m_impl->evaluator.workspace.binding.end());
     const auto& mapping = m_impl->definition->action_program.get_conditional_effect_to_predicate_mapping();
     const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules;
-    const auto schema_rules = m_impl->get_schema_evaluator(action).program.get_rules();
+    const auto schema_rules = m_impl->get_schema_evaluator(action).program.rules();
     const auto ground_action =
         formalism::ground(
             action,
@@ -589,7 +589,7 @@ formalism::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fo
                 }
                 const auto rule =
                     *std::ranges::find_if(schema_rules,
-                                          [&](auto schema_rule) { return schema_rule.get_derived_heads().front().get_predicate() == it->second; });
+                                          [&](auto schema_rule) { return schema_rule.derived_heads().front().predicate() == it->second; });
                 datalog::for_each_static_extension(*rules[static_cast<ygg::uint_t>(rule.index().value)],
                                                    std::span<const urd::index<formalism::Object>>(objects.data(), objects.size()),
                                                    m_impl->evaluator.static_extension_workspace(rule.index().value),
@@ -610,6 +610,8 @@ formalism::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(fo
 const ApplicableActionProgram& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }
 
 const TaskPtr<LiftedTag>& SuccessorGenerator<LiftedTag>::get_task() const noexcept { return m_impl->definition->task; }
+
+TaskFeatures SuccessorGenerator<LiftedTag>::features() const noexcept { return m_impl->definition->features; }
 
 // Diagnostics
 void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
@@ -632,7 +634,7 @@ template<formalism::ActionRowViewConcept Binding>
 void set_binding(urd::flat_vector<urd::index<formalism::Object>>& objects, Binding binding)
 {
     objects.clear();
-    for (const auto value : binding.get_values())
+    for (const auto value : binding.values())
         objects.push_back(ygg::decode_value<urd::index<formalism::Object>>(value));
 }
 
@@ -641,14 +643,14 @@ void set_binding(urd::flat_vector<urd::index<formalism::Object>>& objects, Bindi
 template<typename Grounder, typename Vars, typename Terms>
 void add_lifted_reads(formalism::ConjunctiveConditionView<LiftedTag> condition, Grounder& grounder, formalism::FDRContext& fdr, Vars& variables, Terms& terms)
 {
-    for (const auto literal : condition.template get_literals<formalism::FluentTag>())
-        variables.push_back(static_cast<std::uint32_t>(fdr.get_fact(formalism::ground(literal.get_atom(), grounder).first).get_variable().index().value));
-    if (!condition.template get_literals<formalism::DerivedTag>().empty())
+    for (const auto literal : condition.template literals<formalism::FluentTag>())
+        variables.push_back(static_cast<std::uint32_t>(fdr.get_fact(formalism::ground(literal.atom(), grounder).first).variable().index().value));
+    if (!condition.template literals<formalism::DerivedTag>().empty())
         variables.push_back(every_variable);
-    for (const auto constraint : condition.get_numeric_constraints())
+    for (const auto constraint : condition.numeric_constraints())
     {
-        add_fluent_terms(formalism::ground(constraint.get_lhs(), grounder), terms);
-        add_fluent_terms(formalism::ground(constraint.get_rhs(), grounder), terms);
+        add_fluent_terms(formalism::ground(constraint.left_operand(), grounder), terms);
+        add_fluent_terms(formalism::ground(constraint.right_operand(), grounder), terms);
     }
 }
 
@@ -682,9 +684,9 @@ struct LiftedTools
             return;
         }
         const auto& rules = impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules;
-        const auto schema_rules = impl->get_schema_evaluator(action).program.get_rules();
+        const auto schema_rules = impl->get_schema_evaluator(action).program.rules();
         const auto rule =
-            *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.get_derived_heads().front().get_predicate() == it->second; });
+            *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.derived_heads().front().predicate() == it->second; });
         auto& binding = grounder.binding();
         const auto action_arity = binding.size();
         auto& evaluator = impl->evaluator;
@@ -711,7 +713,7 @@ struct LiftedTools
     void add_effect_reads(formalism::ActionView<LiftedTag> action, Effects effects, Happening& happening)
     {
         for (const auto effect : effects)
-            for_each_static_binding(action, effect, [&] { add_lifted_reads(effect.get_condition(), grounder, *fdr, happening.reads, happening.numeric_reads); });
+            for_each_static_binding(action, effect, [&] { add_lifted_reads(effect.condition(), grounder, *fdr, happening.reads, happening.numeric_reads); });
     }
 
     /// The reads of choices: their outcomes' effects' conditions (which include the choices'), nested ones too.
@@ -719,10 +721,10 @@ struct LiftedTools
     void add_choice_reads(formalism::ActionView<LiftedTag> action, Choices choices, Happening& happening)
     {
         for (const auto choice : choices)
-            for (const auto outcome : choice.get_outcomes())
+            for (const auto outcome : choice.outcomes())
             {
-                add_effect_reads(action, outcome.get_effects(), happening);
-                add_choice_reads(action, outcome.get_choices(), happening);
+                add_effect_reads(action, outcome.effects(), happening);
+                add_choice_reads(action, outcome.choices(), happening);
             }
     }
 };
@@ -736,12 +738,12 @@ bool lifted_over_all_holds(Impl& impl, const StateBuilderView<LiftedTag>& state)
     const auto context = StateContext<LiftedTag>(task, state, ygg::float_t { 0 });
     auto grounder = formalism::GroundingContext { impl.evaluator.workspace.planning_builder, *task.get_repository(), impl.evaluator.workspace.binding };
     const auto applicability_context = ApplicabilityContext { context, grounder, *task.get_fdr_context() };
-    return std::ranges::all_of(context.temporal_storage().get_parts().open,
+    return std::ranges::all_of(context.temporal_storage().parts().open,
                                [&](const OpenAction& open)
                                {
                                    const auto row = urd::resolve(open.action, *task.get_repository());
                                    set_binding(grounder.binding(), row);
-                                   return is_applicable(running_temporal_part(row.get_relation()).get_over_all(), applicability_context);
+                                   return is_applicable(running_temporal_part(row.relation()).over_all(), applicability_context);
                                });
 }
 
@@ -750,7 +752,7 @@ bool lifted_over_all_holds(Impl& impl, const StateBuilderView<LiftedTag>& state)
 /// reads given, its writes the effects fired), its outcome filled by `make(apply, outcome, valid)`; failed where the
 /// temporal network becomes inconsistent or an open over-all condition does not hold. Effect bindings are those
 /// `for_each_effect_binding` reports. Under (minimize (total-time)), the metric is the makespan.
-template<typename Impl, typename ForEachEffectBinding, typename Make>
+template<typename Impl, typename ForEachEffectBinding, typename Make, typename Out>
 void lifted_transition(Impl& impl,
                        const NodeBuilderView<LiftedTag>& node,
                        const urd::data<Transition>& label,
@@ -759,7 +761,7 @@ void lifted_transition(Impl& impl,
                        ForEachEffectBinding& for_each_effect_binding,
                        const TemporalStepper::Kind& temporal,
                        Make make,
-                       SuccessorBuilder<LiftedTag>& out)
+                       Out& out)
 {
     auto& evaluator = impl.evaluator;
     auto& fdr = *impl.definition->task->get_fdr_context();
@@ -774,7 +776,7 @@ void lifted_transition(Impl& impl,
             evaluator.outcome_picks.push_back(LiftedOutcomePick { pick.action, pick.outcome, evaluator.outcome_builder.binding(pick.binding) });
         return std::span<const LiftedOutcomePick>(evaluator.outcome_picks);
     };
-    generate_successor<LiftedTag>(
+    write_successor(
         out,
         node.context(),
         label,
@@ -800,12 +802,12 @@ void lifted_transition(Impl& impl,
                     happening.writes.clear();
                     happening.numeric_writes.clear();
                     evaluator.executor.fired_writes(happening.writes, happening.numeric_writes);
-                    auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
-                    evaluator.scheduled = !impl.definition->temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
+                    auto makespan = time_metric ? node.metric() : ygg::float_t { 0 };
+                    evaluator.scheduled = !impl.definition->features.temporal || evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,
-                [&](const auto& successor_state) { return evaluator.scheduled && lifted_over_all_holds(impl, successor_state); });
+                [&evaluator] { return evaluator.scheduled; });
         });
 }
 
@@ -819,27 +821,29 @@ bool can_end(const Impl& impl, formalism::TemporalPartView<LiftedTag> part, cons
 {
     const auto may_hold = [&](formalism::ConjunctiveConditionView<LiftedTag> condition)
     {
-        return std::ranges::all_of(condition.template get_literals<formalism::StaticTag>(), [&](const auto literal) { return is_applicable(literal, context); })
-               && std::ranges::all_of(condition.template get_literals<formalism::FluentTag>(),
+        return std::ranges::all_of(condition.template literals<formalism::StaticTag>(), [&](const auto literal) { return is_applicable(literal, context); })
+               && std::ranges::all_of(condition.template literals<formalism::FluentTag>(),
                                       [&](const auto literal)
                                       {
-                                          return !literal.get_polarity() || impl.definition->added_predicates.contains(literal.get_atom().get_predicate().index())
+                                          return !literal.polarity() || impl.definition->added_predicates.contains(literal.atom().predicate().index())
                                                  || is_applicable(literal, context);
                                       });
     };
-    return may_hold(part.get_over_all()) && may_hold(part.get_end_condition());
+    return may_hold(part.over_all()) && may_hold(part.end_condition());
 }
 
 /// The label's binding of a borrowed action binding not interned: a row built in the label, from the pool of `repository`
 /// (the repository the label is read through: its values are objects of any of its layers).
-template<formalism::ActionRowViewConcept Binding>
-void build_label_binding(SuccessorBuilder<LiftedTag>& out, const StateRepository<LiftedTag>& repository, Binding binding)
+template<formalism::ActionRowViewConcept Binding, typename Out>
+void build_label_binding(Out& out, const StateRepository<LiftedTag>& repository, Binding binding)
 {
-    auto& label = out.label;
-    auto& row = ygg::formalism::builder_of(label.binding.has_value() ? *label.binding : label.binding.emplace(), repository.builders());
+    auto& label = *out.label;
+    using Row = ygg::Row<formalism::Action<LiftedTag>>;
+    auto& row = urd::builder_of(label.binding.has_value() ? *label.binding : label.binding.emplace(),
+                                [&repository]() -> urd::built_child<Row, StateRepository<LiftedTag>> { return ygg::formalism::checkout<Row>(repository.builders()); });
     urd::store(row.relation, action_of(binding));
     row.values.clear();
-    for (const auto value : binding.get_values())
+    for (const auto value : binding.values())
         row.values.push_back(value);
 }
 
@@ -847,8 +851,8 @@ void build_label_binding(SuccessorBuilder<LiftedTag>& out, const StateRepository
 /// its duration is not a nonnegative number), without grounding the action: its effect bindings and its choices'
 /// instances are those the state's effect atoms report. Starting interns a borrowed binding, as the state's open actions
 /// name it by its key; applying keeps it in the label uninterned.
-template<typename Impl, formalism::ActionRowViewConcept Binding, typename Make>
-void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, Binding binding, Make make, SuccessorBuilder<LiftedTag>& out)
+template<typename Impl, formalism::ActionRowViewConcept Binding, typename Make, typename Out>
+void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, Binding binding, Make make, Out& out)
 {
     auto& evaluator = impl.evaluator;
     const auto action = action_of(binding);
@@ -869,32 +873,32 @@ void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node
 
     auto& happening = evaluator.happening;
     happening.clear();
-    add_lifted_reads(action.get_condition(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
-    tools.add_effect_reads(action, action.get_effects(), happening);
-    tools.add_choice_reads(action, action.get_choices(), happening);
+    add_lifted_reads(action.condition(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
+    tools.add_effect_reads(action, action.effects(), happening);
+    tools.add_choice_reads(action, action.choices(), happening);
 
     auto label = urd::data<Transition>(TransitionKind::APPLY, urd::flat_optional<ActionRowKey>(), 0);
     if constexpr (std::same_as<Binding, formalism::ActionRowView>)
         label.binding = binding.index();
     auto temporal = TemporalStepper::Kind {};
     auto applicable = true;
-    if (const auto temporal_part = action.get_temporal_part(); temporal_part.has_value())
+    if (const auto temporal_part = action.temporal_part(); temporal_part.has_value())
     {
         if (!label.binding.has_value())
         {
             auto row = evaluator.scratch_builder.template scratch<ActionRow>();
             row->relation = action.index();
             row->values.clear();
-            for (const auto value : binding.get_values())
+            for (const auto value : binding.values())
                 row->values.push_back(value);
             label.binding = impl.definition->task->get_repository()->insert(*row).first.index();
         }
         label.kind = TransitionKind::START;
         const auto [min_duration, max_duration] =
-            duration_bounds(temporal_part->get_min_durations(), temporal_part->get_max_durations(), ApplicabilityContext { state_context, grounder, *tools.fdr });
+            duration_bounds(temporal_part->min_durations(), temporal_part->max_durations(), ApplicabilityContext { state_context, grounder, *tools.fdr });
         applicable = min_duration <= max_duration && can_end(impl, *temporal_part, ApplicabilityContext { state_context, grounder, *tools.fdr });
         temporal = TemporalStepper::Kind { TransitionKind::START, 0, *label.binding, min_duration, max_duration, 0 };
-        add_lifted_reads(temporal_part->get_over_all(), grounder, *tools.fdr, happening.over_all, happening.numeric_over_all);
+        add_lifted_reads(temporal_part->over_all(), grounder, *tools.fdr, happening.over_all, happening.numeric_over_all);
     }
 
     if (!applicable)
@@ -904,8 +908,8 @@ void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node
         evaluator.outcome_distributions.clear();
         evaluator.outcome_builder.clear();
         const auto set =
-            evaluator.outcome_builder.build(evaluator.outcome_distributions, action, action.get_choices(), grounder.binding(), for_each_own_effect_binding);
-        const auto effects = std::array { LiftedEffects { action, action.get_effects(), objects } };
+            evaluator.outcome_builder.build(evaluator.outcome_distributions, action, action.choices(), grounder.binding(), for_each_own_effect_binding);
+        const auto effects = std::array { LiftedEffects { action, action.effects(), objects } };
         lifted_transition(impl, node, label, std::span<const LiftedEffects>(effects), set, for_each_effect_binding, temporal, make, out);
     }
     if (!label.binding.has_value())
@@ -916,20 +920,20 @@ void lifted_action_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node
 /// Writes into `out` the successor of ending the open durative action at position `open` (none if its end condition does
 /// not hold): its end effects and choices apply for the bindings of their variables whose conditions hold, and it reads
 /// its over-all condition up to here.
-template<typename Impl, typename Make>
-void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, std::uint32_t open, Make make, SuccessorBuilder<LiftedTag>& out)
+template<typename Impl, typename Make, typename Out>
+void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, std::uint32_t open, Make make, Out& out)
 {
     auto& evaluator = impl.evaluator;
     auto tools = LiftedTools<Impl>(impl);
     auto& grounder = tools.grounder;
     const auto state_context = state_context_of(node);
-    const auto row = urd::resolve(state_context.temporal_storage().get_parts().open[open].action, *impl.definition->task->get_repository());
-    const auto action = row.get_relation();
+    const auto row = urd::resolve(state_context.temporal_storage().parts().open[open].action, *impl.definition->task->get_repository());
+    const auto action = row.relation();
     const auto label = urd::data<Transition>(TransitionKind::END, urd::flat_optional<ActionRowKey>(row.index()), open);
     set_binding(grounder.binding(), row);
     const auto applicability_context = ApplicabilityContext { state_context, grounder, *tools.fdr };
     const auto temporal_part = running_temporal_part(action);
-    if (!is_applicable(temporal_part.get_end_condition(), applicability_context))
+    if (!is_applicable(temporal_part.end_condition(), applicability_context))
     {
         start_successor(out, node.context(), label);
         return;
@@ -946,7 +950,7 @@ void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, s
                                       effect,
                                       [&]
                                       {
-                                          if (is_applicable(effect.get_condition(), applicability_context))
+                                          if (is_applicable(effect.condition(), applicability_context))
                                               apply();
                                       });
     };
@@ -954,17 +958,17 @@ void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, s
 
     auto& happening = evaluator.happening;
     happening.clear();
-    add_lifted_reads(temporal_part.get_end_condition(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
-    add_lifted_reads(temporal_part.get_over_all(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
-    tools.add_effect_reads(action, temporal_part.get_end_effects(), happening);
-    tools.add_choice_reads(action, temporal_part.get_end_choices(), happening);
+    add_lifted_reads(temporal_part.end_condition(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
+    add_lifted_reads(temporal_part.over_all(), grounder, *tools.fdr, happening.reads, happening.numeric_reads);
+    tools.add_effect_reads(action, temporal_part.end_effects(), happening);
+    tools.add_choice_reads(action, temporal_part.end_choices(), happening);
 
     evaluator.outcome_distributions.clear();
     evaluator.outcome_builder.clear();
     const auto set =
-        evaluator.outcome_builder.build(evaluator.outcome_distributions, action, temporal_part.get_end_choices(), grounder.binding(), for_each_own_effect_binding);
-    const auto effects = std::array { LiftedEffects { action, temporal_part.get_end_effects(), objects } };
-    const auto [end_min, end_max] = duration_bounds(temporal_part.get_end_min_durations(), temporal_part.get_end_max_durations(), applicability_context);
+        evaluator.outcome_builder.build(evaluator.outcome_distributions, action, temporal_part.end_choices(), grounder.binding(), for_each_own_effect_binding);
+    const auto effects = std::array { LiftedEffects { action, temporal_part.end_effects(), objects } };
+    const auto [end_min, end_max] = duration_bounds(temporal_part.end_min_durations(), temporal_part.end_max_durations(), applicability_context);
     if (!(end_min <= end_max))
     {
         start_successor(out, node.context(), label);
@@ -974,77 +978,45 @@ void lifted_end_transition(Impl& impl, const NodeBuilderView<LiftedTag>& node, s
     lifted_transition(impl, node, label, std::span<const LiftedEffects>(effects), set, for_each_effect_binding, temporal, make, out);
 }
 
-/// Fills an outcome by writing the applied state into a state builder of `node`'s repository, closed under the axioms.
-inline auto building(const NodeBuilderView<LiftedTag>& node, AxiomEvaluator<LiftedTag>& axiom_evaluator)
+/// Fills an outcome by writing the applied state into a state builder of `node`'s repository (not closed under the axioms).
+inline auto building(const NodeBuilderView<LiftedTag>& node)
 {
-    return [&node, &axiom_evaluator](auto apply, auto& outcome, auto valid) { return build_outcome(node, axiom_evaluator, outcome, apply, valid); };
+    return [&node](auto apply, auto& outcome, auto scheduled) { return build_outcome(node, outcome, apply, scheduled); };
 }
 }
 
-template<formalism::ActionRowViewConcept Binding>
-void SuccessorGenerator<LiftedTag>::generate_successor(const Source& node, Binding binding, AxiomEvaluator<LiftedTag>& axiom_evaluator, SuccessorBuilder<LiftedTag>& out)
+bool SuccessorGenerator<LiftedTag>::over_all_holds(const StateBuilderView<LiftedTag>& state) { return lifted_over_all_holds(*m_impl, state); }
+
+StateDelta& SuccessorGenerator<LiftedTag>::scratch_delta() noexcept { return m_scratch_delta; }
+
+template<NatureEnvironment E, formalism::ActionRowViewConcept Binding>
+void SuccessorGenerator<LiftedTag>::generate_successor(const Source& node,
+                                                       Binding binding,
+                                                       SuccessorBuilder<E, LiftedTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
-    lifted_action_transition(*m_impl, node, binding, building(node, axiom_evaluator), out);
+    lifted_action_transition(*m_impl, node, binding, building(node), out);
 }
 
+template<NatureEnvironment E>
 void SuccessorGenerator<LiftedTag>::generate_end_successor(const Source& node,
                                                            std::uint32_t open,
-                                                           AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                           SuccessorBuilder<LiftedTag>& out)
+                                                           SuccessorBuilder<E, LiftedTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
-    lifted_end_transition(*m_impl, node, open, building(node, axiom_evaluator), out);
+    lifted_end_transition(*m_impl, node, open, building(node), out);
 }
 
+template<NatureEnvironment E>
 void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor(const Source& node,
-                                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                                     SuccessorBuilder<LiftedTag>& out)
+                                                                     SuccessorBuilder<E, LiftedTag>& out)
 {
     validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
     timed_literal_transition(
         m_impl->evaluator,
         node,
-        building(node, axiom_evaluator),
-        [&](const auto& state) { return lifted_over_all_holds(*m_impl, state); },
+        building(node),
         out);
-}
-
-bool SuccessorGenerator<LiftedTag>::for_each_successor(const Source& node,
-                                                       AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                       const std::function<bool(SuccessorBuilder<LiftedTag>&)>& callback)
-{
-    validate_task(m_impl->definition->task, node);
-    validate_task(m_impl->definition->task, axiom_evaluator);
-    const auto& repository = *m_impl->definition->task->get_repository();
-    // One of the node's repository's builders, reused across its successors: back to its pool when this returns.
-    auto checked_out = ygg::formalism::checkout<Successor<LiftedTag>>(node.context().builders());
-    auto& successor = *checked_out;
-    const auto exhausted = m_impl->for_each_applicable_action_binding(node,
-                                                                      std::nullopt,
-                                                                      [&](auto& binding)
-                                                                      {
-                                                                          lifted_action_transition(*m_impl,
-                                                                                                   node,
-                                                                                                   urd::resolve(binding, repository),
-                                                                                                   building(node, axiom_evaluator),
-                                                                                                   successor);
-                                                                          return successor.distributions.empty() || callback(successor);
-                                                                      });
-    if (!exhausted)
-        return false;
-    const auto open_count = static_cast<std::uint32_t>(state_context_of(node).temporal_storage().get_parts().open.size());
-    for (std::uint32_t open = 0; open < open_count; ++open)
-    {
-        generate_end_successor(node, open, axiom_evaluator, successor);
-        if (!successor.distributions.empty() && !callback(successor))
-            return false;
-    }
-    generate_timed_literal_successor(node, axiom_evaluator, successor);
-    return successor.distributions.empty() || callback(successor);
 }
 
 template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Source& node, formalism::ActionRowView binding);
@@ -1054,13 +1026,38 @@ SuccessorGenerator<LiftedTag>::generate_successor_state(const Source& node, form
 template ygg::float_t
 SuccessorGenerator<LiftedTag>::generate_successor_state(const Source& node, formalism::ActionRowBuilderView binding, Builder& out_state, StateDelta& out_delta);
 
-template void SuccessorGenerator<LiftedTag>::generate_successor(const Source& node,
+template void SuccessorGenerator<LiftedTag>::generate_successor<NondeterministicTag, formalism::ActionRowView>(const Source& node,
                                                               formalism::ActionRowView binding,
-                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                              SuccessorBuilder<LiftedTag>& out);
-template void SuccessorGenerator<LiftedTag>::generate_successor(const Source& node,
+                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_successor<NondeterministicTag, formalism::ActionRowBuilderView>(const Source& node,
                                                               formalism::ActionRowBuilderView binding,
-                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                                              SuccessorBuilder<LiftedTag>& out);
+                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_end_successor<NondeterministicTag>(const Source& node,
+                                                              std::uint32_t open,
+                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<NondeterministicTag>(const Source& node,
+                                                              SuccessorBuilder<NondeterministicTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_successor<ProbabilisticTag, formalism::ActionRowView>(const Source& node,
+                                                              formalism::ActionRowView binding,
+                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_successor<ProbabilisticTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                              formalism::ActionRowBuilderView binding,
+                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_end_successor<ProbabilisticTag>(const Source& node,
+                                                              std::uint32_t open,
+                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<ProbabilisticTag>(const Source& node,
+                                                              SuccessorBuilder<ProbabilisticTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_successor<GeneralTag, formalism::ActionRowView>(const Source& node,
+                                                              formalism::ActionRowView binding,
+                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_successor<GeneralTag, formalism::ActionRowBuilderView>(const Source& node,
+                                                              formalism::ActionRowBuilderView binding,
+                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_end_successor<GeneralTag>(const Source& node,
+                                                              std::uint32_t open,
+                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
+template void SuccessorGenerator<LiftedTag>::generate_timed_literal_successor<GeneralTag>(const Source& node,
+                                                              SuccessorBuilder<GeneralTag, LiftedTag>& out);
 
 }

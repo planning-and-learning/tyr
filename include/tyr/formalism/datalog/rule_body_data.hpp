@@ -28,6 +28,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -64,17 +65,14 @@ struct data<::tyr::formalism::RuleBody<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"static_literals", &data::static_literals>,
-                           urd::field<"fluent_literals", &data::fluent_literals>,
-                           urd::field<"derived_literals", &data::derived_literals>,
-                           urd::field<"numeric_constraints", &data::numeric_constraints>> {};
+        return urd::Fields<urd::field<"static_literals", &data::static_literals, urd::sorted, urd::unique>,
+                           urd::field<"fluent_literals", &data::fluent_literals, urd::sorted, urd::unique>,
+                           urd::field<"derived_literals", &data::derived_literals, urd::sorted, urd::unique>,
+                           urd::field<"numeric_constraints", &data::numeric_constraints, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::RuleBody<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::RuleBody<::tyr::GroundTag>>(index); }

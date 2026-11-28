@@ -71,8 +71,8 @@ TypedRuleSchedulerStratum::TypedRuleSchedulerStratum(const analysis::RuleStratum
     m_active_rules(),
     m_full_enumeration_rules()
 {
-    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_active_predicates.template get<F>().reserve(program.get_predicates<F>().size()); });
-    m_active_functions.reserve(program.get_functions<formalism::FluentTag>().size());
+    boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_active_predicates.template get<F>().reserve(program.predicates<F>().size()); });
+    m_active_functions.reserve(program.functions<formalism::FluentTag>().size());
 }
 
 void TypedRuleSchedulerStratum::activate_all()

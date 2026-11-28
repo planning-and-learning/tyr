@@ -52,11 +52,9 @@ struct data<::tyr::planning::AtomStorage<Kind>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &data::indices>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::indices> {}; }
-
-    [[nodiscard]] urd::key<::tyr::planning::AtomStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::AtomStorage<Kind>>(index); }
+    [[nodiscard]] urd::key<::tyr::planning::AtomStorage<Kind>> key() const noexcept { return index; }
 };
 
 }  // namespace urd

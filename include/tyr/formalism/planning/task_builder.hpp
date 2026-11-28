@@ -22,6 +22,7 @@
 #include "tyr/formalism/atom_builder.hpp"
 #include "tyr/formalism/conjunctive_condition_builder.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_term_value_builder.hpp"
 #include "tyr/formalism/object_builder.hpp"
 #include "tyr/formalism/planning/action_builder.hpp"
@@ -50,6 +51,7 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
 {
     urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> index;
     urd::built_t<urd::flat_string, C> name;
+    urd::built_t<urd::flat_vector<::tyr::formalism::RequirementKind>, C> requirements;
     urd::built_t<urd::index<::tyr::formalism::Domain>, C> domain;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
@@ -67,6 +69,7 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"name", &builder::name>,
+                           urd::field<"requirements", &builder::requirements>,
                            urd::field<"domain", &builder::domain>,
                            urd::field<"derived_predicates", &builder::derived_predicates>,
                            urd::field<"objects", &builder::objects>,
@@ -81,22 +84,6 @@ struct builder<::tyr::formalism::Task<::tyr::LiftedTag>, C>
                            urd::field<"timed_literals", &builder::timed_literals>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::name,
-                            &builder::domain,
-                            &builder::derived_predicates,
-                            &builder::objects,
-                            &builder::static_atoms,
-                            &builder::fluent_atoms,
-                            &builder::static_fterm_values,
-                            &builder::fluent_fterm_values,
-                            &builder::auxiliary_fterm_value,
-                            &builder::goal,
-                            &builder::metric,
-                            &builder::axioms,
-                            &builder::timed_literals> {};
-    }
 };
 
 /// The builder of Task: its record's members, each in its built form (urd::built_t).
@@ -105,6 +92,7 @@ struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
 {
     urd::key<::tyr::formalism::Task<::tyr::GroundTag>> index;
     urd::built_t<urd::flat_string, C> name;
+    urd::built_t<urd::flat_vector<::tyr::formalism::RequirementKind>, C> requirements;
     urd::built_t<urd::index<::tyr::formalism::Domain>, C> domain;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Object>>, C> objects;
@@ -127,6 +115,7 @@ struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"name", &builder::name>,
+                           urd::field<"requirements", &builder::requirements>,
                            urd::field<"domain", &builder::domain>,
                            urd::field<"derived_predicates", &builder::derived_predicates>,
                            urd::field<"objects", &builder::objects>,
@@ -146,7 +135,6 @@ struct builder<::tyr::formalism::Task<::tyr::GroundTag>, C>
                            urd::field<"ground_axioms", &builder::ground_axioms>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

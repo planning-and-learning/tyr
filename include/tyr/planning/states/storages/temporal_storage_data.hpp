@@ -50,11 +50,9 @@ struct data<::tyr::planning::TemporalStorage<Kind>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"parts", &data::parts>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::parts> {}; }
-
-    [[nodiscard]] urd::key<::tyr::planning::TemporalStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::TemporalStorage<Kind>>(index); }
+    [[nodiscard]] urd::key<::tyr::planning::TemporalStorage<Kind>> key() const noexcept { return index; }
 };
 
 }  // namespace urd

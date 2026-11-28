@@ -25,8 +25,8 @@ concept LiteralContract = std::constructible_from<urd::index<Entity>, ygg::uint_
                                  data.polarity;
                                  { data == data } -> std::same_as<bool>;
                                  view.index();
-                                 view.get_atom();
-                                 view.get_polarity();
+                                 view.atom();
+                                 view.polarity();
                                  { view == view } -> std::same_as<bool>;
                                  { view < view } -> std::same_as<bool>;
                              };
@@ -54,8 +54,8 @@ concept GroundLiteralContract = std::constructible_from<urd::index<Entity>, ygg:
                                        data.polarity;
                                        { data == data } -> std::same_as<bool>;
                                        view.index();
-                                       view.get_atom();
-                                       view.get_polarity();
+                                       view.atom();
+                                       view.polarity();
                                        { view == view } -> std::same_as<bool>;
                                        { view < view } -> std::same_as<bool>;
                                    };

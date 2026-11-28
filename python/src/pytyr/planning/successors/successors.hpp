@@ -18,6 +18,7 @@
 #define TYR_PYTHON_PLANNING_SUCCESSORS_SUCCESSORS_HPP_
 
 #include "pytyr/planning/module.hpp"
+#include <concepts>
 #include <nanobind/nanobind.h>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/states/state_repository.hpp>
@@ -27,12 +28,15 @@
 namespace tyr::planning
 {
 
-/// A successor with outcomes and its parts (its label, distributions and outcome nodes), as records (S4): their records,
-/// builders and views (a transition's record is bound once, for both kinds), each borrowed view bound before the owned
-/// one, which lends it. The serialization hooks of a task kind's successor views (serialization.cpp: its own source,
-/// instantiated per kind).
+/// A transition's label as records (S4): its builder and views (its record is bound once, for both kinds), alike in every
+/// environment. The serialization hooks of a task kind's label views (serialization.cpp: its own source, instantiated
+/// per kind).
 template<TaskKind Kind>
 void bind_successor_serialization();
+
+/// The serialization hooks of a task kind's successor views of environment E and its parts' builder views.
+template<NatureEnvironment E, TaskKind Kind>
+void bind_environment_successor_serialization();
 
 template<TaskKind Kind>
 void bind_successors(nb::module_& m)
@@ -40,29 +44,29 @@ void bind_successors(nb::module_& m)
     using Repository = StateRepository<Kind>;
     urd::python::bind_builder<Transition, Repository>(m);
     urd::python::bind_view<urd::index_view<Transition, Repository>>(m);
-    urd::python::bind_view<urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>>(m);
-    urd::python::bind_view<urd::borrowed_view<Transition, Repository, urd::data<Transition>>>(m);
-    urd::python::bind_index<OutcomeNode<Kind>>(m);
-    urd::python::bind_data<OutcomeNode<Kind>>(m);
-    urd::python::bind_builder<OutcomeNode<Kind>, Repository>(m);
-    urd::python::bind_view<urd::index_view<OutcomeNode<Kind>, Repository>>(m);
-    urd::python::bind_view<urd::borrowed_view<OutcomeNode<Kind>, Repository, urd::builder<OutcomeNode<Kind>, Repository>>>(m);
-    urd::python::bind_view<urd::borrowed_view<OutcomeNode<Kind>, Repository, urd::data<OutcomeNode<Kind>>>>(m);
-    urd::python::bind_index<Distribution<Kind>>(m);
-    urd::python::bind_data<Distribution<Kind>>(m);
-    urd::python::bind_builder<Distribution<Kind>, Repository>(m);
-    urd::python::bind_view<urd::index_view<Distribution<Kind>, Repository>>(m);
-    urd::python::bind_view<urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>>(m);
-    urd::python::bind_view<urd::borrowed_view<Distribution<Kind>, Repository, urd::data<Distribution<Kind>>>>(m);
-    urd::python::bind_index<Successor<Kind>>(m);
-    urd::python::bind_data<Successor<Kind>>(m);
-    urd::python::bind_builder<Successor<Kind>, Repository>(m);
-    urd::python::bind_view<urd::index_view<Successor<Kind>, Repository>>(m);
-    urd::python::bind_view<SuccessorBuilderView<Kind>>(m);
-    urd::python::bind_view<OwnedSuccessorBuilderView<Kind>>(m);
-    urd::python::bind_view<SuccessorRecordView<Kind>>(m);
-    urd::python::bind_view<OwnedSuccessorRecordView<Kind>>(m);
+    urd::python::bind_record_views<Transition, Repository>(m);
     bind_successor_serialization<Kind>();
+}
+
+/// A successor of environment E and its parts (its outcome nodes, and in the general environment its distributions), as
+/// records (S4), bound into that environment's submodule: their records, builders and views, each borrowed view bound
+/// before the owned one, which lends it.
+template<NatureEnvironment E, TaskKind Kind>
+void bind_environment_successors(nb::module_& m)
+{
+    using Repository = StateRepository<Kind>;
+    urd::python::bind_record<OutcomeNode<E, Kind>, Repository>(m);
+    urd::python::bind_record_views<OutcomeNode<E, Kind>, Repository>(m);
+    if constexpr (std::same_as<E, GeneralTag>)
+    {
+        urd::python::bind_record<Distribution<Kind>, Repository>(m);
+        urd::python::bind_record_views<Distribution<Kind>, Repository>(m);
+    }
+    urd::python::bind_record<Successor<E, Kind>, Repository>(m);
+    urd::python::bind_record_views<Successor<E, Kind>, Repository>(m);
+    urd::python::bind_view<OwnedSuccessorBuilderView<E, Kind>>(m);
+    urd::python::bind_view<OwnedSuccessorRecordView<E, Kind>>(m);
+    bind_environment_successor_serialization<E, Kind>();
 }
 
 }  // namespace tyr::planning

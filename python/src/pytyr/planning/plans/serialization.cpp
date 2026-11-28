@@ -34,7 +34,7 @@ namespace tyr::planning
 /// The serialization hooks of a task kind's plan views, once they are bound.
 template<TaskKind Kind>
 void bind_plan_serialization()
-{ ygg::python::bind_serialization(boost::mp11::mp_list<PlanBuilderView<Kind>, PlanRecordView<Kind>> {}); }
+{ ygg::python::bind_serialization(boost::mp11::mp_list<PlanBuilderView<DeterministicTag, Kind>, PlanRecordView<DeterministicTag, Kind>> {}); }
 
 template void bind_plan_serialization<GroundTag>();
 template void bind_plan_serialization<LiftedTag>();

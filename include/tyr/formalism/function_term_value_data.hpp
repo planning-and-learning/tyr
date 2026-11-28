@@ -49,9 +49,7 @@ struct data<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"fterm", &data::fterm>, urd::field<"value", &data::value>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fterm, &data::value> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fterm, &data::value> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>> key() const noexcept
     { return urd::key<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>(index); }

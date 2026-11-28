@@ -98,8 +98,6 @@ struct builder<::tyr::formalism::Action<::tyr::GroundTag>, C>
                            urd::field<"temporal_part", &builder::temporal_part>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::row, &builder::condition, &builder::effects, &builder::choices, &builder::temporal_part> {}; }
 };
 
 }  // namespace urd

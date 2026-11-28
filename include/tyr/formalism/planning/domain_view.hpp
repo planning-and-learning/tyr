@@ -40,34 +40,37 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    decltype(auto) get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
+    decltype(auto) name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
 
-    auto get_static_predicates() const noexcept { return self().template member<&urd::record_of<V>::static_predicates>(); }
+    /// What it requires of a planner, as its parser set them from what it uses.
+    decltype(auto) requirements() const noexcept { return self().template member<&urd::record_of<V>::requirements>(); }
 
-    auto get_fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
+    auto static_predicates() const noexcept { return self().template member<&urd::record_of<V>::static_predicates>(); }
 
-    auto get_derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
+    auto fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
 
-    auto get_static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
+    auto derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
 
-    auto get_fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
+    auto static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
 
-    auto get_auxiliary_function() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_function>(); }
+    auto fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
 
-    auto get_constants() const noexcept { return self().template member<&urd::record_of<V>::constants>(); }
+    auto auxiliary_function() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_function>(); }
 
-    auto get_actions() const noexcept { return self().template member<&urd::record_of<V>::actions>(); }
+    auto constants() const noexcept { return self().template member<&urd::record_of<V>::constants>(); }
 
-    auto get_axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
+    auto actions() const noexcept { return self().template member<&urd::record_of<V>::actions>(); }
+
+    auto axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
-    auto get_predicates() const noexcept
+    auto predicates() const noexcept
     { return self().template member<::tyr::formalism::domain_predicates_of<T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
-    auto get_functions() const noexcept
+    auto functions() const noexcept
     { return self().template member<::tyr::formalism::domain_functions_of<T>>(); }
 };
 }  // namespace urd

@@ -82,7 +82,7 @@ void fill_delete_free_condition(formalism::ConjunctiveConditionView<GroundTag> c
                                 GroundProgramBuildContext& context,
                                 urd::builder<formalism::RuleBody<GroundTag>, formalism::Repository>& result)
 {
-    for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
+    for (const auto fact : condition.template facts<formalism::PositiveTag>())
         if (const auto literal = create_fact_literal(fact, true, context.grounding_context))
             urd::append(result.fluent_literals, *literal);
 }
@@ -134,11 +134,11 @@ void translate_action_to_delete_free_rules(formalism::ActionView<GroundTag> acti
     {
         if (!seen.insert(cond_eff).second)
             return;
-        const auto body = create_delete_free_effect_condition(action.get_condition(), cond_eff.get_condition(), context);
+        const auto body = create_delete_free_effect_condition(action.condition(), cond_eff.condition(), context);
 
         auto heads = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>> {};
-        for (const auto fact : cond_eff.get_effect().get_facts<formalism::PositiveTag>())
-            if (const auto atom = fact.get_atom())
+        for (const auto fact : cond_eff.effect().facts<formalism::PositiveTag>())
+            if (const auto atom = fact.atom())
                 heads.push_back(atom->index());
         if (!heads.empty())
         {
@@ -159,15 +159,15 @@ create_rpg_ground_program(formalism::TaskView<GroundTag> task, RPGProgram<Ground
     translate_task_symbols(task, *context.program);
     // The atoms of the fluent facts too, each once.
     auto fluent_atoms = urd::Store<urd::set<formalism::AtomView<GroundTag, formalism::FluentTag>>> {};
-    for (const auto atom : task.get_atoms<formalism::FluentTag>())
+    for (const auto atom : task.atoms<formalism::FluentTag>())
         fluent_atoms.insert(atom);
-    for (const auto fact : task.get_fluent_facts())
-        if (const auto atom = fact.get_atom(); atom && fluent_atoms.insert(*atom).second)
+    for (const auto fact : task.fluent_facts())
+        if (const auto atom = fact.atom(); atom && fluent_atoms.insert(*atom).second)
             urd::append(context.program->fluent_atoms, *atom);
 
-    urd::store(context.program->goal, create_delete_free_condition(task.get_goal(), context));
+    urd::store(context.program->goal, create_delete_free_condition(task.goal(), context));
 
-    for (const auto action : task.get_ground_actions())
+    for (const auto action : task.ground_actions())
         translate_action_to_delete_free_rules(action, *context.program, context, mapping);
 
     return repository.insert(*context.program, context.builder).first;
@@ -193,10 +193,10 @@ create_rpg_datalog_program(const formalism::PlanningTask<GroundTag>& planning_ta
     auto source_repository = layer_over(planning_task.get_repository());
     auto source_mapping = RPGProgram<GroundTag>::RuleToActionMapping {};
     const auto source_program = create_rpg_ground_program(task, source_mapping, *source_repository);
-    const auto source_static_fact_sets = datalog::TaggedFactSets<formalism::StaticTag>(source_program.get_predicates<formalism::StaticTag>(),
-                                                                                       source_program.get_functions<formalism::StaticTag>(),
-                                                                                       source_program.get_atoms<formalism::StaticTag>(),
-                                                                                       source_program.get_fterm_values<formalism::StaticTag>(),
+    const auto source_static_fact_sets = datalog::TaggedFactSets<formalism::StaticTag>(source_program.predicates<formalism::StaticTag>(),
+                                                                                       source_program.functions<formalism::StaticTag>(),
+                                                                                       source_program.atoms<formalism::StaticTag>(),
+                                                                                       source_program.fterm_values<formalism::StaticTag>(),
                                                                                        source_program.context());
     auto source_mutable_fact_sets = datalog::MutableFactSets(source_program, source_program.context());
     datalog::insert_program_facts(source_mutable_fact_sets, source_program);

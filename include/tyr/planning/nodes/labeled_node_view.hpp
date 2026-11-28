@@ -35,19 +35,19 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] auto get_label() const noexcept { return self().template member<&urd::record_of<V>::label>(); }
+    [[nodiscard]] auto label() const noexcept { return self().template member<&urd::record_of<V>::label>(); }
 
-    [[nodiscard]] auto get_node() const noexcept { return self().template member<&urd::record_of<V>::node>(); }
+    [[nodiscard]] auto node() const noexcept { return self().template member<&urd::record_of<V>::node>(); }
 
-    /// Its record: its label's key and its node's record. A labeled node's builder's only, its label interned
-    /// (std::bad_variant_access otherwise: a borrowed binding is interned first, intern_label).
+    /// Its record (urd::pack): its label's key and its node's record. A labeled node's builder's only, its label interned
+    /// (std::invalid_argument otherwise: a borrowed binding is interned first, intern_label).
     [[nodiscard]] urd::data<::tyr::planning::LabeledNode<Kind>> pack() const
-        requires urd::is_builder<urd::record_of<V>>
-    { return urd::data<::tyr::planning::LabeledNode<Kind>>(urd::interned_view(get_label()).index(), get_node().pack()); }
+        requires urd::Builder<urd::record_of<V>>
+    { return urd::pack(self()); }
 
     static constexpr auto functions() noexcept
     {
-        if constexpr (urd::is_builder<urd::record_of<V>>)
+        if constexpr (urd::Builder<urd::record_of<V>>)
             return urd::Functions<urd::function<"pack", &view_mixin::pack>> {};
         else
             return urd::Functions<> {};

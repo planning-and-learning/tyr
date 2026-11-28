@@ -45,4 +45,4 @@ def test_fact_sets_give_a_predicates_rows() -> None:
     # The rows keep what they are read through alive.
     del facts, workspace, program, task
     gc.collect()
-    assert all(row.get_relation().get_name() for row in rows)
+    assert all(row.relation().name() for row in rows)

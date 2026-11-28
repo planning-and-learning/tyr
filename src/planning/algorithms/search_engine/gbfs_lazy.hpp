@@ -147,7 +147,7 @@ public:
         m_state_h_value = std::forward<EvaluateUnlocked>(evaluate_unlocked)(
             [&]
             {
-                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic->evaluate(node.get_state()));
+                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic->evaluate(node.state()));
                 if (std::isnan(h_value))
                     throw std::runtime_error("GBFS heuristic value is NaN.");
                 if (h_value != std::numeric_limits<ygg::float_t>::infinity())
@@ -170,7 +170,7 @@ public:
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
         const auto preferred = m_relaxed_plan && in_relaxed_plan(node, action);
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.get_metric(), m_state_h_value, preferred };
+        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.pack().state }, node.metric(), m_state_h_value, preferred };
     }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool is_preferred)
@@ -193,9 +193,9 @@ public:
             return AcceptanceResult::DISCARDED;
         }
 
-        const auto source_state = source_node.get_state();
-        const auto successor_state = successor_node.get_state();
-        const auto g_value = successor_node.get_metric();
+        const auto source_state = source_node.state();
+        const auto successor_state = successor_node.state();
+        const auto g_value = successor_node.metric();
         successor_search_node.status = SearchNodeStatus::OPEN;
         successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
@@ -276,7 +276,7 @@ private:
         {
             m_binding_row.relation = action_of(action).index();
             m_binding_row.values.clear();
-            for (const auto value : action.get_values())
+            for (const auto value : action.values())
                 m_binding_row.values.push_back(value);
             const auto row = node.context().get_task()->get_repository()->find(m_binding_row);
             return row.has_value() && m_relaxed_plan->contains(*row);

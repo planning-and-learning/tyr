@@ -178,11 +178,12 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto remote_hash = dist_hash.hash(urd::resolve(*remote_state, *repository));
     EXPECT_EQ(::tyr::planning::num_states(*repository), source_states_before_generation);
 
-    auto local_state = ::tyr::planning::get_state_builder(*repository);
-    const auto local_auxiliary_value = generator->generate_successor_state(initial, action, *local_state, delta);
-    const auto local_node = tyr::planning::OwnedNodeBuilderView<Kind>(
-        tyr::planning::register_successor(*repository, *axiom_evaluator, std::move(local_state), local_auxiliary_value, initial, delta),
-        repository.get());
+    auto local = tyr::planning::SuccessorState<Kind> {};
+    local.state = ::tyr::planning::get_state_builder(*repository);
+    local.auxiliary_value = generator->generate_successor_state(initial, action, *local.state, local.delta);
+    tyr::planning::find_successor(*repository, initial, local);
+    tyr::planning::extend_successor(*axiom_evaluator, initial, local);
+    const auto local_node = tyr::planning::OwnedNodeBuilderView<Kind>(tyr::planning::register_successor(*repository, initial, local), repository.get());
 
     const auto compatibility_node = tyr::tests::get_successor_node(*generator, initial, action, *repository, *axiom_evaluator);
     EXPECT_EQ(local_node, compatibility_node);
@@ -194,7 +195,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(dist_hash.hash(urd::resolve(*owner_state, *worker_repository)), remote_hash);
     ::tyr::planning::register_extended_state(*worker_repository, *owner_state);
     const auto owner_node = tyr::planning::OwnedNodeBuilderView<Kind>(tyr::planning::NodeBuilder<Kind> { std::move(owner_state), remote_metric }, worker_repository.get());
-    EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
+    EXPECT_EQ(owner_node.metric(), compatibility_node.metric());
     EXPECT_EQ(::tyr::planning::num_states(*repository), source_states_after_local_registration);
     EXPECT_EQ(::tyr::planning::num_states(*worker_repository), 2);
     EXPECT_EQ(dist_hash.hash(::tyr::planning::share(*worker_repository, ::tyr::planning::get_registered_state(*worker_repository, tyr::tests::built_state(owner_node).pack().index()))), remote_hash);
@@ -214,19 +215,19 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto frontier = heuristic.compute_cut_frontier_atoms(initial);
     EXPECT_EQ(frontier.size(), 2);
     const auto find_frontier_atom = [&](std::string_view name)
-    { return std::ranges::find_if(frontier, [&](const auto atom) { return atom.get_predicate().get_name().str() == name; }); };
+    { return std::ranges::find_if(frontier, [&](const auto atom) { return atom.predicate().name().str() == name; }); };
     const auto landmark_it = find_frontier_atom("landmark");
     ASSERT_NE(landmark_it, frontier.end());
     EXPECT_NE(find_frontier_atom("goal"), frontier.end());
     EXPECT_EQ(find_frontier_atom("side"), frontier.end());
 
     const auto bindings = tyr::tests::get_applicable_action_bindings(*generator, initial_node, {});
-    const auto reach_landmark = std::ranges::find_if(bindings, [](const auto binding) { return binding.get_relation().get_name().str() == "reach-landmark"; });
+    const auto reach_landmark = std::ranges::find_if(bindings, [](const auto binding) { return binding.relation().name().str() == "reach-landmark"; });
     ASSERT_NE(reach_landmark, bindings.end());
     auto side = std::optional<tyr::formalism::AtomView<GroundTag, tyr::formalism::FluentTag>> {};
-    for (const auto conditional_effect : generator->ground_action(*reach_landmark).get_effects())
-        for (const auto fact : conditional_effect.get_effect().template get_facts<tyr::formalism::PositiveTag>())
-            if (const auto atom = fact.get_atom(); atom && atom->get_predicate().get_name().str() == "side")
+    for (const auto conditional_effect : generator->ground_action(*reach_landmark).effects())
+        for (const auto fact : conditional_effect.effect().template facts<tyr::formalism::PositiveTag>())
+            if (const auto atom = fact.atom(); atom && atom->predicate().name().str() == "side")
                 side = *atom;
     ASSERT_TRUE(side);
 

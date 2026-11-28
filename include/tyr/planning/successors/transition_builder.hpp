@@ -43,7 +43,6 @@ struct builder<::tyr::planning::Transition, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"kind", &builder::kind>, urd::field<"binding", &builder::binding>, urd::field<"open", &builder::open>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }

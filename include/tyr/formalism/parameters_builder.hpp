@@ -41,7 +41,6 @@ struct builder<::tyr::formalism::Parameters, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variables", &builder::variables>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

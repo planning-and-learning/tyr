@@ -28,13 +28,41 @@
 
 namespace urd
 {
-/// One outcome of a transition: its node (its successor state and metric), the probability chance draws it with in its
-/// distribution (1 where no chance is involved), and whether it fails (a running durative action's over-all condition
-/// does not hold in it: a plan reaching it is invalid). A value, as a labeled node.
+/// One outcome of a transition in the nondeterministic environment, where an adversary picks it: its node (its successor
+/// state and metric) and whether it fails (a running durative action's over-all condition does not hold in it: a plan
+/// reaching it is invalid). No probability: an adversary's pick has none. A value, as a labeled node.
 template<::tyr::TaskKind Kind>
-struct data<::tyr::planning::OutcomeNode<Kind>>
+struct data<::tyr::planning::OutcomeNode<::tyr::planning::NondeterministicTag, Kind>>
 {
-    urd::key<::tyr::planning::OutcomeNode<Kind>> index;
+    urd::key<::tyr::planning::OutcomeNode<::tyr::planning::NondeterministicTag, Kind>> index;
+    urd::data<::tyr::planning::Node<Kind>> node;
+    bool failed = false;
+
+    data() = default;
+
+    data(urd::data<::tyr::planning::Node<Kind>> node_, bool failed_) : index(), node(node_), failed(failed_) {}
+
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"node", &data::node>, urd::field<"failed", &data::failed>> {}; }
+
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
+
+    [[nodiscard]] urd::key<::tyr::planning::OutcomeNode<::tyr::planning::NondeterministicTag, Kind>> key() const noexcept { return index; }
+};
+
+/// One outcome of a transition in an environment where chance draws (the probabilistic one, and the general one): its
+/// node (its successor state and metric), the probability chance draws it with in its distribution, and whether it fails
+/// (a running durative action's over-all condition does not hold in it: a plan reaching it is invalid). A value, as a
+/// labeled node.
+template<::tyr::planning::ChanceEnvironment E, ::tyr::TaskKind Kind>
+struct data<::tyr::planning::OutcomeNode<E, Kind>>
+{
+    urd::key<::tyr::planning::OutcomeNode<E, Kind>> index;
     urd::data<::tyr::planning::Node<Kind>> node;
     ygg::float_t probability = 1;
     bool failed = false;
@@ -54,11 +82,9 @@ struct data<::tyr::planning::OutcomeNode<Kind>>
         return urd::Fields<urd::field<"node", &data::node>, urd::field<"probability", &data::probability>, urd::field<"failed", &data::failed>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::node, &data::probability, &data::failed> {}; }
-
-    [[nodiscard]] urd::key<::tyr::planning::OutcomeNode<Kind>> key() const noexcept { return index; }
+    [[nodiscard]] urd::key<::tyr::planning::OutcomeNode<E, Kind>> key() const noexcept { return index; }
 };
 }
 

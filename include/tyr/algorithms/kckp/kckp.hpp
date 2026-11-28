@@ -63,9 +63,7 @@ struct urd::data<tyr::kckp::Vertex>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"number", &data::number>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::number> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 };
 
 namespace tyr::kckp

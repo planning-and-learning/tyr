@@ -112,18 +112,18 @@ try
     const auto node = tyr::planning::get_initial_node(*repository, *evaluator);
     auto expected_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
     tyr::benchmarks::interned_bindings(*generator, builder, node, {}, expected_bindings);
-    const auto schemas = prepared.task->get_task().get_domain().get_actions();
+    const auto schemas = prepared.task->get_task().get_domain().actions();
     const auto selected = std::ranges::find_if(
         schemas,
-        [&](auto schema) { return std::ranges::any_of(expected_bindings, [&](auto binding) { return binding.get_relation() == schema; }); });
+        [&](auto schema) { return std::ranges::any_of(expected_bindings, [&](auto binding) { return binding.relation() == schema; }); });
     if (selected == schemas.end())
     {
         state.SkipWithError("No initially applicable schema.");
         return;
     }
     const auto schema = *selected;
-    const auto reject_binding = [&](auto binding) { return binding.get_relation() != schema; };
-    state.SetLabel(std::string(schema.get_name()));
+    const auto reject_binding = [&](auto binding) { return binding.relation() != schema; };
+    state.SetLabel(std::string(schema.name()));
     state.counters["num_schemas"] = static_cast<double>(schemas.size());
     state.counters["num_applicable_bindings"] = static_cast<double>(expected_bindings.size());
     erase_if(expected_bindings, reject_binding);
@@ -185,7 +185,7 @@ try
     {
         auto expected = tyr::planning::LabeledNodeList<LiftedTag> {};
         tyr::benchmarks::labeled_successors(*generator, builder, node, {}, *repository, *evaluator, expected);
-        erase_if(expected, [&](const auto& successor) { return reject_binding(urd::resolve(successor, *repository).get_label()); });
+        erase_if(expected, [&](const auto& successor) { return reject_binding(urd::resolve(successor, *repository).label()); });
         const auto by_label = [](const auto& lhs, const auto& rhs) { return lhs.label < rhs.label; };
         std::ranges::sort(expected, by_label);
         std::ranges::sort(successors, by_label);

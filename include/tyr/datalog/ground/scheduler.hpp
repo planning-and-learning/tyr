@@ -97,7 +97,7 @@ public:
     /// the rules with negative literals.
     Scheduler(formalism::ProgramView<GroundTag> program, const analysis::RuleStrata<GroundTag>& strata) : m_program(program)
     {
-        const auto rules = program.get_rules();
+        const auto rules = program.rules();
         const auto num_slots = formalism::rule_index_bound(rules);
         m_states.resize(num_slots);
         m_conditions.resize(num_slots);
@@ -106,10 +106,10 @@ public:
         {
             const auto rule_index = static_cast<ygg::uint_t>(rule.index().value);
             m_rules[rule_index] = rule;
-            const auto body = rule.get_body();
-            const auto numeric_constraints = body.get_numeric_constraints().size();
+            const auto body = rule.body();
+            const auto numeric_constraints = body.numeric_constraints().size();
             auto num_literals = size_t { 0 };
-            boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { num_literals += body.template get_literals<F>().size(); });
+            boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { num_literals += body.template literals<F>().size(); });
             m_conditions[rule_index] = static_cast<ygg::uint_t>(num_literals + numeric_constraints);
             if (numeric_constraints != 0)
                 m_numeric_rules.push_back(rule);
@@ -125,8 +125,8 @@ public:
                 boost::mp11::mp_for_each<MutableTags>(
                     [&]<typename F>(F)
                     {
-                        for (const auto literal : rule.get_body().template get_literals<F>())
-                            has_negative_literal = has_negative_literal || !literal.get_polarity();
+                        for (const auto literal : rule.body().template literals<F>())
+                            has_negative_literal = has_negative_literal || !literal.polarity();
                     });
                 if (has_negative_literal)
                     m_negative_rules[stratum].push_back(rule);

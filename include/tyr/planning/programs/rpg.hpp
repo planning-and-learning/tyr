@@ -90,7 +90,7 @@ public:
 
     /// Not noexcept: the view accessors it goes through are checked and may throw.
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access): value() is the check: it throws for a program without a goal
-    [[nodiscard]] formalism::RuleBodyView<GroundTag> get_goal() const { return m_datalog_program.get_program().get_goal().value(); }
+    [[nodiscard]] formalism::RuleBodyView<GroundTag> get_goal() const { return m_datalog_program.get_program().goal().value(); }
 
 private:
     RuleToActionMapping m_rule_to_action;

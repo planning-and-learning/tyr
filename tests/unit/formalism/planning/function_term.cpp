@@ -40,8 +40,8 @@ concept FunctionTermContract = std::constructible_from<urd::index<Entity>, ygg::
                                       data.terms;
                                       { data == data } -> std::same_as<bool>;
                                       view.index();
-                                      view.get_function();
-                                      view.get_terms();
+                                      view.function();
+                                      view.terms();
                                       { view == view } -> std::same_as<bool>;
                                       { view < view } -> std::same_as<bool>;
                                   };
@@ -68,10 +68,10 @@ concept GroundFunctionTermContract = std::constructible_from<urd::index<Entity>,
                                             data.row;
                                             { data == data } -> std::same_as<bool>;
                                             view.index();
-                                            view.get_function();
-                                            view.get_row();
-                                            view.get_row().template resolve<tyr::formalism::Object>();
-                                            view.get_row().get_relation().index();
+                                            view.function();
+                                            view.row();
+                                            view.row().template resolve<tyr::formalism::Object>();
+                                            view.row().relation().index();
                                             { view == view } -> std::same_as<bool>;
                                             { view < view } -> std::same_as<bool>;
                                         };
@@ -108,8 +108,8 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     const auto [ground_function_term, ground_function_term_created] = repository.insert(ground_function_term_data);
     ASSERT_TRUE(ground_function_term_created);
 
-    EXPECT_EQ(ground_function_term.get_function().index(), function.index());
-    const auto objects = ground_function_term.get_row().template resolve<tyr::formalism::Object>();
+    EXPECT_EQ(ground_function_term.function().index(), function.index());
+    const auto objects = ground_function_term.row().template resolve<tyr::formalism::Object>();
     ASSERT_EQ(objects.size(), 1);
     EXPECT_EQ(objects[0].index(), object.index());
     EXPECT_EQ(fmt::format("{}", binding), "(fuel truck)");
@@ -140,8 +140,8 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     const auto term = source.insert(term_data).first;
     auto builder = tyr::formalism::Builder {};
     const auto copied = destination.view(urd::copy(term, destination, builder));
-    EXPECT_EQ(copied.get_function(), target_function);
-    EXPECT_EQ(urd::as_member<tyr::formalism::Term>(copied.get_terms()[0]), urd::as_member<tyr::formalism::Term>(term.get_terms()[0]));
+    EXPECT_EQ(copied.function(), target_function);
+    EXPECT_EQ(urd::as_member<tyr::formalism::Term>(copied.terms()[0]), urd::as_member<tyr::formalism::Term>(term.terms()[0]));
     EXPECT_EQ(urd::copy(term, destination, builder), copied.index());  // interned once
 }
 

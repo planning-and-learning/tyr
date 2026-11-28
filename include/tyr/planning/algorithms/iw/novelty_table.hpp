@@ -313,9 +313,9 @@ private:
     void collect_atoms(const V& state, AtomIndexList& out)
     {
         out.clear();
-        for (const auto fact : state.get_fluent_facts())
+        for (const auto fact : state.fluent_facts())
         {
-            if (const auto atom = fact.get_atom())
+            if (const auto atom = fact.atom())
                 out.push_back(ygg::uint_t(atom->index().value));
         }
 

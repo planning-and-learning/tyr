@@ -113,14 +113,6 @@ struct LabeledNode
     static constexpr std::string_view name = "LabeledNode";
 };
 
-/// The tag of a plan: a start node and the labeled nodes that follow it. Its record holds their records (plan_data.hpp),
-/// its builder their builders: states unpacked, registered or not (plan_builder.hpp).
-template<TaskKind Kind>
-struct Plan
-{
-    static constexpr std::string_view name = "Plan";
-};
-
 class StaticState;
 
 /// The tag of a state: its record urd::data<State<Kind>> is the state as its repository stores it, its storages packed
@@ -157,15 +149,89 @@ constexpr std::string_view to_string(TransitionKind kind)
     throw std::logic_error("to_string(TransitionKind): unknown kind");
 }
 
-/// The tags of a successor and its parts, records read through the state repository of their task (successor_data.hpp):
-/// a transition's label, an outcome (a successor state, its metric, its probability and whether it fails), a
-/// distribution over outcomes, and a successor (a label and the distributions an adversary picks from).
+/// The environments a successor function works in: what nature does once a transition is chosen. A function names its
+/// environment as its first template argument (generate_successor<DeterministicTag>(...)); the generator is the same in
+/// all of them.
+/// Nothing: a transition has one successor state.
+struct DeterministicTag
+{
+};
+/// An adversary picks one of a transition's outcomes (oneof).
+struct NondeterministicTag
+{
+};
+/// Chance draws one of a transition's outcomes (probabilistic).
+struct ProbabilisticTag
+{
+};
+/// The general case, which the others specialize: an adversary picks a distribution, chance draws an outcome from it
+/// (oneof and probabilistic effects, in any nesting).
+struct GeneralTag
+{
+};
+
+template<typename E>
+concept Environment =
+    std::same_as<E, DeterministicTag> || std::same_as<E, NondeterministicTag> || std::same_as<E, ProbabilisticTag> || std::same_as<E, GeneralTag>;
+
+/// The environments in which nature acts: a transition has outcomes (every one but the deterministic).
+template<typename E>
+concept NatureEnvironment = std::same_as<E, NondeterministicTag> || std::same_as<E, ProbabilisticTag> || std::same_as<E, GeneralTag>;
+
+/// The environments in which chance draws: an outcome carries its probability.
+template<typename E>
+concept ChanceEnvironment = std::same_as<E, ProbabilisticTag> || std::same_as<E, GeneralTag>;
+
+/// The environments in which nature picks among a transition's outcomes directly, an adversary or chance alone: a
+/// successor is its label and its outcomes (the general one has distributions of them in between).
+template<typename E>
+concept OutcomeEnvironment = std::same_as<E, NondeterministicTag> || std::same_as<E, ProbabilisticTag>;
+
+/// What a task's actions ask of an environment: whether some action has a oneof, some a probabilistic effect, and whether
+/// the task is temporal (a durative action or a timed initial literal). A successor generator computes them once
+/// (features()); an algorithm checks them when it is set up (require_environment).
+struct TaskFeatures
+{
+    bool oneof = false;
+    bool probabilistic = false;
+    bool temporal = false;
+};
+
+/// Whether environment E gives a task of these features its exact successors: the deterministic one where nature chooses
+/// nothing, the nondeterministic one where chance draws nothing, the probabilistic one where no adversary picks.
+template<Environment E>
+constexpr bool supports(TaskFeatures features) noexcept
+{
+    if constexpr (std::same_as<E, DeterministicTag>)
+        return !features.oneof && !features.probabilistic;
+    else if constexpr (std::same_as<E, NondeterministicTag>)
+        return !features.probabilistic;
+    else if constexpr (std::same_as<E, ProbabilisticTag>)
+        return !features.oneof;
+    else
+        return true;
+}
+
+/// The tag of a plan in environment E: what solves a task there. A deterministic plan is a start node and the labeled
+/// nodes that follow it; its record holds their records (plan_data.hpp), its builder their builders: states unpacked,
+/// registered or not (plan_builder.hpp). Where nature acts a solution is a policy, which has no record yet.
+template<Environment E, TaskKind Kind>
+struct Plan
+{
+    static constexpr std::string_view name = "Plan";
+};
+
+/// The tags of a successor and its parts, records read through the state repository of their task: a transition's
+/// label; an outcome in environment E (a successor state and its metric, whether it fails, and where chance draws its
+/// probability: outcome_node_data.hpp); a distribution over outcomes, which only the general environment has; and a
+/// successor in environment E (a label and its outcomes, or in the general environment the distributions an adversary
+/// picks from: successor_data.hpp). The deterministic environment has no records: its successor is a successor state.
 struct Transition
 {
     static constexpr std::string_view name = "Transition";
 };
 
-template<TaskKind Kind>
+template<NatureEnvironment E, TaskKind Kind>
 struct OutcomeNode
 {
     static constexpr std::string_view name = "OutcomeNode";
@@ -177,7 +243,7 @@ struct Distribution
     static constexpr std::string_view name = "Distribution";
 };
 
-template<TaskKind Kind>
+template<NatureEnvironment E, TaskKind Kind>
 struct Successor
 {
     static constexpr std::string_view name = "Successor";
@@ -221,18 +287,18 @@ template<TaskKind Kind>
 using NumericStorageBuilderView = urd::borrowed_view<NumericStorage<Kind>, StateRepository<Kind>, urd::builder<NumericStorage<Kind>, StateRepository<Kind>>>;
 template<TaskKind Kind>
 using TemporalStorageBuilderView = urd::borrowed_view<TemporalStorage<Kind>, StateRepository<Kind>, urd::builder<TemporalStorage<Kind>, StateRepository<Kind>>>;
-/// A successor being built (a generator writes it: its outcome states built, unregistered) and a successor packed (its
-/// record: its outcome states' keys), each borrowed or owned, read through the state repository of its task.
-template<TaskKind Kind>
-using SuccessorBuilder = urd::builder<Successor<Kind>, StateRepository<Kind>>;
-template<TaskKind Kind>
-using SuccessorBuilderView = urd::borrowed_view<Successor<Kind>, StateRepository<Kind>, SuccessorBuilder<Kind>>;
-template<TaskKind Kind>
-using OwnedSuccessorBuilderView = urd::owning_view<Successor<Kind>, StateRepository<Kind>, SuccessorBuilder<Kind>>;
-template<TaskKind Kind>
-using SuccessorRecordView = urd::borrowed_view<Successor<Kind>, StateRepository<Kind>, urd::data<Successor<Kind>>>;
-template<TaskKind Kind>
-using OwnedSuccessorRecordView = urd::owning_view<Successor<Kind>, StateRepository<Kind>, urd::data<Successor<Kind>>>;
+/// A successor in environment E being built (a generator writes it: its outcome states built, unregistered) and one
+/// packed (its record: its outcome states' keys), each borrowed or owned, read through the state repository of its task.
+template<NatureEnvironment E, TaskKind Kind>
+using SuccessorBuilder = urd::builder<Successor<E, Kind>, StateRepository<Kind>>;
+template<NatureEnvironment E, TaskKind Kind>
+using SuccessorBuilderView = urd::borrowed_view<Successor<E, Kind>, StateRepository<Kind>, SuccessorBuilder<E, Kind>>;
+template<NatureEnvironment E, TaskKind Kind>
+using OwnedSuccessorBuilderView = urd::owning_view<Successor<E, Kind>, StateRepository<Kind>, SuccessorBuilder<E, Kind>>;
+template<NatureEnvironment E, TaskKind Kind>
+using SuccessorRecordView = urd::borrowed_view<Successor<E, Kind>, StateRepository<Kind>, urd::data<Successor<E, Kind>>>;
+template<NatureEnvironment E, TaskKind Kind>
+using OwnedSuccessorRecordView = urd::owning_view<Successor<E, Kind>, StateRepository<Kind>, urd::data<Successor<E, Kind>>>;
 /// A registered state, packed: the view of its record's index, through its repository, which must outlive it (unpack()
 /// gives it unpacked, a SharedStateBuilderView).
 template<TaskKind Kind>
@@ -266,18 +332,18 @@ template<TaskKind Kind>
 using OwnedLabeledNodeBuilderView = urd::owning_view<LabeledNode<Kind>, StateRepository<Kind>, LabeledNodeBuilder<Kind>>;
 template<TaskKind Kind>
 using OwnedLabeledNodeRecordView = urd::owning_view<LabeledNode<Kind>, StateRepository<Kind>, urd::data<LabeledNode<Kind>>>;
-/// A plan being built or held (its builder), borrowed or owned, and a plan packed (its record), borrowed or owned; each read
-/// through its state repository, which must outlive it (its states' builders go back to its pool).
-template<TaskKind Kind>
-using PlanBuilder = urd::builder<Plan<Kind>, StateRepository<Kind>>;
-template<TaskKind Kind>
-using PlanBuilderView = urd::borrowed_view<Plan<Kind>, StateRepository<Kind>, PlanBuilder<Kind>>;
-template<TaskKind Kind>
-using OwnedPlanBuilderView = urd::owning_view<Plan<Kind>, StateRepository<Kind>, PlanBuilder<Kind>>;
-template<TaskKind Kind>
-using PlanRecordView = urd::borrowed_view<Plan<Kind>, StateRepository<Kind>, urd::data<Plan<Kind>>>;
-template<TaskKind Kind>
-using OwnedPlanRecordView = urd::owning_view<Plan<Kind>, StateRepository<Kind>, urd::data<Plan<Kind>>>;
+/// A plan of environment E being built and one packed (its record), each borrowed or owned, read through the state
+/// repository of its task.
+template<Environment E, TaskKind Kind>
+using PlanBuilder = urd::builder<Plan<E, Kind>, StateRepository<Kind>>;
+template<Environment E, TaskKind Kind>
+using PlanBuilderView = urd::borrowed_view<Plan<E, Kind>, StateRepository<Kind>, PlanBuilder<E, Kind>>;
+template<Environment E, TaskKind Kind>
+using OwnedPlanBuilderView = urd::owning_view<Plan<E, Kind>, StateRepository<Kind>, PlanBuilder<E, Kind>>;
+template<Environment E, TaskKind Kind>
+using PlanRecordView = urd::borrowed_view<Plan<E, Kind>, StateRepository<Kind>, urd::data<Plan<E, Kind>>>;
+template<Environment E, TaskKind Kind>
+using OwnedPlanRecordView = urd::owning_view<Plan<E, Kind>, StateRepository<Kind>, urd::data<Plan<E, Kind>>>;
 
 template<TaskKind Kind>
 class AxiomEvaluator;

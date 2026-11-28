@@ -25,6 +25,7 @@
 #include <tyr/formalism/formatter.hpp>
 #include <urd/elements/index.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::formalism

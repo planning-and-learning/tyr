@@ -25,6 +25,7 @@
 #include "tyr/planning/nodes/node_concepts.hpp"
 #include "tyr/planning/nodes/node_view.hpp"
 #include "tyr/planning/states/state_delta.hpp"
+#include "tyr/planning/states/state_repository.hpp"
 #include "tyr/planning/successors/successor_generator.hpp"
 #include "tyr/planning/successors/successor_generator_concepts.hpp"
 #include "tyr/planning/successors/successors.hpp"
@@ -51,7 +52,7 @@ namespace tyr::tests
 /// repository's node).
 template<TaskKind Kind, typename C, typename R>
 planning::StateBuilderView<Kind> built_state(const urd::borrowed_view<planning::Node<Kind>, C, R>& node)
-{ return node.get_state(); }
+{ return node.state(); }
 
 /// Successors closed under the axioms in builders of `repository`'s pool, not registered (extend_successor).
 template<TaskKind Kind>
@@ -94,6 +95,34 @@ void validate_storage(planning::SuccessorGenerator<Kind>& generator, Storage& st
         throw std::invalid_argument("tests: the successor generator, state repository and axiom evaluator must be of one task.");
 }
 
+/// The three steps for `state`, a builder of `repository`: the lookup, the axiom step unless a state of its identity is
+/// registered already, registering; with `parent` and `delta`, stored as its changes to `parent`.
+template<TaskKind Kind>
+void register_state(planning::StateRepository<Kind>& repository,
+                    planning::AxiomEvaluator<Kind>& axiom_evaluator,
+                    urd::builder<planning::State<Kind>, planning::StateRepository<Kind>>& state)
+{
+    if (!planning::find_state(repository, state))
+    {
+        axiom_evaluator.compute_extended_state(state, repository);
+        planning::register_extended_state(repository, state);
+    }
+}
+
+template<TaskKind Kind>
+void register_state(planning::StateRepository<Kind>& repository,
+                    planning::AxiomEvaluator<Kind>& axiom_evaluator,
+                    urd::builder<planning::State<Kind>, planning::StateRepository<Kind>>& state,
+                    const std::type_identity_t<planning::StateBuilderView<Kind>>& parent,
+                    const planning::StateDelta& delta)
+{
+    if (!planning::find_state(repository, state, parent, delta))
+    {
+        axiom_evaluator.compute_extended_state(state, repository);
+        planning::register_extended_state(repository, state, parent, delta);
+    }
+}
+
 /// The successor of `node` by `binding`, as a node builder: registered in a repository, or closed under the axioms and not
 /// registered.
 template<TaskKind Kind, typename Binding>
@@ -104,9 +133,14 @@ planning::NodeBuilder<Kind> successor_builder(planning::SuccessorGenerator<Kind>
                                               planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                               planning::StateDelta& delta)
 {
-    auto state = ::tyr::planning::get_state_builder(repository);
-    const auto auxiliary_value = generator.generate_successor_state(node, binding, *state, delta);
-    return planning::register_successor(repository, axiom_evaluator, std::move(state), auxiliary_value, node, delta);
+    auto successor = planning::SuccessorState<Kind> {};
+    successor.state = ::tyr::planning::get_state_builder(repository);
+    successor.auxiliary_value = generator.generate_successor_state(node, binding, *successor.state, successor.delta);
+    planning::find_successor(repository, node, successor);
+    planning::extend_successor(axiom_evaluator, node, successor);
+    auto result = planning::register_successor(repository, node, successor);
+    std::swap(delta, successor.delta);
+    return result;
 }
 
 template<TaskKind Kind, typename Binding>
@@ -117,9 +151,13 @@ planning::NodeBuilder<Kind> successor_builder(planning::SuccessorGenerator<Kind>
                                               planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                               planning::StateDelta& delta)
 {
-    auto state = ::tyr::planning::get_state_builder(*storage.repository);
-    const auto auxiliary_value = generator.generate_successor_state(node, binding, *state, delta);
-    return planning::extend_successor(std::move(state), auxiliary_value, node, axiom_evaluator);
+    auto successor = planning::SuccessorState<Kind> {};
+    successor.state = ::tyr::planning::get_state_builder(*storage.repository);
+    successor.auxiliary_value = generator.generate_successor_state(node, binding, *successor.state, successor.delta);
+    planning::extend_successor(axiom_evaluator, node, successor);
+    auto result = planning::successor_node(node, successor);
+    std::swap(delta, successor.delta);
+    return result;
 }
 
 template<TaskKind Kind, typename Binding, typename Storage>
@@ -377,7 +415,7 @@ try_get_applicable_action_binding(planning::SuccessorGenerator<Kind>& generator,
     else if constexpr (std::same_as<Kind, GroundTag>)
     {
         // An applicable ground binding names a ground action of the task: its row is interned already.
-        auto row = urd::make<ygg::Row<formalism::Action<LiftedTag>>>(planning::action_of(binding), binding.get_values());
+        auto row = urd::make<ygg::Row<formalism::Action<LiftedTag>>>(planning::action_of(binding), binding.values());
         return { status, generator.get_task()->get_repository()->find(row) };
     }
     else
@@ -419,16 +457,16 @@ planning::OwnedNodeBuilderView<Kind> node_of_state(const std::type_identity_t<pl
 template<TaskKind Kind>
 planning::OwnedNodeBuilderView<Kind> unpacked(const planning::OwnedNodeRecordView<Kind>& node)
 {
-    return planning::OwnedNodeBuilderView<Kind>(planning::get_node(node.context(), urd::data<planning::Node<Kind>>(node.get_state().index(), node.get_metric())),
+    return planning::OwnedNodeBuilderView<Kind>(planning::get_node(node.context(), urd::data<planning::Node<Kind>>(node.state().index(), node.metric())),
                                      &node.context());
 }
 
 template<TaskKind Kind>
 planning::OwnedLabeledNodeBuilderView<Kind> unpacked(const planning::OwnedLabeledNodeRecordView<Kind>& node)
 {
-    const auto packed_node = node.get_node();
-    const auto record = urd::data<planning::LabeledNode<Kind>>(node.get_label().index(),
-                                                               urd::data<planning::Node<Kind>>(packed_node.get_state().index(), packed_node.get_metric()));
+    const auto packed_node = node.node();
+    const auto record = urd::data<planning::LabeledNode<Kind>>(node.label().index(),
+                                                               urd::data<planning::Node<Kind>>(packed_node.state().index(), packed_node.metric()));
     return planning::OwnedLabeledNodeBuilderView<Kind>(planning::get_labeled_node(node.context(), record), &node.context());
 }
 
@@ -439,15 +477,15 @@ planning::OwnedNodeRecordView<Kind> packed(const std::type_identity_t<planning::
 
 /// The plan from `start` through the labeled nodes `steps` (records), unpacked from `start`'s repository.
 template<TaskKind Kind>
-planning::OwnedPlanBuilderView<Kind> make_plan(const std::type_identity_t<planning::NodeBuilderView<Kind>>& start,
+planning::OwnedPlanBuilderView<planning::DeterministicTag, Kind> make_plan(const std::type_identity_t<planning::NodeBuilderView<Kind>>& start,
                                     std::initializer_list<urd::data<planning::LabeledNode<Kind>>> steps)
 {
     const auto& repository = start.context();
-    auto plan = planning::PlanBuilder<Kind>();
+    auto plan = planning::PlanBuilder<planning::DeterministicTag, Kind>();
     plan.start_node = planning::get_node(repository, start.pack());
     for (const auto& step : steps)
         plan.labeled_succ_nodes.push_back(planning::get_labeled_node(repository, step));
-    return planning::OwnedPlanBuilderView<Kind>(std::move(plan), &repository);
+    return planning::OwnedPlanBuilderView<planning::DeterministicTag, Kind>(std::move(plan), &repository);
 }
 
 /// A labeled node's record from its label and its node.

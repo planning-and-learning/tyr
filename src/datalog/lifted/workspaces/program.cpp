@@ -78,10 +78,10 @@ template struct ProgramWorkspace<LiftedTag,
                                  RuleCostOverridePolicy<LiftedTag>>;
 
 ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& program) :
-    facts(program.get_program().get_predicates<formalism::StaticTag>(),
-          program.get_program().get_functions<formalism::StaticTag>(),
-          program.get_program().get_atoms<formalism::StaticTag>(),
-          program.get_program().get_fterm_values<formalism::StaticTag>(),
+    facts(program.get_program().predicates<formalism::StaticTag>(),
+          program.get_program().functions<formalism::StaticTag>(),
+          program.get_program().atoms<formalism::StaticTag>(),
+          program.get_program().fterm_values<formalism::StaticTag>(),
           *program.m_program_repository),
     engine(program.get_program(), *program.m_program_repository, program.m_analysis, facts.fact_sets)
 {

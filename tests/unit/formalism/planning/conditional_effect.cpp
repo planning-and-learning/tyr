@@ -34,10 +34,10 @@ static_assert(requires(ConditionalEffectData& data) {
 });
 static_assert(requires(const ConditionalEffectView& view) {
     view.index();
-    view.get_arity();
-    view.get_variables();
-    view.get_condition();
-    view.get_effect();
+    view.arity();
+    view.variables();
+    view.condition();
+    view.effect();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
@@ -64,8 +64,8 @@ static_assert(requires(GroundConditionalEffectData& data) {
 });
 static_assert(requires(const GroundConditionalEffectView& view) {
     view.index();
-    view.get_condition();
-    view.get_effect();
+    view.condition();
+    view.effect();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });

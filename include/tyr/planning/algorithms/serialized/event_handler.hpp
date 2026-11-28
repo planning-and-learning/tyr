@@ -41,7 +41,7 @@ public:
     virtual void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics, const Stats& solver_statistics) = 0;
     virtual void on_end_subsearch(ygg::uint_t subsearch_index, tyr::planning::SearchStatus status) = 0;
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
-    virtual void on_solved(const PlanBuilderView<Kind>& plan) = 0;
+    virtual void on_solved(const PlanBuilderView<DeterministicTag, Kind>& plan) = 0;
 
 protected:
     EventHandler(const EventHandler&) = default;
@@ -102,7 +102,7 @@ public:
             self().on_end_search_impl(status, statistics);
     }
 
-    void on_solved(const PlanBuilderView<Kind>& plan) override
+    void on_solved(const PlanBuilderView<DeterministicTag, Kind>& plan) override
     {
         if (verbosity(1))
             self().on_solved_impl(plan);
@@ -133,7 +133,7 @@ private:
         static_cast<void>(statistics);
     }
 
-    void on_solved_impl(const PlanBuilderView<Kind>& plan) const { static_cast<void>(plan); }
+    void on_solved_impl(const PlanBuilderView<DeterministicTag, Kind>& plan) const { static_cast<void>(plan); }
 
 public:
     explicit DefaultEventHandler(size_t verbosity = 0) : EventHandlerBase<DefaultEventHandler<Kind, Stats>, Kind, Stats>(verbosity) {}

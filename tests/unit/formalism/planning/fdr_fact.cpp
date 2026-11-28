@@ -20,13 +20,13 @@ concept FdrFactContract = std::totally_ordered<urd::data<Entity>> && std::totall
                                  data.variable;
                                  data.value;
                                  { data == data } -> std::same_as<bool>;
-                                 view.get_variable();
-                                 view.get_value();
+                                 view.variable();
+                                 view.value();
                                  view.has_value();
                                  {
-                                     view.get_atom_index()
+                                     view.atom_index()
                                  } -> std::same_as<std::optional<urd::index<tyr::formalism::Atom<tyr::GroundTag, tyr::formalism::FluentTag>>>>;
-                                 { view.get_atom() } -> std::same_as<std::optional<tyr::formalism::AtomView<tyr::GroundTag, tyr::formalism::FluentTag>>>;
+                                 { view.atom() } -> std::same_as<std::optional<tyr::formalism::AtomView<tyr::GroundTag, tyr::formalism::FluentTag>>>;
                                  { view == view } -> std::same_as<bool>;
                                  { view < view } -> std::same_as<bool>;
                              };

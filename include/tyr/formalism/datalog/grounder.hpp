@@ -23,7 +23,6 @@
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -60,20 +59,17 @@ std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, Groundi
 
 inline std::pair<RuleBodyView<GroundTag>, bool> ground(RuleBodyView<LiftedTag> element, GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto conj_cond = checkout<RuleBody<GroundTag>>(context.builder());
 
-    // Fill data
-    for (const auto literal : element.template get_literals<StaticTag>())
+    for (const auto literal : element.template literals<StaticTag>())
         urd::append(conj_cond->static_literals, ground(literal, context).first);
-    for (const auto literal : element.template get_literals<FluentTag>())
+    for (const auto literal : element.template literals<FluentTag>())
         urd::append(conj_cond->fluent_literals, ground(literal, context).first);
-    for (const auto literal : element.template get_literals<DerivedTag>())
+    for (const auto literal : element.template literals<DerivedTag>())
         urd::append(conj_cond->derived_literals, ground(literal, context).first);
-    for (const auto numeric_constraint : element.get_numeric_constraints())
+    for (const auto numeric_constraint : element.numeric_constraints())
         urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, context).first);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*conj_cond, context.builder());
 }
 

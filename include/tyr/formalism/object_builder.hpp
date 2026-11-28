@@ -42,7 +42,6 @@ struct builder<::tyr::formalism::Object, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &builder::name>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::name> {}; }
 };
 
 }  // namespace urd

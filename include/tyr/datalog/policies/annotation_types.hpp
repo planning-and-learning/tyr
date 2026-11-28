@@ -341,7 +341,7 @@ public:
     /// Sized for the predicates of each mutable kind of the program.
     explicit PredicateAnnotationMap(formalism::ProgramView<Kind> program)
     {
-        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_annotations.template get<F>().initialize(program.template get_predicates<F>().size()); });
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { m_annotations.template get<F>().initialize(program.template predicates<F>().size()); });
     }
 
     /// Resetting bumps the generation rather than touching the dense row span. Slots of older

@@ -66,6 +66,36 @@ enum class OptimizationDirection : std::uint8_t
     Maximize,
 };
 
+/// What a domain or a task requires of a planner (PDDL's :requirements), as its parser sets them from what it uses: a
+/// oneof needs :non-deterministic, a probabilistic effect :probabilistic-effects, a durative action :durative-actions.
+enum class RequirementKind : std::uint8_t
+{
+    Strips,
+    Typing,
+    NegativePreconditions,
+    DisjunctivePreconditions,
+    Equality,
+    ExistentialPreconditions,
+    UniversalPreconditions,
+    QuantifiedPreconditions,
+    Adl,
+    ConditionalEffects,
+    Fluents,
+    NumericFluents,
+    ActionCosts,
+    DurativeActions,
+    DerivedPredicates,
+    NonDeterministic,
+    ProbabilisticEffects,
+    DurationInequalities,
+    TimedInitialLiterals,
+    Rewards,
+    Preferences,
+    Constraints,
+    Mdp,
+    TrajectoryFormulas,
+};
+
 constexpr std::string_view to_string(BooleanOperatorKind op)
 {
     switch (op)
@@ -130,6 +160,62 @@ constexpr std::string_view to_string(OptimizationDirection direction)
             return "maximize";
     }
     throw std::invalid_argument("invalid OptimizationDirection");
+}
+
+constexpr std::string_view to_string(RequirementKind kind)
+{
+    switch (kind)
+    {
+        case RequirementKind::Strips:
+            return ":strips";
+        case RequirementKind::Typing:
+            return ":typing";
+        case RequirementKind::NegativePreconditions:
+            return ":negative-preconditions";
+        case RequirementKind::DisjunctivePreconditions:
+            return ":disjunctive-preconditions";
+        case RequirementKind::Equality:
+            return ":equality";
+        case RequirementKind::ExistentialPreconditions:
+            return ":existential-preconditions";
+        case RequirementKind::UniversalPreconditions:
+            return ":universal-preconditions";
+        case RequirementKind::QuantifiedPreconditions:
+            return ":quantified-preconditions";
+        case RequirementKind::Adl:
+            return ":adl";
+        case RequirementKind::ConditionalEffects:
+            return ":conditional-effects";
+        case RequirementKind::Fluents:
+            return ":fluents";
+        case RequirementKind::NumericFluents:
+            return ":numeric-fluents";
+        case RequirementKind::ActionCosts:
+            return ":action-costs";
+        case RequirementKind::DurativeActions:
+            return ":durative-actions";
+        case RequirementKind::DerivedPredicates:
+            return ":derived-predicates";
+        case RequirementKind::NonDeterministic:
+            return ":non-deterministic";
+        case RequirementKind::ProbabilisticEffects:
+            return ":probabilistic-effects";
+        case RequirementKind::DurationInequalities:
+            return ":duration-inequalities";
+        case RequirementKind::TimedInitialLiterals:
+            return ":timed-initial-literals";
+        case RequirementKind::Rewards:
+            return ":rewards";
+        case RequirementKind::Preferences:
+            return ":preferences";
+        case RequirementKind::Constraints:
+            return ":constraints";
+        case RequirementKind::Mdp:
+            return ":mdp";
+        case RequirementKind::TrajectoryFormulas:
+            return ":trajectory-formulas";
+    }
+    throw std::invalid_argument("invalid RequirementKind");
 }
 
 constexpr bool is_unary(ArithmeticOperatorKind op) noexcept { return op == ArithmeticOperatorKind::Sub; }

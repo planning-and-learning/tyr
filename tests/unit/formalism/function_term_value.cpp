@@ -23,8 +23,8 @@ concept GroundFunctionTermValueContract =
            data.value;
            { data == data } -> std::same_as<bool>;
            view.index();
-           view.get_fterm();
-           view.get_value();
+           view.fterm();
+           view.value();
            { view == view } -> std::same_as<bool>;
            { view < view } -> std::same_as<bool>;
        };

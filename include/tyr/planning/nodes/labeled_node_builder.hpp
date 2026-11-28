@@ -40,7 +40,6 @@ struct builder<::tyr::planning::LabeledNode<Kind>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &builder::label>, urd::field<"node", &builder::node>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 }
 

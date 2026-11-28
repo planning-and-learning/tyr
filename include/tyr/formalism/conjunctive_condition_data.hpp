@@ -30,6 +30,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -70,20 +71,14 @@ struct data<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"variables", &data::variables>,
-                           urd::field<"static_literals", &data::static_literals>,
-                           urd::field<"fluent_literals", &data::fluent_literals>,
-                           urd::field<"derived_literals", &data::derived_literals>,
-                           urd::field<"numeric_constraints", &data::numeric_constraints>> {};
+                           urd::field<"static_literals", &data::static_literals, urd::sorted, urd::unique>,
+                           urd::field<"fluent_literals", &data::fluent_literals, urd::sorted, urd::unique>,
+                           urd::field<"derived_literals", &data::derived_literals, urd::sorted, urd::unique>,
+                           urd::field<"numeric_constraints", &data::numeric_constraints, urd::sorted, urd::unique>> {};
     }
-
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::
-            Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::LiftedTag>>(index); }
@@ -123,21 +118,18 @@ struct data<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"static_literals", &data::static_literals>,
-                           urd::field<"derived_literals", &data::derived_literals>,
-                           urd::field<"positive_facts", &data::positive_facts>,
-                           urd::field<"negative_facts", &data::negative_facts>,
-                           urd::field<"numeric_constraints", &data::numeric_constraints>> {};
+        return urd::Fields<urd::field<"static_literals", &data::static_literals, urd::sorted, urd::unique>,
+                           urd::field<"derived_literals", &data::derived_literals, urd::sorted, urd::unique>,
+                           urd::field<"positive_facts", &data::positive_facts, urd::sorted, urd::unique>,
+                           urd::field<"negative_facts", &data::negative_facts, urd::sorted, urd::unique>,
+                           urd::field<"numeric_constraints", &data::numeric_constraints, urd::sorted, urd::unique>> {};
     }
 
     static constexpr auto identifying_members() noexcept
     { return urd::Members<&data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::
-            Members<&data::index, &data::static_literals, &data::derived_literals, &data::positive_facts, &data::negative_facts, &data::numeric_constraints> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConjunctiveCondition<::tyr::GroundTag>>(index); }

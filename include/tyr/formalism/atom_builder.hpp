@@ -50,7 +50,6 @@ struct builder<::tyr::formalism::Atom<::tyr::LiftedTag, F>, C>
             Fields<urd::field<"parameters", &builder::parameters>, urd::field<"predicate", &builder::predicate>, urd::field<"terms", &builder::terms>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 /// The builder of Atom: its record's members, each in its built form (urd::built_t).
@@ -62,7 +61,6 @@ struct builder<::tyr::formalism::Atom<::tyr::GroundTag, F>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &builder::row>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::row> {}; }
 };
 
 }  // namespace urd

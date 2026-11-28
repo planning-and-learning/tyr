@@ -122,7 +122,7 @@ def _check_create_state_ground(task: planning.ground.Task) -> None:
     value_recreated_state = state_repository.create_state(
         axiom_evaluator,
         [
-            formalism.FDRFactFluentData(fact.get_variable().index(), fact.get_value())
+            formalism.FDRFactFluentData(fact.variable().index(), fact.value())
             for fact in initial_state.fluent_facts()
         ],
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
@@ -154,7 +154,7 @@ def _check_create_state_lifted(task: planning.lifted.Task) -> None:
     value_recreated_state = state_repository.create_state(
         axiom_evaluator,
         [
-            formalism.FDRFactFluentData(fact.get_variable().index(), fact.get_value())
+            formalism.FDRFactFluentData(fact.variable().index(), fact.value())
             for fact in initial_state.fluent_facts()
         ],
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],

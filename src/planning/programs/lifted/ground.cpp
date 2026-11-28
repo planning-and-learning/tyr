@@ -74,14 +74,14 @@ void append_from_condition(formalism::ConjunctiveConditionView<LiftedTag> cond,
                            urd::builder<formalism::ConjunctiveCondition<LiftedTag>, formalism::Repository>& conj_cond)
 {
     // Keep negated static atoms because they are monotonic
-    for (const auto literal : cond.template get_literals<formalism::StaticTag>())
+    for (const auto literal : cond.template literals<formalism::StaticTag>())
         urd::append(conj_cond.static_literals, literal);
-    for (const auto literal : cond.template get_literals<formalism::FluentTag>())
-        if (literal.get_polarity())
+    for (const auto literal : cond.template literals<formalism::FluentTag>())
+        if (literal.polarity())
             urd::append(conj_cond.fluent_literals, literal);
 
-    for (const auto literal : cond.template get_literals<formalism::DerivedTag>())
-        if (literal.get_polarity())
+    for (const auto literal : cond.template literals<formalism::DerivedTag>())
+        if (literal.polarity())
             urd::append(conj_cond.derived_literals, literal);
 };
 
@@ -101,13 +101,13 @@ auto create_applicability_rule(formalism::ActionView<LiftedTag> action, formalis
 
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
-    for (const auto variable : action.get_variables())
+    for (const auto variable : action.variables())
         urd::append(conj_cond->variables, variable);
-    append_from_condition(action.get_condition(), *conj_cond);
+    append_from_condition(action.condition(), *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
-    for (const auto variable : new_conj_cond.get_variables())
+    for (const auto variable : new_conj_cond.variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
     urd::append(rule->derived_heads, create_applicability_atom(action, context).first);
@@ -131,13 +131,13 @@ auto create_applicability_rule(formalism::AxiomView<LiftedTag> axiom, formalism:
 
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
-    for (const auto variable : axiom.get_variables())
+    for (const auto variable : axiom.variables())
         urd::append(conj_cond->variables, variable);
-    append_from_condition(axiom.get_body(), *conj_cond);
+    append_from_condition(axiom.body(), *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
-    for (const auto variable : new_conj_cond.get_variables())
+    for (const auto variable : new_conj_cond.variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
     urd::append(rule->derived_heads, create_applicability_atom(axiom, context).first);
@@ -155,24 +155,24 @@ auto create_ground_cond_effect_rule(formalism::ActionView<LiftedTag> action,
 
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
-    for (const auto variable : action.get_variables())
+    for (const auto variable : action.variables())
         urd::append(conj_cond->variables, variable);
-    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+    for (const auto literal : action.condition().literals<formalism::StaticTag>())
         urd::append(conj_cond->static_literals, literal);
     urd::append(conj_cond->derived_literals, create_applicability_literal(action, context).first);
 
-    for (const auto variable : cond_eff.get_variables())
+    for (const auto variable : cond_eff.variables())
         urd::append(conj_cond->variables, variable);
-    append_from_condition(cond_eff.get_condition(), *conj_cond);
+    append_from_condition(cond_eff.condition(), *conj_cond);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
-    for (const auto variable : new_conj_cond.get_variables())
+    for (const auto variable : new_conj_cond.variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
-    for (const auto literal : cond_eff.get_effect().get_literals())
-        if (literal.get_polarity())  /// ignore delete effects
-            urd::append(rule->fluent_heads, literal.get_atom());
+    for (const auto literal : cond_eff.effect().literals())
+        if (literal.polarity())  /// ignore delete effects
+            urd::append(rule->fluent_heads, literal.atom());
     if (effect_predicate)
     {
         auto effect_parameters = formalism::checkout<formalism::Parameters>(context.builder());
@@ -180,7 +180,7 @@ auto create_ground_cond_effect_rule(formalism::ActionView<LiftedTag> action,
         auto effect_atom = formalism::checkout<formalism::Atom<LiftedTag, formalism::DerivedTag>>(context.builder());
         urd::store(effect_atom->parameters, context.destination().insert(*effect_parameters, context.builder()).first);
         urd::store(effect_atom->predicate, *effect_predicate);
-        for (ygg::uint_t i = 0; i < effect_predicate->get_arity(); ++i)
+        for (ygg::uint_t i = 0; i < effect_predicate->arity(); ++i)
             urd::build_member(effect_atom->terms.emplace_back(), formalism::Term(formalism::ParameterIndex(i)), context.destination());
         urd::append(rule->derived_heads, context.destination().insert(*effect_atom, context.builder()).first);
     }
@@ -196,15 +196,15 @@ auto create_effect_rule(formalism::AxiomView<LiftedTag> axiom,
 
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(context.builder());
 
-    for (const auto variable : axiom.get_variables())
+    for (const auto variable : axiom.variables())
         urd::append(conj_cond->variables, variable);
-    for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
+    for (const auto literal : axiom.body().literals<formalism::StaticTag>())
         urd::append(conj_cond->static_literals, literal);
     urd::append(conj_cond->derived_literals, create_applicability_literal(axiom, context).first);
 
     const auto new_conj_cond = context.destination().insert(*conj_cond, context.builder()).first;
 
-    for (const auto variable : new_conj_cond.get_variables())
+    for (const auto variable : new_conj_cond.variables())
         urd::append(rule->variables, variable);
     urd::store(rule->body, new_conj_cond);
     urd::append(rule->derived_heads, effect);
@@ -238,15 +238,15 @@ void translate_action_to_ground_rules(formalism::ActionView<LiftedTag> action,
             return;
         auto effect_predicate = std::optional<formalism::PredicateView<formalism::DerivedTag>> {};
         // An effect without variables and condition fires with its action.
-        if (!cond_eff.get_variables().empty() || !cond_eff.get_condition().empty())
+        if (!cond_eff.variables().empty() || !cond_eff.condition().empty())
         {
             auto predicate = formalism::checkout<formalism::Predicate<formalism::DerivedTag>>(context.builder());
             predicate->name = create_triggered_name(action, cond_eff);
-            predicate->arity = action.get_arity() + cond_eff.get_arity();
+            predicate->arity = action.arity() + cond_eff.arity();
             effect_predicate = context.destination().insert(*predicate, context.builder()).first;
             urd::append(program.derived_predicates, *effect_predicate);
         }
-        if (!effect_predicate && std::ranges::none_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
+        if (!effect_predicate && std::ranges::none_of(cond_eff.effect().literals(), [](const auto literal) { return literal.polarity(); }))
             return;
 
         urd::append(program.rules, create_ground_cond_effect_rule(action, cond_eff, effect_predicate, context).first);
@@ -271,7 +271,7 @@ void translate_axiom_to_delete_free_axiom_rules(formalism::AxiomView<LiftedTag> 
 
     urd::append(program.rules, applicability_rule);
 
-    urd::append(program.rules, create_effect_rule(axiom, axiom.get_head(), context).first);
+    urd::append(program.rules, create_effect_rule(axiom, axiom.head(), context).first);
 }
 
 auto create_ground_program(formalism::TaskView<LiftedTag> task,
@@ -286,13 +286,13 @@ auto create_ground_program(formalism::TaskView<LiftedTag> task,
 
     translate_task_symbols(task, *program);
 
-    for (const auto action : task.get_domain().get_actions())
+    for (const auto action : task.domain().actions())
         translate_action_to_ground_rules(action, *program, context, predicate_to_actions, effect_to_predicate);
 
-    for (const auto axiom : task.get_domain().get_axioms())
+    for (const auto axiom : task.domain().axioms())
         translate_axiom_to_delete_free_axiom_rules(axiom, *program, context, predicate_to_axioms);
 
-    for (const auto axiom : task.get_axioms())
+    for (const auto axiom : task.axioms())
         translate_axiom_to_delete_free_axiom_rules(axiom, *program, context, predicate_to_axioms);
 
     return destination.insert(*program, builder).first;

@@ -56,9 +56,7 @@ struct data<::tyr::formalism::TimedLiteral>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"time", &data::time>, urd::field<"literal", &data::literal>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::time, &data::literal> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::TimedLiteral> key() const noexcept { return urd::key<::tyr::formalism::TimedLiteral>(index); }
 };

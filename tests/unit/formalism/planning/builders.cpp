@@ -48,7 +48,7 @@ using LiteralBuilder = urd::builder<f::Literal<LiftedTag, FluentTag>, Repository
 using ParametersBuilder = urd::builder<f::Parameters, Repository>;
 
 /// The name of a child, interned or built (its child view reads it in either form).
-std::string name_of(const auto& child) { return std::string(child.get_name()); }
+std::string name_of(const auto& child) { return std::string(child.name()); }
 
 }  // namespace
 
@@ -79,13 +79,13 @@ TEST(TyrFormalismPlanningBuilders, ReadsBuiltAndInternedChildrenAlike)
     literal.polarity = true;
 
     const auto view = urd::resolve(literal, repository);
-    EXPECT_TRUE(view.get_polarity());
-    const auto atom_view = urd::built_view(view.get_atom());
-    EXPECT_EQ(name_of(atom_view.get_predicate()), "at");
-    const auto parameters_view = urd::built_view(atom_view.get_parameters());
-    ASSERT_EQ(parameters_view.get_variables().size(), 1U);
-    EXPECT_EQ(name_of(parameters_view.get_variables()[0]), "?x");
-    const auto terms = atom_view.get_terms();
+    EXPECT_TRUE(view.polarity());
+    const auto atom_view = urd::built_view(view.atom());
+    EXPECT_EQ(name_of(atom_view.predicate()), "at");
+    const auto parameters_view = urd::built_view(atom_view.parameters());
+    ASSERT_EQ(parameters_view.variables().size(), 1U);
+    EXPECT_EQ(name_of(parameters_view.variables()[0]), "?x");
+    const auto terms = atom_view.terms();
     ASSERT_EQ(terms.size(), 2U);
     EXPECT_EQ(name_of(std::get<0>(terms[0])), "truck");
     EXPECT_EQ(std::get<1>(terms[1]), f::ParameterIndex(0));

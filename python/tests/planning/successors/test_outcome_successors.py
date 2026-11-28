@@ -14,14 +14,14 @@ from pytyr.planning import ground, lifted
 Summary = tuple[str, tuple[int, ...], list[tuple[int, float]]]
 
 
-def _summary(successor: ground.SuccessorBuilderView | lifted.SuccessorBuilderView) -> Summary:
+def _summary(successor: ground.general.SuccessorBuilderView | lifted.general.SuccessorBuilderView) -> Summary:
     """A successor's action binding (its action's name and objects) and, per distribution, its size and probability sum."""
-    binding = successor.get_label().get_binding()
+    binding = successor.label().binding()
     sizes = sorted(
-        (len(distribution.get_outcomes()), float(sum(outcome.get_probability() for outcome in distribution.get_outcomes())))
-        for distribution in successor.get_distributions()
+        (len(distribution.outcomes()), float(sum(outcome.probability() for outcome in distribution.outcomes())))
+        for distribution in successor.distributions()
     )
-    return (binding.get_relation().get_name(), tuple(binding.get_values()), sizes)
+    return (binding.relation().name(), tuple(binding.values()), sizes)
 
 
 def _lifted_task(name: str) -> lifted.Task:
@@ -31,20 +31,26 @@ def _lifted_task(name: str) -> lifted.Task:
 
 
 def _summaries(module: ModuleType, task: ground.Task | lifted.Task) -> list[Summary]:
-    """The summaries of the successors of the task's initial node; registering a successor's outcomes keeps it."""
+    """The summaries of the successors of the task's initial node; the three steps keep a successor."""
     execution = ExecutionContext(1)
     repository = module.StateRepository(task)
     evaluator = module.AxiomEvaluator(task, execution)
     generator = module.SuccessorGenerator(task, execution)
     result: list[Summary] = []
 
-    def collect(successor: ground.SuccessorBuilderView | lifted.SuccessorBuilderView) -> bool:
+    def collect(
+        transition: ground.TransitionLabel | lifted.TransitionLabel,
+        successor: ground.general.SuccessorBuilderView | lifted.general.SuccessorBuilderView,
+    ) -> bool:
         summary = _summary(successor)
-        assert _summary(module.register_outcomes(repository, successor)) == summary
+        found = module.general.find_outcomes(repository, successor)
+        extended = module.general.extend_outcomes(generator, evaluator, found)
+        assert extended is not None
+        assert _summary(module.general.register_outcomes(repository, extended)) == summary
         result.append(summary)
         return True
 
-    generator.for_each_successor(module.get_initial_node(repository, evaluator), evaluator, collect)
+    module.general.for_each_successor(generator, module.get_initial_node(repository, evaluator), collect)
     return sorted(result)
 
 
@@ -59,3 +65,56 @@ def test_successors_are_distributions(name: str) -> None:
             assert size > 0
             assert total == pytest.approx(1.0)
     assert any(len(distributions) > 1 or distributions[0][0] > 1 for _, _, distributions in summaries)
+
+
+def _environment_outcomes(environment: ModuleType, module: ModuleType, task: ground.Task | lifted.Task) -> list[int]:
+    """The number of outcomes of each successor of the task's initial node in an environment whose successors hold them."""
+    execution = ExecutionContext(1)
+    repository = module.StateRepository(task)
+    evaluator = module.AxiomEvaluator(task, execution)
+    generator = module.SuccessorGenerator(task, execution)
+    environment.require(generator)
+    successors = environment.get_successors(generator, repository, evaluator, module.get_initial_node(repository, evaluator))
+    return sorted(len(successor.outcomes()) for successor in successors)
+
+
+def test_environments_follow_a_tasks_effects() -> None:
+    """A oneof task has an adversary's outcomes, a probabilistic one chance's; neither is deterministic."""
+    oneof = _lifted_task("nondeterministic/tests/ipc2008-faults")
+    probabilistic = _lifted_task("probabilistic/tests/ippc2004-bw-nc-pc-nr")
+    execution = ExecutionContext(1)
+
+    features = lifted.SuccessorGenerator(oneof, execution).features()
+    assert (features.oneof, features.probabilistic, features.temporal) == (True, False, False)
+    features = lifted.SuccessorGenerator(probabilistic, execution).features()
+    assert (features.oneof, features.probabilistic, features.temporal) == (False, True, False)
+
+    for task, fitting, other in (
+        (oneof, lifted.nondeterministic, lifted.probabilistic),
+        (probabilistic, lifted.probabilistic, lifted.nondeterministic),
+    ):
+        generator = lifted.SuccessorGenerator(task, execution)
+        fitting.require(generator)
+        lifted.general.require(generator)
+        for unfit in (lifted.deterministic, other):
+            with pytest.raises(ValueError, match="environment"):
+                unfit.require(generator)
+
+    # An adversary's outcomes: several where a oneof fires, alike ground and lifted.
+    outcomes = _environment_outcomes(lifted.nondeterministic, lifted, oneof)
+    assert outcomes == _environment_outcomes(
+        ground.nondeterministic, ground, oneof.instantiate_ground_task(ExecutionContext(1)).task
+    )
+    assert outcomes and outcomes[-1] > 1
+
+    # Chance's outcomes: their probabilities sum to 1.
+    repository = lifted.StateRepository(probabilistic)
+    evaluator = lifted.AxiomEvaluator(probabilistic, execution)
+    generator = lifted.SuccessorGenerator(probabilistic, execution)
+    successors = lifted.probabilistic.get_successors(
+        generator, repository, evaluator, lifted.get_initial_node(repository, evaluator)
+    )
+    assert successors
+    for successor in successors:
+        assert sum(outcome.probability() for outcome in successor.outcomes()) == pytest.approx(1.0)
+    assert any(len(successor.outcomes()) > 1 for successor in successors)

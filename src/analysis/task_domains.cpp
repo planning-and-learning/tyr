@@ -204,35 +204,35 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
     using namespace planning_domains;
 
     auto universe = urd::Store<urd::set<urd::index<formalism::Object>>> {};
-    for (const auto object : task.get_domain().get_constants())
+    for (const auto object : task.domain().constants())
         universe.insert(object.index());
-    for (const auto object : task.get_objects())
+    for (const auto object : task.objects())
         universe.insert(object.index());
 
     ///--- Step 1: Initialize static, fluent, and derived predicate parameter domains
 
-    auto static_predicate_domain_sets = initialize_predicate_domain_sets(task.get_domain().get_predicates<formalism::StaticTag>());
-    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(task.get_domain().get_predicates<formalism::FluentTag>());
+    auto static_predicate_domain_sets = initialize_predicate_domain_sets(task.domain().predicates<formalism::StaticTag>());
+    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(task.domain().predicates<formalism::FluentTag>());
 
     auto derived_predicate_indices = urd::flat_vector<urd::index<formalism::Predicate<formalism::DerivedTag>>> {};
-    for (const auto predicate : task.get_domain().get_predicates<formalism::DerivedTag>())
+    for (const auto predicate : task.domain().predicates<formalism::DerivedTag>())
         derived_predicate_indices.push_back(predicate.index());
-    for (const auto predicate : task.get_derived_predicates())
+    for (const auto predicate : task.derived_predicates())
         derived_predicate_indices.push_back(predicate.index());
 
     const auto derived_predicates = urd::resolve(derived_predicate_indices, task.context());
     auto derived_predicate_domain_sets = initialize_predicate_domain_sets(derived_predicates);
 
-    insert_into_predicate_domain_sets(task.get_atoms<formalism::StaticTag>(), static_predicate_domain_sets);
-    insert_into_predicate_domain_sets(task.get_atoms<formalism::FluentTag>(), fluent_predicate_domain_sets);
+    insert_into_predicate_domain_sets(task.atoms<formalism::StaticTag>(), static_predicate_domain_sets);
+    insert_into_predicate_domain_sets(task.atoms<formalism::FluentTag>(), fluent_predicate_domain_sets);
 
     ///--- Step 2: Initialize static and fluent function parameter domains
 
-    auto static_function_domain_sets = initialize_function_domain_sets(task.get_domain().get_functions<formalism::StaticTag>());
-    auto fluent_function_domain_sets = initialize_function_domain_sets(task.get_domain().get_functions<formalism::FluentTag>());
+    auto static_function_domain_sets = initialize_function_domain_sets(task.domain().functions<formalism::StaticTag>());
+    auto fluent_function_domain_sets = initialize_function_domain_sets(task.domain().functions<formalism::FluentTag>());
 
-    insert_into_function_domain_sets(task.get_fterm_values<formalism::StaticTag>(), static_function_domain_sets);
-    insert_into_function_domain_sets(task.get_fterm_values<formalism::FluentTag>(), fluent_function_domain_sets);
+    insert_into_function_domain_sets(task.fterm_values<formalism::StaticTag>(), static_function_domain_sets);
+    insert_into_function_domain_sets(task.fterm_values<formalism::FluentTag>(), fluent_function_domain_sets);
 
     ///--- Step 2.5: Important not to forget constants in schemas
 
@@ -242,43 +242,43 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,
         };
 
-        for (const auto action : task.get_domain().get_actions())
+        for (const auto action : task.domain().actions())
         {
-            for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-                apply_policy(literal.get_atom(), insert_policy);
+            for (const auto literal : action.condition().literals<formalism::StaticTag>())
+                apply_policy(literal.atom(), insert_policy);
 
-            for (const auto op : action.get_condition().get_numeric_constraints())
+            for (const auto op : action.condition().numeric_constraints())
                 apply_policy(op, insert_policy);
 
             const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> c_effect)
             {
-                for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
-                    apply_policy(literal.get_atom(), insert_policy);
+                for (const auto literal : c_effect.condition().literals<formalism::StaticTag>())
+                    apply_policy(literal.atom(), insert_policy);
 
-                for (const auto literal : c_effect.get_condition().get_literals<formalism::FluentTag>())
-                    apply_policy(literal.get_atom(), insert_policy);
+                for (const auto literal : c_effect.condition().literals<formalism::FluentTag>())
+                    apply_policy(literal.atom(), insert_policy);
 
-                for (const auto op : c_effect.get_condition().get_numeric_constraints())
+                for (const auto op : c_effect.condition().numeric_constraints())
                     apply_policy(op, insert_policy);
             };
             formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
         }
 
-        for (const auto axiom : task.get_domain().get_axioms())
+        for (const auto axiom : task.domain().axioms())
         {
-            for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
-                apply_policy(literal.get_atom(), insert_policy);
+            for (const auto literal : axiom.body().literals<formalism::StaticTag>())
+                apply_policy(literal.atom(), insert_policy);
 
-            for (const auto op : axiom.get_body().get_numeric_constraints())
+            for (const auto op : axiom.body().numeric_constraints())
                 apply_policy(op, insert_policy);
         }
 
-        for (const auto axiom : task.get_axioms())
+        for (const auto axiom : task.axioms())
         {
-            for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
-                apply_policy(literal.get_atom(), insert_policy);
+            for (const auto literal : axiom.body().literals<formalism::StaticTag>())
+                apply_policy(literal.atom(), insert_policy);
 
-            for (const auto op : axiom.get_body().get_numeric_constraints())
+            for (const auto op : axiom.body().numeric_constraints())
                 apply_policy(op, insert_policy);
         }
     }
@@ -286,11 +286,11 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
     ///--- Step 3: Compute action and axiom parameter domains from static information.
 
     auto action_domain_sets = TmpActionDomainMap {};
-    action_domain_sets.reserve(task.get_domain().get_actions().size());
+    action_domain_sets.reserve(task.domain().actions().size());
 
-    for (const auto action : task.get_domain().get_actions())
+    for (const auto action : task.domain().actions())
     {
-        auto parameter_domains = TmpVariableDomainList(action.get_variables().size());
+        auto parameter_domains = TmpVariableDomainList(action.variables().size());
         for (auto& domain : parameter_domains)
             domain.objects = universe;
 
@@ -299,15 +299,15 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
-        for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+        for (const auto literal : action.condition().literals<formalism::StaticTag>())
             apply_policy(literal, restrict_policy);
 
-        for (const auto op : action.get_condition().get_numeric_constraints())
+        for (const auto op : action.condition().numeric_constraints())
             apply_policy(op, restrict_policy);
 
         const auto action_variable_domains = to_variable_domain_list(parameter_domains);
-        const auto action_static_compatibility = detail::StaticLiteralCompatibility(action.get_condition().template get_literals<formalism::StaticTag>(),
-                                                                                    task.get_atoms<formalism::StaticTag>(),
+        const auto action_static_compatibility = detail::StaticLiteralCompatibility(action.condition().template literals<formalism::StaticTag>(),
+                                                                                    task.atoms<formalism::StaticTag>(),
                                                                                     action_variable_domains,
                                                                                     task.context().template size<formalism::Object>());
         const auto action_compatibility = detail::create_pairwise_compatibility_graph(action_variable_domains,
@@ -316,12 +316,12 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
         parameter_domains = to_tmp_variable_domain_list(action_compatibility.domains);
 
         auto effect_domains = TmpConditionalEffectDomainMap {};
-        effect_domains.reserve(action.get_effects().size());
+        effect_domains.reserve(action.effects().size());
 
         const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> c_effect)
         {
             auto c_parameter_domains = parameter_domains;
-            c_parameter_domains.resize(action.get_variables().size() + c_effect.get_variables().size());
+            c_parameter_domains.resize(action.variables().size() + c_effect.variables().size());
 
             for (size_t i = parameter_domains.size(); i < c_parameter_domains.size(); ++i)
                 c_parameter_domains[i].objects = universe;
@@ -331,15 +331,15 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
                 &static_function_domain_sets,  &fluent_function_domain_sets,  &c_parameter_domains,
             };
 
-            for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
+            for (const auto literal : c_effect.condition().literals<formalism::StaticTag>())
                 apply_policy(literal, c_restrict_policy);
 
-            for (const auto op : c_effect.get_condition().get_numeric_constraints())
+            for (const auto op : c_effect.condition().numeric_constraints())
                 apply_policy(op, c_restrict_policy);
 
             const auto effect_variable_domains = to_variable_domain_list(c_parameter_domains);
-            const auto effect_static_compatibility = detail::StaticLiteralCompatibility(c_effect.get_condition().template get_literals<formalism::StaticTag>(),
-                                                                                        task.get_atoms<formalism::StaticTag>(),
+            const auto effect_static_compatibility = detail::StaticLiteralCompatibility(c_effect.condition().template literals<formalism::StaticTag>(),
+                                                                                        task.atoms<formalism::StaticTag>(),
                                                                                         effect_variable_domains,
                                                                                         task.context().template size<formalism::Object>());
             const auto compatibility = detail::create_pairwise_compatibility_graph(effect_variable_domains,
@@ -349,27 +349,27 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
 
             effect_domains.emplace(c_effect.index(),
                                    TmpConditionalEffectDomain {
-                                       TmpConjunctiveConditionDomain { c_effect.get_condition().index(), c_parameter_domains },
-                                       TmpConjunctiveEffectDomain { c_effect.get_effect().index(), c_parameter_domains },
+                                       TmpConjunctiveConditionDomain { c_effect.condition().index(), c_parameter_domains },
+                                       TmpConjunctiveEffectDomain { c_effect.effect().index(), c_parameter_domains },
                                    });
         };
         formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
 
         action_domain_sets.emplace(action.index(),
                                    TmpActionDomain {
-                                       TmpConjunctiveConditionDomain { action.get_condition().index(), parameter_domains },
+                                       TmpConjunctiveConditionDomain { action.condition().index(), parameter_domains },
                                        std::move(effect_domains),
                                    });
     }
 
     auto axiom_domain_sets = TmpAxiomDomainMap {};
-    axiom_domain_sets.reserve(task.get_domain().get_axioms().size() + task.get_axioms().size());
+    axiom_domain_sets.reserve(task.domain().axioms().size() + task.axioms().size());
 
     const auto refine_condition_domains = [&](auto condition, TmpVariableDomainList& parameter_domains)
     {
         const auto domains = to_variable_domain_list(parameter_domains);
-        const auto static_compatibility = detail::StaticLiteralCompatibility(condition.template get_literals<formalism::StaticTag>(),
-                                                                             task.get_atoms<formalism::StaticTag>(),
+        const auto static_compatibility = detail::StaticLiteralCompatibility(condition.template literals<formalism::StaticTag>(),
+                                                                             task.atoms<formalism::StaticTag>(),
                                                                              domains,
                                                                              task.context().template size<formalism::Object>());
         const auto compatibility =
@@ -377,9 +377,9 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
         parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
     };
 
-    for (const auto axiom : task.get_domain().get_axioms())
+    for (const auto axiom : task.domain().axioms())
     {
-        auto parameter_domains = TmpVariableDomainList(axiom.get_body().get_variables().size());
+        auto parameter_domains = TmpVariableDomainList(axiom.body().variables().size());
         for (auto& domain : parameter_domains)
             domain.objects = universe;
 
@@ -388,20 +388,20 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
+        for (const auto literal : axiom.body().literals<formalism::StaticTag>())
             apply_policy(literal, restrict_policy);
 
-        for (const auto op : axiom.get_body().get_numeric_constraints())
+        for (const auto op : axiom.body().numeric_constraints())
             apply_policy(op, restrict_policy);
 
-        refine_condition_domains(axiom.get_body(), parameter_domains);
+        refine_condition_domains(axiom.body(), parameter_domains);
 
         axiom_domain_sets.emplace(axiom.index(), std::move(parameter_domains));
     }
 
-    for (const auto axiom : task.get_axioms())
+    for (const auto axiom : task.axioms())
     {
-        auto parameter_domains = TmpVariableDomainList(axiom.get_body().get_variables().size());
+        auto parameter_domains = TmpVariableDomainList(axiom.body().variables().size());
         for (auto& domain : parameter_domains)
             domain.objects = universe;
 
@@ -410,20 +410,20 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
+        for (const auto literal : axiom.body().literals<formalism::StaticTag>())
             apply_policy(literal, restrict_policy);
 
-        for (const auto op : axiom.get_body().get_numeric_constraints())
+        for (const auto op : axiom.body().numeric_constraints())
             apply_policy(op, restrict_policy);
 
-        refine_condition_domains(axiom.get_body(), parameter_domains);
+        refine_condition_domains(axiom.body(), parameter_domains);
 
         axiom_domain_sets.emplace(axiom.index(), std::move(parameter_domains));
     }
 
     ///--- Step 4: Lift predicate/function domains given the variable relationships in actions and axioms.
 
-    for (const auto action : task.get_domain().get_actions())
+    for (const auto action : task.domain().actions())
     {
         auto& action_domain = action_domain_sets.at(action.index());
         auto& parameter_domains = action_domain.precondition_domain.payload;
@@ -433,16 +433,16 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
-        for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+        for (const auto literal : action.condition().literals<formalism::StaticTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
+        for (const auto literal : action.condition().literals<formalism::FluentTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto literal : action.get_condition().get_literals<formalism::DerivedTag>())
+        for (const auto literal : action.condition().literals<formalism::DerivedTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto op : action.get_condition().get_numeric_constraints())
+        for (const auto op : action.condition().numeric_constraints())
             apply_policy(op, lift_policy);
 
         const auto visit_effect = [&](formalism::ConditionalEffectView<LiftedTag> c_effect)
@@ -455,19 +455,19 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
                 &static_function_domain_sets,  &fluent_function_domain_sets,  &c_parameter_domains,
             };
 
-            for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
+            for (const auto literal : c_effect.condition().literals<formalism::StaticTag>())
                 apply_policy(literal, c_lift_policy);
 
-            for (const auto literal : c_effect.get_condition().get_literals<formalism::FluentTag>())
+            for (const auto literal : c_effect.condition().literals<formalism::FluentTag>())
                 apply_policy(literal, c_lift_policy);
 
-            for (const auto op : c_effect.get_condition().get_numeric_constraints())
+            for (const auto op : c_effect.condition().numeric_constraints())
                 apply_policy(op, c_lift_policy);
 
-            for (const auto literal : c_effect.get_effect().get_literals())
+            for (const auto literal : c_effect.effect().literals())
                 apply_policy(literal, c_lift_policy);
 
-            for (const auto op : c_effect.get_effect().get_numeric_effects())
+            for (const auto op : c_effect.effect().numeric_effects())
                 apply_policy(op, c_lift_policy);
 
             // Keep effect payload aligned with condition payload, as in the original approximation.
@@ -476,7 +476,7 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
         formalism::for_each_effect(action, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
     }
 
-    for (const auto axiom : task.get_domain().get_axioms())
+    for (const auto axiom : task.domain().axioms())
     {
         auto& parameter_domains = axiom_domain_sets.at(axiom.index());
 
@@ -485,22 +485,22 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
+        for (const auto literal : axiom.body().literals<formalism::StaticTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::FluentTag>())
+        for (const auto literal : axiom.body().literals<formalism::FluentTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::DerivedTag>())
+        for (const auto literal : axiom.body().literals<formalism::DerivedTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto op : axiom.get_body().get_numeric_constraints())
+        for (const auto op : axiom.body().numeric_constraints())
             apply_policy(op, lift_policy);
 
-        apply_policy(axiom.get_head(), lift_policy);
+        apply_policy(axiom.head(), lift_policy);
     }
 
-    for (const auto axiom : task.get_axioms())
+    for (const auto axiom : task.axioms())
     {
         auto& parameter_domains = axiom_domain_sets.at(axiom.index());
 
@@ -509,19 +509,19 @@ TaskVariableDomains compute_variable_domains(formalism::TaskView<LiftedTag> task
             &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
+        for (const auto literal : axiom.body().literals<formalism::StaticTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::FluentTag>())
+        for (const auto literal : axiom.body().literals<formalism::FluentTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto literal : axiom.get_body().get_literals<formalism::DerivedTag>())
+        for (const auto literal : axiom.body().literals<formalism::DerivedTag>())
             apply_policy(literal, lift_policy);
 
-        for (const auto op : axiom.get_body().get_numeric_constraints())
+        for (const auto op : axiom.body().numeric_constraints())
             apply_policy(op, lift_policy);
 
-        apply_policy(axiom.get_head(), lift_policy);
+        apply_policy(axiom.head(), lift_policy);
     }
 
     ///--- Step 5: Convert internal sets to public domain wrapper types.

@@ -37,11 +37,10 @@ struct builder<::tyr::formalism::UnaryOperator<T, O>, C>
 {
     urd::key<::tyr::formalism::UnaryOperator<T, O>> index;
     urd::built_t<O, C> operation = O::Sub;
-    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> arg;
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> operand;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"arg", &builder::arg>> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"operand", &builder::operand>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operation, &builder::arg> {}; }
 };
 
 }  // namespace urd

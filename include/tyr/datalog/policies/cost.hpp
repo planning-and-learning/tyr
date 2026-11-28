@@ -159,7 +159,7 @@ private:
             return static_cast<Cost>(0);
         auto credit = static_cast<Cost>(0);
         for (const auto action : actions->second)
-            if (const auto cost = m_action_costs.find(action.get_row()); cost != m_action_costs.end())
+            if (const auto cost = m_action_costs.find(action.row()); cost != m_action_costs.end())
                 credit = std::max(credit, cost->second);
         return credit;
     }
@@ -180,12 +180,12 @@ private:
         const auto rule_binding = instance.cost_key();
         // An action's binding is the first values of the rule's row, its arity many: written into a scratch row of the
         // worker's builder and found in the task's repository (only a row it holds may have its cost set).
-        const auto values = rule_binding.get_values();
+        const auto values = rule_binding.values();
         auto lookup = instance.builder().scratch<ygg::Row<formalism::Action<LiftedTag>>>();
         auto credit = static_cast<Cost>(0);
         for (const auto action : actions->second)
         {
-            const auto arity = action.get_arity();
+            const auto arity = action.arity();
             if (values.size() < arity)
                 continue;
             lookup->relation = action.index();

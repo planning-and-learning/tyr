@@ -28,8 +28,10 @@ GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
 class GroundSuccessors:
     """Ground successors composed as a caller does.
 
-    The generator enumerates bindings borrowed and writes a successor state into a builder of the state repository;
-    registering it (register_successor) makes the node, interning a binding (intern_action_binding) the label.
+    The deterministic environment gives each transition's label (its binding borrowed) and its successor state, written
+    into a builder of the state repository (deterministic.for_each_successor; deterministic.generate_successor for one
+    known binding); the three steps (find_successor, extend_successor, register_successor) make its node, interning a
+    binding (intern_action_binding) the label.
     """
 
     def __init__(
@@ -47,17 +49,19 @@ class GroundSuccessors:
         """The initial node."""
         return planning.ground.get_initial_node(self.repository, self.axiom_evaluator)
 
+    def register(self, node: GroundNode, successor_state: planning.ground.SuccessorState) -> GroundNode:
+        """The node of a successor state of node: the lookup, the axiom step unless it was found, registering."""
+        planning.ground.find_successor(self.repository, node, successor_state)
+        planning.ground.extend_successor(self.axiom_evaluator, node, successor_state)
+        return planning.ground.register_successor(self.repository, node, successor_state)
+
     def successor_node(
         self, node: GroundNode, binding: formalism.RowActionLifted | formalism.ActionGround
     ) -> GroundNode:
         """The successor of node under binding, registered."""
-        row = binding.get_row() if isinstance(binding, formalism.ActionGround) else binding
-        state = self.repository.get_state_builder()
-        delta = planning.StateDelta()
-        auxiliary_value = self.generator.generate_successor_state(node, row, state, delta)
-        return planning.ground.register_successor(
-            self.repository, self.axiom_evaluator, state, auxiliary_value, node, delta
-        )
+        row = binding.row() if isinstance(binding, formalism.ActionGround) else binding
+        successor_state = planning.ground.deterministic.generate_successor(self.generator, node, row)
+        return self.register(node, successor_state)
 
     def for_each_successor_node(
         self,
@@ -67,10 +71,12 @@ class GroundSuccessors:
     ) -> bool:
         """Visit node's successors until callback returns False."""
 
-        def visit(binding: formalism.RowActionLifted) -> bool:
-            return callback(self.successor_node(node, binding))
+        def visit(
+            transition: planning.ground.TransitionLabel, successor_state: planning.ground.SuccessorState
+        ) -> bool:
+            return callback(self.register(node, successor_state))
 
-        return self.generator.for_each_applicable_action_binding(node, visit, action=action)
+        return planning.ground.deterministic.for_each_successor(self.generator, node, visit, action=action)
 
     def for_each_labeled_successor_node(
         self,
@@ -80,15 +86,16 @@ class GroundSuccessors:
     ) -> bool:
         """Visit node's successors labeled by their interned bindings until callback returns False."""
 
-        def visit(borrowed: formalism.RowActionLifted) -> bool:
-            binding = planning.ground.intern_action_binding(self.generator, borrowed)
+        def visit(
+            transition: planning.ground.TransitionLabel, successor_state: planning.ground.SuccessorState
+        ) -> bool:
+            binding = planning.ground.intern_action_binding(self.generator, transition.binding)
+            successor = self.register(node, successor_state)
             return callback(
-                planning.ground.LabeledNodeBuilder(label=binding, node=self.successor_node(node, binding)).view(
-                    self.repository
-                )
+                planning.ground.LabeledNodeBuilder(label=binding, node=successor).view(self.repository)
             )
 
-        return self.generator.for_each_applicable_action_binding(node, visit, action=action)
+        return planning.ground.deterministic.for_each_successor(self.generator, node, visit, action=action)
 
     def successor_nodes(self, node: GroundNode, action: formalism.ActionLifted | None = None) -> list[GroundNode]:
         """Node's successors."""
@@ -113,19 +120,24 @@ class GroundSuccessors:
         """Node's applicable action bindings, interned."""
         result: list[formalism.RowActionLifted] = []
 
-        def visit(binding: formalism.RowActionLifted) -> bool:
-            result.append(planning.ground.intern_action_binding(generator, binding))
-            return True
+        # Labels only: arrange sees every transition's label and has none generated.
+        def collect(labels: list[planning.ground.TransitionLabel]) -> list[int]:
+            result.extend(planning.ground.intern_action_binding(generator, label.binding) for label in labels)
+            return []
 
-        generator.for_each_applicable_action_binding(node, visit, action=action)
+        planning.ground.deterministic.for_each_successor(
+            generator, node, lambda transition, successor_state: True, action=action, arrange=collect
+        )
         return result
 
 
 class LiftedSuccessors:
     """Lifted successors composed as a caller does.
 
-    The generator enumerates bindings borrowed and writes a successor state into a builder of the state repository;
-    registering it (register_successor) makes the node, interning a binding (intern_action_binding) the label.
+    The deterministic environment gives each transition's label (its binding borrowed) and its successor state, written
+    into a builder of the state repository (deterministic.for_each_successor; deterministic.generate_successor for one
+    known binding); the three steps (find_successor, extend_successor, register_successor) make its node, interning a
+    binding (intern_action_binding) the label.
     """
 
     def __init__(
@@ -143,19 +155,21 @@ class LiftedSuccessors:
         """The initial node."""
         return planning.lifted.get_initial_node(self.repository, self.axiom_evaluator)
 
+    def register(self, node: LiftedNode, successor_state: planning.lifted.SuccessorState) -> LiftedNode:
+        """The node of a successor state of node: the lookup, the axiom step unless it was found, registering."""
+        planning.lifted.find_successor(self.repository, node, successor_state)
+        planning.lifted.extend_successor(self.axiom_evaluator, node, successor_state)
+        return planning.lifted.register_successor(self.repository, node, successor_state)
+
     def successor_node(
         self,
         node: LiftedNode,
         binding: formalism.RowActionLiftedBuilderView | formalism.RowActionLifted | formalism.ActionGround,
     ) -> LiftedNode:
         """The successor of node under binding, registered."""
-        row = binding.get_row() if isinstance(binding, formalism.ActionGround) else binding
-        state = self.repository.get_state_builder()
-        delta = planning.StateDelta()
-        auxiliary_value = self.generator.generate_successor_state(node, row, state, delta)
-        return planning.lifted.register_successor(
-            self.repository, self.axiom_evaluator, state, auxiliary_value, node, delta
-        )
+        row = binding.row() if isinstance(binding, formalism.ActionGround) else binding
+        successor_state = planning.lifted.deterministic.generate_successor(self.generator, node, row)
+        return self.register(node, successor_state)
 
     def for_each_successor_node(
         self,
@@ -165,10 +179,12 @@ class LiftedSuccessors:
     ) -> bool:
         """Visit node's successors until callback returns False."""
 
-        def visit(binding: formalism.RowActionLiftedBuilderView) -> bool:
-            return callback(self.successor_node(node, binding))
+        def visit(
+            transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState
+        ) -> bool:
+            return callback(self.register(node, successor_state))
 
-        return self.generator.for_each_applicable_action_binding(node, visit, action=action)
+        return planning.lifted.deterministic.for_each_successor(self.generator, node, visit, action=action)
 
     def for_each_labeled_successor_node(
         self,
@@ -178,15 +194,16 @@ class LiftedSuccessors:
     ) -> bool:
         """Visit node's successors labeled by their interned bindings until callback returns False."""
 
-        def visit(borrowed: formalism.RowActionLiftedBuilderView) -> bool:
-            binding = planning.lifted.intern_action_binding(self.generator, borrowed)
+        def visit(
+            transition: planning.lifted.TransitionLabel, successor_state: planning.lifted.SuccessorState
+        ) -> bool:
+            binding = planning.lifted.intern_action_binding(self.generator, transition.binding)
+            successor = self.register(node, successor_state)
             return callback(
-                planning.lifted.LabeledNodeBuilder(label=binding, node=self.successor_node(node, binding)).view(
-                    self.repository
-                )
+                planning.lifted.LabeledNodeBuilder(label=binding, node=successor).view(self.repository)
             )
 
-        return self.generator.for_each_applicable_action_binding(node, visit, action=action)
+        return planning.lifted.deterministic.for_each_successor(self.generator, node, visit, action=action)
 
     def successor_nodes(self, node: LiftedNode, action: formalism.ActionLifted | None = None) -> list[LiftedNode]:
         """Node's successors."""
@@ -211,11 +228,14 @@ class LiftedSuccessors:
         """Node's applicable action bindings, interned."""
         result: list[formalism.RowActionLifted] = []
 
-        def visit(binding: formalism.RowActionLiftedBuilderView) -> bool:
-            result.append(planning.lifted.intern_action_binding(generator, binding))
-            return True
+        # Labels only: arrange sees every transition's label and has none generated.
+        def collect(labels: list[planning.lifted.TransitionLabel]) -> list[int]:
+            result.extend(planning.lifted.intern_action_binding(generator, label.binding) for label in labels)
+            return []
 
-        generator.for_each_applicable_action_binding(node, visit, action=action)
+        planning.lifted.deterministic.for_each_successor(
+            generator, node, lambda transition, successor_state: True, action=action, arrange=collect
+        )
         return result
 
 

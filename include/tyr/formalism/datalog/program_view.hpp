@@ -40,50 +40,50 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_static_predicates() const noexcept { return self().template member<&urd::record_of<V>::static_predicates>(); }
+    auto static_predicates() const noexcept { return self().template member<&urd::record_of<V>::static_predicates>(); }
 
-    auto get_fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
+    auto fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
 
-    auto get_derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
+    auto derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
 
-    auto get_static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
+    auto static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
 
-    auto get_fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
+    auto fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
 
-    auto get_objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
+    auto objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
 
-    auto get_static_atoms() const noexcept { return self().template member<&urd::record_of<V>::static_atoms>(); }
+    auto static_atoms() const noexcept { return self().template member<&urd::record_of<V>::static_atoms>(); }
 
-    auto get_fluent_atoms() const noexcept { return self().template member<&urd::record_of<V>::fluent_atoms>(); }
+    auto fluent_atoms() const noexcept { return self().template member<&urd::record_of<V>::fluent_atoms>(); }
 
-    auto get_derived_atoms() const noexcept { return self().template member<&urd::record_of<V>::derived_atoms>(); }
+    auto derived_atoms() const noexcept { return self().template member<&urd::record_of<V>::derived_atoms>(); }
 
-    auto get_static_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::static_fterm_values>(); }
+    auto static_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::static_fterm_values>(); }
 
-    auto get_fluent_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::fluent_fterm_values>(); }
+    auto fluent_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::fluent_fterm_values>(); }
 
-    auto get_goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
+    auto goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
 
-    auto get_rules() const noexcept { return self().template member<&urd::record_of<V>::rules>(); }
+    auto rules() const noexcept { return self().template member<&urd::record_of<V>::rules>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
-    auto get_predicates() const noexcept
+    auto predicates() const noexcept
     { return self().template member<::tyr::formalism::program_predicates_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
-    auto get_functions() const noexcept
+    auto functions() const noexcept
     { return self().template member<::tyr::formalism::program_functions_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
-    auto get_atoms() const noexcept
+    auto atoms() const noexcept
     { return self().template member<::tyr::formalism::program_atoms_of<F, T>>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
-    auto get_fterm_values() const noexcept
+    auto fterm_values() const noexcept
     { return self().template member<::tyr::formalism::program_fterm_values_of<F, T>>(); }
 };
 }  // namespace urd

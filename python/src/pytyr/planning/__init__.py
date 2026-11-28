@@ -14,6 +14,7 @@ from pytyr._pytyr.planning import (
     SearchStatus as SearchStatus,
     StateDelta as StateDelta,
     Statistics as Statistics,
+    TaskFeatures as TaskFeatures,
     TemporalNetwork as TemporalNetwork,
     TemporalParts as TemporalParts,
     TemporalRole as TemporalRole,

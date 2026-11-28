@@ -33,11 +33,11 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_atoms() const noexcept { return self().template member<&urd::record_of<V>::atoms>(); }
+    auto atoms() const noexcept { return self().template member<&urd::record_of<V>::atoms>(); }
 
-    auto get_domain_size() const noexcept { return get_atoms().size() + 1; }
+    auto domain_size() const noexcept { return atoms().size() + 1; }
 
-    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_domain_size", &view_mixin::get_domain_size>> {}; }
+    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"domain_size", &view_mixin::domain_size>> {}; }
 };
 }  // namespace urd
 

@@ -46,15 +46,15 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] decltype(auto) get_indices() const noexcept { return self().template member<&urd::record_of<V>::indices>(); }
+    [[nodiscard]] decltype(auto) indices() const noexcept { return self().template member<&urd::record_of<V>::indices>(); }
 
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-    { return get_indices().contains(static_cast<ygg::uint_t>(index.value)); }
+    { return indices().contains(static_cast<ygg::uint_t>(index.value)); }
 
     /// Its derived atoms, by their bits.
     [[nodiscard]] auto atoms() const noexcept
     {
-        return urd::transform(get_indices(),
+        return urd::transform(indices(),
                               [](ygg::uint_t i) { return urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> { i }; });
     }
 

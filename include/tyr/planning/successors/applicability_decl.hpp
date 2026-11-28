@@ -38,27 +38,21 @@ template<TaskKind Kind>
 class StateContext
 {
 public:
-    /// From a state's view, registered or being built: its storages, through its getters, built (urd::built_view).
-    template<typename V>
-        requires requires(const V& state) { state.get_fact_storage(); }
+    /// From the view of a state's builder (registered or being built): its storages, through its getters.
+    template<urd::BuilderView V>
     StateContext(const Task<Kind>& task, const V& state, ygg::float_t auxiliary_value) :
         StateContext(task,
-                     state.get_fact_storage(),
-                     state.get_atom_storage(),
-                     state.get_numeric_storage(),
-                     state.get_temporal_storage(),
+                     state.fact_storage(),
+                     state.atom_storage(),
+                     state.numeric_storage(),
+                     state.temporal_storage(),
                      auxiliary_value)
     {
     }
 
-    /// From a state being built (its builder), its storages built (urd::built), read through its state repository.
+    /// From a state being built (its builder), read through its state repository.
     StateContext(const StateRepository<Kind>& repository, const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value) :
-        StateContext(*repository.get_task(),
-                     FactStorageBuilderView<Kind>(&*state.fact_storage, &repository),
-                     AtomStorageBuilderView<Kind>(&*state.atom_storage, &repository),
-                     NumericStorageBuilderView<Kind>(&*state.numeric_storage, &repository),
-                     TemporalStorageBuilderView<Kind>(&*state.temporal_storage, &repository),
-                     auxiliary_value)
+        StateContext(*repository.get_task(), StateBuilderView<Kind>(&state, &repository), auxiliary_value)
     {
     }
 

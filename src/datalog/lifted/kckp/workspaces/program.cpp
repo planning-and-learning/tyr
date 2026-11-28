@@ -38,7 +38,7 @@ void initialize_const_rule_workspaces(formalism::ProgramView<LiftedTag> program,
                                       analysis::RuleCompatibilityGraphMap& graphs,
                                       ConstRuleWorkspaces& workspaces)
 {
-    const auto rules = program.get_rules();
+    const auto rules = program.rules();
     workspaces.resize(formalism::rule_index_bound(rules));
     auto builder = formalism::Builder {};
     for (const auto rule : rules)
@@ -50,11 +50,11 @@ ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::ProgramView<LiftedTag> program
                                        formalism::Repository& program_repository,
                                        analysis::ProgramAnalysis& analysis,
                                        const TaggedFactSets<formalism::StaticTag>& static_fact_sets) :
-    assignment_sets(program.get_predicates<formalism::StaticTag>(),
-                    program.get_functions<formalism::StaticTag>(),
+    assignment_sets(program.predicates<formalism::StaticTag>(),
+                    program.functions<formalism::StaticTag>(),
                     analysis.domains.static_predicate_domains,
                     analysis.domains.static_function_domains,
-                    program.get_objects().size(),
+                    program.objects().size(),
                     static_fact_sets),
     rules()
 { initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules); }

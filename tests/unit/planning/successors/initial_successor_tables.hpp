@@ -43,7 +43,7 @@ void register_initial_successor_tables(ygg::serialization::Dictionaries& diction
 {
     using Repository = planning::StateRepository<Kind>;
     using Indices = urd::Store<urd::sequence<std::string>>;
-    dictionaries.template register_table<planning::SuccessorBuilderView<Kind>>("successors", "S");
+    dictionaries.template register_table<planning::SuccessorBuilderView<planning::GeneralTag, Kind>>("successors", "S");
     dictionaries.template register_table<urd::borrowed_view<planning::Transition, Repository, urd::builder<planning::Transition, Repository>>>("labels", "L");
     dictionaries.template register_table<formalism::ActionRowView>("bindings", "B");
     dictionaries.template register_table<
@@ -54,7 +54,7 @@ void register_initial_successor_tables(ygg::serialization::Dictionaries& diction
     dictionaries.template register_table<urd::borrowed_view<planning::Distribution<Kind>, Repository, urd::builder<planning::Distribution<Kind>, Repository>>>(
         "distributions",
         "D");
-    dictionaries.template register_table<urd::borrowed_view<planning::OutcomeNode<Kind>, Repository, urd::builder<planning::OutcomeNode<Kind>, Repository>>>(
+    dictionaries.template register_table<urd::borrowed_view<planning::OutcomeNode<planning::GeneralTag, Kind>, Repository, urd::builder<planning::OutcomeNode<planning::GeneralTag, Kind>, Repository>>>(
         "outcomes",
         "O");
     dictionaries.template register_table<planning::NodeBuilderView<Kind>>("nodes", "N");

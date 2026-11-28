@@ -47,7 +47,7 @@ public:
 
     formalism::RuleView<LiftedTag> get_rule() const noexcept { return m_rule; }
 
-    auto get_body() const noexcept { return get_rule().get_body(); }
+    auto get_body() const noexcept { return get_rule().body(); }
 
     template<formalism::FactKind F>
     auto resolve(formalism::AtomView<LiftedTag, F> atom) const

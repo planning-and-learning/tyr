@@ -37,13 +37,12 @@ struct builder<::tyr::formalism::BinaryOperator<T, O>, C>
 {
     urd::key<::tyr::formalism::BinaryOperator<T, O>> index;
     urd::built_t<O, C> operation {};
-    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> lhs;
-    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> rhs;
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> left_operand;
+    urd::built_t<::tyr::formalism::FunctionExpression<T>, C> right_operand;
 
     static constexpr auto fields() noexcept
-    { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"lhs", &builder::lhs>, urd::field<"rhs", &builder::rhs>> {}; }
+    { return urd::Fields<urd::field<"operation", &builder::operation>, urd::field<"left_operand", &builder::left_operand>, urd::field<"right_operand", &builder::right_operand>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::operation, &builder::lhs, &builder::rhs> {}; }
 };
 
 }  // namespace urd

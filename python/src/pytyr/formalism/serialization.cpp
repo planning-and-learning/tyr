@@ -40,7 +40,8 @@ void bind_serialization()
                                         BooleanOperatorKind,
                                         ArithmeticOperatorKind,
                                         NumericEffectOperatorKind,
-                                        OptimizationDirection>;
+                                        OptimizationDirection,
+                                        RequirementKind>;
     ygg::python::bind_serialization(boost::mp11::mp_append<IndexViews, RowViews, Others> {});
 }
 }  // namespace tyr::formalism

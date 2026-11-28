@@ -59,9 +59,7 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"parameters", &data::parameters>, urd::field<"function", &data::function>, urd::field<"terms", &data::terms>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::parameters, &data::function, &data::terms> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>> key() const noexcept
     { return urd::key<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>(index); }
@@ -85,9 +83,7 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &data::row>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> key() const noexcept
     { return urd::key<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>(index); }

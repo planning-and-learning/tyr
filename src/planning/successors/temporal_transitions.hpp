@@ -84,15 +84,15 @@ void add_fluent_terms(formalism::FunctionExpressionView<GroundTag> expression, O
         [&]<typename E>(const E& part)
         {
             if constexpr (std::same_as<E, formalism::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind>>)
-                add_fluent_terms(part.get_arg(), out);
+                add_fluent_terms(part.operand(), out);
             else if constexpr (std::same_as<E, formalism::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind>>)
             {
-                add_fluent_terms(part.get_lhs(), out);
-                add_fluent_terms(part.get_rhs(), out);
+                add_fluent_terms(part.left_operand(), out);
+                add_fluent_terms(part.right_operand(), out);
             }
             else if constexpr (std::same_as<E, formalism::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind>>)
             {
-                for (const auto arg : part.get_args())
+                for (const auto arg : part.operands())
                     add_fluent_terms(arg, out);
             }
             else if constexpr (std::same_as<E, formalism::FunctionTermView<GroundTag, formalism::FluentTag>>)
@@ -105,16 +105,16 @@ void add_fluent_terms(formalism::FunctionExpressionView<GroundTag> expression, O
 template<typename Vars, typename Terms>
 void add_reads(formalism::ConjunctiveConditionView<GroundTag> condition, Vars& variables, Terms& terms)
 {
-    for (const auto fact : condition.get_positive_facts())
-        variables.push_back(static_cast<std::uint32_t>(fact.get_variable().index().value));
-    for (const auto fact : condition.get_negative_facts())
-        variables.push_back(static_cast<std::uint32_t>(fact.get_variable().index().value));
-    if (!condition.get_derived_literals().empty())
+    for (const auto fact : condition.positive_facts())
+        variables.push_back(static_cast<std::uint32_t>(fact.variable().index().value));
+    for (const auto fact : condition.negative_facts())
+        variables.push_back(static_cast<std::uint32_t>(fact.variable().index().value));
+    if (!condition.derived_literals().empty())
         variables.push_back(every_variable);
-    for (const auto constraint : condition.get_numeric_constraints())
+    for (const auto constraint : condition.numeric_constraints())
     {
-        add_fluent_terms(constraint.get_lhs(), terms);
-        add_fluent_terms(constraint.get_rhs(), terms);
+        add_fluent_terms(constraint.left_operand(), terms);
+        add_fluent_terms(constraint.right_operand(), terms);
     }
 }
 
@@ -138,7 +138,7 @@ template<typename TimedLiterals>
 std::pair<std::uint32_t, std::uint32_t> next_timed_literals(TimedLiterals timed_literals, std::uint32_t progress)
 {
     auto end = progress;
-    while (end < timed_literals.size() && timed_literals[end].get_time() == timed_literals[progress].get_time())
+    while (end < timed_literals.size() && timed_literals[end].time() == timed_literals[progress].time())
         ++end;
     return { progress, end };
 }
@@ -157,15 +157,15 @@ void apply_timed_literals(TimedLiterals timed_literals,
     for (const auto polarity : { false, true })
         for (auto i = begin; i < end; ++i)
         {
-            const auto literal = timed_literals[i].get_literal();
-            if (literal.get_polarity() != polarity)
+            const auto literal = timed_literals[i].literal();
+            if (literal.polarity() != polarity)
                 continue;
-            const auto fact = fdr.get_fact(literal.get_atom());
-            const auto variable = fact.get_variable().index();
+            const auto fact = fdr.get_fact(literal.atom());
+            const auto variable = fact.variable().index();
             happening.writes.push_back(static_cast<std::uint32_t>(variable.value));
             if (polarity)
                 state.set(fact);
-            else if (parent.fact_storage().get(variable) == fact.get_value())
+            else if (parent.fact_storage().get(variable) == fact.value())
                 state.set(urd::data<formalism::FDRFact<formalism::FluentTag>> { variable, formalism::FDRValue::none() });
         }
 }
@@ -355,16 +355,17 @@ private:
 };
 
 /// The successor of the next timed initial literals (those of the earliest time not yet reached; none if all happened):
-/// one happening at their fixed time, its writes their FDR variables; failed where an open over-all condition does not
-/// hold (`over_all_holds(state)`). Under (minimize (total-time)), the metric is the makespan. Written into `out`.
-template<TaskKind Kind, typename Evaluator, typename Make, typename OverAllHolds>
-void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>& node, Make make, OverAllHolds over_all_holds, SuccessorBuilder<Kind>& out)
+/// one happening at their fixed time, its writes their FDR variables; failed where it does not fit the temporal network
+/// (an open over-all condition is the axiom step's to check). Under (minimize (total-time)), the metric is the makespan.
+/// Written into `out`.
+template<TaskKind Kind, typename Evaluator, typename Make, typename Out>
+void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>& node, Make make, Out& out)
 {
     const auto& task = *node.context().get_task();
     const auto state_context = state_context_of(node);
-    const auto timed_literals = task.get_task().get_timed_literals();
+    const auto timed_literals = task.get_task().timed_literals();
     const auto label = urd::data<Transition>(TransitionKind::TIMED_LITERAL, {}, 0);
-    const auto progress = state_context.temporal_storage().get_parts().til_progress;
+    const auto progress = state_context.temporal_storage().parts().til_progress;
     if (progress >= timed_literals.size())
     {
         start_successor(out, node.context(), label);
@@ -373,7 +374,7 @@ void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>&
     const auto [begin, end] = next_timed_literals(timed_literals, progress);
     auto temporal = TemporalStepper::Kind {};
     temporal.kind = TransitionKind::TIMED_LITERAL;
-    temporal.time = timed_literals[begin].get_time();
+    temporal.time = timed_literals[begin].time();
     temporal.timed_literals = end - begin;
     const auto time_metric = minimizes_total_time(task);
     auto& fdr = *task.get_fdr_context();
@@ -381,7 +382,7 @@ void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>&
     auto& distributions = evaluator.outcome_distributions;
     distributions.clear();
     const auto set = distributions.unit();
-    generate_successor<Kind>(
+    write_successor(
         out,
         node.context(),
         label,
@@ -405,12 +406,12 @@ void timed_literal_transition(Evaluator& evaluator, const NodeBuilderView<Kind>&
                     happening.clear();
                     apply_timed_literals(timed_literals, begin, end, state, state_context, fdr, happening);
                     compute_state_delta(state_context, StateContext<Kind> { node.context(), state, ygg::float_t { 0 } }, evaluator.successor_delta);
-                    auto makespan = time_metric ? node.get_metric() : ygg::float_t { 0 };
+                    auto makespan = time_metric ? node.metric() : ygg::float_t { 0 };
                     evaluator.scheduled = evaluator.stepper.add(state.temporal_storage->parts, happening, temporal, makespan);
                     return time_metric ? std::max(auxiliary_value, makespan) : auxiliary_value;
                 },
                 outcome,
-                [&](const auto& successor_state) { return evaluator.scheduled && over_all_holds(successor_state); });
+                [&evaluator] { return evaluator.scheduled; });
         });
 }
 

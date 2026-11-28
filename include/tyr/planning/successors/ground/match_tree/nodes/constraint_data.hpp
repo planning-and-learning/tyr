@@ -65,9 +65,7 @@ struct data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
                            urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::constraint, &data::true_child, &data::dontcare_child> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::constraint, &data::true_child, &data::dontcare_child> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> key() const noexcept
     { return urd::key<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>(index); }

@@ -121,12 +121,12 @@ Out write(Out out, const std::variant<Alternatives...>& value)
 template<typename Out, typename View>
 Out write_lifted_arguments(Out out, const View& value, std::string_view name)
 {
-    if (value.get_terms().empty())
+    if (value.terms().empty())
         return fmt::format_to(out, "{}", name);
-    const auto variables = value.get_parameters().get_variables();
+    const auto variables = value.parameters().variables();
     out = fmt::format_to(out, "{}(", name);
     auto separator = std::string_view("");
-    for (auto term : value.get_terms())
+    for (auto term : value.terms())
     {
         out = fmt::format_to(out, "{}", separator);
         if (const auto* parameter = std::get_if<tf::ParameterIndex>(&term))
@@ -140,58 +140,58 @@ Out write_lifted_arguments(Out out, const View& value, std::string_view name)
 
 template<typename Out, typename C>
 Out write(Out out, const urd::index_view<tf::Object, C>& value)
-{ return fmt::format_to(out, "{}", value.get_name()); }
+{ return fmt::format_to(out, "{}", value.name()); }
 
 template<typename Out, typename C>
 Out write(Out out, const urd::index_view<tf::Variable, C>& value)
-{ return fmt::format_to(out, "{}", value.get_name()); }
+{ return fmt::format_to(out, "{}", value.name()); }
 
 template<typename Out, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Predicate<F>, C>& value)
-{ return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity()); }
+{ return fmt::format_to(out, "{}/{}", value.name(), value.arity()); }
 
 template<typename Out, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Function<F>, C>& value)
-{ return fmt::format_to(out, "{}/{}", value.get_name(), value.get_arity()); }
+{ return fmt::format_to(out, "{}/{}", value.name(), value.arity()); }
 
 template<typename Out, tyr::TaskKind T, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Atom<T, F>, C>& value)
 {
     if constexpr (std::same_as<T, GroundTag>)
-        return fmt::format_to(out, "{}", value.get_row());
+        return fmt::format_to(out, "{}", value.row());
     else
-        return write_lifted_arguments(out, value, value.get_predicate().get_name().str());
+        return write_lifted_arguments(out, value, value.predicate().name().str());
 }
 
 template<typename Out, tyr::TaskKind T, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::Literal<T, F>, C>& value)
 {
-    if (!value.get_polarity())
+    if (!value.polarity())
         out = fmt::format_to(out, "not ");
-    return write(out, value.get_atom());
+    return write(out, value.atom());
 }
 
 template<typename Out, tyr::TaskKind T, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::FunctionTerm<T, F>, C>& value)
 {
     if constexpr (std::same_as<T, GroundTag>)
-        return fmt::format_to(out, "{}", value.get_row());
+        return fmt::format_to(out, "{}", value.row());
     else
-        return write_lifted_arguments(out, value, value.get_function().get_name().str());
+        return write_lifted_arguments(out, value, value.function().name().str());
 }
 
 template<typename Out, tyr::TaskKind T, tf::FactKind F, typename C>
 Out write(Out out, const urd::index_view<tf::FunctionTermValue<T, F>, C>& value)
 {
-    out = write(out, value.get_fterm());
-    return fmt::format_to(out, " = {}", value.get_value());
+    out = write(out, value.fterm());
+    return fmt::format_to(out, " = {}", value.value());
 }
 
 template<typename Out, tyr::TaskKind T, tf::OperatorKind O, typename C>
 Out write(Out out, const urd::index_view<tf::UnaryOperator<T, O>, C>& value)
 {
-    out = fmt::format_to(out, "({}", value.get_operation());
-    out = write(out, value.get_arg());
+    out = fmt::format_to(out, "({}", value.operation());
+    out = write(out, value.operand());
     return fmt::format_to(out, ")");
 }
 
@@ -202,9 +202,9 @@ Out write(Out out, const urd::index_view<tf::BinaryOperator<T, O>, C>& value)
     constexpr auto parenthesized = !std::same_as<O, tf::BooleanOperatorKind>;
     if constexpr (parenthesized)
         out = fmt::format_to(out, "(");
-    out = write(out, value.get_lhs());
-    out = fmt::format_to(out, " {} ", value.get_operation());
-    out = write(out, value.get_rhs());
+    out = write(out, value.left_operand());
+    out = fmt::format_to(out, " {} ", value.operation());
+    out = write(out, value.right_operand());
     if constexpr (parenthesized)
         out = fmt::format_to(out, ")");
     return out;
@@ -215,10 +215,10 @@ Out write(Out out, const urd::index_view<tf::MultiOperator<T, O>, C>& value)
 {
     out = fmt::format_to(out, "(");
     auto first = true;
-    for (const auto& arg : value.get_args())
+    for (const auto& arg : value.operands())
     {
         if (!first)
-            out = fmt::format_to(out, " {} ", value.get_operation());
+            out = fmt::format_to(out, " {} ", value.operation());
         out = write(out, arg);
         first = false;
     }
@@ -230,17 +230,17 @@ Out write(Out out, const urd::index_view<tf::NumericEffect<T, F>, C>& value)
 {
     // Each operator as the assignment it is: assign :=, increase +=, decrease -=, scale-up *=, scale-down /=.
     auto assignment = std::string_view(":=");
-    if (value.get_operation() == tf::NumericEffectOperatorKind::Increase)
+    if (value.operation() == tf::NumericEffectOperatorKind::Increase)
         assignment = "+=";
-    else if (value.get_operation() == tf::NumericEffectOperatorKind::Decrease)
+    else if (value.operation() == tf::NumericEffectOperatorKind::Decrease)
         assignment = "-=";
-    else if (value.get_operation() == tf::NumericEffectOperatorKind::ScaleUp)
+    else if (value.operation() == tf::NumericEffectOperatorKind::ScaleUp)
         assignment = "*=";
-    else if (value.get_operation() == tf::NumericEffectOperatorKind::ScaleDown)
+    else if (value.operation() == tf::NumericEffectOperatorKind::ScaleDown)
         assignment = "/=";
-    out = write(out, value.get_fterm());
+    out = write(out, value.fterm());
     out = fmt::format_to(out, " {} ", assignment);
-    return write(out, value.get_fexpr());
+    return write(out, value.fexpr());
 }
 
 /// The elements of a range, separated by `separator`.
@@ -269,13 +269,13 @@ Out write_rule_body(Out out, const Body& value)
         out = write(out, element);
         separator = ", ";
     };
-    for (auto literal : value.get_static_literals())
+    for (auto literal : value.static_literals())
         write_element(literal);
-    for (auto literal : value.get_fluent_literals())
+    for (auto literal : value.fluent_literals())
         write_element(literal);
-    for (auto literal : value.get_derived_literals())
+    for (auto literal : value.derived_literals())
         write_element(literal);
-    for (auto constraint : value.get_numeric_constraints())
+    for (auto constraint : value.numeric_constraints())
         write_element(constraint);
     return out;
 }
@@ -293,19 +293,19 @@ template<tyr::TaskKind T>
 fmt::format_context::iterator fmt::formatter<urd::index_view<tf::Rule<T>, tf::Repository>>::format(const urd::index_view<tf::Rule<T>, tf::Repository>& value,
                                                                                                    fmt::format_context& context) const
 {
-    const auto body = value.get_body();
-    const auto has_body = !body.get_static_literals().empty() || !body.get_fluent_literals().empty() || !body.get_derived_literals().empty()
-                          || !body.get_numeric_constraints().empty();
-    auto out = write_joined(context.out(), value.get_fluent_heads(), ", ");
-    if (!value.get_fluent_heads().empty() && !value.get_derived_heads().empty())
+    const auto body = value.body();
+    const auto has_body = !body.static_literals().empty() || !body.fluent_literals().empty() || !body.derived_literals().empty()
+                          || !body.numeric_constraints().empty();
+    auto out = write_joined(context.out(), value.fluent_heads(), ", ");
+    if (!value.fluent_heads().empty() && !value.derived_heads().empty())
         out = fmt::format_to(out, ", ");
-    out = write_joined(out, value.get_derived_heads(), ", ");
+    out = write_joined(out, value.derived_heads(), ", ");
     if (has_body)
     {
         out = fmt::format_to(out, " :- ");
         out = write_rule_body(out, body);
     }
-    return fmt::format_to(out, ".  % cost {}", value.get_cost());
+    return fmt::format_to(out, ".  % cost {}", value.cost());
 }
 
 // A program, one statement per line: its predicates, functions and objects as comments, its facts and function values,
@@ -326,12 +326,12 @@ fmt::formatter<urd::index_view<tf::Program<T>, tf::Repository>>::format(const ur
         out = write_joined(out, elements, ", ");
         line = new_line;
     };
-    comment("static predicates", value.get_static_predicates());
-    comment("fluent predicates", value.get_fluent_predicates());
-    comment("derived predicates", value.get_derived_predicates());
-    comment("static functions", value.get_static_functions());
-    comment("fluent functions", value.get_fluent_functions());
-    comment("objects", value.get_objects());
+    comment("static predicates", value.static_predicates());
+    comment("fluent predicates", value.fluent_predicates());
+    comment("derived predicates", value.derived_predicates());
+    comment("static functions", value.static_functions());
+    comment("fluent functions", value.fluent_functions());
+    comment("objects", value.objects());
     const auto statements = [&](const auto& elements)
     {
         for (auto element : elements)
@@ -342,17 +342,17 @@ fmt::formatter<urd::index_view<tf::Program<T>, tf::Repository>>::format(const ur
             line = new_line;
         }
     };
-    statements(value.get_static_atoms());
-    statements(value.get_fluent_atoms());
-    statements(value.get_derived_atoms());
-    statements(value.get_static_fterm_values());
-    statements(value.get_fluent_fterm_values());
-    for (auto rule : value.get_rules())
+    statements(value.static_atoms());
+    statements(value.fluent_atoms());
+    statements(value.derived_atoms());
+    statements(value.static_fterm_values());
+    statements(value.fluent_fterm_values());
+    for (auto rule : value.rules())
     {
         out = fmt::format_to(out, "{}{}", line, rule);
         line = new_line;
     }
-    if (const auto goal = value.get_goal(); goal.has_value())
+    if (const auto goal = value.goal(); goal.has_value())
     {
         out = fmt::format_to(out, "{}?- ", line);
         out = write_rule_body(out, goal.value());

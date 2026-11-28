@@ -61,16 +61,16 @@ Residual compute_residual(InvariantView invariant, const Predicates& taken)
 {
     auto residual = Residual {};
     auto counted = false;
-    const auto r = invariant.get_num_rigid_variables();
-    for (const auto atom : invariant.get_atoms())
+    const auto r = invariant.num_rigid_variables();
+    for (const auto atom : invariant.atoms())
     {
-        const auto predicate = atom.get_predicate();
+        const auto predicate = atom.predicate();
         if (taken.contains(predicate))
             continue;
         ++residual.atoms;
         if (std::ranges::find(residual.predicates, predicate) == residual.predicates.end())
             residual.predicates.push_back(predicate);
-        for (const auto term : atom.get_terms())
+        for (const auto term : atom.terms())
             std::visit(
                 [&]<typename T>(const T& arg)
                 {
@@ -169,8 +169,8 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
         const auto chosen = candidates.front();
         used.insert(chosen);
         order.push_back(unique[chosen]);
-        for (const auto atom : unique[chosen].get_atoms())
-            taken.insert(atom.get_predicate());
+        for (const auto atom : unique[chosen].atoms())
+            taken.insert(atom.predicate());
     }
 }
 

@@ -28,9 +28,9 @@ concept BinaryOperatorContract = std::constructible_from<urd::index<Entity>, ygg
                                         { data.operation } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>&>;
                                         { data == data } -> std::same_as<bool>;
                                         view.index();
-                                        { view.get_operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
-                                        view.get_lhs();
-                                        view.get_rhs();
+                                        { view.operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
+                                        view.left_operand();
+                                        view.right_operand();
                                         { view == view } -> std::same_as<bool>;
                                         { view < view } -> std::same_as<bool>;
                                     };

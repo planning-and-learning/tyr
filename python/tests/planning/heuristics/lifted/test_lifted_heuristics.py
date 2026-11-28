@@ -13,7 +13,7 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
     axiom_evaluator = planning.lifted.AxiomEvaluator(task, execution_context)
     state_repository = planning.lifted.StateRepository(task)
     state = state_repository.get_initial_state(axiom_evaluator)
-    goal = task.get_task().get_goal()
+    goal = task.get_task().goal()
 
     class PythonHeuristic(planning.lifted.Heuristic):
         def __init__(self) -> None:

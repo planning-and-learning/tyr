@@ -35,10 +35,10 @@ static_assert(requires(AxiomData& data) {
 });
 static_assert(requires(const AxiomView& view) {
     view.index();
-    view.get_body().get_arity();
-    view.get_body();
-    view.get_variables();
-    view.get_head();
+    view.body().arity();
+    view.body();
+    view.variables();
+    view.head();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
@@ -66,12 +66,12 @@ static_assert(requires(GroundAxiomData& data) {
 });
 static_assert(requires(const GroundAxiomView& view) {
     view.index();
-    view.get_axiom();
-    view.get_row();
-    view.get_row().template resolve<tyr::formalism::Object>();
-    view.get_row().get_relation().index();
-    view.get_body();
-    view.get_head();
+    view.axiom();
+    view.row();
+    view.row().template resolve<tyr::formalism::Object>();
+    view.row().relation().index();
+    view.body();
+    view.head();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });

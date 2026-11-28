@@ -67,9 +67,9 @@ void insert_unextended_state(const StateContext<GroundTag>& state,
 {
     auto& fact_sets = workspace.facts.fact_sets.template get<formalism::FluentTag>();
     for (const auto atom : state.fact_storage().fluent_atoms())
-        datalog::insert(fact_sets, urd::resolve(atom, repository).get_row().index());
+        datalog::insert(fact_sets, urd::resolve(atom, repository).row().index());
     for (const auto& [fterm, value] : state.numeric_storage().fterm_values())
-        datalog::insert(fact_sets, urd::resolve(fterm, repository).get_row().index(), ygg::ClosedInterval<ygg::float_t>(value, value));
+        datalog::insert(fact_sets, urd::resolve(fterm, repository).row().index(), ygg::ClosedInterval<ygg::float_t>(value, value));
 }
 
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state. Each state row the program reads
@@ -86,15 +86,15 @@ void insert_unextended_state(const StateContext<LiftedTag>& state,
     for (const auto atom_index : state.fact_storage().fluent_atoms())
     {
         const auto atom = urd::resolve(atom_index, repository);
-        if (inputs.reads(atom.get_predicate()))
-            datalog::insert(fact_sets, urd::copy(atom.get_row(), workspace_repository, workspace.datalog_builder));
+        if (inputs.reads(atom.predicate()))
+            datalog::insert(fact_sets, urd::copy(atom.row(), workspace_repository, workspace.datalog_builder));
     }
     for (const auto& [fterm_index, value] : state.numeric_storage().fterm_values())
     {
         const auto fterm = urd::resolve(fterm_index, repository);
-        if (inputs.reads(fterm.get_function()))
+        if (inputs.reads(fterm.function()))
             datalog::insert(fact_sets,
-                            urd::copy(fterm.get_row(), workspace_repository, workspace.datalog_builder),
+                            urd::copy(fterm.row(), workspace_repository, workspace.datalog_builder),
                             ygg::ClosedInterval<ygg::float_t>(value, value));
     }
 }
@@ -112,8 +112,8 @@ void insert_extended_state(const StateContext<LiftedTag>& state,
     for (const auto atom_index : state.atom_storage().atoms())
     {
         const auto atom = urd::resolve(atom_index, repository);
-        if (inputs.reads(atom.get_predicate()))
-            datalog::insert(fact_sets, urd::copy(atom.get_row(), workspace_repository, workspace.datalog_builder));
+        if (inputs.reads(atom.predicate()))
+            datalog::insert(fact_sets, urd::copy(atom.row(), workspace_repository, workspace.datalog_builder));
     }
 }
 

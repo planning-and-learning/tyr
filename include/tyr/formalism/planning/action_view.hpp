@@ -50,54 +50,54 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    const auto& get_name() const noexcept
+    const auto& name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::name>(); }
 
-    const auto& get_original_name() const noexcept
+    const auto& original_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::original_name>(); }
 
-    auto get_original_arity() const noexcept
+    auto original_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::original_arity>(); }
 
-    auto get_variables() const noexcept
+    auto variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
 
-    auto get_row() const noexcept
+    auto row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::row>(); }
 
-    auto get_condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
+    auto condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
 
-    auto get_effects() const noexcept { return self().template member<&urd::record_of<V>::effects>(); }
+    auto effects() const noexcept { return self().template member<&urd::record_of<V>::effects>(); }
 
-    auto get_choices() const noexcept { return self().template member<&urd::record_of<V>::choices>(); }
+    auto choices() const noexcept { return self().template member<&urd::record_of<V>::choices>(); }
 
     /// The duration, over-all and end parts of a durative action; none for an instantaneous one.
-    auto get_temporal_part() const noexcept { return self().template member<&urd::record_of<V>::temporal_part>(); }
+    auto temporal_part() const noexcept { return self().template member<&urd::record_of<V>::temporal_part>(); }
 
-    auto get_arity() const noexcept
+    auto arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return get_variables().size(); }
+    { return variables().size(); }
 
     /// Its rows' column types (a key of row pools): one object column per argument, computed.
-    [[nodiscard]] ygg::UniformColumnTypes get_column_types() const
+    [[nodiscard]] ygg::UniformColumnTypes column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(get_variables().size()); }
+    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(variables().size()); }
 
-    auto get_action() const noexcept
+    auto action() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_relation(); }
+    { return row().relation(); }
 
     static constexpr auto functions() noexcept
     {
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
-            return urd::Functions<urd::function<"get_action", &view_mixin::get_action>> {};
+            return urd::Functions<urd::function<"action", &view_mixin::action>> {};
         else
-            return urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>, urd::function<"get_column_types", &view_mixin::get_column_types>> {};
+            return urd::Functions<urd::function<"arity", &view_mixin::arity>, urd::function<"column_types", &view_mixin::column_types>> {};
     }
 };
 }  // namespace urd

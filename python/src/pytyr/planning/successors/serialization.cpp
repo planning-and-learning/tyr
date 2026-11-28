@@ -25,28 +25,51 @@
 #include "tyr/planning/successors/transition_view.hpp"
 
 #include <boost/mp11.hpp>
+#include <concepts>
 #include <yggdrasil/python/serialization.hpp>
 
 namespace tyr::planning
 {
 
-/// The serialization hooks of a task kind's successor views and its parts' builder views (its label and the label's
-/// binding, distributions and outcomes), once they are bound.
+/// The serialization hooks of a task kind's label views (a transition's builder view and its binding's), once they are
+/// bound: alike in every environment.
 template<TaskKind Kind>
 void bind_successor_serialization()
 {
     using Repository = StateRepository<Kind>;
-    ygg::python::bind_serialization(boost::mp11::mp_list<SuccessorBuilderView<Kind>,
-                                                         SuccessorRecordView<Kind>,
-                                                         urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>,
-                                                                            Repository,
-                                                                            urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>,
-                                                         urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>,
-                                                         urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>,
-                                                         urd::borrowed_view<OutcomeNode<Kind>, Repository, urd::builder<OutcomeNode<Kind>, Repository>>> {});
+    ygg::python::bind_serialization(
+        boost::mp11::mp_list<urd::borrowed_view<ygg::Row<formalism::Action<LiftedTag>>, Repository, urd::builder<ygg::Row<formalism::Action<LiftedTag>>, Repository>>,
+                             urd::borrowed_view<Transition, Repository, urd::builder<Transition, Repository>>> {});
+}
+
+/// The serialization hooks of a task kind's successor views of environment E and its parts' builder views (its outcomes,
+/// and in the general environment its distributions), once they are bound.
+template<NatureEnvironment E, TaskKind Kind>
+void bind_environment_successor_serialization()
+{
+    using Repository = StateRepository<Kind>;
+    using Outcome = urd::borrowed_view<OutcomeNode<E, Kind>, Repository, urd::builder<OutcomeNode<E, Kind>, Repository>>;
+    if constexpr (std::same_as<E, GeneralTag>)
+    {
+        ygg::python::bind_serialization(
+            boost::mp11::mp_list<SuccessorBuilderView<E, Kind>,
+                                 SuccessorRecordView<E, Kind>,
+                                 urd::borrowed_view<Distribution<Kind>, Repository, urd::builder<Distribution<Kind>, Repository>>,
+                                 Outcome> {});
+    }
+    else
+    {
+        ygg::python::bind_serialization(boost::mp11::mp_list<SuccessorBuilderView<E, Kind>, SuccessorRecordView<E, Kind>, Outcome> {});
+    }
 }
 
 template void bind_successor_serialization<GroundTag>();
 template void bind_successor_serialization<LiftedTag>();
+template void bind_environment_successor_serialization<NondeterministicTag, GroundTag>();
+template void bind_environment_successor_serialization<NondeterministicTag, LiftedTag>();
+template void bind_environment_successor_serialization<ProbabilisticTag, GroundTag>();
+template void bind_environment_successor_serialization<ProbabilisticTag, LiftedTag>();
+template void bind_environment_successor_serialization<GeneralTag, GroundTag>();
+template void bind_environment_successor_serialization<GeneralTag, LiftedTag>();
 
 }  // namespace tyr::planning

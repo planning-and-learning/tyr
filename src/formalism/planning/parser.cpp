@@ -86,12 +86,12 @@ Parser::parse_task(const std::string& task_description, std::optional<std::files
 
     // A predicate only the task's timed initial literals change is fluent in this task: its domain translated again so.
     auto fluent = std::set<std::string>();
-    for (const auto predicate : m_domain.get_domain().get_predicates<FluentTag>())
-        fluent.insert(predicate.get_name().str());
+    for (const auto predicate : m_domain.get_domain().predicates<FluentTag>())
+        fluent.insert(predicate.name().str());
     auto changed = std::set<std::string>();
-    for (const auto timed_literal : task.get_timed_initial_literals())
+    for (const auto timed_literal : task.timed_initial_literals())
     {
-        const auto name = timed_literal.get_literal().get_atom().get_predicate().get_name().str();
+        const auto name = timed_literal.literal().atom().predicate().name().str();
         if (!fluent.contains(name))
             changed.insert(name);
     }

@@ -118,20 +118,20 @@ inline std::optional<SearchStatistics> parse_optional_statistics(const boost::js
 }
 
 template<TaskKind Kind>
-urd::Store<urd::sequence<std::string>> plan_actions(const planning::PlanBuilderView<Kind>& plan)
+urd::Store<urd::sequence<std::string>> plan_actions(const planning::PlanBuilderView<planning::DeterministicTag, Kind>& plan)
 {
     auto result = urd::Store<urd::sequence<std::string>> {};
-    for (const auto& labeled_node : plan.get_labeled_succ_nodes())
-        urd::visit_view(labeled_node.get_label(),
+    for (const auto& labeled_node : plan.labeled_succ_nodes())
+        urd::visit_view(labeled_node.label(),
                         [&](const auto& label) { result.push_back(fmt::format("{}", std::make_pair(label, formalism::PlanFormatting()))); });
     return result;
 }
 
 template<TaskKind Kind>
-void expect_plan(const PlanStatistics& expected, const std::type_identity_t<planning::PlanBuilderView<Kind>>& actual)
+void expect_plan(const PlanStatistics& expected, const std::type_identity_t<planning::PlanBuilderView<planning::DeterministicTag, Kind>>& actual)
 {
-    EXPECT_EQ(actual.get_length(), expected.length);
-    EXPECT_DOUBLE_EQ(static_cast<double>(actual.get_cost()), static_cast<double>(expected.cost));
+    EXPECT_EQ(actual.length(), expected.length);
+    EXPECT_DOUBLE_EQ(static_cast<double>(actual.cost()), static_cast<double>(expected.cost));
     EXPECT_EQ(plan_actions(actual), expected.actions);
 }
 

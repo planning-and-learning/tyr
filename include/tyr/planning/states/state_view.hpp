@@ -86,15 +86,15 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] decltype(auto) get_fact_storage() const noexcept { return self().template member<&urd::record_of<V>::fact_storage>(); }
+    [[nodiscard]] auto fact_storage() const noexcept { return self().template member<&urd::record_of<V>::fact_storage>(); }
 
-    [[nodiscard]] decltype(auto) get_atom_storage() const noexcept { return self().template member<&urd::record_of<V>::atom_storage>(); }
+    [[nodiscard]] auto atom_storage() const noexcept { return self().template member<&urd::record_of<V>::atom_storage>(); }
 
-    [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
+    [[nodiscard]] auto numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
 
-    [[nodiscard]] decltype(auto) get_temporal_storage() const noexcept { return self().template member<&urd::record_of<V>::temporal_storage>(); }
+    [[nodiscard]] auto temporal_storage() const noexcept { return self().template member<&urd::record_of<V>::temporal_storage>(); }
 
-    [[nodiscard]] const auto& get_formalism_repository() const noexcept { return self().context().get_task()->get_repository(); }
+    [[nodiscard]] const auto& formalism_repository() const noexcept { return self().context().get_task()->get_repository(); }
 
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     { return self().context().get_task()->get_static_state().test(index); }
@@ -103,20 +103,20 @@ public:
     { return self().context().get_task()->get_static_state().get(index); }
 
     [[nodiscard]] ::tyr::formalism::FDRValue value(urd::index<::tyr::formalism::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    { return get_fact_storage().get(index); }
+    { return fact_storage().get(index); }
 
     [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-    { return get_numeric_storage().get(index); }
+    { return numeric_storage().get(index); }
 
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-    { return get_atom_storage().test(index); }
+    { return atom_storage().test(index); }
 
     [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.index()); }
 
     [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
     {
         const auto fact = std::as_const(*self().context().get_task()->get_fdr_context()).get_fact(view);
-        return fact && value(fact->get_variable().index()) == fact->get_value();
+        return fact && value(fact->variable().index()) == fact->value();
     }
 
     [[nodiscard]] ygg::float_t value(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
@@ -130,73 +130,73 @@ public:
     [[nodiscard]] bool test(::tyr::formalism::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
     /// Its fluent facts, as its fact storage holds them.
-    [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return get_fact_storage().facts(); }
+    [[nodiscard]] auto fluent_fact_index_values() const noexcept { return fact_storage().facts(); }
 
     /// The indices of its atoms of kind F: static ones its task's, fluent ones those of its facts, derived ones its atom storage's.
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atom_indices() const noexcept
+    [[nodiscard]] auto atom_indices() const noexcept
     {
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return self().context().get_task()->get_static_state().get_atoms();
         else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return get_fact_storage().fluent_atoms();
+            return fact_storage().fluent_atoms();
         else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
-            return get_atom_storage().atoms();
+            return atom_storage().atoms();
         else
             static_assert(false);
     }
 
     /// Its function term values of kind F: static ones its task's, fluent ones its numeric storage's.
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_fterm_index_values() const noexcept
+    [[nodiscard]] auto fterm_index_values() const noexcept
     {
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return self().context().get_task()->get_static_state().get_fterm_index_values();
         else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return get_numeric_storage().fterm_values();
+            return numeric_storage().fterm_values();
         else
             static_assert(false);
     }
 
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms() const noexcept
+    [[nodiscard]] auto atoms() const noexcept
     {
-        return get_atom_indices<F>()
-               | std::views::transform([repository = get_formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
+        return atom_indices<F>()
+               | std::views::transform([repository = formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
     }
 
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms(::tyr::formalism::PredicateView<F> predicate) const
+    [[nodiscard]] auto atoms(::tyr::formalism::PredicateView<F> predicate) const
     {
-        return get_atoms<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
+        return atoms<F>() | std::views::filter([predicate](auto atom) { return atom.predicate() == predicate; });
     }
 
     /// The facts, computed on the fly: each view owns its fact.
-    [[nodiscard]] auto get_fluent_facts() const noexcept
+    [[nodiscard]] auto fluent_facts() const noexcept
     {
-        return get_fluent_fact_index_values()
-               | std::views::transform([repository = get_formalism_repository().get()](auto fact) { return urd::resolve(std::move(fact), *repository); });
+        return fluent_fact_index_values()
+               | std::views::transform([repository = formalism_repository().get()](auto fact) { return urd::resolve(std::move(fact), *repository); });
     }
 
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_fterm_values() const noexcept
+    [[nodiscard]] auto fterm_values() const noexcept
     {
-        return get_fterm_index_values<F>()
-               | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
+        return fterm_index_values<F>()
+               | std::views::transform([repository = formalism_repository().get()](auto&& pair)
                                        { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
     }
 
     /// Its packed form, the view of its builder's index, resolved through its repository (StateRepository::view): a
     /// registered state's; a state being built has none (its index is none).
     [[nodiscard]] ::tyr::planning::StateView<Kind> pack() const noexcept
-        requires urd::is_builder<urd::record_of<V>>
+        requires urd::Builder<urd::record_of<V>>
     { return self().template member<&urd::record_of<V>::index>(); }
 
     static constexpr auto functions() noexcept
     {
         using Self = const view_mixin&;
         constexpr auto read = urd::Functions<
-            urd::function<"get_formalism_repository", &view_mixin::get_formalism_repository>,
+            urd::function<"formalism_repository", &view_mixin::formalism_repository>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>) const>(
                               &view_mixin::test),
@@ -239,43 +239,43 @@ public:
                           static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>) const>(
                               &view_mixin::value),
                           urd::arg<"view">>,
-            urd::function<"get_fluent_fact_index_values", &view_mixin::get_fluent_fact_index_values>,
-            urd::function<"fluent_facts", &view_mixin::get_fluent_facts>,
+            urd::function<"fluent_fact_index_values", &view_mixin::fluent_fact_index_values>,
+            urd::function<"fluent_facts", &view_mixin::fluent_facts>,
             urd::function<"static_atoms",
-                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>()) (view_mixin::*)() const noexcept>(
-                              &view_mixin::template get_atoms<::tyr::formalism::StaticTag>)>,
+                          static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::StaticTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template atoms<::tyr::formalism::StaticTag>)>,
             urd::function<"fluent_atoms",
-                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>()) (view_mixin::*)() const noexcept>(
-                              &view_mixin::template get_atoms<::tyr::formalism::FluentTag>)>,
+                          static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::FluentTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template atoms<::tyr::formalism::FluentTag>)>,
             urd::function<"derived_atoms",
-                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>()) (view_mixin::*)() const noexcept>(
-                              &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>)>,
+                          static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::DerivedTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template atoms<::tyr::formalism::DerivedTag>)>,
             urd::function<"static_fterm_values",
-                          static_cast<decltype(std::declval<Self>().template get_fterm_values<::tyr::formalism::StaticTag>()) (view_mixin::*)() const noexcept>(
-                              &view_mixin::template get_fterm_values<::tyr::formalism::StaticTag>)>,
+                          static_cast<decltype(std::declval<Self>().template fterm_values<::tyr::formalism::StaticTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template fterm_values<::tyr::formalism::StaticTag>)>,
             urd::function<"fluent_fterm_values",
-                          static_cast<decltype(std::declval<Self>().template get_fterm_values<::tyr::formalism::FluentTag>()) (view_mixin::*)() const noexcept>(
-                              &view_mixin::template get_fterm_values<::tyr::formalism::FluentTag>)>,
-            urd::function<"get_atoms",
-                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>(
+                          static_cast<decltype(std::declval<Self>().template fterm_values<::tyr::formalism::FluentTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template fterm_values<::tyr::formalism::FluentTag>)>,
+            urd::function<"atoms",
+                          static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::StaticTag>(
                               std::declval<::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>>())) (view_mixin::*)(
                               ::tyr::formalism::PredicateView<::tyr::formalism::StaticTag>) const>(
-                              &view_mixin::template get_atoms<::tyr::formalism::StaticTag>),
+                              &view_mixin::template atoms<::tyr::formalism::StaticTag>),
                           urd::arg<"predicate">>,
-            urd::function<"get_atoms",
-                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>(
+            urd::function<"atoms",
+                          static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::FluentTag>(
                               std::declval<::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>>())) (view_mixin::*)(
                               ::tyr::formalism::PredicateView<::tyr::formalism::FluentTag>) const>(
-                              &view_mixin::template get_atoms<::tyr::formalism::FluentTag>),
+                              &view_mixin::template atoms<::tyr::formalism::FluentTag>),
                           urd::arg<"predicate">>,
-            urd::function<"get_atoms",
-                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>(
+            urd::function<"atoms",
+                          static_cast<decltype(std::declval<Self>().template atoms<::tyr::formalism::DerivedTag>(
                               std::declval<::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>>())) (view_mixin::*)(
                               ::tyr::formalism::PredicateView<::tyr::formalism::DerivedTag>) const>(
-                              &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>),
+                              &view_mixin::template atoms<::tyr::formalism::DerivedTag>),
                           urd::arg<"predicate">>> {};
         // pack(), where it has it (a builder's view).
-        if constexpr (urd::is_builder<urd::record_of<V>>)
+        if constexpr (urd::Builder<urd::record_of<V>>)
             return urd::Functions<urd::function<"pack", &view_mixin::pack>> {} + read;
         else
             return read;
@@ -291,20 +291,21 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] decltype(auto) get_fact_storage() const noexcept { return self().template member<&urd::record_of<V>::fact_storage>(); }
+    [[nodiscard]] auto fact_storage() const noexcept { return self().template member<&urd::record_of<V>::fact_storage>(); }
 
-    [[nodiscard]] decltype(auto) get_atom_storage() const noexcept { return self().template member<&urd::record_of<V>::atom_storage>(); }
+    [[nodiscard]] auto atom_storage() const noexcept { return self().template member<&urd::record_of<V>::atom_storage>(); }
 
-    [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
+    [[nodiscard]] auto numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
 
-    [[nodiscard]] decltype(auto) get_temporal_storage() const noexcept { return self().template member<&urd::record_of<V>::temporal_storage>(); }
+    [[nodiscard]] auto temporal_storage() const noexcept { return self().template member<&urd::record_of<V>::temporal_storage>(); }
 
     [[nodiscard]] ::tyr::planning::SharedStateBuilderView<Kind> unpack() const
     {
-        if constexpr (std::same_as<V, ::tyr::planning::StateView<Kind>>)
+        // A registered state by its key (its index kept); a record held outside its repository as it is.
+        if constexpr (urd::Indexed<V>)
             return ::tyr::planning::share(self().context(), ::tyr::planning::get_registered_state(self().context(), self().index()));
         else
-            return ::tyr::planning::share(self().context(), ::tyr::planning::unpack(self().context(), urd::detail::view_access::record(self())));
+            return ::tyr::planning::share(self().context(), ::tyr::planning::unpack(self().context(), urd::record(self())));
     }
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"unpack", &view_mixin::unpack>> {}; }
@@ -313,67 +314,29 @@ public:
 namespace tyr::planning
 {
 
-/// A state read through its repository: a registered state's view (StateBuilderView) or a builder's (StateBuilderView).
+/// A state read through its repository by its storages: a view of its builder or of its record.
 template<typename V>
 concept StateReadable = requires(const V& state) {
-    state.get_fact_storage();
-    state.get_numeric_storage();
-    state.get_temporal_storage();
+    state.fact_storage();
+    state.numeric_storage();
+    state.temporal_storage();
 };
 
-/// A state's storages, hashed and compared by what they hold (facts: a ground state's values per variable, a lifted
-/// state's atom bits; numeric values), not by their views: a view hashes and compares with its context, which differs
-/// between repositories.
-inline void hash_combine_facts(ygg::hash_t& result, const FactStorageBuilderView<GroundTag>& facts) { urd::hash_combine(result, facts.get_values()); }
-
-inline void hash_combine_facts(ygg::hash_t& result, const FactStorageBuilderView<LiftedTag>& facts) { urd::hash_combine(result, facts.get_indices()); }
-
-inline bool equal_facts(const FactStorageBuilderView<GroundTag>& lhs, const FactStorageBuilderView<GroundTag>& rhs)
-{ return urd::EqualTo<> {}(lhs.get_values(), rhs.get_values()); }
-
-inline bool equal_facts(const FactStorageBuilderView<LiftedTag>& lhs, const FactStorageBuilderView<LiftedTag>& rhs)
-{ return urd::EqualTo<> {}(lhs.get_indices(), rhs.get_indices()); }
-
-template<TaskKind Kind>
-void hash_combine_numerics(ygg::hash_t& result, const NumericStorageBuilderView<Kind>& numerics)
-{ urd::hash_combine(result, numerics.get_values()); }
-
-template<TaskKind Kind>
-bool equal_numerics(const NumericStorageBuilderView<Kind>& lhs, const NumericStorageBuilderView<Kind>& rhs)
-{ return urd::EqualTo<> {}(lhs.get_values(), rhs.get_values()); }
-
-template<TaskKind Kind>
-void hash_combine_temporal(ygg::hash_t& result, const TemporalStorageBuilderView<Kind>& temporal)
-{ urd::hash_combine(result, temporal.get_parts()); }
-
-template<TaskKind Kind>
-bool equal_temporals(const TemporalStorageBuilderView<Kind>& lhs, const TemporalStorageBuilderView<Kind>& rhs)
-{ return lhs.get_parts() == rhs.get_parts(); }
-
-/// The hash of a state's unextended content (its facts, numeric values and agenda, not its derived atoms), by what its storages
-/// hold: the same state hashes alike whichever repository it is read through (the workers').
-template<StateReadable V>
+/// The hash of a state's unextended content (its facts, numeric values and agenda, not its derived atoms): its builder's
+/// (urd::Hash: by its identifying storages, each by what it holds, not by its view, which hashes with its context), so
+/// that the same state hashes alike whichever repository it is read through (the workers').
+template<urd::BuilderView V>
 ygg::hash_t hash_unextended(const V& state)
-{
-    auto result = ygg::hash_t { 0 };
-    hash_combine_facts(result, state.get_fact_storage());
-    hash_combine_numerics(result, state.get_numeric_storage());
-    hash_combine_temporal(result, state.get_temporal_storage());
-    return result;
-}
+{ return urd::Hash<> {}(urd::record(state)); }
 
 /// Whether two states have equal unextended content (hash_unextended), whichever repositories they are read through.
-template<StateReadable V, StateReadable W>
+template<urd::BuilderView V, urd::BuilderView W>
 bool equal_unextended(const V& lhs, const W& rhs)
-{
-    return equal_facts(lhs.get_fact_storage(), rhs.get_fact_storage())
-           && equal_numerics(lhs.get_numeric_storage(), rhs.get_numeric_storage())
-           && equal_temporals(lhs.get_temporal_storage(), rhs.get_temporal_storage());
-}
+{ return urd::EqualTo<> {}(urd::record(lhs), urd::record(rhs)); }
 
 }
 
-/// A state, registered or being built: its atoms, facts and numeric values (and its index, where it has one).
+/// A state, registered or being built: its atoms, facts and numeric values.
 template<::tyr::TaskKind Kind>
 struct fmt::formatter<::tyr::planning::SharedStateBuilderView<Kind>, char> : ygg::without_format_spec
 {

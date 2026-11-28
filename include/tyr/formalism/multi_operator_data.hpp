@@ -27,6 +27,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -37,11 +38,11 @@ struct data<::tyr::formalism::MultiOperator<T, O>>
 {
     urd::key<::tyr::formalism::MultiOperator<T, O>> index;
     O operation = O::Add;
-    urd::flat_vector<::tyr::formalism::FunctionExpression<T>> args;
+    urd::flat_vector<::tyr::formalism::FunctionExpression<T>> operands;
 
     data() = default;
 
-    data(O operation_, urd::flat_vector<::tyr::formalism::FunctionExpression<T>> args_) : index(), operation(operation_), args(std::move(args_))
+    data(O operation_, urd::flat_vector<::tyr::formalism::FunctionExpression<T>> operands_) : index(), operation(operation_), operands(std::move(operands_))
     {
         if (!is_multi(operation))
             throw std::invalid_argument("multi operator must be Add or Mul");
@@ -53,11 +54,9 @@ struct data<::tyr::formalism::MultiOperator<T, O>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"args", &data::args>> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"operands", &data::operands, urd::sorted>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::args> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::args> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::MultiOperator<T, O>> key() const noexcept { return urd::key<::tyr::formalism::MultiOperator<T, O>>(index); }
 };

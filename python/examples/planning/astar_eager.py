@@ -37,13 +37,13 @@ from pytyr.planning.lifted import (
     GoalStrategy,
     Heuristic,
     NodeBuilderView,
-    PlanBuilderView,
     PruningStrategy,
     StateBuilderView,
     StateRepository,
     SuccessorGenerator,
     Task,
 )
+from pytyr.planning.lifted.deterministic import PlanBuilderView
 
 # Lazy Greedy Best-First Search (GBFS) exposes an almost identical interface,
 # although some options and EventHandler events differ slightly.
@@ -175,7 +175,7 @@ def main() -> None:
     plan = search_result.plan
 
     if plan is not None:
-        print(f"Found plan with length {plan.get_length()} and cost {plan.get_cost()}")
+        print(f"Found plan with length {plan.length()} and cost {plan.cost()}")
         print(plan)
     else:
         print("No solution was found.")

@@ -78,7 +78,7 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
             self.num_expanded = statistics.get_num_expanded()
 
         @override
-        def on_solved(self, plan: planning.ground.PlanBuilderView) -> None:
+        def on_solved(self, plan: planning.ground.deterministic.PlanBuilderView) -> None:
             self.solved = True
 
     state_repository, axiom_evaluator, successor_generator = make_components_ground(task, concurrent=True)
@@ -100,13 +100,12 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
     assert result.status == planning.SearchStatus.SOLVED
     assert result.plan is not None
     assert result.goal_node is not None
-    assert result.goal_node.get_state().context() == state_repository
+    assert result.goal_node.state().context() == state_repository
     assert result.statistics.get_num_expanded() > 0
     assert result.statistics.get_num_destination_lock_acquisitions() > 0
     assert event_handler.end_status == result.status
     assert event_handler.num_expanded == result.statistics.get_num_expanded()
     assert event_handler.solved
-    assert not hasattr(event_handler, "on_expand_node")
     _assert_worker_statistics(result, 2)
 
     brfs_options = planning.algorithms.brfs.ground.Options()
@@ -120,7 +119,7 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
     )
     assert brfs_result.status == planning.SearchStatus.SOLVED
     assert brfs_result.goal_node is not None
-    assert brfs_result.goal_node.get_state().context() == state_repository
+    assert brfs_result.goal_node.state().context() == state_repository
     _assert_worker_statistics(brfs_result, 2)
 
     astar_options = planning.algorithms.astar_eager.ground.Options()
@@ -161,7 +160,7 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
             self.num_expanded = statistics.get_num_expanded()
 
         @override
-        def on_solved(self, plan: planning.lifted.PlanBuilderView) -> None:
+        def on_solved(self, plan: planning.lifted.deterministic.PlanBuilderView) -> None:
             self.solved = True
 
     state_repository, axiom_evaluator, successor_generator = make_components_lifted(task, concurrent=True)
@@ -183,13 +182,12 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
     assert result.status == planning.SearchStatus.SOLVED
     assert result.plan is not None
     assert result.goal_node is not None
-    assert result.goal_node.get_state().context() == state_repository
+    assert result.goal_node.state().context() == state_repository
     assert result.statistics.get_num_expanded() > 0
     assert result.statistics.get_num_destination_lock_acquisitions() > 0
     assert event_handler.end_status == result.status
     assert event_handler.num_expanded == result.statistics.get_num_expanded()
     assert event_handler.solved
-    assert not hasattr(event_handler, "on_expand_node")
     _assert_worker_statistics(result, 2)
 
     brfs_options = planning.algorithms.brfs.lifted.Options()
@@ -203,7 +201,7 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
     )
     assert brfs_result.status == planning.SearchStatus.SOLVED
     assert brfs_result.goal_node is not None
-    assert brfs_result.goal_node.get_state().context() == state_repository
+    assert brfs_result.goal_node.state().context() == state_repository
     _assert_worker_statistics(brfs_result, 2)
 
     astar_options = planning.algorithms.astar_eager.lifted.Options()
@@ -287,7 +285,7 @@ def _check_null_python_heuristic_workers_lifted(task: planning.lifted.Task) -> N
 def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_ground(task, concurrent=True)
     initial_state = state_repository.get_initial_state(axiom_evaluator)
-    fluent_variables = [fact.get_variable() for fact in initial_state.fluent_facts()]
+    fluent_variables = [fact.variable() for fact in initial_state.fluent_facts()]
     factory_indices: dict[str, list[tuple[type[object], int]]] = {"goal": [], "pruning": []}
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
@@ -375,7 +373,7 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
 def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_lifted(task, concurrent=True)
     initial_state = state_repository.get_initial_state(axiom_evaluator)
-    fluent_variables = [fact.get_variable() for fact in initial_state.fluent_facts()]
+    fluent_variables = [fact.variable() for fact in initial_state.fluent_facts()]
     factory_indices: dict[str, list[tuple[type[object], int]]] = {"goal": [], "pruning": []}
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}

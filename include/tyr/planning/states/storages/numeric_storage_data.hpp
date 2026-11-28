@@ -53,11 +53,9 @@ struct data<::tyr::planning::NumericStorage<Kind>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &data::values>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::values> {}; }
-
-    [[nodiscard]] urd::key<::tyr::planning::NumericStorage<Kind>> key() const noexcept { return urd::key<::tyr::planning::NumericStorage<Kind>>(index); }
+    [[nodiscard]] urd::key<::tyr::planning::NumericStorage<Kind>> key() const noexcept { return index; }
 };
 
 }  // namespace urd

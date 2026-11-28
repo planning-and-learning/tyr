@@ -19,40 +19,29 @@
 #define TYR_FORMALISM_CANONICALIZATION_HPP_
 
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
 
 #include <concepts>
 #include <urd/elements/data.hpp>
 #include <utility>
-#include <yggdrasil/semantics/canonicalization.hpp>
 
 namespace tyr::formalism
 {
 
-/**
- * Canonicalization of the records shared by planning and datalog (found by ADL from prepare_for_insert). Every record
- * has a canonicalize overload, a no-op where it is canonical as built, so a record without one is a compile error.
- */
-
-inline void canonicalize(Term&)
-{
-    // Trivially canonical
-}
-
+/// The canonical form of a record that is more than its fields promise (found by ADL from prepare_for_insert; a list a
+/// record holds as a set says so on its field, urd::sorted and urd::unique, and yggdrasil sorts it): a commutative
+/// binary operator's operands in order.
 template<TaskKind T, OperatorKind O>
 void canonicalize(urd::data<BinaryOperator<T, O>>& data)
 {
     if constexpr (std::same_as<O, ArithmeticOperatorKind>)
     {
-        if ((data.operation == ArithmeticOperatorKind::Add || data.operation == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
-            std::swap(data.lhs, data.rhs);
+        if ((data.operation == ArithmeticOperatorKind::Add || data.operation == ArithmeticOperatorKind::Mul) && data.left_operand > data.right_operand)
+            std::swap(data.left_operand, data.right_operand);
     }
 }
-
-template<TaskKind T>
-void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{ ygg::canonicalize<false>(data.args); }
 
 }
 

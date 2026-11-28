@@ -29,12 +29,24 @@
 
 namespace urd
 {
-/// The builder of an outcome: its node's builder (its state a child: built, or registered), its probability and whether it
-/// fails.
+/// The builder of an outcome an adversary picks: its node's builder (its state a child: built, or registered) and whether
+/// it fails.
 template<::tyr::TaskKind Kind, typename C>
-struct builder<::tyr::planning::OutcomeNode<Kind>, C>
+struct builder<::tyr::planning::OutcomeNode<::tyr::planning::NondeterministicTag, Kind>, C>
 {
-    urd::key<::tyr::planning::OutcomeNode<Kind>> index;
+    urd::key<::tyr::planning::OutcomeNode<::tyr::planning::NondeterministicTag, Kind>> index;
+    urd::built_t<urd::data<::tyr::planning::Node<Kind>>, C> node;
+    urd::built_t<bool, C> failed = false;
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"node", &builder::node>, urd::field<"failed", &builder::failed>> {}; }
+};
+
+/// The builder of an outcome chance draws: its node's builder (its state a child: built, or registered), its probability
+/// and whether it fails.
+template<::tyr::planning::ChanceEnvironment E, ::tyr::TaskKind Kind, typename C>
+struct builder<::tyr::planning::OutcomeNode<E, Kind>, C>
+{
+    urd::key<::tyr::planning::OutcomeNode<E, Kind>> index;
     urd::built_t<urd::data<::tyr::planning::Node<Kind>>, C> node;
     urd::built_t<ygg::float_t, C> probability = 1;
     urd::built_t<bool, C> failed = false;
@@ -43,8 +55,6 @@ struct builder<::tyr::planning::OutcomeNode<Kind>, C>
     {
         return urd::Fields<urd::field<"node", &builder::node>, urd::field<"probability", &builder::probability>, urd::field<"failed", &builder::failed>> {};
     }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 }
 

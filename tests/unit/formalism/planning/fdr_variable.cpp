@@ -21,8 +21,8 @@ concept FdrVariableContract = std::constructible_from<urd::index<Entity>, ygg::u
                                      data.atoms;
                                      { data == data } -> std::same_as<bool>;
                                      view.index();
-                                     view.get_domain_size();
-                                     view.get_atoms();
+                                     view.domain_size();
+                                     view.atoms();
                                      { view == view } -> std::same_as<bool>;
                                      { view < view } -> std::same_as<bool>;
                                  };

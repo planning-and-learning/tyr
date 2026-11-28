@@ -242,7 +242,7 @@ evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvalu
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
-    auto state = EvaluationState { Aggregation::identity(), static_cast<Cost>(instance.get_rule().get_cost()) };
+    auto state = EvaluationState { Aggregation::identity(), static_cast<Cost>(instance.get_rule().cost()) };
 
     if (!can_continue(state.support_cost, state.raw_edge))
         return std::nullopt;
@@ -251,14 +251,14 @@ evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvalu
     boost::mp11::mp_for_each<MutableTags>(
         [&]<typename F>(F)
         {
-            for (const auto literal : instance.get_body().template get_literals<F>())
+            for (const auto literal : instance.get_body().template literals<F>())
             {
                 if (!supported)
                     return;
-                if (!literal.get_polarity())
+                if (!literal.polarity())
                     continue;
 
-                const auto binding = instance.resolve(literal.get_atom()).index();
+                const auto binding = instance.resolve(literal.atom()).index();
                 const auto* annotation = input.predicate_annotations().find(binding);
                 if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
                 {
@@ -273,7 +273,7 @@ evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvalu
     if (!supported)
         return std::nullopt;
 
-    for (const auto constraint : instance.get_body().get_numeric_constraints())
+    for (const auto constraint : instance.get_body().numeric_constraints())
         if (!evaluate(instance.resolve(constraint), input.fact_sets()))
             return std::nullopt;
 
@@ -514,7 +514,7 @@ RuleUpdateResult fire_propositional_update(const Heads& heads,
     }
     else
     {
-        const auto edge = static_cast<Cost>(input.rule_instance.get_rule().get_cost());
+        const auto edge = static_cast<Cost>(input.rule_instance.get_rule().cost());
         auto pruned = false;
         if constexpr (!AP::records_propositional_achievers && std::same_as<CP, RuleCostPolicy>)
             pruned = support + edge >= best_head_cost(heads, input.evaluation, delta_annotations);

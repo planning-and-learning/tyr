@@ -202,9 +202,9 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
             const auto solved = result.status == tyr::planning::SearchStatus::SOLVED;
             if (solved)
             {
-                if (!result.plan || !std::isfinite(result.plan->get_cost()))
+                if (!result.plan || !std::isfinite(result.plan->cost()))
                     throw std::runtime_error("Solved search returned no finite-cost plan.");
-                const auto cost = result.plan->get_cost();
+                const auto cost = result.plan->cost();
                 if (prepared.reference_cost
                     && std::abs(cost - *prepared.reference_cost) > ygg::FloatTolerance<ygg::float_t>::tolerance(cost, *prepared.reference_cost))
                     throw std::runtime_error("A* plan cost differs between worker counts or repetitions.");
@@ -216,8 +216,8 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
             state.SetLabel(status_names.at(static_cast<size_t>(result.status)));
             state.counters["status"] = static_cast<double>(result.status);
             state.counters["solved"] = solved ? 1 : 0;
-            state.counters["cost"] = result.plan ? result.plan->get_cost() : -1;
-            state.counters["length"] = result.plan ? static_cast<double>(result.plan->get_length()) : -1;
+            state.counters["cost"] = result.plan ? result.plan->cost() : -1;
+            state.counters["length"] = result.plan ? static_cast<double>(result.plan->length()) : -1;
             state.counters["workers"] = static_cast<double>(result.worker_statistics.size());
             state.counters["num_expanded"] = static_cast<double>(result.statistics.get_num_expanded());
             state.counters["num_generated_successors"] = static_cast<double>(result.statistics.get_num_generated_successors());

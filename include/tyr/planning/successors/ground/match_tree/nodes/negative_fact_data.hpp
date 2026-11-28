@@ -62,9 +62,7 @@ struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
             Fields<urd::field<"fact", &data::fact>, urd::field<"true_child", &data::true_child>, urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact, &data::true_child, &data::dontcare_child> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact, &data::true_child, &data::dontcare_child> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> key() const noexcept
     { return urd::key<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>(index); }

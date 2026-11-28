@@ -77,10 +77,10 @@ struct FFRPGHeuristic<Kind, V>::Impl :
 
         if (const auto& goal = this->workspace().tp.get_goal())
         {
-            for (const auto literal : goal->template get_literals<formalism::FluentTag>())
+            for (const auto literal : goal->template literals<formalism::FluentTag>())
             {
-                assert(literal.get_polarity());
-                extract_relaxed_plan(literal.get_atom().get_row());
+                assert(literal.polarity());
+                extract_relaxed_plan(literal.atom().row());
             }
         }
 

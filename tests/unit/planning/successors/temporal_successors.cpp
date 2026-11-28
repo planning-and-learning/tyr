@@ -46,22 +46,22 @@ using Label = std::tuple<planning::TransitionKind, std::string, std::uint32_t>;
 template<typename Successor>
 Label label_of(const Successor& successor)
 {
-    const auto label = successor.get_label();
+    const auto label = successor.label();
     auto name = std::string();
-    if (const auto binding = label.get_binding())
+    if (const auto binding = label.binding())
         urd::visit_view(*binding,
                         [&](const auto& row)
                         {
                             // Its relation in whichever form the row holds it; its objects through the row's repository.
-                            urd::visit_view(row.get_relation(),
+                            urd::visit_view(row.relation(),
                                             [&](const auto& relation)
                                             {
-                                                name = relation.get_name().str();
-                                                for (std::size_t column = 0; column < relation.get_arity(); ++column)
-                                                    name += " " + urd::resolve(row.template get<urd::index<formalism::Object>>(column), row.context()).get_name().str();
+                                                name = relation.name().str();
+                                                for (std::size_t column = 0; column < relation.arity(); ++column)
+                                                    name += " " + urd::resolve(row.template get<urd::index<formalism::Object>>(column), row.context()).name().str();
                                             });
                         });
-    return { label.get_kind(), name, label.get_open() };
+    return { label.kind(), name, label.open() };
 }
 
 /// A node read through its repository.
@@ -69,7 +69,8 @@ template<TaskKind Kind>
 planning::NodeBuilderView<Kind> view_of(const planning::NodeBuilder<Kind>& node, const planning::StateRepository<Kind>& repository)
 { return urd::resolve(node, repository); }
 
-/// Calls `callback` with each successor of `node`, its outcome states registered (a node of one is moved out of it).
+/// Calls `callback` with each applicable successor of `node`, its outcome states closed under the axioms and registered (a
+/// node of one is moved out of it).
 template<TaskKind Kind, typename Callback>
 void for_each_registered_successor(planning::SuccessorGenerator<Kind>& generator,
                                    const planning::NodeBuilder<Kind>& node,
@@ -77,13 +78,18 @@ void for_each_registered_successor(planning::SuccessorGenerator<Kind>& generator
                                    planning::AxiomEvaluator<Kind>& axiom_evaluator,
                                    Callback callback)
 {
-    generator.for_each_successor(view_of(node, repository),
-                                 axiom_evaluator,
-                                 [&](planning::SuccessorBuilder<Kind>& successor)
-                                 {
-                                     planning::register_outcomes(repository, successor);
-                                     return callback(successor);
-                                 });
+    planning::for_each_successor<planning::GeneralTag>(
+        generator,
+        view_of(node, repository),
+        [&](const planning::TransitionLabel<Kind>& /*transition*/, planning::SuccessorBuilder<planning::GeneralTag, Kind>& successor)
+        {
+            // The axiom step: a transition whose outcomes all fail there is not applicable.
+            planning::find_outcomes(repository, successor);
+            if (!planning::extend_outcomes(generator, repository, axiom_evaluator, successor))
+                return true;
+            planning::register_outcomes(repository, successor);
+            return callback(successor);
+        });
 }
 
 /// The search space of a task explored breadth first through successors with outcomes: per depth the sorted labels of
@@ -103,7 +109,7 @@ std::pair<std::vector<std::vector<Label>>, std::optional<std::size_t>> explore(c
     seen.insert(view_of(initial, *state_repository).pack().state);
     auto layer = std::vector<planning::NodeBuilder<Kind>>();
     layer.push_back(std::move(initial));
-    const auto goal = task->get_task().get_goal();
+    const auto goal = task->get_task().goal();
     for (std::size_t depth = 0; depth < max_depth && !layer.empty(); ++depth)
     {
         auto labels = std::vector<Label>();
@@ -113,7 +119,7 @@ std::pair<std::vector<std::vector<Label>>, std::optional<std::size_t>> explore(c
                                           node,
                                           *state_repository,
                                           *axiom_evaluator,
-                                          [&](planning::SuccessorBuilder<Kind>& successor)
+                                          [&](planning::SuccessorBuilder<planning::GeneralTag, Kind>& successor)
                                           {
                                               labels.push_back(label_of(urd::resolve(std::as_const(successor), std::as_const(*state_repository))));
                                               for (auto& distribution : successor.distributions)
@@ -191,7 +197,7 @@ std::optional<planning::NodeBuilder<Kind>> step(planning::SuccessorGenerator<Kin
                                   node,
                                   repository,
                                   axiom_evaluator,
-                                  [&](planning::SuccessorBuilder<Kind>& successor)
+                                  [&](planning::SuccessorBuilder<planning::GeneralTag, Kind>& successor)
                                   {
                                       if (matches(label_of(urd::resolve(std::as_const(successor), std::as_const(repository)))))
                                           result = urd::clone(successor.distributions.front()->outcomes.front()->node);

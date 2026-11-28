@@ -47,9 +47,7 @@ struct data<::tyr::formalism::Object>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &data::name>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::name> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Object> key() const noexcept { return urd::key<::tyr::formalism::Object>(index); }
 };

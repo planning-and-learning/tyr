@@ -95,7 +95,7 @@ struct RPGDefinition
 template<TaskKind Kind>
 struct RPGPolicy;
 
-inline formalism::ActionRowView to_action_binding(formalism::ActionView<GroundTag> action) noexcept { return action.get_row(); }
+inline formalism::ActionRowView to_action_binding(formalism::ActionView<GroundTag> action) noexcept { return action.row(); }
 
 inline formalism::ActionRowView to_action_binding(formalism::ActionRowView action) noexcept { return action; }
 
@@ -112,9 +112,9 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
     auto grounding_context = formalism::GroundingContext { workspace.datalog_builder, destination };
     auto condition = formalism::checkout<formalism::RuleBody<GroundTag>>(grounding_context.builder());
 
-    for (const auto fact : source_goal.template get_facts<formalism::PositiveTag>())
+    for (const auto fact : source_goal.template facts<formalism::PositiveTag>())
     {
-        const auto atom = fact.get_atom();
+        const auto atom = fact.atom();
         if (!atom)
             continue;
 
@@ -149,7 +149,7 @@ public:
     RPGEvaluator(std::shared_ptr<Definition> definition, ygg::ExecutionContextPtr execution_context) :
         m_definition(std::move(definition)),
         m_execution_context(std::move(execution_context)),
-        m_source_goal(m_definition->task->get_task().get_goal()),
+        m_source_goal(m_definition->task->get_task().goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
     { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
 
@@ -257,9 +257,9 @@ protected:
                                                 boost::mp11::mp_for_each<datalog::MutableTags>(
                                                     [&]<typename F>(F)
                                                     {
-                                                        for (const auto literal : instance.get_body().template get_literals<F>())
-                                                            if (literal.get_polarity())
-                                                                callback(instance.resolve(literal.get_atom()));
+                                                        for (const auto literal : instance.get_body().template literals<F>())
+                                                            if (literal.polarity())
+                                                                callback(instance.resolve(literal.atom()));
                                                     });
                                             });
     }

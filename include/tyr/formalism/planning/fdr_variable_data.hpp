@@ -49,9 +49,7 @@ struct data<::tyr::formalism::FDRVariable<T>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &data::atoms>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::atoms> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atoms> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::FDRVariable<T>> key() const noexcept { return urd::key<::tyr::formalism::FDRVariable<T>>(index); }
 };

@@ -31,7 +31,7 @@ namespace urd
 /// The builder of a plan: its start node's builder and its labeled nodes' builders (their states unpacked, registered or
 /// not; their labels interned).
 template<::tyr::TaskKind Kind, typename C>
-struct builder<::tyr::planning::Plan<Kind>, C>
+struct builder<::tyr::planning::Plan<::tyr::planning::DeterministicTag, Kind>, C>
 {
     urd::built_t<urd::data<::tyr::planning::Node<Kind>>, C> start_node;
     urd::built_t<urd::flat_vector<urd::data<::tyr::planning::LabeledNode<Kind>>>, C> labeled_succ_nodes;
@@ -39,7 +39,6 @@ struct builder<::tyr::planning::Plan<Kind>, C>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"start_node", &builder::start_node>, urd::field<"labeled_succ_nodes", &builder::labeled_succ_nodes>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 }
 

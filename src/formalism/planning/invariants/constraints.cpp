@@ -354,7 +354,7 @@ void ensure_literals_sat(ConstraintSystem& system, const std::vector<std::pair<u
         const auto& [atom, polarity] = literal;
         if constexpr (std::is_same_v<T, StaticTag>)
         {
-            if (repository.view(atom.predicate).get_name().view() == "=")
+            if (repository.view(atom.predicate).name().view() == "=")
             {
                 urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
                 if (atom.terms.size() == 2)

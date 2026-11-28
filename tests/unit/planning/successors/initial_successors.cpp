@@ -147,15 +147,17 @@ boost::json::value serialized_initial_successors(const planning::TaskPtr<Kind>& 
     register_initial_successor_tables<Kind>(dictionaries);
     // The generator's successors as it writes them (builders), each kept as a clone: they outlive the tables, which read
     // them (each as its borrowed view).
-    auto successors = std::vector<planning::OwnedSuccessorBuilderView<Kind>> {};
-    const auto keep = [&](planning::SuccessorBuilder<Kind>& successor)
+    auto successors = std::vector<planning::OwnedSuccessorBuilderView<planning::GeneralTag, Kind>> {};
+    const auto keep = [&](const planning::TransitionLabel<Kind>& /*transition*/, planning::SuccessorBuilder<planning::GeneralTag, Kind>& successor)
     {
-        successors.emplace_back(urd::clone(successor), repository.get());
+        // The axiom step, without interning: a transition whose outcomes all fail there is not applicable.
+        if (planning::extend_outcomes(generator, *repository, axiom_evaluator, successor))
+            successors.emplace_back(urd::clone(successor), repository.get());
         return true;
     };
-    planning::for_each_successor(generator, initial, axiom_evaluator, keep);
+    planning::for_each_successor<planning::GeneralTag>(generator, initial, keep);
     auto serialized = boost::json::array {};
-    for (const planning::SuccessorBuilderView<Kind>& successor : successors)
+    for (const planning::SuccessorBuilderView<planning::GeneralTag, Kind>& successor : successors)
         serialized.push_back(dictionaries.serialize(successor));
     return boost::json::object { { "successors", std::move(serialized) }, { "tables", dictionaries.tables() } };
 }
@@ -171,8 +173,8 @@ void expect_no_allocations_after_warmup(const planning::TaskPtr<Kind>& task, con
     auto axiom_evaluator = planning::AxiomEvaluator<Kind>(task, execution_context);
     auto generator = planning::SuccessorGenerator<Kind>(task, execution_context);
     const auto initial = planning::get_initial_node(*repository, axiom_evaluator);
-    const auto visit = [](planning::SuccessorBuilder<Kind>& /*successor*/) { return true; };
-    const auto expand = [&] { return planning::for_each_successor(generator, initial, axiom_evaluator, visit); };
+    const auto visit = [](const planning::TransitionLabel<Kind>& /*transition*/, planning::SuccessorBuilder<planning::GeneralTag, Kind>& /*successor*/) { return true; };
+    const auto expand = [&] { return planning::for_each_successor<planning::GeneralTag>(generator, initial, visit); };
     ASSERT_TRUE(expand());
     ASSERT_TRUE(expand());
     {

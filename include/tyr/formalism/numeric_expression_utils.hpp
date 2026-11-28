@@ -49,7 +49,7 @@ struct evaluation_of
 };
 
 template<typename Expression>
-    requires requires(const Expression& expression) { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operation())>, BooleanOperatorKind>; }
+    requires requires(const Expression& expression) { requires std::same_as<std::remove_cvref_t<decltype(expression.operation())>, BooleanOperatorKind>; }
 struct evaluation_of<Expression>
 {
     using type = bool;
@@ -72,25 +72,25 @@ evaluation_t<Expression> evaluate(const Expression& expression, ResolveTerm& res
         return std::visit([&](const auto& child) { return evaluate(child, resolve_term); }, expression);
     }
     else if constexpr (requires {
-                           expression.get_operation();
-                           expression.get_lhs();
-                           expression.get_rhs();
+                           expression.operation();
+                           expression.left_operand();
+                           expression.right_operand();
                        })
     {
-        const auto rhs = evaluate(expression.get_rhs(), resolve_term);
-        const auto lhs = evaluate(expression.get_lhs(), resolve_term);
-        if constexpr (requires { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operation())>, BooleanOperatorKind>; })
-            return apply_existential(expression.get_operation(), lhs, rhs);
+        const auto rhs = evaluate(expression.right_operand(), resolve_term);
+        const auto lhs = evaluate(expression.left_operand(), resolve_term);
+        if constexpr (requires { requires std::same_as<std::remove_cvref_t<decltype(expression.operation())>, BooleanOperatorKind>; })
+            return apply_existential(expression.operation(), lhs, rhs);
         else
-            return apply(expression.get_operation(), lhs, rhs);
+            return apply(expression.operation(), lhs, rhs);
     }
-    else if constexpr (requires { expression.get_arg(); })
+    else if constexpr (requires { expression.operand(); })
     {
-        return apply(expression.get_operation(), evaluate(expression.get_arg(), resolve_term));
+        return apply(expression.operation(), evaluate(expression.operand(), resolve_term));
     }
-    else if constexpr (requires { expression.get_args(); })
+    else if constexpr (requires { expression.operands(); })
     {
-        const auto& args = expression.get_args();
+        const auto& args = expression.operands();
         auto it = args.begin();
         if (it == args.end())
             return ygg::ClosedInterval<ygg::float_t>();
@@ -98,7 +98,7 @@ evaluation_t<Expression> evaluate(const Expression& expression, ResolveTerm& res
         auto value = evaluate(*it, resolve_term);
         ++it;
         for (; it != args.end(); ++it)
-            value = apply(expression.get_operation(), value, evaluate(*it, resolve_term));
+            value = apply(expression.operation(), value, evaluate(*it, resolve_term));
         return value;
     }
     else
@@ -119,18 +119,18 @@ auto evaluate_numeric_expression(const Expression& expression, ResolveTerm resol
 template<typename Effect, typename ResolveTerm>
 ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(const Effect& effect, ResolveTerm resolve_term)
 {
-    auto rhs = numeric_evaluation_detail::evaluate(effect.get_fexpr(), resolve_term);
+    auto rhs = numeric_evaluation_detail::evaluate(effect.fexpr(), resolve_term);
     if (empty(rhs))
         return {};
 
-    if (effect.get_operation() == formalism::NumericEffectOperatorKind::Assign)
+    if (effect.operation() == formalism::NumericEffectOperatorKind::Assign)
         return rhs;
 
-    const auto lhs = numeric_evaluation_detail::evaluate(effect.get_fterm(), resolve_term);
+    const auto lhs = numeric_evaluation_detail::evaluate(effect.fterm(), resolve_term);
     if (empty(lhs))
         return {};
 
-    return apply(effect.get_operation(), lhs, rhs);
+    return apply(effect.operation(), lhs, rhs);
 }
 
 }

@@ -48,14 +48,14 @@ SLOW = {
 
 def register_tables(module: ModuleType, dictionaries: Dictionaries) -> None:
     """The fixture's tables, as initial_successor_tables.hpp registers them."""
-    dictionaries.register_table(module.SuccessorBuilderView, "successors", "S")
+    dictionaries.register_table(module.general.SuccessorBuilderView, "successors", "S")
     dictionaries.register_table(module.TransitionBuilderView, "labels", "L")
     dictionaries.register_table(formalism.RowActionLifted, "bindings", "B")
     dictionaries.register_table(module.RowActionLiftedBuilderView, "built_bindings", "b")
     dictionaries.register_table(formalism.ActionLifted, "actions", "A", fields=["name"])
     dictionaries.register_table(formalism.Object, "objects", "o", fields=["name"])
-    dictionaries.register_table(module.DistributionBuilderView, "distributions", "D")
-    dictionaries.register_table(module.OutcomeNodeBuilderView, "outcomes", "O")
+    dictionaries.register_table(module.general.DistributionBuilderView, "distributions", "D")
+    dictionaries.register_table(module.general.OutcomeNodeBuilderView, "outcomes", "O")
     dictionaries.register_table(module.NodeBuilderView, "nodes", "N")
     # A state and its storages, built (as the generator writes them).
     dictionaries.register_table(module.StateBuilderView, "states", "s")
@@ -73,14 +73,17 @@ def serialized_initial_successors(module: ModuleType, task: ground.Task | lifted
     node = module.get_initial_node(repository, evaluator)
     dictionaries = Dictionaries()
     register_tables(module, dictionaries)
-    # The generator's successors as it writes them (builders), each kept as a clone.
+    # The generator's successors (builders), their states closed under the axioms and none registered, each kept.
     successors = []
 
-    def keep(successor: Any) -> bool:
-        successors.append(successor.clone())
+    def keep(transition: Any, successor: Any) -> bool:
+        # The axiom step, without interning: a transition whose outcomes all fail there is not applicable.
+        extended = module.general.extend_outcomes(generator, evaluator, successor)
+        if extended is not None:
+            successors.append(extended)
         return True
 
-    module.for_each_successor(generator, node, evaluator, keep)
+    module.general.for_each_successor(generator, node, keep)
     serialized = [dictionaries.serialize(successor) for successor in successors]
     return {"successors": serialized, "tables": dictionaries.tables()}
 

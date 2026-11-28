@@ -39,15 +39,15 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    const auto& get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
+    const auto& name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
 
-    auto get_arity() const noexcept { return self().template member<&urd::record_of<V>::arity>(); }
+    auto arity() const noexcept { return self().template member<&urd::record_of<V>::arity>(); }
 
     /// Its rows' column types (a key of row pools): one object column per argument, computed.
-    [[nodiscard]] ygg::UniformColumnTypes get_column_types() const
-    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(static_cast<std::size_t>(get_arity())); }
+    [[nodiscard]] ygg::UniformColumnTypes column_types() const
+    { return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(static_cast<std::size_t>(arity())); }
 
-    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {}; }
+    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"column_types", &view_mixin::column_types>> {}; }
 };
 }  // namespace urd
 

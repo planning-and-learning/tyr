@@ -65,14 +65,11 @@ void bind_states(nb::module_& m)
     urd::python::bind_view<AtomStorageBuilderView<Kind>>(m);
     urd::python::bind_view<NumericStorageBuilderView<Kind>>(m);
     urd::python::bind_view<TemporalStorageBuilderView<Kind>>(m);
-    urd::python::bind_index<State<Kind>>(m);
-    urd::python::bind_data<State<Kind>>(m);
-    urd::python::bind_builder<State<Kind>, StateRepository<Kind>>(m);
-    urd::python::bind_view<StateView<Kind>>(m);
-    urd::python::bind_view<StateBuilderView<Kind>>(m);
+    urd::python::bind_record<State<Kind>, StateRepository<Kind>>(m);
+    // Its builder's view, and the view of a state held as a record of its own, not interned: the forms a node's state
+    // takes (urd::child).
+    urd::python::bind_record_views<State<Kind>, StateRepository<Kind>>(m);
     urd::python::bind_view<SharedStateBuilderView<Kind>>(m);
-    // A state held as a record of its own, not interned: one of the forms a node's state takes (urd::child).
-    urd::python::bind_view<StateRecordView<Kind>>(m);
     bind_state_serialization<Kind>();
 }
 

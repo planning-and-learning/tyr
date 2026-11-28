@@ -53,9 +53,7 @@ struct data<::tyr::planning::LabeledNode<Kind>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"label", &data::label>, urd::field<"node", &data::node>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::label, &data::node> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 };
 }
 

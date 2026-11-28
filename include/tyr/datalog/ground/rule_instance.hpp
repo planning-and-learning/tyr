@@ -33,15 +33,15 @@ public:
 
     [[nodiscard]] formalism::RuleView<GroundTag> get_rule() const noexcept { return m_rule; }
 
-    [[nodiscard]] auto get_body() const noexcept { return m_rule.get_body(); }
+    [[nodiscard]] auto get_body() const noexcept { return m_rule.body(); }
 
     template<formalism::FactKind F>
     [[nodiscard]] auto get_heads() const noexcept
-    { return m_rule.template get_heads<F>(); }
+    { return m_rule.template heads<F>(); }
 
     template<formalism::FactKind F>
     [[nodiscard]] auto resolve(formalism::AtomView<GroundTag, F> atom) const noexcept
-    { return atom.get_row(); }
+    { return atom.row(); }
 
     [[nodiscard]] auto resolve(formalism::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 

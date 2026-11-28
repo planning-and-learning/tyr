@@ -49,18 +49,18 @@ void add_stratum_listeners(const RuleStratum<LiftedTag>& stratum, const formalis
     {
         const auto rule_view = urd::resolve(rule, context);
 
-        for (const auto literal : rule_view.get_body().template get_literals<formalism::FluentTag>())
-            if (literal.get_polarity())
-                listeners.fluent_predicates[literal.get_atom().get_predicate().index()].insert(rule);
+        for (const auto literal : rule_view.body().template literals<formalism::FluentTag>())
+            if (literal.polarity())
+                listeners.fluent_predicates[literal.atom().predicate().index()].insert(rule);
 
-        for (const auto literal : rule_view.get_body().template get_literals<formalism::DerivedTag>())
-            if (literal.get_polarity())
-                listeners.derived_predicates[literal.get_atom().get_predicate().index()].insert(rule);
+        for (const auto literal : rule_view.body().template literals<formalism::DerivedTag>())
+            if (literal.polarity())
+                listeners.derived_predicates[literal.atom().predicate().index()].insert(rule);
 
         auto reads = urd::Store<urd::set<formalism::FunctionTermView<LiftedTag, formalism::FluentTag>>> {};
-        formalism::collect_reads(rule_view.get_body(), reads);
+        formalism::collect_reads(rule_view.body(), reads);
         for (const auto term : reads)
-            listeners.functions[term.get_function().index()].insert(rule);
+            listeners.functions[term.function().index()].insert(rule);
     }
 }
 }

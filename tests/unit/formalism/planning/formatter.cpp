@@ -26,31 +26,31 @@ namespace
 /// generate_parser_counts_suite.py records them.
 boost::json::object counts(tyr::formalism::TaskView<::tyr::LiftedTag> task)
 {
-    const auto domain = task.get_domain();
+    const auto domain = task.domain();
     return boost::json::object {
         { "domain",
           boost::json::object {
-              { "constants", domain.get_constants().size() },
-              { "static_predicates", domain.get_static_predicates().size() },
-              { "fluent_predicates", domain.get_fluent_predicates().size() },
-              { "derived_predicates", domain.get_derived_predicates().size() },
-              { "static_functions", domain.get_static_functions().size() },
-              { "fluent_functions", domain.get_fluent_functions().size() },
-              { "has_auxiliary_function", domain.get_auxiliary_function().has_value() },
-              { "actions", domain.get_actions().size() },
-              { "axioms", domain.get_axioms().size() },
+              { "constants", domain.constants().size() },
+              { "static_predicates", domain.static_predicates().size() },
+              { "fluent_predicates", domain.fluent_predicates().size() },
+              { "derived_predicates", domain.derived_predicates().size() },
+              { "static_functions", domain.static_functions().size() },
+              { "fluent_functions", domain.fluent_functions().size() },
+              { "has_auxiliary_function", domain.auxiliary_function().has_value() },
+              { "actions", domain.actions().size() },
+              { "axioms", domain.axioms().size() },
           } },
         { "task",
           boost::json::object {
-              { "objects", task.get_objects().size() },
-              { "derived_predicates", task.get_derived_predicates().size() },
-              { "static_atoms", task.get_static_atoms().size() },
-              { "fluent_atoms", task.get_fluent_atoms().size() },
-              { "static_fterm_values", task.get_static_fterm_values().size() },
-              { "fluent_fterm_values", task.get_fluent_fterm_values().size() },
-              { "has_auxiliary_fterm_value", task.get_auxiliary_fterm_value().has_value() },
-              { "axioms", task.get_axioms().size() },
-              { "has_metric", task.get_metric().has_value() },
+              { "objects", task.objects().size() },
+              { "derived_predicates", task.derived_predicates().size() },
+              { "static_atoms", task.static_atoms().size() },
+              { "fluent_atoms", task.fluent_atoms().size() },
+              { "static_fterm_values", task.static_fterm_values().size() },
+              { "fluent_fterm_values", task.fluent_fterm_values().size() },
+              { "has_auxiliary_fterm_value", task.auxiliary_fterm_value().has_value() },
+              { "axioms", task.axioms().size() },
+              { "has_metric", task.metric().has_value() },
           } },
     };
 }

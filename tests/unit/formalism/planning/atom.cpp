@@ -40,8 +40,8 @@ concept AtomContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> 
                               data.terms;
                               { data == data } -> std::same_as<bool>;
                               view.index();
-                              view.get_predicate();
-                              view.get_terms();
+                              view.predicate();
+                              view.terms();
                               { view == view } -> std::same_as<bool>;
                               { view < view } -> std::same_as<bool>;
                           };
@@ -96,10 +96,10 @@ TEST(TyrFormalismPlanningAtom, ExposesRepositoryView)
     const auto [atom, atom_created] = repository.insert(atom_data);
     ASSERT_TRUE(atom_created);
 
-    EXPECT_EQ(atom.get_predicate().get_name(), "at");
-    EXPECT_EQ(atom.get_predicate().get_arity(), 2);
+    EXPECT_EQ(atom.predicate().name(), "at");
+    EXPECT_EQ(atom.predicate().arity(), 2);
 
-    const auto atom_terms = atom.get_terms();
+    const auto atom_terms = atom.terms();
     ASSERT_EQ(atom_terms.size(), 2);
     visit(
         [&](const auto& value)
@@ -136,10 +136,10 @@ concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::ui
                                     data.row;
                                     { data == data } -> std::same_as<bool>;
                                     view.index();
-                                    view.get_predicate();
-                                    view.get_row();
-                                    view.get_row().template resolve<tyr::formalism::Object>();
-                                    view.get_row().get_relation().index();
+                                    view.predicate();
+                                    view.row();
+                                    view.row().template resolve<tyr::formalism::Object>();
+                                    view.row().relation().index();
                                     { view == view } -> std::same_as<bool>;
                                     { view < view } -> std::same_as<bool>;
                                 };
@@ -177,8 +177,8 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
-    EXPECT_EQ(ground_atom.get_predicate().index(), predicate.index());
-    const auto objects = ground_atom.get_row().template resolve<tyr::formalism::Object>();
+    EXPECT_EQ(ground_atom.predicate().index(), predicate.index());
+    const auto objects = ground_atom.row().template resolve<tyr::formalism::Object>();
     ASSERT_EQ(objects.size(), 2);
     EXPECT_EQ(objects[0].index(), object.index());
     EXPECT_EQ(objects[1].index(), object.index());

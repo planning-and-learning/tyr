@@ -43,8 +43,8 @@ namespace
 urd::data<Atom<LiftedTag, FluentTag>> lifted_record(AtomView<GroundTag, FluentTag> atom)
 {
     auto result = urd::data<Atom<LiftedTag, FluentTag>>();
-    result.predicate = atom.get_predicate().index();
-    for (const auto object : atom.get_row().template resolve<::tyr::formalism::Object>())
+    result.predicate = atom.predicate().index();
+    for (const auto object : atom.row().template resolve<::tyr::formalism::Object>())
         result.terms.push_back(Term(object.index()));
     return result;
 }
@@ -59,7 +59,7 @@ InvariantMatchData::InvariantMatchData(InvariantView invariant,
 
 void InvariantMatchData::build_postings()
 {
-    const std::size_t num_rigid = m_invariant.get_num_rigid_variables();
+    const std::size_t num_rigid = m_invariant.num_rigid_variables();
     const auto num_bindings = m_rigid_variable_bindings.size();
 
     m_postings.clear();
@@ -96,7 +96,7 @@ bool intersect_matching_bindings(const InvariantMatchData& data, const Invariant
     const auto& postings = data.postings();
 
     auto first = true;
-    for (size_t p = 0; p < data.invariant().get_num_rigid_variables(); ++p)
+    for (size_t p = 0; p < data.invariant().num_rigid_variables(); ++p)
     {
         const auto parameter = ParameterIndex(static_cast<ygg::uint_t>(p));
 
@@ -150,7 +150,7 @@ void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& res
         workspace.matches.clear();
 
         // Each atom of the invariant is a pattern, read as its record.
-        for (const auto part : data.invariant().get_atoms())
+        for (const auto part : data.invariant().atoms())
         {
             const auto& pattern = *part.context()[part.index()];
             if (pattern.predicate != atom.predicate)
@@ -160,7 +160,7 @@ void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& res
                 continue;
 
             auto sigma =
-                match_invariant_against_ground_atom(data.invariant().get_num_rigid_variables(), data.invariant().get_num_counted_variables(), pattern, atom);
+                match_invariant_against_ground_atom(data.invariant().num_rigid_variables(), data.invariant().num_counted_variables(), pattern, atom);
             if (!sigma.has_value())
                 continue;
 

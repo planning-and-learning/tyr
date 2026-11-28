@@ -34,7 +34,7 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] auto get_outcomes() const noexcept { return self().template member<&urd::record_of<V>::outcomes>(); }
+    [[nodiscard]] auto outcomes() const noexcept { return self().template member<&urd::record_of<V>::outcomes>(); }
 };
 
 #endif

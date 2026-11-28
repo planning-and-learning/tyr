@@ -53,27 +53,7 @@ struct builder<::tyr::planning::TemporalStorage<Kind>, C>
     urd::key<::tyr::planning::TemporalStorage<Kind>> index;
     urd::built_t<::tyr::planning::TemporalWords, C> parts;
 
-    void clear() { parts.clear(); }
-
-    /// Takes the parts of a view of a builder of its kind (another state's).
-    void assign(const urd::borrowed_view<::tyr::planning::TemporalStorage<Kind>, C, builder>& storage) { parts = storage.get_parts(); }
-
-    void swap(builder& other) noexcept
-    {
-        std::swap(index, other.index);
-        std::swap(parts, other.parts);
-    }
-
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"parts", &builder::parts>> {}; }
-
-    static constexpr auto functions() noexcept
-    {
-        return urd::Functions<urd::function<"clear", &builder::clear>,
-                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
-                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
-    }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

@@ -198,9 +198,9 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
     auto result = std::vector<urd::builder<Invariant, Repository>>();
 
     const auto op = ops[threat.op_index];
-    const auto add_literal = threat.effect.get_effect().get_literals()[static_cast<std::ptrdiff_t>(threat.add_index)];
-    assert(add_literal.get_polarity());
-    const auto& add_atom = *add_literal.get_atom().context()[add_literal.get_atom().index()];
+    const auto add_literal = threat.effect.effect().literals()[static_cast<std::ptrdiff_t>(threat.add_index)];
+    assert(add_literal.polarity());
+    const auto& add_atom = *add_literal.atom().context()[add_literal.atom().index()];
 
     const auto* part = find_part(inv, add_atom.predicate);
     if (part == nullptr)
@@ -208,12 +208,12 @@ refine_candidate(const urd::builder<Invariant, Repository>& inv, const Threat& t
 
     const auto visit_effect = [&](ConditionalEffectView<LiftedTag> conj_effect)
     {
-        for (const auto literal : conj_effect.get_effect().get_literals())
+        for (const auto literal : conj_effect.effect().literals())
         {
-            if (literal.get_polarity() || is_overridden_delete(conj_effect, literal))
+            if (literal.polarity() || is_overridden_delete(conj_effect, literal))
                 continue;
 
-            const auto& del_atom = *literal.get_atom().context()[literal.get_atom().index()];
+            const auto& del_atom = *literal.atom().context()[literal.atom().index()];
 
             if (has_predicate(inv, del_atom.predicate))
                 continue;
@@ -252,7 +252,7 @@ std::vector<urd::builder<Invariant, Repository>> make_initial_candidates(Predica
 
     for (const auto predicate : predicates)
     {
-        const auto arity = static_cast<std::size_t>(predicate.get_arity());
+        const auto arity = static_cast<std::size_t>(predicate.arity());
 
         auto atoms = std::vector<urd::data<Atom<LiftedTag, FluentTag>>>();
         atoms.push_back(make_initial_atom(predicate, arity));

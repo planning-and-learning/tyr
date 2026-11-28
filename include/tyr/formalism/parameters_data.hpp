@@ -49,9 +49,7 @@ struct data<::tyr::formalism::Parameters>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variables", &data::variables>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Parameters> key() const noexcept { return urd::key<::tyr::formalism::Parameters>(index); }
 };

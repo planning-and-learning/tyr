@@ -100,12 +100,11 @@ public:
         if (owner != sender.index)
         {
             auto receiver_target = ::tyr::planning::get_state_builder(repository);
-            using std::swap;
-            receiver_target->swap(*target);
+            std::swap(*receiver_target, *target);
             target = std::move(receiver_target);
         }
 
-        ::tyr::planning::register_state(repository, *sender.axiom_evaluator, *target, parent, delta);
+        detail::register_successor_state(repository, *sender.axiom_evaluator, *target, parent, delta);
         assert(repository.shares_storage_with(*engine.get_worker(owner).state_repository));
         return PreparedTarget { owner, NodeBuilder<Kind> { std::move(target), metric } };
     }
@@ -166,7 +165,7 @@ public:
                                          ygg::float_t metric,
                                          size_t num_workers)
     {
-        ::tyr::planning::register_state(*worker.state_repository, *worker.axiom_evaluator, *target, parent, delta);
+        detail::register_successor_state(*worker.state_repository, *worker.axiom_evaluator, *target, parent, delta);
         const auto state_owner = owner(target->index, num_workers);
         return PreparedTarget { state_owner, NodeBuilder<Kind> { std::move(target), metric } };
     }
@@ -546,9 +545,9 @@ public:
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
-        auto prepared = m_state_policy.prepare_target(engine, sender, source.get_state(), std::move(target), delta, metric, engine.num_workers());
+        auto prepared = m_state_policy.prepare_target(engine, sender, source.state(), std::move(target), delta, metric, engine.num_workers());
         const auto is_goal =
-            sender.goal_strategy->is_dynamic_goal_satisfied(engine.start_node().get_state(), urd::resolve(prepared.node, *sender.state_repository).get_state());
+            sender.goal_strategy->is_dynamic_goal_satisfied(engine.start_node().state(), urd::resolve(prepared.node, *sender.state_repository).state());
         sender.statistics.increment_num_generated_candidates(prepared.owner != sender.index);
         auto& receiver = engine.get_worker(prepared.owner);
         prepared.node.metric = g_value;
@@ -833,7 +832,7 @@ public:
             callback(*worker);
     }
 
-    std::pair<OwnedPlanBuilderView<Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
+    std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
         auto views = urd::Store<urd::sequence<WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>> {};
         views.reserve(size());
@@ -856,8 +855,8 @@ public:
                                                                                  *m_caller_state_repository,
                                                                                  *m_caller_axiom_evaluator,
                                                                                  options.cost_mode);
-        auto owned = OwnedPlanBuilderView<Kind>(std::move(plan), m_caller_state_repository);
-        auto goal_node = OwnedNodeRecordView<Kind>(owned.get_goal_node().pack(), m_caller_state_repository);
+        auto owned = OwnedPlanBuilderView<DeterministicTag, Kind>(std::move(plan), m_caller_state_repository);
+        auto goal_node = OwnedNodeRecordView<Kind>(owned.goal_node().pack(), m_caller_state_repository);
         return { std::move(owned), std::move(goal_node) };
     }
 

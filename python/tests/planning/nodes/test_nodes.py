@@ -13,32 +13,32 @@ def _check_packed_nodes_ground(task: planning.ground.Task) -> None:
     initial_node = successors.initial_node()
     successor = successors.labeled_successor_nodes(initial_node)[0]
     node = planning.ground.get_node(
-        state_repository, planning.ground.NodeData(successor.get_node().get_state().pack().index(), 17.5)
+        state_repository, planning.ground.NodeData(successor.node().state().pack().index(), 17.5)
     )
-    labeled = planning.ground.LabeledNodeBuilder(label=successor.get_label(), node=node).view(state_repository)
-    state_text = str(node.get_state())
-    label_text = str(labeled.get_label())
+    labeled = planning.ground.LabeledNodeBuilder(label=successor.label(), node=node).view(state_repository)
+    state_text = str(node.state())
+    label_text = str(labeled.label())
     packed = node.pack()
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.ground.NodeData
     assert packed.metric == 17.5
-    assert packed == planning.ground.NodeData(node.get_state().pack().index(), 17.5)
+    assert packed == planning.ground.NodeData(node.state().pack().index(), 17.5)
     assert planning.ground.get_node(state_repository, packed) == node
     assert type(packed_labeled) is planning.ground.LabeledNodeData
     assert packed_labeled.node == packed
     assert repr(packed) == str(packed)
     assert repr(packed_labeled) == str(packed_labeled)
-    plan = planning.ground.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
+    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
 
     del initial_node, successor, successors, node, labeled, state_repository, axiom_evaluator, successor_generator
     gc.collect()
 
-    step = plan.get_labeled_succ_nodes()[0]
+    step = plan.labeled_succ_nodes()[0]
     assert type(step) is planning.ground.LabeledNodeBuilderView
-    assert step.get_node().get_metric() == 17.5
-    assert str(step.get_node().get_state()) == state_text
-    assert str(step.get_label()) == label_text
+    assert step.node().metric() == 17.5
+    assert str(step.node().state()) == state_text
+    assert str(step.label()) == label_text
 
 
 def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
@@ -47,54 +47,54 @@ def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
     initial_node = successors.initial_node()
     successor = successors.labeled_successor_nodes(initial_node)[0]
     node = planning.lifted.get_node(
-        state_repository, planning.lifted.NodeData(successor.get_node().get_state().pack().index(), 17.5)
+        state_repository, planning.lifted.NodeData(successor.node().state().pack().index(), 17.5)
     )
-    labeled = planning.lifted.LabeledNodeBuilder(label=successor.get_label(), node=node).view(state_repository)
-    state_text = str(node.get_state())
-    label_text = str(labeled.get_label())
+    labeled = planning.lifted.LabeledNodeBuilder(label=successor.label(), node=node).view(state_repository)
+    state_text = str(node.state())
+    label_text = str(labeled.label())
     packed = node.pack()
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.lifted.NodeData
     assert packed.metric == 17.5
-    assert packed == planning.lifted.NodeData(node.get_state().pack().index(), 17.5)
+    assert packed == planning.lifted.NodeData(node.state().pack().index(), 17.5)
     assert planning.lifted.get_node(state_repository, packed) == node
     assert type(packed_labeled) is planning.lifted.LabeledNodeData
     assert packed_labeled.node == packed
     assert repr(packed) == str(packed)
     assert repr(packed_labeled) == str(packed_labeled)
-    plan = planning.lifted.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
 
     del initial_node, successor, successors, node, labeled, state_repository, axiom_evaluator, successor_generator
     gc.collect()
 
-    step = plan.get_labeled_succ_nodes()[0]
+    step = plan.labeled_succ_nodes()[0]
     assert type(step) is planning.lifted.LabeledNodeBuilderView
-    assert step.get_node().get_metric() == 17.5
-    assert str(step.get_node().get_state()) == state_text
-    assert str(step.get_label()) == label_text
+    assert step.node().metric() == 17.5
+    assert str(step.node().state()) == state_text
+    assert str(step.label()) == label_text
 
 
 def _check_packed_node_keeps_its_state_repository_alive_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_ground(task)
     initial_node = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
-    plan = planning.ground.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(state_repository)
-    state_text = str(initial_node.get_state())
+    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(state_repository)
+    state_text = str(initial_node.state())
     del initial_node, state_repository, axiom_evaluator, successor_generator
     gc.collect()
 
-    assert str(plan.get_start_node().get_state()) == state_text
+    assert str(plan.start_node().state()) == state_text
 
 
 def _check_packed_node_keeps_its_state_repository_alive_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = make_components_lifted(task)
     initial_node = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).initial_node()
-    plan = planning.lifted.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(state_repository)
-    state_text = str(initial_node.get_state())
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[]).view(state_repository)
+    state_text = str(initial_node.state())
     del initial_node, state_repository, axiom_evaluator, successor_generator
     gc.collect()
 
-    assert str(plan.get_start_node().get_state()) == state_text
+    assert str(plan.start_node().state()) == state_text
 
 
 def _first_successor_label_ground(task: planning.ground.Task, *, packed: bool) -> tuple[formalism.RowActionLifted, str]:
@@ -103,8 +103,8 @@ def _first_successor_label_ground(task: planning.ground.Task, *, packed: bool) -
     labeled = GroundSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
         initial_node
     )[0]
-    plan = planning.ground.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
-    label = plan.get_labeled_succ_nodes()[0].get_label() if packed else labeled.get_label()
+    plan = planning.ground.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
+    label = plan.labeled_succ_nodes()[0].label() if packed else labeled.label()
     return label, str(label)
 
 
@@ -114,8 +114,8 @@ def _first_successor_label_lifted(task: planning.lifted.Task, *, packed: bool) -
     labeled = LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).labeled_successor_nodes(
         initial_node
     )[0]
-    plan = planning.lifted.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
-    label = plan.get_labeled_succ_nodes()[0].get_label() if packed else labeled.get_label()
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=initial_node, labeled_succ_nodes=[labeled]).view(state_repository)
+    label = plan.labeled_succ_nodes()[0].label() if packed else labeled.label()
     return label, str(label)
 
 
@@ -158,32 +158,32 @@ def _check_labeled_node_plan_construction_ground(task: planning.ground.Task) -> 
 
     assert labeled_successor_nodes
     first_labeled_successor = labeled_successor_nodes[0]
-    assert type(first_labeled_successor.get_label()) is formalism.RowActionLifted
+    assert type(first_labeled_successor.label()) is formalism.RowActionLifted
     assert (
         GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, first_labeled_successor.get_label()
+            start_node, first_labeled_successor.label()
         )
-        == first_labeled_successor.get_node()
+        == first_labeled_successor.node()
     )
     assert (
         GroundSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, successor_generator.ground_action(first_labeled_successor.get_label())
+            start_node, successor_generator.ground_action(first_labeled_successor.label())
         )
-        == first_labeled_successor.get_node()
+        == first_labeled_successor.node()
     )
 
     labeled_node = planning.ground.LabeledNodeBuilder(
-        label=first_labeled_successor.get_label(),
-        node=first_labeled_successor.get_node(),
+        label=first_labeled_successor.label(),
+        node=first_labeled_successor.node(),
     ).view(state_repository)
-    plan = planning.ground.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(state_repository)
+    plan = planning.ground.deterministic.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(state_repository)
 
-    assert plan.get_length() == 1
+    assert plan.length() == 1
     assert not plan.empty()
-    assert plan.get_cost() == labeled_node.get_node().get_metric()
-    assert plan.get_start_node().get_state().pack() == start_node.get_state().pack()
-    assert plan.get_labeled_succ_nodes()[0].get_label() == labeled_node.get_label()
-    assert plan.get_labeled_succ_nodes()[0].get_node().get_state().pack() == labeled_node.get_node().get_state().pack()
+    assert plan.cost() == labeled_node.node().metric()
+    assert plan.start_node().state().pack() == start_node.state().pack()
+    assert plan.labeled_succ_nodes()[0].label() == labeled_node.label()
+    assert plan.labeled_succ_nodes()[0].node().state().pack() == labeled_node.node().state().pack()
 
 
 def _check_labeled_node_plan_construction_lifted(task: planning.lifted.Task) -> None:
@@ -195,32 +195,32 @@ def _check_labeled_node_plan_construction_lifted(task: planning.lifted.Task) -> 
 
     assert labeled_successor_nodes
     first_labeled_successor = labeled_successor_nodes[0]
-    assert type(first_labeled_successor.get_label()) is formalism.RowActionLifted
+    assert type(first_labeled_successor.label()) is formalism.RowActionLifted
     assert (
         LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, first_labeled_successor.get_label()
+            start_node, first_labeled_successor.label()
         )
-        == first_labeled_successor.get_node()
+        == first_labeled_successor.node()
     )
     assert (
         LiftedSuccessors(successor_generator, state_repository, axiom_evaluator).successor_node(
-            start_node, successor_generator.ground_action(first_labeled_successor.get_label())
+            start_node, successor_generator.ground_action(first_labeled_successor.label())
         )
-        == first_labeled_successor.get_node()
+        == first_labeled_successor.node()
     )
 
     labeled_node = planning.lifted.LabeledNodeBuilder(
-        label=first_labeled_successor.get_label(),
-        node=first_labeled_successor.get_node(),
+        label=first_labeled_successor.label(),
+        node=first_labeled_successor.node(),
     ).view(state_repository)
-    plan = planning.lifted.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(state_repository)
+    plan = planning.lifted.deterministic.PlanBuilder(start_node=start_node, labeled_succ_nodes=[labeled_node]).view(state_repository)
 
-    assert plan.get_length() == 1
+    assert plan.length() == 1
     assert not plan.empty()
-    assert plan.get_cost() == labeled_node.get_node().get_metric()
-    assert plan.get_start_node().get_state().pack() == start_node.get_state().pack()
-    assert plan.get_labeled_succ_nodes()[0].get_label() == labeled_node.get_label()
-    assert plan.get_labeled_succ_nodes()[0].get_node().get_state().pack() == labeled_node.get_node().get_state().pack()
+    assert plan.cost() == labeled_node.node().metric()
+    assert plan.start_node().state().pack() == start_node.state().pack()
+    assert plan.labeled_succ_nodes()[0].label() == labeled_node.label()
+    assert plan.labeled_succ_nodes()[0].node().state().pack() == labeled_node.node().state().pack()
 
 
 def test_packed_nodes_preserve_state_metric_and_label() -> None:

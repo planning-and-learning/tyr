@@ -39,7 +39,6 @@ struct builder<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &builder::elements>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::elements> {}; }
 };
 
 }  // namespace urd

@@ -40,9 +40,9 @@ evaluate_metric(std::optional<formalism::MetricView> metric,
                 const StateContext<Kind>& state_context)
 {
     if (auxiliary_fterm_value)
-        return auxiliary_fterm_value.value().get_value();
+        return auxiliary_fterm_value.value().value();
 
-    const auto value = metric ? evaluate(metric.value().get_fexpr(), state_context) : 0.;
+    const auto value = metric ? evaluate(metric.value().fexpr(), state_context) : 0.;
 
     return ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
 }
@@ -53,8 +53,8 @@ evaluate_successor_metric(const StateRepository<Kind>& repository, const urd::bu
 {
     const auto& task = *repository.get_task();
     auto context = StateContext<Kind> { repository, state, auxiliary_value };
-    if (const auto metric = task.get_task().get_metric())
-        context.auxiliary_value() = evaluate(metric.value().get_fexpr(), context);
+    if (const auto metric = task.get_task().metric())
+        context.auxiliary_value() = evaluate(metric.value().fexpr(), context);
     else
         ++context.auxiliary_value();  // Assume unit cost if no metric is given.
 

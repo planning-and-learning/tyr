@@ -248,12 +248,12 @@ void bind_workspace(nb::module_& m, const std::string& name)
         cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
-                [](Workspace& self, Atom atom) { return tyr::datalog::insert(self.facts.fact_sets, atom.get_row().index()); },
+                [](Workspace& self, Atom atom) { return tyr::datalog::insert(self.facts.fact_sets, atom.row().index()); },
                 "atom"_a)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionTerm term, const Interval& interval)
-                { return tyr::datalog::insert(self.facts.fact_sets.template get<formalism::FluentTag>(), term.get_row().index(), interval); },
+                { return tyr::datalog::insert(self.facts.fact_sets.template get<formalism::FluentTag>(), term.row().index(), interval); },
                 "function_term"_a,
                 "interval"_a);
     }
@@ -272,7 +272,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
             .def(
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom)
-                { return tyr::datalog::insert(self.facts.fact_sets, urd::copy(atom.get_row(), *self.workspace_repository, self.datalog_builder)); },
+                { return tyr::datalog::insert(self.facts.fact_sets, urd::copy(atom.row(), *self.workspace_repository, self.datalog_builder)); },
                 "atom"_a)
             .def(
                 "insert_fluent_binding",

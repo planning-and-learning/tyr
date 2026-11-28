@@ -41,13 +41,13 @@ static_assert(requires(ActionData& data) {
 });
 static_assert(requires(const ActionView& view) {
     view.index();
-    view.get_name();
-    view.get_original_name();
-    view.get_original_arity();
-    view.get_arity();
-    view.get_variables();
-    view.get_condition();
-    view.get_effects();
+    view.name();
+    view.original_name();
+    view.original_arity();
+    view.arity();
+    view.variables();
+    view.condition();
+    view.effects();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
@@ -56,10 +56,10 @@ TEST(TyrFormalismPlanningAction, PreservesOriginalArityAfterNormalization)
 {
     const auto parser = tyr::formalism::Parser(task_fixture("witness/domain.pddl"));
     const auto domain = parser.get_domain();
-    const auto actions = domain.get_domain().get_actions();
+    const auto actions = domain.get_domain().actions();
     ASSERT_EQ(actions.size(), 1);
-    EXPECT_EQ(actions.front().get_original_arity(), 1);
-    EXPECT_EQ(actions.front().get_arity(), 2);
+    EXPECT_EQ(actions.front().original_arity(), 1);
+    EXPECT_EQ(actions.front().arity(), 2);
 }
 
 TEST(TyrFormalismPlanningAction, FormatsBinding)
@@ -98,7 +98,7 @@ TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndBindingObjects)
 {
     const auto parser = tyr::formalism::Parser(task_fixture("transfer/domain.pddl"));
     const auto domain = parser.get_domain();
-    const auto source_action = domain.get_domain().get_actions().front();
+    const auto source_action = domain.get_domain().actions().front();
     auto source = tyr::formalism::Repository(&source_action.context());
     auto destination = tyr::formalism::Repository();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
@@ -118,14 +118,14 @@ TEST(TyrFormalismPlanningCopy, CopiesActionClosureAndBindingObjects)
 
     auto builder = tyr::formalism::Builder {};
     const auto copied_binding = destination.view(urd::copy(binding, destination, builder));
-    const auto copied = copied_binding.get_relation();
+    const auto copied = copied_binding.relation();
     EXPECT_EQ(&copied.context(), &destination);
-    EXPECT_EQ(copied.get_original_name(), source_action.get_original_name());
-    EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
+    EXPECT_EQ(copied.original_name(), source_action.original_name());
+    EXPECT_EQ(copied.original_arity(), source_action.original_arity());
     EXPECT_EQ(fmt::format("{}", copied), fmt::format("{}", source_action));
-    EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
+    EXPECT_NE(copied.variables().front().index(), source_action.variables().front().index());
     EXPECT_NE(copied_binding.value(0), binding.value(0));
-    EXPECT_EQ(copied_binding.template resolve<tyr::formalism::Object>(0).get_name(), "truck");
+    EXPECT_EQ(copied_binding.template resolve<tyr::formalism::Object>(0).name(), "truck");
     EXPECT_EQ(urd::copy(binding, destination, builder), copied_binding.index());  // interned once
 }
 
@@ -152,12 +152,12 @@ static_assert(requires(GroundActionData& data) {
 });
 static_assert(requires(const GroundActionView& view) {
     view.index();
-    view.get_action();
-    view.get_row();
-    view.get_row().template resolve<tyr::formalism::Object>();
-    view.get_row().get_relation().index();
-    view.get_condition();
-    view.get_effects();
+    view.action();
+    view.row();
+    view.row().template resolve<tyr::formalism::Object>();
+    view.row().relation().index();
+    view.condition();
+    view.effects();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });

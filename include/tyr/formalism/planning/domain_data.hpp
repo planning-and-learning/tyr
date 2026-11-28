@@ -20,12 +20,14 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/data.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -36,6 +38,7 @@ struct data<::tyr::formalism::Domain>
 {
     urd::key<::tyr::formalism::Domain> index;
     urd::flat_string name;
+    urd::flat_vector<::tyr::formalism::RequirementKind> requirements;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
@@ -49,6 +52,7 @@ struct data<::tyr::formalism::Domain>
     data() = default;
 
     data(urd::flat_string name_,
+         urd::flat_vector<::tyr::formalism::RequirementKind> requirements_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
@@ -60,6 +64,7 @@ struct data<::tyr::formalism::Domain>
          urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::LiftedTag>>> axioms_) :
         index(),
         name(std::move(name_)),
+        requirements(std::move(requirements_)),
         static_predicates(std::move(static_predicates_)),
         fluent_predicates(std::move(fluent_predicates_)),
         derived_predicates(std::move(derived_predicates_)),
@@ -81,45 +86,20 @@ struct data<::tyr::formalism::Domain>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"name", &data::name>,
-                           urd::field<"static_predicates", &data::static_predicates>,
-                           urd::field<"fluent_predicates", &data::fluent_predicates>,
-                           urd::field<"derived_predicates", &data::derived_predicates>,
-                           urd::field<"static_functions", &data::static_functions>,
-                           urd::field<"fluent_functions", &data::fluent_functions>,
+                           urd::field<"requirements", &data::requirements, urd::sorted, urd::unique>,
+                           urd::field<"static_predicates", &data::static_predicates, urd::sorted, urd::unique>,
+                           urd::field<"fluent_predicates", &data::fluent_predicates, urd::sorted, urd::unique>,
+                           urd::field<"derived_predicates", &data::derived_predicates, urd::sorted, urd::unique>,
+                           urd::field<"static_functions", &data::static_functions, urd::sorted, urd::unique>,
+                           urd::field<"fluent_functions", &data::fluent_functions, urd::sorted, urd::unique>,
                            urd::field<"auxiliary_function", &data::auxiliary_function>,
-                           urd::field<"constants", &data::constants>,
-                           urd::field<"actions", &data::actions>,
-                           urd::field<"axioms", &data::axioms>> {};
-    }
-
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::name,
-                            &data::static_predicates,
-                            &data::fluent_predicates,
-                            &data::derived_predicates,
-                            &data::static_functions,
-                            &data::fluent_functions,
-                            &data::auxiliary_function,
-                            &data::constants,
-                            &data::actions,
-                            &data::axioms> {};
+                           urd::field<"constants", &data::constants, urd::sorted, urd::unique>,
+                           urd::field<"actions", &data::actions, urd::sorted, urd::unique>,
+                           urd::field<"axioms", &data::axioms, urd::sorted, urd::unique>> {};
     }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::static_predicates,
-                            &data::fluent_predicates,
-                            &data::derived_predicates,
-                            &data::static_functions,
-                            &data::fluent_functions,
-                            &data::auxiliary_function,
-                            &data::constants,
-                            &data::actions,
-                            &data::axioms> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Domain> key() const noexcept { return urd::key<::tyr::formalism::Domain>(index); }
 };

@@ -118,8 +118,8 @@ class PlanStatistics(TypedDict):
 
 
 class PlanLike(Protocol):
-    def get_cost(self) -> float: ...
-    def get_length(self) -> int: ...
+    def cost(self) -> float: ...
+    def length(self) -> int: ...
 
 
 class SearchResultLike(Protocol):
@@ -237,8 +237,8 @@ def counters_of(statistics: Statistics) -> ConfigStatistics:
 
 def plan_of(plan: PlanLike) -> PlanStatistics:
     return PlanStatistics(
-        cost=as_json_number(float(plan.get_cost())),
-        length=plan.get_length(),
+        cost=as_json_number(float(plan.cost())),
+        length=plan.length(),
         actions=[line for line in str(plan).splitlines() if line],
     )
 

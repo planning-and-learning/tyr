@@ -72,7 +72,7 @@ void expect_schema_queries_match_filtered_successors()
     const auto count_action_bindings = [](const auto& task)
     {
         auto count = size_t { 0 };
-        for (const auto action : task->get_domain().get_domain().get_actions())
+        for (const auto action : task->get_domain().get_domain().actions())
             count += task->get_repository()->template size<ygg::Row<tyr::formalism::Action<tyr::LiftedTag>>>(action.index());
         return count;
     };
@@ -98,22 +98,22 @@ void expect_schema_queries_match_filtered_successors()
     const auto initial_node = [&]
     {
         if constexpr (Building)
-            return tyr::tests::node_of_state<Kind>(urd::resolve(*owned, *state_repository), registered_initial.get_metric());
+            return tyr::tests::node_of_state<Kind>(urd::resolve(*owned, *state_repository), registered_initial.metric());
         else
             return tyr::tests::owned_node(*state_repository, tyr::tests::built_state(registered_initial).pack().index());
     }();
-    const auto actions = task->get_task().get_domain().get_actions();
-    const auto offered_alias = std::ranges::find_if(actions, [](auto action) { return action.get_name().str() == "alias"; });
-    const auto offered_valid = std::ranges::find_if(actions, [](auto action) { return action.get_name().str() == "valid"; });
-    const auto offered_resize = std::ranges::find_if(actions, [](auto action) { return action.get_name().str() == "resize"; });
-    const auto offered_dormant = std::ranges::find_if(actions, [](auto action) { return action.get_name().str() == "dormant"; });
+    const auto actions = task->get_task().domain().actions();
+    const auto offered_alias = std::ranges::find_if(actions, [](auto action) { return action.name().str() == "alias"; });
+    const auto offered_valid = std::ranges::find_if(actions, [](auto action) { return action.name().str() == "valid"; });
+    const auto offered_resize = std::ranges::find_if(actions, [](auto action) { return action.name().str() == "resize"; });
+    const auto offered_dormant = std::ranges::find_if(actions, [](auto action) { return action.name().str() == "dormant"; });
     ASSERT_NE(offered_alias, actions.end());
     ASSERT_NE(offered_valid, actions.end());
     ASSERT_NE(offered_resize, actions.end());
     ASSERT_NE(offered_dormant, actions.end());
-    const auto constants = task->get_task().get_domain().get_constants();
-    const auto low = std::ranges::find_if(constants, [](auto object) { return object.get_name().str() == "low"; });
-    const auto high = std::ranges::find_if(constants, [](auto object) { return object.get_name().str() == "high"; });
+    const auto constants = task->get_task().domain().constants();
+    const auto low = std::ranges::find_if(constants, [](auto object) { return object.name().str() == "low"; });
+    const auto high = std::ranges::find_if(constants, [](auto object) { return object.name().str() == "high"; });
     ASSERT_NE(low, constants.end());
     ASSERT_NE(high, constants.end());
     const auto& object_repository = *task->get_repository();
@@ -132,7 +132,7 @@ void expect_schema_queries_match_filtered_successors()
             data.values.push_back(object.value);
         return data;
     };
-    const auto task_objects = task->get_task().get_objects();
+    const auto task_objects = task->get_task().objects();
     ASSERT_EQ(task_objects.size(), 1);
     const auto local_indices = std::array { task_objects[0].index(), (*low).index() };
     ASSERT_NE(&task_objects[0].context(), &(*low).context());
@@ -190,7 +190,7 @@ void expect_schema_queries_match_filtered_successors()
             const auto result = tyr::tests::try_get_applicable_action_binding(*generator, initial_node, object_repository.view(offer(action, objects)));
             ASSERT_EQ(result.status, tyr::planning::ActionBindingStatus::APPLICABLE);
             ASSERT_TRUE(result.binding);
-            EXPECT_EQ(result.binding.value().get_relation(), action);
+            EXPECT_EQ(result.binding.value().relation(), action);
             EXPECT_TRUE(std::ranges::equal(result.binding.value().template get<urd::index<formalism::Object>>(), objects));
             const auto published = count_action_bindings(task);
             EXPECT_EQ(published, before + (std::same_as<Kind, LiftedTag> && generator == source.get() ? 1 : 0));
@@ -220,11 +220,11 @@ void expect_schema_queries_match_filtered_successors()
     {
         const auto left = tyr::tests::built_state(lhs);
         const auto right = tyr::tests::built_state(rhs);
-        return lhs.get_metric() == rhs.get_metric() && std::ranges::equal(left.get_fluent_fact_index_values(), right.get_fluent_fact_index_values())
-               && std::ranges::equal(left.template get_atom_indices<::tyr::formalism::DerivedTag>(),
-                                     right.template get_atom_indices<::tyr::formalism::DerivedTag>())
-               && std::ranges::equal(left.template get_fterm_index_values<formalism::FluentTag>(),
-                                     right.template get_fterm_index_values<formalism::FluentTag>());
+        return lhs.metric() == rhs.metric() && std::ranges::equal(left.fluent_fact_index_values(), right.fluent_fact_index_values())
+               && std::ranges::equal(left.template atom_indices<::tyr::formalism::DerivedTag>(),
+                                     right.template atom_indices<::tyr::formalism::DerivedTag>())
+               && std::ranges::equal(left.template fterm_index_values<formalism::FluentTag>(),
+                                     right.template fterm_index_values<formalism::FluentTag>());
     };
     const auto num_action_bindings = count_action_bindings(task);
     const auto states_before_streaming = ::tyr::planning::num_states(*state_repository);
@@ -244,14 +244,14 @@ void expect_schema_queries_match_filtered_successors()
                                                         static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::OwnedNodeBuilderView<Kind>>);
                                                         if (successor_storage)
                                                         {
-                                                            EXPECT_EQ(&tyr::tests::built_state(successor).get_numeric_storage().get_values(), successor_storage);
+                                                            EXPECT_EQ(&tyr::tests::built_state(successor).numeric_storage().values(), successor_storage);
                                                         }
-                                                        successor_storage = &tyr::tests::built_state(successor).get_numeric_storage().get_values();
+                                                        successor_storage = &tyr::tests::built_state(successor).numeric_storage().values();
                                                         if constexpr (Building)
                                                         {
                                                             auto copy = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>();
                                                             copy.assign(tyr::tests::built_state(successor));
-                                                            streamed_states.emplace_back(std::move(copy), successor.get_metric());
+                                                            streamed_states.emplace_back(std::move(copy), successor.metric());
                                                         }
                                                         else
                                                             packed_nodes.emplace_back(successor.pack(), state_repository.get());
@@ -296,34 +296,34 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_EQ(actual_delta, expected_delta);
         const auto actual_view = urd::resolve(*actual, *state_repository);
         const auto expected_view = urd::resolve(*expected, *state_repository);
-        EXPECT_TRUE(std::ranges::equal(actual_view.get_fluent_fact_index_values(), expected_view.get_fluent_fact_index_values()));
-        EXPECT_TRUE(std::ranges::equal(actual_view.get_numeric_storage().fterm_values(), expected_view.get_numeric_storage().fterm_values()));
+        EXPECT_TRUE(std::ranges::equal(actual_view.fluent_fact_index_values(), expected_view.fluent_fact_index_values()));
+        EXPECT_TRUE(std::ranges::equal(actual_view.numeric_storage().fterm_values(), expected_view.numeric_storage().fterm_values()));
         EXPECT_EQ(::tyr::planning::num_states(*state_repository), num_states);
         EXPECT_TRUE(owned->index.is_none());
     }
     const auto same_successor = [&](const auto& lhs, const auto& rhs)
-    { return lhs.get_label() == rhs.get_label() && same_node(lhs.get_node(), rhs.get_node()); };
+    { return lhs.label() == rhs.label() && same_node(lhs.node(), rhs.node()); };
     ASSERT_EQ(all_successors.size(), 4);
     auto schemas = tyr::formalism::ActionViewList<LiftedTag> {};
-    for (const auto& action_list : { task->get_domain().get_domain().get_actions(), task->get_task().get_domain().get_actions() })
+    for (const auto& action_list : { task->get_domain().get_domain().actions(), task->get_task().domain().actions() })
         schemas.insert(schemas.end(), action_list.begin(), action_list.end());
 
     for (auto* generator : { source.get(), worker.get() })
     {
         for (const auto action : schemas)
         {
-            SCOPED_TRACE(action.get_name().str());
+            SCOPED_TRACE(action.name().str());
             auto expected_successors = std::vector<tyr::planning::LabeledNodeBuilderView<Kind>> {};
             auto expected_nodes = std::vector<tyr::planning::NodeBuilderView<Kind>> {};
             auto expected_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
             for (const auto& successor : all_successors)
-                if (urd::interned_view(successor.get_label()).get_relation().index() == action.index())
+                if (urd::interned_view(successor.label()).relation().index() == action.index())
                 {
                     expected_successors.push_back(successor);
-                    expected_nodes.push_back(successor.get_node());
+                    expected_nodes.push_back(successor.node());
                 }
             for (const auto binding : all_bindings)
-                if (binding.get_relation().index() == action.index())
+                if (binding.relation().index() == action.index())
                     urd::append(expected_bindings, binding);
 
             EXPECT_TRUE(std::ranges::is_permutation(
@@ -411,7 +411,7 @@ void expect_schema_queries_match_filtered_successors()
                 }));
             EXPECT_EQ(callback_bindings, bindings);
             EXPECT_TRUE(std::ranges::equal(callback_successors, successors, same_successor));
-            if (action.get_name() == "alias")
+            if (action.name() == "alias")
             {
                 EXPECT_GT(inspected, bindings.size());  // Aliased numeric effects are rejected after the predicate.
             }
@@ -419,7 +419,7 @@ void expect_schema_queries_match_filtered_successors()
             const auto accepts_low = [&](auto binding)
             {
                 // A borrowed binding's action may have no pool (no stored types) yet: read its canonical values.
-                const auto& values = binding.get_values();
+                const auto& values = binding.values();
                 return values.empty() || values[0] == (*low).index().value;
             };
             callback_bindings.clear();
@@ -503,11 +503,11 @@ void expect_schema_queries_match_filtered_successors()
 
             if constexpr (std::same_as<Kind, GroundTag>)
             {
-                if (action.get_name().str() == "dormant")
+                if (action.name().str() == "dormant")
                 {
-                    EXPECT_TRUE(std::ranges::none_of(task->get_task().get_ground_actions(),
+                    EXPECT_TRUE(std::ranges::none_of(task->get_task().ground_actions(),
                                                      [&](const auto ground_action)
-                                                     { return ground_action.get_row().get_relation().index() == action.index(); }));
+                                                     { return ground_action.row().relation().index() == action.index(); }));
                 }
             }
         }
@@ -522,12 +522,12 @@ void expect_schema_queries_match_filtered_successors()
                 for (const auto object : binding.template get<urd::index<formalism::Object>>())
                     urd::append(indices, object);
                 const auto objects = ObjectIndices(indices);
-                EXPECT_EQ(generator->check_action_binding(initial_node, object_repository.view(offer(binding.get_relation(), objects))),
+                EXPECT_EQ(generator->check_action_binding(initial_node, object_repository.view(offer(binding.relation(), objects))),
                           tyr::planning::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(generator->check_action_binding(initial_node, object_repository.view(offer(*offered_alias, ObjectIndices(aliased_indices)))),
                           tyr::planning::ActionBindingStatus::INAPPLICABLE);
                 const auto offered =
-                    tyr::tests::try_get_applicable_action_binding(*generator, initial_node, object_repository.view(offer(binding.get_relation(), objects)));
+                    tyr::tests::try_get_applicable_action_binding(*generator, initial_node, object_repository.view(offer(binding.relation(), objects)));
                 EXPECT_EQ(offered.status, tyr::planning::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(offered.binding, std::optional(binding));
                 const auto rejected =
@@ -550,7 +550,7 @@ void expect_schema_queries_match_filtered_successors()
             [&](tyr::planning::ActionBindingView<Kind> binding)
             {
                 const auto action = tyr::planning::action_of(binding);
-                const auto& values = binding.get_values();
+                const auto& values = binding.values();
                 const auto saved = urd::Store<urd::sequence<ygg::Value>>(values.begin(), values.end());
                 const auto count_before_check = count_action_bindings(task);
                 EXPECT_EQ(generator->check_action_binding(initial_node, binding), tyr::planning::ActionBindingStatus::APPLICABLE);
@@ -571,7 +571,7 @@ void expect_schema_queries_match_filtered_successors()
                 static_cast<void>(generator->generate_successor_state(initial_node, other, *unregistered, delta));
                 static_cast<void>(tyr::tests::get_packed_successor_node(*generator, initial_node, other, *state_repository, *axiom_evaluator));
                 EXPECT_EQ(tyr::planning::action_of(binding), action);
-                EXPECT_TRUE(std::ranges::equal(binding.get_values(), saved));
+                EXPECT_TRUE(std::ranges::equal(binding.values(), saved));
                 callback_successors.push_back(tyr::tests::get_labeled_successor_node(*generator, initial_node, binding, next_storage(), *axiom_evaluator));
                 EXPECT_EQ(tyr::planning::intern_action_binding(*generator, builder, binding), retained);
                 return true;
@@ -593,8 +593,8 @@ void expect_schema_queries_match_filtered_successors()
             auto fresh_repository = tyr::planning::StateRepository<Kind>::create(fresh_task);
             auto fresh_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(fresh_task, execution_context);
             const auto node = tyr::tests::owned_initial_node(*fresh_repository, *fresh_axioms);
-            const auto fresh_actions = fresh_task->get_domain().get_domain().get_actions();
-            const auto alias = std::ranges::find_if(fresh_actions, [](auto action) { return action.get_name().str() == "alias"; });
+            const auto fresh_actions = fresh_task->get_domain().get_domain().actions();
+            const auto alias = std::ranges::find_if(fresh_actions, [](auto action) { return action.name().str() == "alias"; });
             ASSERT_NE(alias, fresh_actions.end());
             ASSERT_EQ(count_action_bindings(fresh_task), 0);
             auto calls = size_t { 0 };
@@ -611,7 +611,7 @@ void expect_schema_queries_match_filtered_successors()
             auto scratch = tyr::tests::Unregistered<Kind> { fresh_repository.get() };
             auto borrowed_state = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>();
             borrowed_state.assign(tyr::tests::built_state(node));
-            const auto borrowed_node = tyr::tests::node_of_state<Kind>(urd::resolve(borrowed_state, *fresh_repository), node.get_metric());
+            const auto borrowed_node = tyr::tests::node_of_state<Kind>(urd::resolve(borrowed_state, *fresh_repository), node.metric());
             const auto discard = [&](tyr::planning::ActionBindingView<Kind> binding)
             {
                 EXPECT_EQ(fresh_generator->check_action_binding(borrowed_node, binding), tyr::planning::ActionBindingStatus::APPLICABLE);
@@ -665,17 +665,17 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(count_action_bindings(task), outside_count);
 
     auto foreign_task = make_lifted_task();
-    const auto foreign_action = foreign_task->get_domain().get_domain().get_actions()[0];
-    const auto foreign_constants = foreign_task->get_task().get_domain().get_constants();
-    const auto foreign_low = std::ranges::find_if(foreign_constants, [](auto object) { return object.get_name().str() == "low"; });
+    const auto foreign_action = foreign_task->get_domain().get_domain().actions()[0];
+    const auto foreign_constants = foreign_task->get_task().domain().constants();
+    const auto foreign_low = std::ranges::find_if(foreign_constants, [](auto object) { return object.name().str() == "low"; });
     ASSERT_NE(foreign_low, foreign_constants.end());
     ASSERT_EQ((*foreign_low).index(), (*low).index());
     ASSERT_NE(&(*foreign_low).context(), &(*low).context());
     EXPECT_THROW(source->check_action_binding(initial_node, foreign_task->get_repository()->view(offer(*offered_alias, ObjectIndices(distinct_indices)))),
                  std::invalid_argument);
     const auto bindings_before_foreign = count_action_bindings(task);
-    const auto foreign_actions = foreign_task->get_task().get_domain().get_actions();
-    const auto foreign_alias = std::ranges::find_if(foreign_actions, [](auto action) { return action.get_name().str() == "alias"; });
+    const auto foreign_actions = foreign_task->get_task().domain().actions();
+    const auto foreign_alias = std::ranges::find_if(foreign_actions, [](auto action) { return action.name().str() == "alias"; });
     ASSERT_NE(foreign_alias, foreign_actions.end());
     auto foreign_data = urd::data<ygg::Row<tyr::formalism::Action<LiftedTag>>> {};
     foreign_data.relation = (*foreign_alias).index();
@@ -730,7 +730,7 @@ void expect_schema_queries_match_filtered_successors()
             return foreign_task;
     }();
     const auto foreign_repository = tyr::planning::StateRepository<Kind>::create(foreign_same_kind);
-    const auto foreign_node = tyr::tests::node_of_state<Kind>(urd::resolve(*owned, *foreign_repository), initial_node.get_metric());
+    const auto foreign_node = tyr::tests::node_of_state<Kind>(urd::resolve(*owned, *foreign_repository), initial_node.metric());
     EXPECT_THROW(tyr::tests::get_applicable_action_bindings(*source, foreign_node, {}), std::invalid_argument);
     EXPECT_THROW(source->for_each_applicable_action_binding(foreign_node, {}, [](auto) { return true; }), std::invalid_argument);
     EXPECT_THROW(source->check_action_binding(foreign_node, all_bindings.front()), std::invalid_argument);

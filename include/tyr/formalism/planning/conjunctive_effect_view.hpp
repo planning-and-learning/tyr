@@ -40,25 +40,25 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_literals() const noexcept
+    auto literals() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::literals>(); }
 
-    auto get_add_facts() const noexcept
+    auto add_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::add_facts>(); }
 
-    auto get_del_facts() const noexcept
+    auto del_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::del_facts>(); }
 
-    auto get_numeric_effects() const noexcept { return self().template member<&urd::record_of<V>::numeric_effects>(); }
+    auto numeric_effects() const noexcept { return self().template member<&urd::record_of<V>::numeric_effects>(); }
 
-    auto get_auxiliary_numeric_effect() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_numeric_effect>(); }
+    auto auxiliary_numeric_effect() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_numeric_effect>(); }
 
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::PolarityKind F>
-    auto get_facts() const noexcept
+    auto facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<::tyr::formalism::effect_facts_of<F>>(); }
 };

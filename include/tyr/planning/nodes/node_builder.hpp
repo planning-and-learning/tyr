@@ -34,12 +34,11 @@ namespace urd
 template<::tyr::TaskKind Kind, typename C>
 struct builder<::tyr::planning::Node<Kind>, C>
 {
-    urd::built_child<::tyr::planning::State<Kind>, C> state = urd::make_owned<urd::builder<::tyr::planning::State<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::State<Kind>>, C> state = urd::make_owned<urd::builder<::tyr::planning::State<Kind>, C>>();
     urd::built_t<ygg::float_t, C> metric;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"state", &builder::state>, urd::field<"metric", &builder::metric>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 }
 

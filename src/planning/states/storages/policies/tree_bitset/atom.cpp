@@ -57,7 +57,7 @@ auto StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert
     -> std::pair<Key, bool>
 {
     // One flip per block in which the two rows differ, by increasing position.
-    const auto from = hint.parent_state->get_atom_storage().get_indices().significant_words();
+    const auto from = hint.parent_state->atom_storage().indices().significant_words();
     const auto to = unpacked.indices.significant_words();
     m_flips.clear();
     for (std::size_t i = 0; i < 2 * std::max(from.size(), to.size()); ++i)

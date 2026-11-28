@@ -62,9 +62,7 @@ struct data<::tyr::formalism::Axiom<::tyr::LiftedTag>>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"body", &data::body>, urd::field<"head", &data::head>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::head> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::head> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::Axiom<::tyr::LiftedTag>>(index); }
@@ -101,7 +99,7 @@ struct data<::tyr::formalism::Axiom<::tyr::GroundTag>>
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::head> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Axiom<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::Axiom<::tyr::GroundTag>>(index); }

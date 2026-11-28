@@ -47,9 +47,7 @@ struct data<::tyr::formalism::FDRFact<T>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &data::variable>, urd::field<"value", &data::value>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 };
 
 }

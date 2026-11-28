@@ -82,8 +82,8 @@ def predicate_rows(
     """
     result: list[tuple[PredicateFluent | PredicateDerived, list[Row]]] = []
     for fact_sets, predicates in (
-        (workspace.get_fluent_fact_sets(), program.get_program().get_fluent_predicates()),
-        (workspace.get_derived_fact_sets(), program.get_program().get_derived_predicates()),
+        (workspace.get_fluent_fact_sets(), program.get_program().fluent_predicates()),
+        (workspace.get_derived_fact_sets(), program.get_program().derived_predicates()),
     ):
         result.extend(
             (predicate, list(fact_sets.rows(int(predicate.index()))))
@@ -125,17 +125,17 @@ def atoms_by_predicate(
     effect_predicates: set[str] = (
         set()
         if effect_programs is None
-        else {predicate.get_name() for _, predicate in effect_programs.get_conditional_effect_to_predicate_mapping()}
+        else {predicate.name() for _, predicate in effect_programs.get_conditional_effect_to_predicate_mapping()}
     )
     result: list[PredicateAtoms] = []
     for predicate, rows in predicate_rows(program, workspace):
-        if predicate.get_name() in effect_predicates:
+        if predicate.name() in effect_predicates:
             continue
         bindings: list[AtomBinding] = [{"objects": binding_objects(row)} for row in rows]
         result.append(
             {
-                "predicate": predicate.get_name(),
-                "arity": predicate.get_arity(),
+                "predicate": predicate.name(),
+                "arity": predicate.arity(),
                 "bindings": bindings,
             }
         )
@@ -164,14 +164,14 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         case "axiom_evaluator":
             program = planning.AxiomEvaluatorProgram(context.task.get_formalism_task())
             datalog_program = program.get_datalog_program()
-            if len(datalog_program.get_program().get_rules()) == 0:
+            if len(datalog_program.get_program().rules()) == 0:
                 return []
             return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program))
         case "applicable_action":
             axiom_program = planning.AxiomEvaluatorProgram(context.task.get_formalism_task())
             axiom_datalog_program = axiom_program.get_datalog_program()
             axiom_rows: list[Row] = []
-            if len(axiom_datalog_program.get_program().get_rules()) != 0:
+            if len(axiom_datalog_program.get_program().rules()) != 0:
                 axiom_workspace = solve_program(context.execution_context, axiom_datalog_program)
                 axiom_rows = [row for _, rows in predicate_rows(axiom_datalog_program, axiom_workspace) for row in rows]
             program = planning.ApplicableActionProgram(context.task.get_formalism_task())

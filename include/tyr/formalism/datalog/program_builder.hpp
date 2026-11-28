@@ -74,22 +74,6 @@ struct builder<::tyr::formalism::Program<T>, C>
                            urd::field<"rules", &builder::rules>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::static_predicates,
-                            &builder::fluent_predicates,
-                            &builder::derived_predicates,
-                            &builder::static_functions,
-                            &builder::fluent_functions,
-                            &builder::objects,
-                            &builder::static_atoms,
-                            &builder::fluent_atoms,
-                            &builder::derived_atoms,
-                            &builder::static_fterm_values,
-                            &builder::fluent_fterm_values,
-                            &builder::goal,
-                            &builder::rules> {};
-    }
 };
 
 }  // namespace urd
@@ -108,19 +92,19 @@ void list_except_rules(ProgramView<T> element, urd::builder<Program<T>, Reposito
             urd::append(destination, e);
     };
 
-    list_all(element.template get_predicates<StaticTag>(), result.static_predicates);
-    list_all(element.template get_predicates<FluentTag>(), result.fluent_predicates);
-    list_all(element.template get_predicates<DerivedTag>(), result.derived_predicates);
-    list_all(element.template get_functions<StaticTag>(), result.static_functions);
-    list_all(element.template get_functions<FluentTag>(), result.fluent_functions);
-    list_all(element.get_objects(), result.objects);
-    list_all(element.template get_atoms<StaticTag>(), result.static_atoms);
-    list_all(element.template get_atoms<FluentTag>(), result.fluent_atoms);
-    list_all(element.template get_atoms<DerivedTag>(), result.derived_atoms);
-    list_all(element.template get_fterm_values<StaticTag>(), result.static_fterm_values);
-    list_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
+    list_all(element.template predicates<StaticTag>(), result.static_predicates);
+    list_all(element.template predicates<FluentTag>(), result.fluent_predicates);
+    list_all(element.template predicates<DerivedTag>(), result.derived_predicates);
+    list_all(element.template functions<StaticTag>(), result.static_functions);
+    list_all(element.template functions<FluentTag>(), result.fluent_functions);
+    list_all(element.objects(), result.objects);
+    list_all(element.template atoms<StaticTag>(), result.static_atoms);
+    list_all(element.template atoms<FluentTag>(), result.fluent_atoms);
+    list_all(element.template atoms<DerivedTag>(), result.derived_atoms);
+    list_all(element.template fterm_values<StaticTag>(), result.static_fterm_values);
+    list_all(element.template fterm_values<FluentTag>(), result.fluent_fterm_values);
 
-    if (const auto goal = element.get_goal())
+    if (const auto goal = element.goal())
         urd::store(result.goal, *goal);
 }
 

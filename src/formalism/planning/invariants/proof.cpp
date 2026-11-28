@@ -62,12 +62,12 @@ void append_literals(std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>
                      ConjunctiveConditionView<LiftedTag> condition,
                      const unification::SubstitutionFunction<Term>* sigma)
 {
-    for (const auto literal : condition.template get_literals<T>())
+    for (const auto literal : condition.template literals<T>())
     {
-        auto atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
+        auto atom = urd::clone(*literal.atom().context()[literal.atom().index()]);
         if (sigma != nullptr)
             atom = unification::apply_substitution(atom, *sigma);
-        out.emplace_back(std::move(atom), literal.get_polarity());
+        out.emplace_back(std::move(atom), literal.polarity());
     }
 }
 
@@ -89,7 +89,7 @@ void ensure_conjunction_sat(ConstraintSystem& system, const Conjunction& conjunc
 unification::SubstitutionFunction<Term>
 make_effect_alpha_renaming(ConditionalEffectView<LiftedTag> effect, std::size_t num_parent_variables, std::size_t fresh_base)
 {
-    const std::size_t num_variables = effect.get_arity();
+    const std::size_t num_variables = effect.arity();
     auto sigma = unification::SubstitutionFunction<Term>::from_range(ParameterIndex { static_cast<ygg::uint_t>(num_parent_variables) }, num_variables);
 
     for (std::size_t i = 0; i < num_variables; ++i)
@@ -134,12 +134,12 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(ActionView<LiftedTag> o
 
     const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect, OutcomePath path)
     {
-        for (const auto literal : effect.get_effect().get_literals())
+        for (const auto literal : effect.effect().literals())
         {
-            if (literal.get_polarity() != polarity || (!polarity && is_overridden_delete(effect, literal)))
+            if (literal.polarity() != polarity || (!polarity && is_overridden_delete(effect, literal)))
                 continue;
 
-            auto atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
+            auto atom = urd::clone(*literal.atom().context()[literal.atom().index()]);
             if (has_predicate(inv, atom.predicate))
                 result.push_back(EffectAtomRef { effect, std::vector<OutcomeStep>(path.begin(), path.end()), std::move(atom) });
         }
@@ -152,7 +152,7 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(ActionView<LiftedTag> o
 std::size_t max_num_effect_variables(ActionView<LiftedTag> op)
 {
     std::size_t result = 0;
-    const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect) { result = std::max(result, static_cast<std::size_t>(effect.get_arity())); };
+    const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect) { result = std::max(result, static_cast<std::size_t>(effect.arity())); };
     formalism::for_each_effect(op, [&](auto effect, formalism::OutcomePath /*path*/) { visit_effect(effect); });
     return result;
 }
@@ -163,8 +163,8 @@ Conjunction
 build_add_effect_produced(ActionView<LiftedTag> op, ConditionalEffectView<LiftedTag> add_effect, const urd::data<Atom<LiftedTag, FluentTag>>& add_atom)
 {
     auto produced = Conjunction();
-    append_condition(produced, op.get_condition(), nullptr);
-    append_condition(produced, add_effect.get_condition(), nullptr);
+    append_condition(produced, op.condition(), nullptr);
+    append_condition(produced, add_effect.condition(), nullptr);
     produced.fluent_literals.emplace_back(urd::clone(add_atom), false);
     return produced;
 }
@@ -215,13 +215,13 @@ ConstraintSystem make_param_system(ActionView<LiftedTag> op, ConditionalEffectVi
     };
 
     urd::Store<urd::sequence<ParameterIndex>> params;
-    const std::size_t num_op_variables = op.get_arity();
-    params.reserve(num_op_variables + add_effect.get_arity());
+    const std::size_t num_op_variables = op.arity();
+    params.reserve(num_op_variables + add_effect.arity());
 
     for (size_t i = 0; i < num_op_variables; ++i)
         params.emplace_back(i);
 
-    for (size_t i = 0; i < add_effect.get_arity(); ++i)
+    for (size_t i = 0; i < add_effect.arity(); ++i)
         params.emplace_back(num_op_variables + i);
 
     for (const auto param : params)
@@ -278,16 +278,16 @@ std::optional<ConstraintSystem> make_balance_system(const urd::data<Atom<LiftedT
 
 bool is_overridden_delete(ConditionalEffectView<LiftedTag> effect, LiteralView<LiftedTag, FluentTag> literal)
 {
-    if (literal.get_polarity())
+    if (literal.polarity())
         return false;
-    const auto literals = effect.get_effect().get_literals();
-    return std::ranges::any_of(literals, [&](const auto other) { return other.get_polarity() && other.get_atom().index() == literal.get_atom().index(); });
+    const auto literals = effect.effect().literals();
+    return std::ranges::any_of(literals, [&](const auto other) { return other.polarity() && other.atom().index() == literal.atom().index(); });
 }
 
 bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invariant, Repository>& inv)
 {
     const auto add_effects = collect_relevant_effect_atoms(op, inv, true);
-    const std::size_t num_op_variables = op.get_arity();
+    const std::size_t num_op_variables = op.arity();
 
     const std::size_t fresh_base_lhs = num_op_variables;
     const std::size_t fresh_base_rhs = num_op_variables + max_num_effect_variables(op) + 1;
@@ -296,7 +296,7 @@ bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invarian
     {
         // An effect with its own variables is also paired with a fresh copy of itself: two of its instantiations can add
         // two atoms of one instance (Helmert 2009, Fig. 7: duplicate quantified effects).
-        const auto first_partner = (add_effects[i].effect.get_arity() > 0) ? i : i + 1;
+        const auto first_partner = (add_effects[i].effect.arity() > 0) ? i : i + 1;
         for (std::size_t j = first_partner; j < add_effects.size(); ++j)
         {
             const auto& eff1 = add_effects[i];
@@ -324,9 +324,9 @@ bool is_operator_too_heavy(ActionView<LiftedTag> op, const urd::builder<Invarian
             ensure_cover(system, *rhs_pattern, rhs_atom, inv);
 
             auto conjunction = Conjunction();
-            append_condition(conjunction, op.get_condition(), nullptr);
-            append_condition(conjunction, eff1.effect.get_condition(), &lhs_sigma);
-            append_condition(conjunction, eff2.effect.get_condition(), &rhs_sigma);
+            append_condition(conjunction, op.condition(), nullptr);
+            append_condition(conjunction, eff1.effect.condition(), &lhs_sigma);
+            append_condition(conjunction, eff2.effect.condition(), &rhs_sigma);
             conjunction.fluent_literals.emplace_back(std::move(lhs_atom), false);
             conjunction.fluent_literals.emplace_back(std::move(rhs_atom), false);
 
@@ -360,7 +360,7 @@ bool is_add_effect_unbalanced(ActionView<LiftedTag> op,
     // A delete effect's own variables are renamed past every effect's local range, also within the add's effect, and stay
     // free in the constraint system: Fast Downward flattens effects into one per literal, each with its own variables,
     // and a universal delete balances the add if some instantiation of it is entailed.
-    const std::size_t num_op_variables = op.get_arity();
+    const std::size_t num_op_variables = op.arity();
     const std::size_t fresh_base = num_op_variables + max_num_effect_variables(op);
 
     for (const auto& del_ref : del_effects)
@@ -372,7 +372,7 @@ bool is_add_effect_unbalanced(ActionView<LiftedTag> op,
         const auto sigma = make_effect_alpha_renaming(del_ref.effect, num_op_variables, fresh_base);
         const auto del_atom = unification::apply_substitution(del_ref.atom, sigma);
         auto del_condition = Conjunction();
-        append_condition(del_condition, del_ref.effect.get_condition(), &sigma);
+        append_condition(del_condition, del_ref.effect.condition(), &sigma);
 
         auto balance_system = make_balance_system(add_atom, del_condition, del_atom, produced);
         if (!balance_system.has_value())
@@ -403,14 +403,14 @@ ProofResult prove_invariant(const urd::builder<Invariant, Repository>& inv, cons
         auto threat = std::optional<Threat> {};
         const auto visit_effect = [&](ConditionalEffectView<LiftedTag> effect, OutcomePath path)
         {
-            const auto literals = effect.get_effect().get_literals();
+            const auto literals = effect.effect().literals();
             for (std::size_t literal_index = 0; literal_index < literals.size() && !threat; ++literal_index)
             {
                 const auto literal = literals[static_cast<std::ptrdiff_t>(literal_index)];
-                if (!literal.get_polarity())
+                if (!literal.polarity())
                     continue;
 
-                const auto add_atom = urd::clone(*literal.get_atom().context()[literal.get_atom().index()]);
+                const auto add_atom = urd::clone(*literal.atom().context()[literal.atom().index()]);
                 if (!has_predicate(inv, add_atom.predicate))
                     continue;
 

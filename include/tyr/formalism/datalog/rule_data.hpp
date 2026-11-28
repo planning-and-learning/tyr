@@ -27,6 +27,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 
@@ -68,16 +69,13 @@ struct data<::tyr::formalism::Rule<::tyr::LiftedTag>>
     {
         return urd::Fields<urd::field<"variables", &data::variables>,
                            urd::field<"body", &data::body>,
-                           urd::field<"fluent_heads", &data::fluent_heads>,
-                           urd::field<"derived_heads", &data::derived_heads>,
+                           urd::field<"fluent_heads", &data::fluent_heads, urd::sorted, urd::unique>,
+                           urd::field<"derived_heads", &data::derived_heads, urd::sorted, urd::unique>,
                            urd::field<"cost", &data::cost>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::variables, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::variables, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Rule<::tyr::LiftedTag>>(index); }
 };
@@ -114,16 +112,15 @@ struct data<::tyr::formalism::Rule<::tyr::GroundTag>>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"body", &data::body>,
-                           urd::field<"fluent_heads", &data::fluent_heads>,
-                           urd::field<"derived_heads", &data::derived_heads>,
+                           urd::field<"fluent_heads", &data::fluent_heads, urd::sorted, urd::unique>,
+                           urd::field<"derived_heads", &data::derived_heads, urd::sorted, urd::unique>,
                            urd::field<"cost", &data::cost>> {};
     }
 
     /// Identified by its content: identical ground rules are one rule.
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::body, &data::fluent_heads, &data::derived_heads, &data::cost> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Rule<::tyr::GroundTag>> key() const noexcept { return urd::key<::tyr::formalism::Rule<::tyr::GroundTag>>(index); }
 };

@@ -25,6 +25,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 
@@ -63,13 +64,11 @@ struct data<::tyr::formalism::Invariant>
     {
         return urd::Fields<urd::field<"num_rigid_variables", &data::num_rigid_variables>,
                            urd::field<"num_counted_variables", &data::num_counted_variables>,
-                           urd::field<"atoms", &data::atoms>> {};
+                           urd::field<"atoms", &data::atoms, urd::sorted, urd::unique>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Invariant> key() const noexcept { return urd::key<::tyr::formalism::Invariant>(index); }
 };

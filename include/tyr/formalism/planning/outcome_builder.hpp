@@ -43,7 +43,6 @@ struct builder<::tyr::formalism::Outcome<T>, C>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"effects", &builder::effects>, urd::field<"choices", &builder::choices>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

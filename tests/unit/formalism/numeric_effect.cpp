@@ -33,9 +33,9 @@ concept NumericEffectContract =
            { data.operation } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            { data == data } -> std::same_as<bool>;
            view.index();
-           { view.get_operation() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
-           view.get_fterm();
-           view.get_fexpr();
+           { view.operation() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
+           view.fterm();
+           view.fexpr();
            { view == view } -> std::same_as<bool>;
            { view < view } -> std::same_as<bool>;
        };
@@ -76,9 +76,9 @@ concept GroundNumericEffectContract =
            { data.operation } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            { data == data } -> std::same_as<bool>;
            view.index();
-           { view.get_operation() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
-           view.get_fterm();
-           view.get_fexpr();
+           { view.operation() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
+           view.fterm();
+           view.fexpr();
            { view == view } -> std::same_as<bool>;
            { view < view } -> std::same_as<bool>;
        };

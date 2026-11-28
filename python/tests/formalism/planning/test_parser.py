@@ -69,8 +69,8 @@ def test_in_memory_paths_are_optional_and_preserved_through_grounding(
     assert isinstance(grounded.task.get_task(), TaskGround)
     assert grounded.task.get_formalism_task().get_path() == task_path
     assert grounded.task.get_formalism_task().get_domain().get_path() == domain_path
-    assert task.get_task().get_num_objects() == 6
-    assert grounded.task.get_task().get_num_objects() == 6
+    assert task.get_task().num_objects() == 6
+    assert grounded.task.get_task().num_objects() == 6
 
 
 def test_programmatic_wrappers_default_to_no_path() -> None:
@@ -100,9 +100,9 @@ def test_parser_view_accessors_keep_temporary_owners_alive() -> None:
 
     gc.collect()
 
-    assert domain.get_name() == "gripper-strips"
-    assert task.get_name() == "gripper-2"
-    assert [object_.get_name() for object_ in task.get_objects()] == ["ball1", "ball2", "left", "right"]
+    assert domain.name() == "gripper-strips"
+    assert task.name() == "gripper-2"
+    assert [object_.name() for object_ in task.objects()] == ["ball1", "ball2", "left", "right"]
 
 
 def test_nested_task_view_accessors_keep_temporary_parent_views_alive() -> None:
@@ -111,18 +111,18 @@ def test_nested_task_view_accessors_keep_temporary_parent_views_alive() -> None:
     problem_filepath = str(GRIPPER.task_path)
 
     task = Parser(domain_filepath, parser_options).parse_task(problem_filepath, parser_options).get_task()
-    domain = task.get_domain()
-    goal = task.get_goal()
+    domain = task.domain()
+    goal = task.goal()
     del task
 
     gc.collect()
 
-    assert domain.get_name() == "gripper-strips"
-    positive_goal_facts = list(goal.get_positive_facts())
+    assert domain.name() == "gripper-strips"
+    positive_goal_facts = list(goal.positive_facts())
     assert len(positive_goal_facts) == 1
-    goal_atom = positive_goal_facts[0].get_atom()
+    goal_atom = positive_goal_facts[0].atom()
     assert goal_atom is not None
-    assert goal_atom.get_predicate().get_name() == "at"
+    assert goal_atom.predicate().name() == "at"
 
 
 def test_parsed_domain_exposes_symbol_metadata() -> None:
@@ -130,12 +130,12 @@ def test_parsed_domain_exposes_symbol_metadata() -> None:
     domain = parser.get_domain().get_domain()
 
     static_predicates = [
-        (int(predicate.index()), predicate.get_name(), predicate.get_arity())
-        for predicate in domain.get_static_predicates()
+        (int(predicate.index()), predicate.name(), predicate.arity())
+        for predicate in domain.static_predicates()
     ]
     fluent_predicates = [
-        (int(predicate.index()), predicate.get_name(), predicate.get_arity())
-        for predicate in domain.get_fluent_predicates()
+        (int(predicate.index()), predicate.name(), predicate.arity())
+        for predicate in domain.fluent_predicates()
     ]
 
     for _, _, arity in static_predicates + fluent_predicates:
@@ -159,26 +159,26 @@ def test_parsed_domain_exposes_symbol_metadata() -> None:
 
 def test_nested_action_view_accessors_keep_temporary_parent_views_alive() -> None:
     parser, _ = _parse_gripper_task()
-    action = next(iter(parser.get_domain().get_domain().get_actions()))
-    condition = action.get_condition()
+    action = next(iter(parser.get_domain().get_domain().actions()))
+    condition = action.condition()
     del action
 
     gc.collect()
 
-    assert condition.get_arity() == 3
-    static_literals = list(condition.get_static_literals())
+    assert condition.arity() == 3
+    static_literals = list(condition.static_literals())
     assert len(static_literals) == 6
 
     literal = static_literals[0]
-    atom = literal.get_atom()
+    atom = literal.atom()
     del literal
     gc.collect()
 
-    predicate = atom.get_predicate()
+    predicate = atom.predicate()
     del atom
     gc.collect()
 
-    assert predicate.get_name() in {"ball", "gripper", "room"}
+    assert predicate.name() in {"ball", "gripper", "room"}
 
 
 def test_parsed_task_exposes_domain_action_and_goal_views() -> None:
@@ -186,29 +186,29 @@ def test_parsed_task_exposes_domain_action_and_goal_views() -> None:
     domain = parser.get_domain().get_domain()
     task = parsed_task.get_task()
 
-    assert domain.get_name() == "gripper-strips"
-    assert task.get_name() == "gripper-2"
-    assert task.get_num_objects() == 6
-    assert len(list(domain.get_constants())) == 2
+    assert domain.name() == "gripper-strips"
+    assert task.name() == "gripper-2"
+    assert task.num_objects() == 6
+    assert len(list(domain.constants())) == 2
 
-    assert [object_.get_name() for object_ in task.get_objects()] == [
+    assert [object_.name() for object_ in task.objects()] == [
         "ball1",
         "ball2",
         "left",
         "right",
     ]
-    static_atoms = list(task.get_static_atoms())
-    fluent_atoms = list(task.get_fluent_atoms())
+    static_atoms = list(task.static_atoms())
+    fluent_atoms = list(task.fluent_atoms())
 
     assert len(static_atoms) == 12
     assert len(fluent_atoms) == 5
     for atom in [*static_atoms, *fluent_atoms]:
-        assert atom.get_predicate().get_arity() == len(list(atom.get_row().resolve_objects()))
-    assert list(task.get_static_fterm_values()) == []
-    assert list(task.get_fluent_fterm_values()) == []
-    assert list(task.get_axioms()) == []
+        assert atom.predicate().arity() == len(list(atom.row().resolve_objects()))
+    assert list(task.static_fterm_values()) == []
+    assert list(task.fluent_fterm_values()) == []
+    assert list(task.axioms()) == []
 
-    actions = {action.get_name(): action for action in domain.get_actions()}
+    actions = {action.name(): action for action in domain.actions()}
 
     assert sorted(actions) == ["drop", "move", "pick"]
 
@@ -225,57 +225,57 @@ def test_parsed_task_exposes_domain_action_and_goal_views() -> None:
         num_fluent_literals,
     ) in expected_action_metadata.items():
         action = actions[action_name]
-        condition = action.get_condition()
-        static_literals = list(condition.get_static_literals())
-        fluent_literals = list(condition.get_fluent_literals())
+        condition = action.condition()
+        static_literals = list(condition.static_literals())
+        fluent_literals = list(condition.fluent_literals())
 
-        assert action.get_original_arity() == original_arity
-        assert action.get_arity() == arity
-        assert len(list(action.get_variables())) == arity
-        assert len(list(action.get_effects())) == 1
-        assert condition.get_arity() == arity
-        assert len(list(condition.get_variables())) == arity
+        assert action.original_arity() == original_arity
+        assert action.arity() == arity
+        assert len(list(action.variables())) == arity
+        assert len(list(action.effects())) == 1
+        assert condition.arity() == arity
+        assert len(list(condition.variables())) == arity
         assert len(static_literals) == num_static_literals
         assert len(fluent_literals) == num_fluent_literals
         for literal in [*static_literals, *fluent_literals]:
-            atom = literal.get_atom()
-            assert atom.get_predicate().get_arity() == len(list(atom.get_terms()))
-        assert list(condition.get_derived_literals()) == []
-        assert list(condition.get_numeric_constraints()) == []
+            atom = literal.atom()
+            assert atom.predicate().arity() == len(list(atom.terms()))
+        assert list(condition.derived_literals()) == []
+        assert list(condition.numeric_constraints()) == []
 
-    goal = task.get_goal()
+    goal = task.goal()
 
-    assert len(list(goal.get_positive_facts())) == 1
-    assert list(goal.get_negative_facts()) == []
-    assert list(goal.get_static_literals()) == []
-    assert list(goal.get_derived_literals()) == []
-    assert list(goal.get_numeric_constraints()) == []
+    assert len(list(goal.positive_facts())) == 1
+    assert list(goal.negative_facts()) == []
+    assert list(goal.static_literals()) == []
+    assert list(goal.derived_literals()) == []
+    assert list(goal.numeric_constraints()) == []
 
 
 def test_fdr_context_exposes_variables_and_fact_metadata() -> None:
     _, task = _parse_gripper_task()
     fdr_context = task.get_fdr_context()
-    fluent_atoms = list(task.get_task().get_fluent_atoms())
+    fluent_atoms = list(task.get_task().fluent_atoms())
     variables = list(fdr_context.get_variables())
 
-    variable_atoms = [atom for variable in variables for atom in variable.get_atoms()]
+    variable_atoms = [atom for variable in variables for atom in variable.atoms()]
 
     assert variables
     assert set(fluent_atoms) <= set(variable_atoms)
-    assert all(variable.get_domain_size() >= len(list(variable.get_atoms())) for variable in variables)
-    assert sum(variable.get_domain_size() - 1 for variable in variables) >= len(fluent_atoms)
+    assert all(variable.domain_size() >= len(list(variable.atoms())) for variable in variables)
+    assert sum(variable.domain_size() - 1 for variable in variables) >= len(fluent_atoms)
 
     for atom in fluent_atoms:
         fact = fdr_context.get_fact(atom)
 
         assert fact.has_value()
-        assert fact.get_atom() == atom
-        assert fact.get_variable() in variables
+        assert fact.atom() == atom
+        assert fact.variable() in variables
 
 
 def test_fdr_context_view_accessors_keep_temporary_owners_alive() -> None:
     _, task = _parse_gripper_task()
-    fluent_atom = next(iter(task.get_task().get_fluent_atoms()))
+    fluent_atom = next(iter(task.get_task().fluent_atoms()))
 
     variables = task.get_fdr_context().get_variables()
     fact = task.get_fdr_context().get_fact(fluent_atom)
@@ -285,7 +285,7 @@ def test_fdr_context_view_accessors_keep_temporary_owners_alive() -> None:
     variables = list(variables)
     assert variables
     assert fact.has_value()
-    assert fact.get_variable() in variables
+    assert fact.variable() in variables
 
 
 def test_views_from_independent_parsers_are_distinct() -> None:
@@ -298,9 +298,9 @@ def test_views_from_independent_parsers_are_distinct() -> None:
         ParserOptions(),
     )
 
-    first_predicate = next(iter(first_parser.get_domain().get_domain().get_fluent_predicates()))
-    second_predicate = next(iter(second_parser.get_domain().get_domain().get_fluent_predicates()))
+    first_predicate = next(iter(first_parser.get_domain().get_domain().fluent_predicates()))
+    second_predicate = next(iter(second_parser.get_domain().get_domain().fluent_predicates()))
 
     assert int(first_predicate.index()) == int(second_predicate.index())
-    assert first_predicate.get_name() == second_predicate.get_name()
+    assert first_predicate.name() == second_predicate.name()
     assert first_predicate != second_predicate

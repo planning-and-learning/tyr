@@ -61,9 +61,7 @@ struct data<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::condition, &data::effect> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConditionalEffect<::tyr::LiftedTag>>(index); }
@@ -94,9 +92,7 @@ struct data<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::condition, &data::effect> {}; }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::effect> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::ConditionalEffect<::tyr::GroundTag>>(index); }

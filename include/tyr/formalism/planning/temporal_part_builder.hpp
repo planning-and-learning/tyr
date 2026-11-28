@@ -58,7 +58,6 @@ struct builder<::tyr::formalism::TemporalPart<T>, C>
                            urd::field<"end_choices", &builder::end_choices>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

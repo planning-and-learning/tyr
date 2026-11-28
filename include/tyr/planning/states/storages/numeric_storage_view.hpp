@@ -47,15 +47,15 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    [[nodiscard]] decltype(auto) get_values() const noexcept { return self().template member<&urd::record_of<V>::values>(); }
+    [[nodiscard]] decltype(auto) values() const noexcept { return self().template member<&urd::record_of<V>::values>(); }
 
     [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-    { return ::tyr::get(static_cast<ygg::uint_t>(index.value), get_values(), std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    { return ::tyr::get(static_cast<ygg::uint_t>(index.value), values(), std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
     /// The function terms with a value (not NaN) and their values, by ascending function term.
     [[nodiscard]] auto fterm_values() const noexcept
     {
-        const auto* values = &get_values();
+        const auto* values = &self().values();
         return std::views::iota(std::size_t { 0 }, values->size()) | std::views::filter([values](std::size_t i) { return !std::isnan((*values)[i]); })
                | std::views::transform(
                    [values](std::size_t i)

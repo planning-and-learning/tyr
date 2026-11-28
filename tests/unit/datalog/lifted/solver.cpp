@@ -74,12 +74,12 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
 
     const auto insert_inputs = [&]
     {
-        for (const auto atom : fixture.program.get_program().get_atoms<tyr::formalism::FluentTag>())
-            tyr::datalog::insert(workspace.facts.fact_sets, atom.get_row().index());
-        for (const auto fterm_value : fixture.program.get_program().get_fterm_values<tyr::formalism::FluentTag>())
+        for (const auto atom : fixture.program.get_program().atoms<tyr::formalism::FluentTag>())
+            tyr::datalog::insert(workspace.facts.fact_sets, atom.row().index());
+        for (const auto fterm_value : fixture.program.get_program().fterm_values<tyr::formalism::FluentTag>())
             tyr::datalog::insert(workspace.facts.fact_sets.get<tyr::formalism::FluentTag>(),
-                                 fterm_value.get_fterm().get_row().index(),
-                                 ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+                                 fterm_value.fterm().row().index(),
+                                 ygg::ClosedInterval<ygg::float_t>(fterm_value.value(), fterm_value.value()));
     };
     for (size_t iteration = 0; iteration < 2; ++iteration)
     {
@@ -111,14 +111,14 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     auto fixture = make_lifted_predicate_program();
     auto builder = tyr::formalism::Builder {};
     const auto program = fixture.program.get_program();
-    const auto atom = program.get_rules()[0].get_body().get_literals<tyr::formalism::FluentTag>()[0].get_atom();
-    const auto objects = program.get_objects();
+    const auto atom = program.rules()[0].body().literals<tyr::formalism::FluentTag>()[0].atom();
+    const auto objects = program.objects();
     ASSERT_EQ(objects.size(), 2);
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
     auto context = tyr::formalism::GroundingContext { builder, *fixture.repository, indices };
     auto prepared = tyr::formalism::checkout<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
-    urd::store(prepared->relation, atom.get_predicate());
-    tyr::formalism::ground(atom.get_terms(), context, prepared->values);
+    urd::store(prepared->relation, atom.predicate());
+    tyr::formalism::ground(atom.terms(), context, prepared->values);
 
     indices[0] = objects[1].index();
     const auto nested = tyr::formalism::ground_binding(atom, context).first;
@@ -150,7 +150,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
     {
         auto effect_predicates = urd::Store<urd::set<std::string>> {};
         for (const auto& [_, predicate] : effect_to_predicate)
-            effect_predicates.insert(predicate.get_name().str());
+            effect_predicates.insert(predicate.name().str());
         erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });
         return atoms;
     };

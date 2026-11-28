@@ -47,14 +47,14 @@ static_assert(requires(Data& data, const View& view) {
     data.derived_heads;
     data.cost;
     view.index();
-    view.get_body().get_arity();
-    view.get_variables();
-    view.get_body();
-    view.get_fluent_heads();
-    view.get_derived_heads();
-    view.template get_heads<tyr::formalism::FluentTag>();
-    view.template get_heads<tyr::formalism::DerivedTag>();
-    view.get_cost();
+    view.body().arity();
+    view.variables();
+    view.body();
+    view.fluent_heads();
+    view.derived_heads();
+    view.template heads<tyr::formalism::FluentTag>();
+    view.template heads<tyr::formalism::DerivedTag>();
+    view.cost();
 });
 
 }
@@ -79,12 +79,12 @@ static_assert(requires(Data& data, const View& view) {
     data.derived_heads;
     data.cost;
     view.index();
-    view.get_body();
-    view.get_fluent_heads();
-    view.get_derived_heads();
-    view.template get_heads<tyr::formalism::FluentTag>();
-    view.template get_heads<tyr::formalism::DerivedTag>();
-    view.get_cost();
+    view.body();
+    view.fluent_heads();
+    view.derived_heads();
+    view.template heads<tyr::formalism::FluentTag>();
+    view.template heads<tyr::formalism::DerivedTag>();
+    view.cost();
 });
 
 }

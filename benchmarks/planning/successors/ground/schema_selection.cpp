@@ -72,10 +72,10 @@ struct BenchmarkCase
 Forest make_forest(const tyr::planning::Task<GroundTag>& task)
 {
     auto groups = urd::Store<urd::map<tyr::formalism::ActionView<LiftedTag>, tyr::formalism::ActionViewList<GroundTag>>> {};
-    for (const auto schema : task.get_task().get_domain().get_actions())
+    for (const auto schema : task.get_task().get_domain().actions())
         groups.try_emplace(schema);
-    for (const auto action : task.get_task().get_ground_actions())
-        groups.at(action.get_action()).push_back(action);
+    for (const auto action : task.get_task().ground_actions())
+        groups.at(action.action()).push_back(action);
     auto forest = Forest {};
     for (auto& [schema, actions] : groups)
         forest.emplace(schema, Tree::create(std::move(actions), task.get_repository()));
@@ -118,7 +118,7 @@ try
         prepared.task = lifted_task->instantiate_ground_task(*execution_context).task;
         if (prepared.task)
         {
-            const auto actions = prepared.task->get_task().get_ground_actions();
+            const auto actions = prepared.task->get_task().ground_actions();
             prepared.tree = Tree::create(tyr::formalism::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_repository());
             prepared.forest = make_forest(*prepared.task);
             prepared.generator = std::make_shared<tyr::planning::SuccessorGenerator<GroundTag>>(prepared.task, execution_context);
@@ -130,7 +130,7 @@ try
         state.SkipWithError("Grounding failed.");
         return;
     }
-    const auto actions = task->get_task().get_ground_actions();
+    const auto actions = task->get_task().ground_actions();
     const auto all_actions = tyr::formalism::ActionViewList<GroundTag>(actions.begin(), actions.end());
     auto tree = prepared.tree->make_worker();
     auto forest = Forest {};
@@ -140,7 +140,7 @@ try
     auto repository = tyr::planning::StateRepository<GroundTag>::create(task);
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = tyr::planning::get_initial_node(*repository, *evaluator);
-    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state(), node.get_metric());
+    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.state(), node.metric());
     auto applicable = tyr::formalism::ActionViewList<GroundTag> {};
     auto scratch = tyr::formalism::ActionViewList<GroundTag> {};
     auto expected = tyr::formalism::ActionViewList<GroundTag> {};
@@ -154,18 +154,18 @@ try
 
     auto all_bindings = urd::Store<urd::sequence<tyr::formalism::ActionRowView>> {};
     tyr::benchmarks::interned_bindings(*generator, builder, node, {}, all_bindings);
-    auto schemas = task->get_task().get_domain().get_actions();
+    auto schemas = task->get_task().get_domain().actions();
     const auto selected =
         std::ranges::find_if(schemas,
-                             [&](auto schema) { return std::ranges::any_of(all_bindings, [&](auto binding) { return binding.get_relation() == schema; }); });
+                             [&](auto schema) { return std::ranges::any_of(all_bindings, [&](auto binding) { return binding.relation() == schema; }); });
     if (selected == schemas.end())
     {
         state.SkipWithError("No initially applicable schema.");
         return;
     }
     const auto schema = *selected;
-    const auto reject_action = [&](auto action) { return action.get_action() != schema; };
-    const auto reject_binding = [&](auto binding) { return binding.get_relation() != schema; };
+    const auto reject_action = [&](auto action) { return action.action() != schema; };
+    const auto reject_binding = [&](auto binding) { return binding.relation() != schema; };
     erase_if(expected, reject_action);
     forest.at(schema)->generate(context, applicable);
     std::ranges::sort(applicable, by_index);
@@ -225,8 +225,8 @@ try
                 successors.clear();
                 for (const auto action : applicable)
                     if (executor.is_applicable_if_fires(action, context))
-                        successors.emplace_back(action.get_row().index(),
-                                                tyr::benchmarks::registered_successor(*generator, node, action.get_row(), *repository, *evaluator));
+                        successors.emplace_back(action.row().index(),
+                                                tyr::benchmarks::registered_successor(*generator, node, action.row(), *repository, *evaluator));
                 benchmark::DoNotOptimize(successors);
                 benchmark::DoNotOptimize(successors.size());
             }
@@ -248,7 +248,7 @@ try
     {
         auto reference = tyr::planning::LabeledNodeList<GroundTag> {};
         tyr::benchmarks::labeled_successors(*generator, builder, node, {}, *repository, *evaluator, reference);
-        erase_if(reference, [&](const auto& successor) { return reject_binding(urd::resolve(successor, *repository).get_label()); });
+        erase_if(reference, [&](const auto& successor) { return reject_binding(urd::resolve(successor, *repository).label()); });
         const auto by_label = [](const auto& lhs, const auto& rhs) { return lhs.label < rhs.label; };
         std::ranges::sort(reference, by_label);
         std::ranges::sort(successors, by_label);
@@ -260,7 +260,7 @@ try
     }
     for ([[maybe_unused]] auto _ : state)
         generate();
-    state.SetLabel(std::string(schema.get_name()));
+    state.SetLabel(std::string(schema.name()));
     state.counters["num_ground_actions"] = static_cast<double>(all_actions.size());
     state.counters["num_schemas"] = static_cast<double>(schemas.size());
     state.counters["num_selected_actions"] = static_cast<double>(expected.size());

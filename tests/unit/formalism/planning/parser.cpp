@@ -35,18 +35,18 @@ TEST(TyrTests, ParserTranslatesDurativeActions)
     const auto domain = benchmark("temporal", "ipc2002-depots-time-simple-automatic");
     auto parser = tyr::formalism::Parser(domain / "domain.pddl");
     EXPECT_NO_THROW(static_cast<void>(parser.parse_task(domain / "test-1.pddl")));
-    const auto actions = parser.get_domain().get_domain().get_actions();
+    const auto actions = parser.get_domain().get_domain().actions();
     ASSERT_FALSE(actions.empty());
     auto ending = 0;
     for (const auto action : actions)
     {
-        const auto temporal_part = action.get_temporal_part();
+        const auto temporal_part = action.temporal_part();
         if (!temporal_part.has_value())
         {
             ADD_FAILURE() << "an instantaneous action in a domain of durative actions";
             continue;
         }
-        ending += temporal_part->get_end_effects().empty() ? 0 : 1;
+        ending += temporal_part->end_effects().empty() ? 0 : 1;
     }
     // Drive, drop and load have effects at their end (lift and unload only at their start).
     EXPECT_EQ(ending, 3);
@@ -67,12 +67,12 @@ struct Choices
 Choices choices_of(const tyr::formalism::Parser& parser)
 {
     auto result = Choices();
-    for (const auto action : parser.get_domain().get_domain().get_actions())
-        for (const auto choice : action.get_choices())
+    for (const auto action : parser.get_domain().get_domain().actions())
+        for (const auto choice : action.choices())
         {
             ++result.count;
             auto sum = 0.0;
-            for (const auto probability : choice.get_probabilities())
+            for (const auto probability : choice.probabilities())
                 sum += probability;
             result.probability_sums.push_back(sum);
         }

@@ -46,16 +46,16 @@ struct fmt::formatter<std::pair<V, tyr::formalism::PlanFormatting>> : ygg::witho
     {
         // Its relation in whichever form the row holds it; its objects through the row's repository (the relation's may
         // be a layer below the objects: a domain's).
-        return urd::visit_view(value.first.get_relation(),
+        return urd::visit_view(value.first.relation(),
                                [&](const auto& relation)
                                {
-                                   auto out = fmt::format_to(context.out(), "({}", relation.get_original_name());
+                                   auto out = fmt::format_to(context.out(), "({}", relation.original_name());
                                    // Its original arguments only: an action's row has further columns after them.
-                                   for (std::size_t column = 0; column < relation.get_original_arity(); ++column)
+                                   for (std::size_t column = 0; column < relation.original_arity(); ++column)
                                        out = fmt::format_to(
                                            out,
                                            " {}",
-                                           urd::resolve(value.first.template get<urd::index<tyr::formalism::Object>>(column), value.first.context()).get_name());
+                                           urd::resolve(value.first.template get<urd::index<tyr::formalism::Object>>(column), value.first.context()).name());
                                    return fmt::format_to(out, ")");
                                });
     }

@@ -26,7 +26,7 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind, typename V>
-GoalCountHeuristic<Kind, V>::GoalCountHeuristic(std::shared_ptr<const Task<Kind>> task) : m_task(std::move(task)), m_goal(m_task->get_task().get_goal())
+GoalCountHeuristic<Kind, V>::GoalCountHeuristic(std::shared_ptr<const Task<Kind>> task) : m_task(std::move(task)), m_goal(m_task->get_task().goal())
 {
 }
 
@@ -45,25 +45,25 @@ ygg::float_t GoalCountHeuristic<Kind, V>::evaluate(const V& state)
 
     auto state_context = StateContext<Kind> { *m_task, state, ygg::float_t { 0 } };
 
-    for (const auto fact : m_goal.template get_facts<formalism::PositiveTag>())
+    for (const auto fact : m_goal.template facts<formalism::PositiveTag>())
     {
         if (!is_applicable<formalism::PositiveTag>(fact, state_context))
             ++unsat_counter;
     }
 
-    for (const auto fact : m_goal.template get_facts<formalism::NegativeTag>())
+    for (const auto fact : m_goal.template facts<formalism::NegativeTag>())
     {
         if (!is_applicable<formalism::NegativeTag>(fact, state_context))
             ++unsat_counter;
     }
 
-    for (const auto fact : m_goal.template get_literals<formalism::DerivedTag>())
+    for (const auto fact : m_goal.template literals<formalism::DerivedTag>())
     {
         if (!is_applicable(fact, state_context))
             ++unsat_counter;
     }
 
-    for (const auto numeric_constraint : m_goal.get_numeric_constraints())
+    for (const auto numeric_constraint : m_goal.numeric_constraints())
     {
         if (!is_applicable(numeric_constraint, state_context))
             ++unsat_counter;

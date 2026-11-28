@@ -75,22 +75,22 @@ formalism::LiteralView<GroundTag, formalism::FluentTag> create_condition_literal
 std::pair<formalism::RuleView<GroundTag>, bool> create_axiom_rule(formalism::AxiomView<GroundTag> axiom,
                                                                   formalism::GroundingContext<formalism::Builder, formalism::Repository>& context)
 {
-    const auto condition = axiom.get_body();
+    const auto condition = axiom.body();
     auto body = formalism::checkout<formalism::RuleBody<GroundTag>>(context.builder());
-    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+    for (const auto literal : condition.literals<formalism::StaticTag>())
         urd::append(body->static_literals, literal);
-    for (const auto fact : condition.get_facts<formalism::PositiveTag>())
+    for (const auto fact : condition.facts<formalism::PositiveTag>())
         urd::append(body->fluent_literals, create_condition_literal(fact, true, context));
-    for (const auto fact : condition.get_facts<formalism::NegativeTag>())
+    for (const auto fact : condition.facts<formalism::NegativeTag>())
         urd::append(body->fluent_literals, create_condition_literal(fact, false, context));
-    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+    for (const auto literal : condition.literals<formalism::DerivedTag>())
         urd::append(body->derived_literals, literal);
-    for (const auto numeric_constraint : condition.get_numeric_constraints())
+    for (const auto numeric_constraint : condition.numeric_constraints())
         urd::append(body->numeric_constraints, numeric_constraint);
 
     auto rule = formalism::checkout<formalism::Rule<GroundTag>>(context.builder());
     urd::store(rule->body, context.destination().insert(*body, context.builder()).first);
-    urd::append(rule->derived_heads, axiom.get_head());
+    urd::append(rule->derived_heads, axiom.head());
     return context.destination().insert(*rule, context.builder());
 }
 
@@ -102,7 +102,7 @@ formalism::ProgramView<GroundTag> create_axiom_program(formalism::TaskView<Groun
 
     translate_task_symbols(task, *program);
 
-    for (const auto axiom : task.get_ground_axioms())
+    for (const auto axiom : task.ground_axioms())
         if (const auto [rule, inserted] = create_axiom_rule(axiom, context); inserted)
             urd::append(program->rules, rule);
 

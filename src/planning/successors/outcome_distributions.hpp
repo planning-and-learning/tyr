@@ -20,6 +20,7 @@
 
 #include "../metric.hpp"
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/choice_effect_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -245,57 +246,81 @@ GroundOutcomeDistributions::Set build_ground_choices(GroundOutcomeDistributions&
     auto result = distributions.unit();
     for (const auto choice : choices)
     {
-        if (!is_applicable(choice.get_condition(), state))
+        if (!is_applicable(choice.condition(), state))
             continue;
         const auto base = distributions.begin_operands();
-        for (const auto outcome : choice.get_outcomes())
+        for (const auto outcome : choice.outcomes())
         {
             // Sequenced: both build into the arena, and the picks' order is the arguments' (unspecified) otherwise.
-            const auto nested = build_ground_choices(distributions, outcome.get_choices(), state);
+            const auto nested = build_ground_choices(distributions, outcome.choices(), state);
             const auto picked = distributions.single(outcome);
             distributions.push_operand(distributions.product(picked, nested));
         }
         const auto set =
-            choice.get_probabilities().empty() ? distributions.union_of_operands(base) : distributions.mixture_of_operands(base, choice.get_probabilities());
+            choice.probabilities().empty() ? distributions.union_of_operands(base) : distributions.mixture_of_operands(base, choice.probabilities());
         result = distributions.product(result, set);
     }
     return result;
 }
 
-/// Whether two outcomes are the same: equal metrics and equal states (read through `repository`: equal content, as the
-/// search compares states, whatever their builders' representations).
-template<TaskKind Kind>
-bool same_outcome(const StateRepository<Kind>& repository,
-                  const urd::builder<OutcomeNode<Kind>, StateRepository<Kind>>& lhs,
-                  const urd::builder<OutcomeNode<Kind>, StateRepository<Kind>>& rhs)
+/// Whether two outcomes (builders of one kind of outcome) are the same: equal metrics and equal states (read through
+/// `repository`: equal content, as the search compares states, whatever their builders' representations).
+template<TaskKind Kind, typename Outcome>
+bool same_outcome(const StateRepository<Kind>& repository, const Outcome& lhs, const Outcome& rhs)
 {
     return lhs.node.metric == rhs.node.metric
            && equal_unextended(urd::resolve(*lhs.node.state, repository), urd::resolve(*rhs.node.state, repository));
 }
 
-/// Starts the successor labeled `label` in `out`, a builder of `repository`'s: its label written in place, no
-/// distributions yet (the transition is not applicable unless some are added). Its earlier distributions go
-/// back to their pool.
-template<TaskKind Kind>
-void start_successor(SuccessorBuilder<Kind>& out, const StateRepository<Kind>& repository, const urd::data<Transition>& label)
+/// Starts the successor labeled `label` in `out`, a builder of `repository`'s: its label written in place, nothing for
+/// nature to pick from yet (the transition is not applicable unless something is added). What it held earlier goes
+/// back to its pool.
+template<NatureEnvironment E, TaskKind Kind>
+void start_successor(SuccessorBuilder<E, Kind>& out, const StateRepository<Kind>& /*repository*/, const urd::data<Transition>& label)
 {
-    urd::built_form<urd::data<Transition>, StateRepository<Kind>>::assign(label, out.label);
-    out.distributions.clear();
+    urd::built_form<urd::data<Transition>, StateRepository<Kind>>::assign(label, *out.label);
+    clear_outcomes(out);
 }
 
-/// Writes into `out` (of `repository`'s states) the successor labeled `label` of the set of distributions `set`: each joint outcome of each
-/// distribution an outcome that `make(picks, outcome)` fills (its node: the transition applied with the picked outcomes),
-/// returning whether it is valid (false: a running durative action's over-all condition does not hold, the outcome
-/// fails); equal outcomes of a distribution merged. No distributions if `fires(picks)` says the effects conflict in some
-/// joint outcome, or if every outcome fails (the transition is not applicable).
-template<TaskKind Kind, typename Pick, typename Fires, typename Make>
-void generate_successor(SuccessorBuilder<Kind>& out,
-                        const StateRepository<Kind>& repository,
-                        const urd::data<Transition>& label,
-                        const OutcomeDistributions<Pick>& distributions,
-                        OutcomeRange set,
-                        Fires fires,
-                        Make make)
+/// Adds to `outcomes` (a successor's of environment E, or a distribution's) the outcome that `make(picks, outcome)`
+/// fills, which returns whether it is valid (false: it fails); where chance draws it, with `probability`. An outcome
+/// equal to an earlier one is merged into it (chance's probabilities add). Returns whether it is valid.
+template<NatureEnvironment E, TaskKind Kind, typename Outcomes, typename Picks, typename Make>
+bool add_outcome(const StateRepository<Kind>& repository, Outcomes& outcomes, ygg::float_t probability, Picks picks, Make& make)
+{
+    auto& outcome = *outcomes.emplace_back(ygg::formalism::checkout<OutcomeNode<E, Kind>>(repository.builders()));
+    const auto valid = make(picks, outcome);
+    outcome.failed = !valid;
+    if constexpr (ChanceEnvironment<E>)
+        outcome.probability = probability;
+    const auto earlier = std::span(outcomes).first(outcomes.size() - 1);
+    const auto equal = std::ranges::find_if(earlier, [&](auto& existing) { return same_outcome(repository, *existing, outcome); });
+    if (equal != earlier.end())
+    {
+        if constexpr (ChanceEnvironment<E>)
+            (*equal)->probability += probability;
+        outcomes.pop_back();
+    }
+    return valid;
+}
+
+/// Writes into `out` (of `repository`'s states) the successor in environment E labeled `label` of the set of distributions
+/// `set`: each joint outcome an outcome that `make(picks, outcome)` fills (its node: the transition applied with the
+/// picked outcomes), returning whether it is valid (false: the happening does not fit the state's temporal network, the
+/// outcome fails; whether a running durative action's over-all condition holds is the axiom step's to say); equal
+/// outcomes merged. In the general environment, a distribution per distribution of the set; in
+/// the nondeterministic one, the one outcome of each (chance draws nothing there); in the probabilistic one, the outcomes
+/// of the single distribution (no adversary picks there). Nothing to pick from if `fires(picks)` says the effects
+/// conflict in some joint outcome, or if every outcome fails (the transition is not applicable). A set that does not have
+/// the environment's shape is a task the environment does not fit (require_environment): std::logic_error.
+template<NatureEnvironment E, TaskKind Kind, typename Pick, typename Fires, typename Make>
+void write_successor(SuccessorBuilder<E, Kind>& out,
+                     const StateRepository<Kind>& repository,
+                     const urd::data<Transition>& label,
+                     const OutcomeDistributions<Pick>& distributions,
+                     OutcomeRange set,
+                     Fires fires,
+                     Make make)
 {
     start_successor(out, repository, label);
 
@@ -305,36 +330,49 @@ void generate_successor(SuccessorBuilder<Kind>& out,
                 return;
 
     auto any_valid = false;
-    for (const auto distribution : distributions.distributions(set))
+    if constexpr (std::same_as<E, GeneralTag>)
     {
-        auto& outcomes = out.distributions.emplace_back(ygg::formalism::checkout<Distribution<Kind>>(repository.builders()))->outcomes;
-        outcomes.clear();
-        for (const auto& joint : distributions.joints(distribution))
+        for (const auto distribution : distributions.distributions(set))
         {
-            auto& outcome = *outcomes.emplace_back(ygg::formalism::checkout<OutcomeNode<Kind>>(repository.builders()));
-            const auto valid = make(distributions.picks(joint), outcome);
-            any_valid = any_valid || valid;
-            outcome.probability = joint.probability;
-            outcome.failed = !valid;
-            const auto earlier = std::span(outcomes).first(outcomes.size() - 1);
-            const auto equal =
-                std::ranges::find_if(earlier, [&](auto& existing) { return same_outcome<Kind>(repository, *existing, outcome); });
-            if (equal != earlier.end())
+            auto& outcomes = out.distributions.emplace_back(ygg::formalism::checkout<Distribution<Kind>>(repository.builders()))->outcomes;
+            for (const auto& joint : distributions.joints(distribution))
             {
-                (*equal)->probability += joint.probability;
-                outcomes.pop_back();
+                const auto valid = add_outcome<E>(repository, outcomes, joint.probability, distributions.picks(joint), make);
+                any_valid = any_valid || valid;
             }
         }
     }
+    else if constexpr (std::same_as<E, NondeterministicTag>)
+    {
+        for (const auto distribution : distributions.distributions(set))
+        {
+            const auto joints = distributions.joints(distribution);
+            if (joints.size() != 1)
+                throw std::logic_error("successors: chance draws an outcome, which the nondeterministic environment does not model.");
+            const auto valid = add_outcome<E>(repository, out.outcomes, joints.front().probability, distributions.picks(joints.front()), make);
+            any_valid = any_valid || valid;
+        }
+    }
+    else
+    {
+        const auto alternatives = distributions.distributions(set);
+        if (alternatives.size() != 1)
+            throw std::logic_error("successors: an adversary picks an outcome, which the probabilistic environment does not model.");
+        for (const auto& joint : distributions.joints(alternatives.front()))
+        {
+            const auto valid = add_outcome<E>(repository, out.outcomes, joint.probability, distributions.picks(joint), make);
+            any_valid = any_valid || valid;
+        }
+    }
     if (!any_valid)
-        out.distributions.clear();
+        clear_outcomes(out);
 }
 
 /// The temporal part of a running durative action (an agenda event's action has one).
 template<TaskKind T>
 formalism::TemporalPartView<T> running_temporal_part(formalism::ActionView<T> action)
 {
-    const auto part = action.get_temporal_part();
+    const auto part = action.temporal_part();
     if (!part.has_value())
         throw std::logic_error("An agenda event of an action that is not durative.");
     return *part;
@@ -347,43 +385,48 @@ formalism::TemporalPartView<T> running_temporal_part(formalism::ActionView<T> ac
 template<TaskKind Kind>
 bool minimizes_total_time(const Task<Kind>& task)
 {
-    const auto metric = task.get_task().get_metric();
+    const auto metric = task.get_task().metric();
     if (!metric.has_value())
         return false;
-    const auto fexpr = metric->get_fexpr();
+    const auto fexpr = metric->fexpr();
     const auto* term = std::get_if<formalism::FunctionTermView<GroundTag, formalism::AuxiliaryTag>>(&fexpr);
-    return term != nullptr && term->get_function().get_name() == "total-time";
+    return term != nullptr && term->function().name() == "total-time";
 }
 
-/// Whether the task is temporal: its domain has a durative action or it has a timed initial literal (alike ground and
-/// lifted). Only a temporal task's transitions keep a temporal network in their states; elsewhere a state is its facts
-/// and numeric values, so outcomes of equal facts are equal.
+/// What the task asks of an environment (TaskFeatures; alike ground and lifted), as its requirements and its domain's
+/// say: a parser sets them from what a task uses (a oneof needs :non-deterministic, a probabilistic effect
+/// :probabilistic-effects, a durative action :durative-actions, a timed initial literal :timed-initial-literals), and one
+/// built by hand states them itself. Only a temporal task's transitions keep a temporal network in their states;
+/// elsewhere a state is its facts and numeric values, so outcomes of equal facts are equal.
 template<TaskKind Kind>
-bool is_temporal(const Task<Kind>& task)
+TaskFeatures task_features(const Task<Kind>& task)
 {
     const auto view = task.get_task();
-    return !view.get_timed_literals().empty()
-           || std::ranges::any_of(view.get_domain().get_actions(), [](const auto action) { return action.get_temporal_part().has_value(); });
+    const auto requires_kind = [&view](formalism::RequirementKind kind)
+    {
+        const auto declares = [kind](const auto& requirements) { return std::ranges::find(requirements, kind) != std::ranges::end(requirements); };
+        return declares(view.requirements()) || declares(view.domain().requirements());
+    };
+    return TaskFeatures { requires_kind(formalism::RequirementKind::NonDeterministic),
+                          requires_kind(formalism::RequirementKind::ProbabilisticEffects),
+                          requires_kind(formalism::RequirementKind::DurativeActions)
+                              || requires_kind(formalism::RequirementKind::TimedInitialLiterals) };
 }
 
-/// Fills `outcome` with the node of `apply(builder) -> auxiliary value`, written into a state builder of `node`'s repository
-/// and closed under the axioms, not registered: its state that builder (a built child). Returns `valid(state)`.
-template<TaskKind Kind, typename Apply, typename Valid>
-bool build_outcome(const NodeBuilderView<Kind>& node,
-                   AxiomEvaluator<Kind>& axiom_evaluator,
-                   urd::builder<OutcomeNode<Kind>, StateRepository<Kind>>& outcome,
-                   Apply apply,
-                   Valid valid)
+/// Fills `outcome` (an outcome's builder, of any environment) with the node of `apply(builder) -> auxiliary value`, written
+/// into a state builder of `node`'s repository: its state that builder (a built child), neither closed under the axioms
+/// nor registered (extend_outcomes, register_outcomes). Returns `scheduled()`: whether the happening fits the
+/// state's temporal network (true where the task is not temporal).
+template<TaskKind Kind, typename Outcome, typename Apply, typename Scheduled>
+bool build_outcome(const NodeBuilderView<Kind>& node, Outcome& outcome, Apply apply, Scheduled scheduled)
 {
     const auto& repository = node.context();
     auto state = ::tyr::planning::get_state_builder(repository);
     const auto auxiliary_value = apply(*state);
     const auto metric = evaluate_successor_metric(repository, *state, auxiliary_value);
-    axiom_evaluator.compute_extended_state(*state, repository);
-    const auto result = valid(urd::resolve(*state, repository));
     outcome.node.state = std::move(state);
     outcome.node.metric = metric;
-    return result;
+    return scheduled();
 }
 
 }

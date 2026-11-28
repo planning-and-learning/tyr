@@ -52,6 +52,7 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
 {
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::TaskView<LiftedTag>>(),
               (urd::Store<urd::sequence<std::string>> { "name",
+                                                        "requirements",
                                                         "domain",
                                                         "derived_predicates",
                                                         "objects",
@@ -66,6 +67,7 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                                         "timed_literals" }));
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::TaskView<GroundTag>>(),
               (urd::Store<urd::sequence<std::string>> { "name",
+                                                        "requirements",
                                                         "domain",
                                                         "derived_predicates",
                                                         "objects",
@@ -123,7 +125,7 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
 TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 {
     auto repository = tyr::formalism::Repository();
-    const auto binding = make_atom(repository, "truck").get_row();
+    const auto binding = make_atom(repository, "truck").row();
     for (const auto& fields : { urd::Store<urd::sequence<std::string>> { "values" }, urd::Store<urd::sequence<std::string>> {} })
     {
         auto dictionaries = ygg::serialization::Dictionaries {};
@@ -148,7 +150,7 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
 {
     auto repository = tyr::formalism::Repository();
-    const auto binding = make_atom(repository, "truck").get_row();
+    const auto binding = make_atom(repository, "truck").row();
     auto dictionaries = ygg::serialization::Dictionaries {};
     size_t calls = 0;
     dictionaries.register_table<tyr::formalism::PredicateRowView<tyr::formalism::FluentTag>>("bindings",
@@ -157,7 +159,7 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
                                                                                              [&](auto& ar, const auto& value)
                                                                                              {
                                                                                                  ++calls;
-                                                                                                 ar.field("predicate_name", value.get_relation().get_name());
+                                                                                                 ar.field("predicate_name", value.relation().name());
                                                                                                  ar.field("arguments",
                                                                                                           value.template resolve<tyr::formalism::Object>());
                                                                                                  ar.field("text", ygg::to_string(value));
@@ -218,7 +220,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     const auto variable = repository.insert(variable_data).first;
     const auto fact_data = urd::data<tyr::formalism::FDRFact<tyr::formalism::FluentTag>>(variable.index(), tyr::formalism::FDRValue::none());
     const auto fact = urd::resolve(fact_data, repository);
-    ASSERT_FALSE(fact.get_atom().has_value());
+    ASSERT_FALSE(fact.atom().has_value());
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::FDRFactView<tyr::formalism::FluentTag>>("facts", "f");
     dictionaries.register_table<tyr::formalism::FDRVariableView<tyr::formalism::FluentTag>>("variables", "v");
@@ -244,8 +246,8 @@ TEST(TyrSerialization, ExpressionsKeepConstantsInline)
     EXPECT_EQ(dictionaries.serialize(binary).as_string(), "b0");
     const auto operators = dictionaries.table<BinaryView>();
     ASSERT_EQ(operators.size(), 1);
-    EXPECT_EQ(operators[0].as_object().at("lhs"), 3.0);
-    EXPECT_EQ(operators[0].as_object().at("rhs"), 3.0);
+    EXPECT_EQ(operators[0].as_object().at("left_operand"), 3.0);
+    EXPECT_EQ(operators[0].as_object().at("right_operand"), 3.0);
     EXPECT_EQ(operators[0].as_object().at("operation").as_string(), "-");
 }
 
@@ -270,7 +272,7 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("objects", "p"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("predicates", "o"), std::invalid_argument);
     auto repository = tyr::formalism::Repository();
-    dictionaries.serialize(make_atom(repository, "truck").get_row().template resolve<tyr::formalism::Object>()[0]);
+    dictionaries.serialize(make_atom(repository, "truck").row().template resolve<tyr::formalism::Object>()[0]);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::PredicateView<tyr::formalism::FluentTag>>("predicates", "p"), std::logic_error);
 }
 

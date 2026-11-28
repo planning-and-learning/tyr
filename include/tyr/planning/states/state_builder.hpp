@@ -86,10 +86,10 @@ struct builder<::tyr::planning::State<Kind>, C>
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
     // name as the record's are.
     urd::key<::tyr::planning::State<Kind>> index;
-    urd::built_child<::tyr::planning::FactStorage<Kind>, C> fact_storage = urd::make_owned<urd::builder<::tyr::planning::FactStorage<Kind>, C>>();
-    urd::built_child<::tyr::planning::AtomStorage<Kind>, C> atom_storage = urd::make_owned<urd::builder<::tyr::planning::AtomStorage<Kind>, C>>();
-    urd::built_child<::tyr::planning::NumericStorage<Kind>, C> numeric_storage = urd::make_owned<urd::builder<::tyr::planning::NumericStorage<Kind>, C>>();
-    urd::built_child<::tyr::planning::TemporalStorage<Kind>, C> temporal_storage = urd::make_owned<urd::builder<::tyr::planning::TemporalStorage<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::FactStorage<Kind>>, C> fact_storage = urd::make_owned<urd::builder<::tyr::planning::FactStorage<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::AtomStorage<Kind>>, C> atom_storage = urd::make_owned<urd::builder<::tyr::planning::AtomStorage<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::NumericStorage<Kind>>, C> numeric_storage = urd::make_owned<urd::builder<::tyr::planning::NumericStorage<Kind>, C>>();
+    urd::built_only_t<urd::key<::tyr::planning::TemporalStorage<Kind>>, C> temporal_storage = urd::make_owned<urd::builder<::tyr::planning::TemporalStorage<Kind>, C>>();
 
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -100,17 +100,12 @@ struct builder<::tyr::planning::State<Kind>, C>
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
     { numeric_storage->set(fterm, value); }
 
-    /// The value of `fterm` its numeric storage holds built (NaN where it has none).
-    [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
-    { return numeric_storage->get(fterm); }
-
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { atom_storage->set(atom); }
 
     /// A fact's view (borrowed or computed): its fact set.
-    template<typename V>
-        requires std::same_as<typename V::value_type, ::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>
+    template<urd::ViewOf<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>> V>
     void set(const V& fact)
-    { set(urd::make<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value())); }
+    { set(urd::make<::tyr::formalism::FDRFact<::tyr::formalism::FluentTag>>(fact.variable(), fact.value())); }
 
     void set(::tyr::formalism::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
 
@@ -119,43 +114,32 @@ struct builder<::tyr::planning::State<Kind>, C>
     void clear()
     {
         index = {};
-        clear_unextended_part();
-        clear_extended_part();
+        urd::clear_fields(*this);
     }
 
     void clear_unextended_part()
     {
-        fact_storage->clear();
-        numeric_storage->clear();
-        temporal_storage->clear();
+        urd::clear_fields(*fact_storage);
+        urd::clear_fields(*numeric_storage);
+        urd::clear_fields(*temporal_storage);
     }
 
-    void clear_extended_part() { atom_storage->clear(); }
+    void clear_extended_part() { urd::clear_fields(*atom_storage); }
 
     /// Takes a state's facts, numeric values and agenda (a view of it: registered, or another builder's).
     template<typename V>
     void assign_unextended_part(const V& state)
     {
-        fact_storage->assign(state.get_fact_storage());
-        numeric_storage->assign(state.get_numeric_storage());
-        temporal_storage->assign(state.get_temporal_storage());
+        urd::build_from(state.fact_storage(), *fact_storage);
+        urd::build_from(state.numeric_storage(), *numeric_storage);
+        urd::build_from(state.temporal_storage(), *temporal_storage);
     }
 
     /// Takes a state whole: its storages and its index (none for a state being built).
     void assign(const ::tyr::planning::StateBuilderView<Kind>& state)
     {
-        assign_storages(state);
+        urd::build_from(state, *this);
         index = state.pack().index();
-    }
-
-    void swap(builder& other) noexcept
-    {
-        using std::swap;
-        swap(index, other.index);
-        swap(fact_storage, other.fact_storage);
-        swap(atom_storage, other.atom_storage);
-        swap(numeric_storage, other.numeric_storage);
-        swap(temporal_storage, other.temporal_storage);
     }
 
     void resize_fluent_facts(size_t size)
@@ -196,29 +180,15 @@ struct builder<::tyr::planning::State<Kind>, C>
             urd::function<"clear_unextended_part", &builder::clear_unextended_part>,
             urd::function<"clear_extended_part", &builder::clear_extended_part>,
             urd::function<"assign_unextended_part", &builder::template assign_unextended_part<::tyr::planning::StateBuilderView<Kind>>, urd::arg<"state">>,
-            urd::function<"assign", &builder::assign, urd::arg<"state">>,
-            urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+            urd::function<"assign", &builder::assign, urd::arg<"state">>> {};
         // resize_fluent_facts, where it has it (a ground state: a value per FDR variable).
         if constexpr (std::same_as<Kind, ::tyr::GroundTag>)
             return mutators + urd::Functions<urd::function<"resize_fluent_facts", &builder::resize_fluent_facts, urd::arg<"size">>> {};
         else
             return mutators;
     }
-
-private:
-    /// The storages of a state's view.
-    template<typename V>
-    void assign_storages(const V& state)
-    {
-        assign_unextended_part(state);
-        atom_storage->assign(state.get_atom_storage());
-    }
 };
 
 }  // namespace urd
-
-namespace tyr::planning
-{
-}
 
 #endif

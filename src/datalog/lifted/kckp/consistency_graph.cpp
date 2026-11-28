@@ -25,7 +25,6 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_body_view.hpp"
@@ -70,11 +69,11 @@ namespace
 /// term's function's, and a constraint's largest function term's or parameter count, whichever is larger.
 template<formalism::FactKind F>
 std::size_t kckp_arity(formalism::LiteralView<LiftedTag, F> element)
-{ return element.get_atom().get_predicate().get_arity(); }
+{ return element.atom().predicate().arity(); }
 
 template<formalism::FactKind F>
 std::size_t kckp_arity(formalism::FunctionTermView<LiftedTag, F> element)
-{ return element.get_function().get_arity(); }
+{ return element.function().arity(); }
 
 std::size_t kckp_arity(formalism::BooleanOperatorView<LiftedTag> element)
 { return std::max(formalism::max_fterm_arity(element), formalism::collect_parameters(element).size()); }
@@ -275,7 +274,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::UnaryOpe
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{ return apply(element.get_operation(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
+{ return apply(element.operation(), consistent_interval(element.operand(), structure, constraint_info, assignment_sets)); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
@@ -283,9 +282,9 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::BinaryOp
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 {
-    return apply(element.get_operation(),
-                 consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
-                 consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
+    return apply(element.operation(),
+                 consistent_interval(element.left_operand(), structure, constraint_info, assignment_sets),
+                 consistent_interval(element.right_operand(), structure, constraint_info, assignment_sets));
 }
 
 template<typename GraphStructure>
@@ -294,13 +293,13 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::MultiOpe
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 {
-    const auto child_fexprs = element.get_args();
+    const auto child_fexprs = element.operands();
 
     return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
                            child_fexprs.end(),
                            consistent_interval(child_fexprs.front(), structure, constraint_info, assignment_sets),
                            [&](const auto& value, const auto& child_expr)
-                           { return apply(element.get_operation(), value, consistent_interval(child_expr, structure, constraint_info, assignment_sets)); });
+                           { return apply(element.operation(), value, consistent_interval(child_expr, structure, constraint_info, assignment_sets)); });
 }
 
 template<typename GraphStructure>
@@ -336,9 +335,9 @@ inline bool consistent_numeric_constraint(formalism::BooleanOperatorView<LiftedT
                                           const ConstraintTerms& constraint_info,
                                           const AssignmentSets& assignment_sets)
 {
-    return apply_existential(element.get_operation(),
-                             consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
-                             consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
+    return apply_existential(element.operation(),
+                             consistent_interval(element.left_operand(), structure, constraint_info, assignment_sets),
+                             consistent_interval(element.right_operand(), structure, constraint_info, assignment_sets));
 }
 
 /// Whether a vertex's or an edge's assignments satisfy every numeric constraint (nullary ones are tested separately).
@@ -394,8 +393,8 @@ static details::Literals<T> literals_of(formalism::LiteralListView<LiftedTag, T>
     for (const auto literal : literals)
     {
         const auto number = static_cast<ygg::uint_t>(terms.size());
-        result.heads.push_back({ literal.get_atom().get_predicate().index(), literal.get_polarity() });
-        const auto& element = terms.emplace_back(terms_of(literal.get_atom().get_terms()));
+        result.heads.push_back({ literal.atom().predicate().index(), literal.polarity() });
+        const auto& element = terms.emplace_back(terms_of(literal.atom().terms()));
 
         auto has = std::vector<bool>(arity);
         auto constants = false;
@@ -429,8 +428,8 @@ static details::FunctionTerms<T> function_terms_of(const urd::Store<urd::sequenc
     for (const auto fterm : fterms)
     {
         result.number.emplace(fterm.index(), static_cast<ygg::uint_t>(terms.size()));
-        result.functions.push_back(fterm.get_function().index());
-        terms.push_back(terms_of(fterm.get_terms()));
+        result.functions.push_back(fterm.function().index());
+        terms.push_back(terms_of(fterm.terms()));
     }
     result.terms = rows_of(terms);
     return result;
@@ -439,7 +438,7 @@ static details::FunctionTerms<T> function_terms_of(const urd::Store<urd::sequenc
 static auto constraint_terms_of(formalism::RuleBodyView<LiftedTag> element)
 {
     auto result = urd::Store<urd::sequence<details::ConstraintTerms>> {};
-    for (const auto constraint : element.get_numeric_constraints())
+    for (const auto constraint : element.numeric_constraints())
         result.push_back({ function_terms_of(formalism::collect_fterms<LiftedTag, formalism::StaticTag>(constraint)),
                            function_terms_of(formalism::collect_fterms<LiftedTag, formalism::FluentTag>(constraint)) });
     return result;
@@ -449,7 +448,7 @@ static details::MutableLiterals literals_of(formalism::RuleBodyView<LiftedTag> e
 {
     auto result = details::MutableLiterals {};
     boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F)
-                                          { result.template get<F>() = literals_of(element.template get_literals<F>(), element.get_arity()); });
+                                          { result.template get<F>() = literals_of(element.template literals<F>(), element.arity()); });
     return result;
 }
 
@@ -514,7 +513,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     /// 2. Monotonically update full consistent vertices partition
 
     {
-        const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
+        const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.numeric_constraints();
 
         for (ygg::uint_t p = 0; p < num_partitions; ++p)
         {
@@ -568,7 +567,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     /// 3. Monotonically update full explicitly consistent edges
 
     {
-        const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+        const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.numeric_constraints();
 
         for (ygg::uint_t pi = 0; pi < num_partitions; ++pi)
         {
@@ -660,26 +659,26 @@ std::pair<formalism::RuleBodyView<LiftedTag>, bool> create_overapproximation_con
 {
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
-    for (const auto variable : condition.get_variables())
+    for (const auto variable : condition.variables())
         urd::append(conj_cond->variables, variable);
 
     const auto literal_belongs_to_k_overapproximation = [k](const auto literal)
-    { return literal.get_polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
+    { return literal.polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
     const auto numeric_constraint_belongs_to_k_overapproximation = [k](const auto& numeric_constraint) { return kckp_arity(numeric_constraint) >= k; };
 
-    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+    for (const auto literal : condition.literals<formalism::StaticTag>())
         if (literal_belongs_to_k_overapproximation(literal))
             urd::append(conj_cond->static_literals, literal);
 
-    for (const auto literal : condition.get_literals<formalism::FluentTag>())
+    for (const auto literal : condition.literals<formalism::FluentTag>())
         if (literal_belongs_to_k_overapproximation(literal))
             urd::append(conj_cond->fluent_literals, literal);
 
-    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+    for (const auto literal : condition.literals<formalism::DerivedTag>())
         if (literal_belongs_to_k_overapproximation(literal))
             urd::append(conj_cond->derived_literals, literal);
 
-    for (const auto numeric_constraint : condition.get_numeric_constraints())
+    for (const auto numeric_constraint : condition.numeric_constraints())
         if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
             urd::append(conj_cond->numeric_constraints, numeric_constraint);
 
@@ -693,7 +692,7 @@ std::pair<formalism::RuleBodyView<LiftedTag>, bool> create_overapproximation_con
 {
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
-    for (const auto variable : condition.get_variables())
+    for (const auto variable : condition.variables())
         urd::append(conj_cond->variables, variable);
 
     // Binary KCKP edges join distinct rule parameters, so a one-parameter literal such as p(x,x) still needs an exact check.
@@ -702,19 +701,19 @@ std::pair<formalism::RuleBodyView<LiftedTag>, bool> create_overapproximation_con
     const auto requires_exact_numeric_check = [k](const auto& numeric_constraint)
     { return kckp_arity(numeric_constraint) > k || (k == 2 && kckp_arity(numeric_constraint) == 2); };
 
-    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+    for (const auto literal : condition.literals<formalism::StaticTag>())
         if (requires_exact_literal_check(literal))
             urd::append(conj_cond->static_literals, literal);
 
-    for (const auto literal : condition.get_literals<formalism::FluentTag>())
+    for (const auto literal : condition.literals<formalism::FluentTag>())
         if (requires_exact_literal_check(literal))
             urd::append(conj_cond->fluent_literals, literal);
 
-    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+    for (const auto literal : condition.literals<formalism::DerivedTag>())
         if (requires_exact_literal_check(literal))
             urd::append(conj_cond->derived_literals, literal);
 
-    for (const auto numeric_constraint : condition.get_numeric_constraints())
+    for (const auto numeric_constraint : condition.numeric_constraints())
         if (requires_exact_numeric_check(numeric_constraint))
             urd::append(conj_cond->numeric_constraints, numeric_constraint);
 
@@ -726,15 +725,15 @@ create_hyperedge_conjunctive_condition(formalism::RuleBodyView<LiftedTag> confli
 {
     auto conj_cond = formalism::checkout<formalism::ConjunctiveCondition<LiftedTag>>(builder);
 
-    for (const auto variable : conflicting_condition.get_variables())
+    for (const auto variable : conflicting_condition.variables())
         urd::append(conj_cond->variables, variable);
 
-    for (const auto literal : conflicting_condition.get_literals<formalism::FluentTag>())
-        if (literal.get_polarity())
+    for (const auto literal : conflicting_condition.literals<formalism::FluentTag>())
+        if (literal.polarity())
             urd::append(conj_cond->fluent_literals, literal);
 
-    for (const auto literal : conflicting_condition.get_literals<formalism::DerivedTag>())
-        if (literal.get_polarity())
+    for (const auto literal : conflicting_condition.literals<formalism::DerivedTag>())
+        if (literal.polarity())
             urd::append(conj_cond->derived_literals, literal);
 
     return context.insert(*conj_cond, builder);
@@ -750,19 +749,19 @@ create_ground_nullary_conjunctive_condition(formalism::RuleBodyView<LiftedTag> c
 
     const auto is_nullary = [](const auto& element) { return parameter_arity(element) == 0; };
 
-    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+    for (const auto literal : condition.literals<formalism::StaticTag>())
         if (is_nullary(literal))
             urd::append(conj_cond->static_literals, ground(literal, grounder_context).first);
 
-    for (const auto literal : condition.get_literals<formalism::FluentTag>())
+    for (const auto literal : condition.literals<formalism::FluentTag>())
         if (is_nullary(literal))
             urd::append(conj_cond->fluent_literals, ground(literal, grounder_context).first);
 
-    for (const auto literal : condition.get_literals<formalism::DerivedTag>())
+    for (const auto literal : condition.literals<formalism::DerivedTag>())
         if (is_nullary(literal))
             urd::append(conj_cond->derived_literals, ground(literal, grounder_context).first);
 
-    for (const auto numeric_constraint : condition.get_numeric_constraints())
+    for (const auto numeric_constraint : condition.numeric_constraints())
         if (is_nullary(numeric_constraint))
             urd::append(conj_cond->numeric_constraints, ground(numeric_constraint, grounder_context).first);
 

@@ -49,7 +49,6 @@ struct builder<::tyr::formalism::Axiom<::tyr::LiftedTag>, C>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"variables", &builder::variables>, urd::field<"body", &builder::body>, urd::field<"head", &builder::head>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::variables, &builder::body, &builder::head> {}; }
 };
 
 /// The builder of Axiom: its record's members, each in its built form (urd::built_t).

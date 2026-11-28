@@ -27,7 +27,7 @@ static_assert(requires(ObjectData& data) {
 template<typename View>
 concept ObjectViewContract = std::totally_ordered<View> && requires(const View& view) {
     view.index();
-    view.get_name();
+    view.name();
 };
 
 static_assert(ObjectViewContract<ObjectView>);
@@ -56,6 +56,6 @@ TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
     const auto view = repository.view(object.index());
     EXPECT_EQ(view, object);
     EXPECT_EQ(&view.context(), &repository);
-    EXPECT_EQ(view.get_name(), "truck");
+    EXPECT_EQ(view.name(), "truck");
     EXPECT_EQ(view, view);
 }

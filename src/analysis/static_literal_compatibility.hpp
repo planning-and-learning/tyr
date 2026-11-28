@@ -193,7 +193,7 @@ public:
 
         for (const auto& literal : literals)
         {
-            const auto& terms = literal.get_atom().get_terms();
+            const auto& terms = literal.atom().terms();
             auto parameters = urd::Store<urd::sequence<ygg::uint_t>> {};
             parameters.reserve(terms.size());
             for (const auto term : terms)
@@ -221,16 +221,16 @@ public:
             auto assignment = urd::Store<urd::sequence<Object>>(arity);
             auto assigned = urd::Store<urd::set<ygg::uint_t>, urd::dense> {};
             auto has_matching_atom = false;
-            const auto predicate = literal.get_atom().get_predicate().index();
+            const auto predicate = literal.atom().predicate().index();
             for (const auto& atom : atoms)
             {
-                if (atom.get_predicate().index() != predicate)
+                if (atom.predicate().index() != predicate)
                     continue;
 
                 assigned.clear();
                 auto matches = true;
                 auto position = size_t { 0 };
-                for (const auto object : atom.get_row().template resolve<formalism::Object>())
+                for (const auto object : atom.row().template resolve<formalism::Object>())
                 {
                     if (position == terms.size())
                     {
@@ -281,10 +281,10 @@ public:
 
             if (parameters.empty())
             {
-                if (literal.get_polarity() != has_matching_atom)
+                if (literal.polarity() != has_matching_atom)
                     m_satisfiable = false;
             }
-            else if (literal.get_polarity())
+            else if (literal.polarity())
             {
                 for (const auto parameter : parameters)
                     m_unary_compatible[parameter] &= unary_supports[parameter];

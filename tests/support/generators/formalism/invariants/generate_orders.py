@@ -46,18 +46,18 @@ CRITERIA = {
 
 def as_fixture(invariant: Invariant) -> dict[str, Any]:
     atoms: list[dict[str, str | list[int]]] = []
-    for atom in invariant.get_atoms():
+    for atom in invariant.atoms():
         parameters: list[int] = []
-        for term in atom.get_terms():
+        for term in atom.terms():
             match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(term))
             if match is None:
                 msg = f"invariant with a constant is not expressible in the fixture: {term}"
                 raise ValueError(msg)
             parameters.append(int(match[1]))
-        atoms.append({"predicate": str(atom.get_predicate().get_name()), "parameters": parameters})
+        atoms.append({"predicate": str(atom.predicate().name()), "parameters": parameters})
     return {
-        "num_rigid_variables": invariant.get_num_rigid_variables(),
-        "num_counted_variables": invariant.get_num_counted_variables(),
+        "num_rigid_variables": invariant.num_rigid_variables(),
+        "num_counted_variables": invariant.num_counted_variables(),
         "atoms": atoms,
     }
 

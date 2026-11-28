@@ -20,6 +20,7 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <urd/elements/concepts.hpp>
@@ -27,6 +28,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -37,6 +39,7 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
 {
     urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> index;
     urd::flat_string name;
+    urd::flat_vector<::tyr::formalism::RequirementKind> requirements;
     urd::index<::tyr::formalism::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> objects;
@@ -54,6 +57,7 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
     data() = default;
 
     data(urd::flat_string name_,
+         urd::flat_vector<::tyr::formalism::RequirementKind> requirements_,
          urd::index<::tyr::formalism::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> objects_,
@@ -68,6 +72,7 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
          urd::flat_vector<urd::index<::tyr::formalism::TimedLiteral>> timed_literals_) :
         index(),
         name(std::move(name_)),
+        requirements(std::move(requirements_)),
         domain(domain_),
         derived_predicates(std::move(derived_predicates_)),
         objects(std::move(objects_)),
@@ -92,54 +97,23 @@ struct data<::tyr::formalism::Task<::tyr::LiftedTag>>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"name", &data::name>,
+                           urd::field<"requirements", &data::requirements, urd::sorted, urd::unique>,
                            urd::field<"domain", &data::domain>,
-                           urd::field<"derived_predicates", &data::derived_predicates>,
-                           urd::field<"objects", &data::objects>,
-                           urd::field<"static_atoms", &data::static_atoms>,
-                           urd::field<"fluent_atoms", &data::fluent_atoms>,
-                           urd::field<"static_fterm_values", &data::static_fterm_values>,
-                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
+                           urd::field<"derived_predicates", &data::derived_predicates, urd::sorted, urd::unique>,
+                           urd::field<"objects", &data::objects, urd::sorted, urd::unique>,
+                           urd::field<"static_atoms", &data::static_atoms, urd::sorted, urd::unique>,
+                           urd::field<"fluent_atoms", &data::fluent_atoms, urd::sorted, urd::unique>,
+                           urd::field<"static_fterm_values", &data::static_fterm_values, urd::sorted, urd::unique>,
+                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values, urd::sorted, urd::unique>,
                            urd::field<"auxiliary_fterm_value", &data::auxiliary_fterm_value>,
                            urd::field<"goal", &data::goal>,
                            urd::field<"metric", &data::metric>,
-                           urd::field<"axioms", &data::axioms>,
+                           urd::field<"axioms", &data::axioms, urd::sorted, urd::unique>,
                            urd::field<"timed_literals", &data::timed_literals>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::name,
-                            &data::domain,
-                            &data::derived_predicates,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::auxiliary_fterm_value,
-                            &data::goal,
-                            &data::metric,
-                            &data::axioms,
-                            &data::timed_literals> {};
-    }
-
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::domain,
-                            &data::derived_predicates,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::auxiliary_fterm_value,
-                            &data::goal,
-                            &data::metric,
-                            &data::axioms,
-                            &data::timed_literals> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::LiftedTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::LiftedTag>>(index); }
 };
@@ -149,6 +123,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
 {
     urd::key<::tyr::formalism::Task<::tyr::GroundTag>> index;
     urd::flat_string name;
+    urd::flat_vector<::tyr::formalism::RequirementKind> requirements;
     urd::index<::tyr::formalism::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> objects;
@@ -173,6 +148,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
     data() = default;
 
     data(urd::flat_string name_,
+         urd::flat_vector<::tyr::formalism::RequirementKind> requirements_,
          urd::index<::tyr::formalism::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> objects_,
@@ -192,6 +168,7 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
          urd::flat_vector<urd::index<::tyr::formalism::Axiom<::tyr::GroundTag>>> ground_axioms_) :
         index(),
         name(std::move(name_)),
+        requirements(std::move(requirements_)),
         domain(domain_),
         derived_predicates(std::move(derived_predicates_)),
         objects(std::move(objects_)),
@@ -221,49 +198,28 @@ struct data<::tyr::formalism::Task<::tyr::GroundTag>>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"name", &data::name>,
+                           urd::field<"requirements", &data::requirements, urd::sorted, urd::unique>,
                            urd::field<"domain", &data::domain>,
-                           urd::field<"derived_predicates", &data::derived_predicates>,
-                           urd::field<"objects", &data::objects>,
-                           urd::field<"static_atoms", &data::static_atoms>,
-                           urd::field<"fluent_atoms", &data::fluent_atoms>,
-                           urd::field<"derived_atoms", &data::derived_atoms>,
-                           urd::field<"static_fterm_values", &data::static_fterm_values>,
-                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
+                           urd::field<"derived_predicates", &data::derived_predicates, urd::sorted, urd::unique>,
+                           urd::field<"objects", &data::objects, urd::sorted, urd::unique>,
+                           urd::field<"static_atoms", &data::static_atoms, urd::sorted, urd::unique>,
+                           urd::field<"fluent_atoms", &data::fluent_atoms, urd::sorted, urd::unique>,
+                           urd::field<"derived_atoms", &data::derived_atoms, urd::sorted, urd::unique>,
+                           urd::field<"static_fterm_values", &data::static_fterm_values, urd::sorted, urd::unique>,
+                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values, urd::sorted, urd::unique>,
                            urd::field<"auxiliary_fterm_value", &data::auxiliary_fterm_value>,
                            urd::field<"goal", &data::goal>,
                            urd::field<"metric", &data::metric>,
-                           urd::field<"axioms", &data::axioms>,
+                           urd::field<"axioms", &data::axioms, urd::sorted, urd::unique>,
                            urd::field<"timed_literals", &data::timed_literals>,
-                           urd::field<"fluent_variables", &data::fluent_variables>,
-                           urd::field<"fluent_facts", &data::fluent_facts>,
-                           urd::field<"ground_actions", &data::ground_actions>,
-                           urd::field<"ground_axioms", &data::ground_axioms>> {};
+                           urd::field<"fluent_variables", &data::fluent_variables, urd::sorted, urd::unique>,
+                           urd::field<"fluent_facts", &data::fluent_facts, urd::sorted, urd::unique>,
+                           urd::field<"ground_actions", &data::ground_actions, urd::sorted, urd::unique>,
+                           urd::field<"ground_axioms", &data::ground_axioms, urd::sorted, urd::unique>> {};
     }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::domain,
-                            &data::derived_predicates,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::derived_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::auxiliary_fterm_value,
-                            &data::goal,
-                            &data::metric,
-                            &data::axioms,
-                            &data::timed_literals,
-                            &data::fluent_variables,
-                            &data::fluent_facts,
-                            &data::ground_actions,
-                            &data::ground_axioms> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Task<::tyr::GroundTag>> key() const noexcept { return urd::key<::tyr::formalism::Task<::tyr::GroundTag>>(index); }
 };

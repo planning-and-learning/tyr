@@ -26,6 +26,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
@@ -83,7 +84,7 @@ struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
                            urd::field<"original_arity", &data::original_arity>,
                            urd::field<"variables", &data::variables>,
                            urd::field<"condition", &data::condition>,
-                           urd::field<"effects", &data::effects>,
+                           urd::field<"effects", &data::effects, urd::sorted, urd::unique>,
                            urd::field<"choices", &data::choices>,
                            urd::field<"temporal_part", &data::temporal_part>> {};
     }
@@ -95,17 +96,7 @@ struct data<::tyr::formalism::Action<::tyr::LiftedTag>>
     }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::original_name,
-                            &data::original_arity,
-                            &data::variables,
-                            &data::condition,
-                            &data::effects,
-                            &data::choices,
-                            &data::temporal_part> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Action<::tyr::LiftedTag>> key() const noexcept
     { return urd::key<::tyr::formalism::Action<::tyr::LiftedTag>>(index); }
@@ -150,16 +141,13 @@ struct data<::tyr::formalism::Action<::tyr::GroundTag>>
     {
         return urd::Fields<urd::field<"row", &data::row>,
                            urd::field<"condition", &data::condition>,
-                           urd::field<"effects", &data::effects>,
+                           urd::field<"effects", &data::effects, urd::sorted, urd::unique>,
                            urd::field<"choices", &data::choices>,
                            urd::field<"temporal_part", &data::temporal_part>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::row, &data::condition, &data::effects, &data::choices, &data::temporal_part> {}; }
-
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::row, &data::condition, &data::effects, &data::choices, &data::temporal_part> {}; }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Action<::tyr::GroundTag>> key() const noexcept
     { return urd::key<::tyr::formalism::Action<::tyr::GroundTag>>(index); }

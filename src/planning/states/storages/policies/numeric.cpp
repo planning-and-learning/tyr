@@ -34,23 +34,10 @@ StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::StateComponentR
 {
 }
 
-namespace
-{
-/// A builder's values, each canonical, into `canonical` (its buffer reused).
-template<TaskKind Kind>
-void canonicalize(const urd::builder<NumericStorage<Kind>, StateRepository<Kind>>& unpacked, std::vector<ygg::float_t>& canonical)
-{
-    canonical.clear();
-    for (const auto value : unpacked.values)
-        canonical.push_back(ygg::FloatTolerance<ygg::float_t>::canonicalize(value));
-}
-}
-
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
 auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert_built(const Unpacked& unpacked) -> std::pair<Key, bool>
 {
-    canonicalize(unpacked, m_canonical);
-    const auto [handle, inserted] = m_float_vectors->insert(m_canonical);
+    const auto [handle, inserted] = m_float_vectors->insert(unpacked.values);
     return { Key(handle), inserted };
 }
 
@@ -58,12 +45,11 @@ template<TaskKind Kind, typename Tag, bool ThreadSafe>
 auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert_built(const Unpacked& unpacked, const SuccessorHint<Kind>& hint)
     -> std::pair<Key, bool>
 {
-    canonicalize(unpacked, m_canonical);
     const auto parent = hint.template parent_key<NumericStorage<Kind>>().value;
 
     // Value vectors grow with the highest function term set, so a successor may be longer than its parent,
     // and a write delta cannot grow a stored vector.
-    const auto& values = m_canonical;
+    const auto& values = unpacked.values;
     if (values.size() != m_float_vectors->row_size(parent))
     {
         const auto [handle, inserted] = m_float_vectors->insert(values);

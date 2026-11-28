@@ -54,8 +54,6 @@ struct builder<::tyr::formalism::RuleBody<::tyr::GroundTag>, C>
                            urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&builder::static_literals, &builder::fluent_literals, &builder::derived_literals, &builder::numeric_constraints> {}; }
 };
 
 }  // namespace urd

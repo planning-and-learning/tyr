@@ -65,7 +65,7 @@ public:
     virtual void on_start_search(const NodeBuilderView<Kind>& node) = 0;
     virtual void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
-    virtual void on_solved(const PlanBuilderView<Kind>& plan) = 0;
+    virtual void on_solved(const PlanBuilderView<DeterministicTag, Kind>& plan) = 0;
 
     virtual WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker>) { return nullptr; }
 
@@ -85,7 +85,7 @@ public:
     void on_start_search(const NodeBuilderView<Kind>& node) override;
     void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override;
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override;
-    void on_solved(const PlanBuilderView<Kind>& plan) override;
+    void on_solved(const PlanBuilderView<DeterministicTag, Kind>& plan) override;
     WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker> index) override;
 
     [[nodiscard]] const tyr::planning::ProgressStatistics& get_progress_statistics() const noexcept { return m_progress_statistics; }

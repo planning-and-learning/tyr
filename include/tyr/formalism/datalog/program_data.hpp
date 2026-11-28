@@ -26,6 +26,7 @@
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/tags.hpp>
 #include <utility>
 
 namespace urd
@@ -89,55 +90,23 @@ struct data<::tyr::formalism::Program<T>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"static_predicates", &data::static_predicates>,
-                           urd::field<"fluent_predicates", &data::fluent_predicates>,
-                           urd::field<"derived_predicates", &data::derived_predicates>,
-                           urd::field<"static_functions", &data::static_functions>,
-                           urd::field<"fluent_functions", &data::fluent_functions>,
-                           urd::field<"objects", &data::objects>,
-                           urd::field<"static_atoms", &data::static_atoms>,
-                           urd::field<"fluent_atoms", &data::fluent_atoms>,
-                           urd::field<"derived_atoms", &data::derived_atoms>,
-                           urd::field<"static_fterm_values", &data::static_fterm_values>,
-                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
+        return urd::Fields<urd::field<"static_predicates", &data::static_predicates, urd::sorted, urd::unique>,
+                           urd::field<"fluent_predicates", &data::fluent_predicates, urd::sorted, urd::unique>,
+                           urd::field<"derived_predicates", &data::derived_predicates, urd::sorted, urd::unique>,
+                           urd::field<"static_functions", &data::static_functions, urd::sorted, urd::unique>,
+                           urd::field<"fluent_functions", &data::fluent_functions, urd::sorted, urd::unique>,
+                           urd::field<"objects", &data::objects, urd::sorted, urd::unique>,
+                           urd::field<"static_atoms", &data::static_atoms, urd::sorted, urd::unique>,
+                           urd::field<"fluent_atoms", &data::fluent_atoms, urd::sorted, urd::unique>,
+                           urd::field<"derived_atoms", &data::derived_atoms, urd::sorted, urd::unique>,
+                           urd::field<"static_fterm_values", &data::static_fterm_values, urd::sorted, urd::unique>,
+                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values, urd::sorted, urd::unique>,
                            urd::field<"goal", &data::goal>,
-                           urd::field<"rules", &data::rules>> {};
-    }
-
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::static_predicates,
-                            &data::fluent_predicates,
-                            &data::derived_predicates,
-                            &data::static_functions,
-                            &data::fluent_functions,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::derived_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::goal,
-                            &data::rules> {};
+                           urd::field<"rules", &data::rules, urd::sorted, urd::unique>> {};
     }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::static_predicates,
-                            &data::fluent_predicates,
-                            &data::derived_predicates,
-                            &data::static_functions,
-                            &data::fluent_functions,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::derived_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::goal,
-                            &data::rules> {};
-    }
+    { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::formalism::Program<T>> key() const noexcept { return urd::key<::tyr::formalism::Program<T>>(index); }
 };

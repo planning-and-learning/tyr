@@ -46,28 +46,12 @@ struct builder<::tyr::planning::AtomStorage<Kind>, C>
 
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { indices.insert(static_cast<ygg::uint_t>(atom.value)); }
 
-    void clear() { indices.clear(); }
-
-    /// Takes the bits of a view of a builder of its kind (another state's).
-    void assign(const urd::borrowed_view<::tyr::planning::AtomStorage<Kind>, C, builder>& storage) { indices = storage.get_indices(); }
-
-    void swap(builder& other) noexcept
-    {
-        std::swap(index, other.index);
-        indices.swap(other.indices);
-    }
-
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
 
     static constexpr auto functions() noexcept
     {
-        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">>,
-                              urd::function<"clear", &builder::clear>,
-                              urd::function<"assign", &builder::assign, urd::arg<"storage">>,
-                              urd::function<"swap", &builder::swap, urd::arg<"other">>> {};
+        return urd::Functions<urd::function<"set", &builder::set, urd::arg<"index">>> {};
     }
-
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
 }  // namespace urd

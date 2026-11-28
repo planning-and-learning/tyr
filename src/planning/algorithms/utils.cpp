@@ -48,11 +48,11 @@ NodeBuilder<Kind> normalize_start_node(Task<Kind>& task,
     const auto& source = start_node->context();
     if (source.get_task().get() != &task)
         throw std::invalid_argument("normalize_start_node(...): start node belongs to a different task.");
-    const auto metric = start_node->get_metric();
+    const auto metric = start_node->metric();
     if (!std::isfinite(metric))
         throw std::runtime_error("normalize_start_node(...): start node metric value is not finite.");
 
-    const auto source_state = ::tyr::planning::get_registered_state(source, start_node->get_state().index());
+    const auto source_state = ::tyr::planning::get_registered_state(source, start_node->state().index());
     auto node = NodeBuilder<Kind>();
     node.state = register_extended_state(state_repository, urd::resolve(*source_state, source));
     node.metric = metric;

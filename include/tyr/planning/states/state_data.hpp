@@ -20,13 +20,13 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/planning/states/storages/atom_storage_data.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/states/storages/atom_storage_data.hpp"
 #include "tyr/planning/states/storages/fact_storage_data.hpp"
 #include "tyr/planning/states/storages/numeric_storage_data.hpp"
-#include "tyr/planning/states/storages/state_storage.hpp"
 #include "tyr/planning/states/storages/policies/config.hpp"
 #include "tyr/planning/states/storages/policies/policy.hpp"
+#include "tyr/planning/states/storages/state_storage.hpp"
 
 #include <concepts>
 #include <tuple>
@@ -84,15 +84,11 @@ struct data<::tyr::planning::State<Kind>>
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact_storage, &data::numeric_storage, &data::temporal_storage> {}; }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage, &data::temporal_storage> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
-    [[nodiscard]] urd::key<::tyr::planning::State<Kind>> key() const noexcept { return urd::key<::tyr::planning::State<Kind>>(index); }
+    [[nodiscard]] urd::key<::tyr::planning::State<Kind>> key() const noexcept { return index; }
 };
 
 }  // namespace urd
-
-namespace tyr::planning
-{
-}
 
 #endif

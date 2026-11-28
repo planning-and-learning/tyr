@@ -55,16 +55,16 @@ using ActionBindingView = std::conditional_t<std::same_as<Kind, GroundTag>, form
 /// Whether a binding reads its relation as an action view (an interned row, a record's borrowed view).
 template<typename Binding>
 concept ReadsActionView = requires(const Binding& binding) {
-    { binding.get_relation() } -> std::same_as<formalism::ActionView<LiftedTag>>;
+    { binding.relation() } -> std::same_as<formalism::ActionView<LiftedTag>>;
 };
 
 template<typename Binding>
 formalism::ActionView<LiftedTag> action_of(const Binding& binding)
 {
     if constexpr (ReadsActionView<Binding>)
-        return binding.get_relation();
+        return binding.relation();
     else
-        return urd::interned_view(binding.get_relation());
+        return urd::interned_view(binding.relation());
 }
 
 /// Which applicable bindings an enumeration reports: those of `action` (all actions where none is given), each condition

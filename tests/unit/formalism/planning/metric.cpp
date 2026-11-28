@@ -30,8 +30,8 @@ static_assert(requires(MetricData& data) {
 });
 static_assert(requires(const MetricView& view) {
     view.index();
-    view.get_optimization_direction();
-    view.get_fexpr();
+    view.optimization_direction();
+    view.fexpr();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });

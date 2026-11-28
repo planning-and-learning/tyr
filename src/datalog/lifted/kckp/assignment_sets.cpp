@@ -219,7 +219,7 @@ PredicateAssignmentSet<T>::PredicateAssignmentSet(formalism::PredicateView<T> pr
                                                   size_t num_objects) :
     m_predicate_index(predicate.index()),
     m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
-    m_remapped_objects(predicate.get_arity())
+    m_remapped_objects(predicate.arity())
 {
 }
 
@@ -303,7 +303,7 @@ void PredicateAssignmentSets<T>::reset() noexcept
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::AtomView<GroundTag, T> ground_atom)
-{ insert(ground_atom.get_row()); }
+{ insert(ground_atom.row()); }
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::PredicateRowView<T> binding)
@@ -345,7 +345,7 @@ FunctionAssignmentSet<T>::FunctionAssignmentSet(formalism::FunctionView<T> funct
     m_function_index(function.index()),
     m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
     m_set(m_hash.size(), ygg::ClosedInterval<ygg::float_t>()),
-    m_remapped_objects(function.get_arity())
+    m_remapped_objects(function.arity())
 {
 }
 
@@ -372,7 +372,7 @@ bool FunctionAssignmentSet<T>::insert(formalism::FunctionRowView<T> binding, ygg
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSet<T>::insert(formalism::FunctionTermValueView<GroundTag, T> fterm_value)
-{ return insert(fterm_value.get_fterm().get_row(), fterm_value.get_value()); }
+{ return insert(fterm_value.fterm().row(), fterm_value.value()); }
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const EmptyAssignment&) const noexcept
@@ -444,15 +444,15 @@ void FunctionAssignmentSets<T>::reset() noexcept
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-{ return m_sets[binding.get_relation().index().value].insert(binding, std::move(interval)); }
+{ return m_sets[binding.relation().index().value].insert(binding, std::move(interval)); }
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::FunctionTermView<GroundTag, T> function_term, ygg::float_t value)
-{ return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), value); }
+{ return m_sets[function_term.function().index().value].insert(function_term.row(), value); }
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval)
-{ return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), std::move(interval)); }
+{ return m_sets[function_term.function().index().value].insert(function_term.row(), std::move(interval)); }
 
 template<formalism::FactKind T>
 void FunctionAssignmentSets<T>::insert(formalism::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values)
@@ -467,7 +467,7 @@ template<formalism::FactKind T>
 void FunctionAssignmentSets<T>::insert(formalism::FunctionTermValueListView<GroundTag, T> fterm_values)
 {
     for (const auto fterm_value : fterm_values)
-        insert(fterm_value.get_fterm(), fterm_value.get_value());
+        insert(fterm_value.fterm(), fterm_value.value());
 }
 
 template<formalism::FactKind T>
@@ -520,11 +520,11 @@ template<formalism::FactKind T>
 TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::ProgramView<LiftedTag> program,
                                               const analysis::ProgramVariableDomains& domains,
                                               const TaggedFactSets<T>& fact_sets) :
-    predicate(program.template get_predicates<T>(), analysis::get_predicate_domains<T>(domains), program.get_objects().size()),
+    predicate(program.template predicates<T>(), analysis::get_predicate_domains<T>(domains), program.objects().size()),
     function()
 {
     if constexpr (has_function_facts<T>)
-        function = FunctionAssignmentSets<T>(program.template get_functions<T>(), analysis::get_function_domains<T>(domains), program.get_objects().size());
+        function = FunctionAssignmentSets<T>(program.template functions<T>(), analysis::get_function_domains<T>(domains), program.objects().size());
     insert(fact_sets);
 }
 

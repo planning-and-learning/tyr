@@ -123,24 +123,24 @@ ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
     using namespace datalog_domains;
 
     auto universe = urd::Store<urd::set<urd::index<formalism::Object>>> {};
-    for (const auto object : program.get_objects())
+    for (const auto object : program.objects())
         universe.insert(object.index());
 
     ///--- Step 1: Initialize static and fluent predicate parameter domains
 
-    auto static_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<formalism::StaticTag>());
-    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<formalism::FluentTag>());
-    auto derived_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<formalism::DerivedTag>());
-    insert_into_predicate_domain_sets(program.get_atoms<formalism::StaticTag>(), static_predicate_domain_sets);
-    insert_into_predicate_domain_sets(program.get_atoms<formalism::FluentTag>(), fluent_predicate_domain_sets);
-    insert_into_predicate_domain_sets(program.get_atoms<formalism::DerivedTag>(), derived_predicate_domain_sets);
+    auto static_predicate_domain_sets = initialize_predicate_domain_sets(program.predicates<formalism::StaticTag>());
+    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(program.predicates<formalism::FluentTag>());
+    auto derived_predicate_domain_sets = initialize_predicate_domain_sets(program.predicates<formalism::DerivedTag>());
+    insert_into_predicate_domain_sets(program.atoms<formalism::StaticTag>(), static_predicate_domain_sets);
+    insert_into_predicate_domain_sets(program.atoms<formalism::FluentTag>(), fluent_predicate_domain_sets);
+    insert_into_predicate_domain_sets(program.atoms<formalism::DerivedTag>(), derived_predicate_domain_sets);
 
     ///--- Step 2: Initialize static and fluent function parameter domains
 
-    auto static_function_domain_sets = initialize_function_domain_sets(program.get_functions<formalism::StaticTag>());
-    auto fluent_function_domain_sets = initialize_function_domain_sets(program.get_functions<formalism::FluentTag>());
-    insert_into_function_domain_sets(program.get_fterm_values<formalism::StaticTag>(), static_function_domain_sets);
-    insert_into_function_domain_sets(program.get_fterm_values<formalism::FluentTag>(), fluent_function_domain_sets);
+    auto static_function_domain_sets = initialize_function_domain_sets(program.functions<formalism::StaticTag>());
+    auto fluent_function_domain_sets = initialize_function_domain_sets(program.functions<formalism::FluentTag>());
+    insert_into_function_domain_sets(program.fterm_values<formalism::StaticTag>(), static_function_domain_sets);
+    insert_into_function_domain_sets(program.fterm_values<formalism::FluentTag>(), fluent_function_domain_sets);
 
     ///--- Step 2.5: Important not to forget constants in schemas
 
@@ -152,18 +152,18 @@ ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
 
         const auto insert_rule_constants = [&]()
         {
-            for (const auto rule : program.get_rules())
+            for (const auto rule : program.rules())
             {
-                for (const auto literal : rule.get_body().template get_literals<formalism::StaticTag>())
-                    apply_policy(literal.get_atom(), insert_policy);
+                for (const auto literal : rule.body().template literals<formalism::StaticTag>())
+                    apply_policy(literal.atom(), insert_policy);
 
-                for (const auto op : rule.get_body().get_numeric_constraints())
+                for (const auto op : rule.body().numeric_constraints())
                     apply_policy(op, insert_policy);
 
-                for (const auto head : rule.get_heads<formalism::FluentTag>())
+                for (const auto head : rule.heads<formalism::FluentTag>())
                     apply_policy(head, insert_policy);
 
-                for (const auto head : rule.get_heads<formalism::DerivedTag>())
+                for (const auto head : rule.heads<formalism::DerivedTag>())
                     apply_policy(head, insert_policy);
             }
         };
@@ -178,13 +178,13 @@ ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
 
     const auto restrict_rule_domains = [&](auto& domain_sets)
     {
-        domain_sets.reserve(program.get_rules().size());
+        domain_sets.reserve(program.rules().size());
         auto& graphs = compatibility_graphs;
-        graphs.reserve(program.get_rules().size());
+        graphs.reserve(program.rules().size());
 
-        for (const auto rule : program.get_rules())
+        for (const auto rule : program.rules())
         {
-            auto variables = rule.get_body().get_variables();
+            auto variables = rule.body().variables();
             auto parameter_domains = TmpVariableDomainList(variables.size());
 
             for (auto& domain : parameter_domains)
@@ -195,18 +195,18 @@ ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
                 &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
             };
 
-            for (const auto literal : rule.get_body().template get_literals<formalism::StaticTag>())
+            for (const auto literal : rule.body().template literals<formalism::StaticTag>())
                 apply_policy(literal, restrict_policy);
 
-            for (const auto op : rule.get_body().get_numeric_constraints())
+            for (const auto op : rule.body().numeric_constraints())
                 apply_policy(op, restrict_policy);
 
             const auto domains = to_variable_domain_list(parameter_domains);
-            const auto static_compatibility = detail::StaticLiteralCompatibility(rule.get_body().template get_literals<formalism::StaticTag>(),
-                                                                                 program.get_atoms<formalism::StaticTag>(),
+            const auto static_compatibility = detail::StaticLiteralCompatibility(rule.body().template literals<formalism::StaticTag>(),
+                                                                                 program.atoms<formalism::StaticTag>(),
                                                                                  domains,
-                                                                                 program.get_objects().size());
-            auto compatibility = detail::create_pairwise_compatibility_graph(domains, program.get_objects().size(), { &static_compatibility });
+                                                                                 program.objects().size());
+            auto compatibility = detail::create_pairwise_compatibility_graph(domains, program.objects().size(), { &static_compatibility });
             parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
             graphs.emplace(rule.index(), std::move(compatibility.graph));
 
@@ -220,7 +220,7 @@ ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
 
     const auto lift_rule_domains = [&](const auto& domain_sets)
     {
-        for (const auto rule : program.get_rules())
+        for (const auto rule : program.rules())
         {
             const auto& parameter_domains = domain_sets.at(rule.index());
 
@@ -229,22 +229,22 @@ ProgramAnalysis analyze_program(formalism::ProgramView<LiftedTag> program)
                 &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
             };
 
-            for (const auto literal : rule.get_body().template get_literals<formalism::StaticTag>())
+            for (const auto literal : rule.body().template literals<formalism::StaticTag>())
                 apply_policy(literal, lift_policy);
 
-            for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
+            for (const auto literal : rule.body().template literals<formalism::FluentTag>())
                 apply_policy(literal, lift_policy);
 
-            for (const auto literal : rule.get_body().template get_literals<formalism::DerivedTag>())
+            for (const auto literal : rule.body().template literals<formalism::DerivedTag>())
                 apply_policy(literal, lift_policy);
 
-            for (const auto op : rule.get_body().get_numeric_constraints())
+            for (const auto op : rule.body().numeric_constraints())
                 apply_policy(op, lift_policy);
 
-            for (const auto head : rule.get_heads<formalism::FluentTag>())
+            for (const auto head : rule.heads<formalism::FluentTag>())
                 apply_policy(head, lift_policy);
 
-            for (const auto head : rule.get_heads<formalism::DerivedTag>())
+            for (const auto head : rule.heads<formalism::DerivedTag>())
                 apply_policy(head, lift_policy);
         }
     };

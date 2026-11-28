@@ -8,7 +8,7 @@ from pytyr import planning
 Node = planning.ground.OwnedNodeBuilderView | planning.ground.NodeBuilderView
 
 
-Plan = planning.ground.PlanBuilderView
+Plan = planning.ground.deterministic.PlanBuilderView
 
 
 IwStatistics = planning.algorithms.iw.ground.Statistics

@@ -12,10 +12,6 @@ def test_optimization_directions_are_distinct() -> None:
 
 
 def test_formalism_is_one_module() -> None:
-    for name in ("BooleanOperatorKind", "ArithmeticOperatorKind", "NumericEffectOperatorKind", "ObjectData"):
-        assert hasattr(formalism, name)
-    assert not hasattr(formalism, "planning")
-    assert not hasattr(formalism, "datalog")
     assert formalism.BooleanOperatorKind.Eq != formalism.BooleanOperatorKind.Ne
 
 

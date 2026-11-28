@@ -136,15 +136,34 @@ inline void ground(TermListView terms, const GroundingContext<Builder, Repositor
             term);
 }
 
+namespace detail
+{
+/// A row's builder holding what the context's binding grounds an atom to: its predicate and its terms' values. It is
+/// inserted (ground) or looked up (try_ground).
+template<FactKind F>
+urd::handle<urd::builder<ygg::Row<Predicate<F>>, Repository>> bound_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
+{
+    auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
+    urd::store(binding->relation, element.predicate());
+    ground(element.terms(), context, binding->values);
+    return binding;
+}
+
+/// Likewise for a function term: its function and its terms' values.
+template<FactKind F>
+urd::handle<urd::builder<ygg::Row<Function<F>>, Repository>> bound_row(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
+{
+    auto binding = checkout<ygg::Row<Function<F>>>(context.builder());
+    urd::store(binding->relation, element.function());
+    ground(element.terms(), context, binding->values);
+    return binding;
+}
+}  // namespace detail
+
 template<FactKind F>
 std::pair<PredicateRowKey<F>, bool> ground_row(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
-    auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
-
-    urd::store(binding->relation, element.get_predicate());
-    ground(element.get_terms(), context, binding->values);
-
-    const auto [row, created] = context.destination().insert(*binding, context.builder());
+    const auto [row, created] = context.destination().insert(*detail::bound_row(element, context), context.builder());
     return { row.index(), created };
 }
 
@@ -158,24 +177,16 @@ std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> eleme
 template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
-    auto binding = checkout<ygg::Row<Function<F>>>(context.builder());
-
-    urd::store(binding->relation, element.get_function());
-    ground(element.get_terms(), context, binding->values);
-
-    return context.destination().insert(*binding, context.builder());
+    return context.destination().insert(*detail::bound_row(element, context), context.builder());
 }
 
 template<FactKind T>
 std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto fterm = checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
-    // Fill data
     urd::store(fterm->row, ground_binding(element, context).first);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*fterm, context.builder());
 }
 
@@ -195,86 +206,68 @@ inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag
 inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element,
                                                                                     GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto unary = checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
-    // Fill data
-    unary->operation = element.get_operation();
-    urd::store(unary->arg, ground(element.get_arg(), context));
+    unary->operation = element.operation();
+    urd::store(unary->operand, ground(element.operand(), context));
 
-    // Canonicalize and Serialize
     return context.destination().insert(*unary, context.builder());
 }
 
 template<OperatorKind O>
 std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto binary = checkout<BinaryOperator<GroundTag, O>>(context.builder());
 
-    // Fill data
-    binary->operation = element.get_operation();
-    urd::store(binary->lhs, ground(element.get_lhs(), context));
-    urd::store(binary->rhs, ground(element.get_rhs(), context));
+    binary->operation = element.operation();
+    urd::store(binary->left_operand, ground(element.left_operand(), context));
+    urd::store(binary->right_operand, ground(element.right_operand(), context));
 
-    // Canonicalize and Serialize
     return context.destination().insert(*binary, context.builder());
 }
 
 inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element,
                                                                                     GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto multi = checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
-    // Fill data
-    multi->operation = element.get_operation();
-    for (const auto arg : element.get_args())
-        urd::append(multi->args, ground(arg, context));
+    multi->operation = element.operation();
+    for (const auto arg : element.operands())
+        urd::append(multi->operands, ground(arg, context));
 
-    // Canonicalize and Serialize
     return context.destination().insert(*multi, context.builder());
 }
 
 template<FactKind T>
 std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto atom = checkout<Atom<GroundTag, T>>(context.builder());
 
-    // Fill data
     atom->row = ground_row(element, context).first;
 
-    // Canonicalize and Serialize
     return context.destination().insert(*atom, context.builder());
 }
 
 template<FactKind T>
 std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto ground_literal = checkout<Literal<GroundTag, T>>(context.builder());
 
-    // Fill data
-    ground_literal->polarity = element.get_polarity();
-    urd::store(ground_literal->atom, ground(element.get_atom(), context).first);
+    ground_literal->polarity = element.polarity();
+    urd::store(ground_literal->atom, ground(element.atom(), context).first);
 
-    // Canonicalize and Serialize
     return context.destination().insert(*ground_literal, context.builder());
 }
 
 template<FactKind T>
 std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<LiftedTag, T> element, GroundingContext<Builder, Repository>& context)
 {
-    // Fetch and clear
     auto numeric_effect = checkout<NumericEffect<GroundTag, T>>(context.builder());
 
-    // Fill data
-    numeric_effect->operation = element.get_operation();
-    urd::store(numeric_effect->fterm, ground(element.get_fterm(), context).first);
-    urd::store(numeric_effect->fexpr, ground(element.get_fexpr(), context));
+    numeric_effect->operation = element.operation();
+    urd::store(numeric_effect->fterm, ground(element.fterm(), context).first);
+    urd::store(numeric_effect->fexpr, ground(element.fexpr(), context));
 
-    // Canonicalize and Serialize
     return context.destination().insert(*numeric_effect, context.builder());
 }
 
@@ -284,23 +277,13 @@ std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<Lifted
 template<FactKind F>
 std::optional<FunctionRowView<F>> try_ground_binding(FunctionTermView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
-    auto binding = checkout<ygg::Row<Function<F>>>(context.builder());
-
-    urd::store(binding->relation, element.get_function());
-    ground(element.get_terms(), context, binding->values);
-
-    return context.destination().find(*binding, context.builder());
+    return context.destination().find(*detail::bound_row(element, context), context.builder());
 }
 
 template<FactKind F>
 std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> element, GroundingContext<Builder, Repository>& context)
 {
-    auto binding = checkout<ygg::Row<Predicate<F>>>(context.builder());
-
-    urd::store(binding->relation, element.get_predicate());
-    ground(element.get_terms(), context, binding->values);
-
-    return context.destination().find(*binding, context.builder());
+    return context.destination().find(*detail::bound_row(element, context), context.builder());
 }
 
 template<FactKind T>
@@ -312,7 +295,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 
     auto fterm = checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
-    fterm->row.template emplace<0>(binding_or_nullopt->index());
+    urd::store(fterm->row, *binding_or_nullopt);
 
     return context.destination().find(*fterm, context.builder());
 }
@@ -326,7 +309,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
     auto atom = checkout<Atom<GroundTag, T>>(context.builder());
 
-    atom->row.template emplace<0>(binding_or_nullopt->index());
+    urd::store(atom->row, *binding_or_nullopt);
 
     return context.destination().find(*atom, context.builder());
 }

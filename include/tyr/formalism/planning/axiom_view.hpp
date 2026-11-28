@@ -46,36 +46,36 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_variables() const noexcept
+    auto variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
 
-    auto get_row() const noexcept
+    auto row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::row>(); }
 
-    auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
+    auto body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
 
-    auto get_head() const noexcept { return self().template member<&urd::record_of<V>::head>(); }
+    auto head() const noexcept { return self().template member<&urd::record_of<V>::head>(); }
 
     /// Its rows' column types (a key of row pools): one object column per argument, computed.
-    [[nodiscard]] ygg::UniformColumnTypes get_column_types() const
+    [[nodiscard]] ygg::UniformColumnTypes column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
     {
         return ygg::uniform_column_types<urd::index<::tyr::formalism::Object>>(
-            urd::visit_view(get_body(), [](const auto& body) { return static_cast<std::size_t>(body.get_arity()); }));
+            urd::visit_view(body(), [](const auto& body) { return static_cast<std::size_t>(body.arity()); }));
     }
 
-    auto get_axiom() const noexcept
+    auto axiom() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_relation(); }
+    { return row().relation(); }
 
     static constexpr auto functions() noexcept
     {
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
-            return urd::Functions<urd::function<"get_axiom", &view_mixin::get_axiom>> {};
+            return urd::Functions<urd::function<"axiom", &view_mixin::axiom>> {};
         else
-            return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {};
+            return urd::Functions<urd::function<"column_types", &view_mixin::column_types>> {};
     }
 };
 }  // namespace urd

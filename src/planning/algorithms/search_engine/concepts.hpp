@@ -139,7 +139,7 @@ concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy
                                      {
                                          policy.for_each([](WorkerData&) {})
                                      } -> std::same_as<void>;
-                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<OwnedPlanBuilderView<Kind>, OwnedNodeRecordView<Kind>>>;
+                                     { policy.reconstruct_solution(goal, options) } -> std::same_as<std::pair<OwnedPlanBuilderView<DeterministicTag, Kind>, OwnedNodeRecordView<Kind>>>;
                                  };
 
 template<SearchKind Search,

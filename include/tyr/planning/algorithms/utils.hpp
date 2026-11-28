@@ -74,7 +74,7 @@ template<TaskKind Kind>
 struct SearchResult
 {
     SearchStatus status = SearchStatus::IN_PROGRESS;
-    std::optional<OwnedPlanBuilderView<Kind>> plan = std::nullopt;
+    std::optional<OwnedPlanBuilderView<DeterministicTag, Kind>> plan = std::nullopt;
     std::optional<OwnedNodeRecordView<Kind>> goal_node = std::nullopt;
     std::optional<std::pair<size_t, size_t>> cycle_range = std::nullopt;
     /// Idle time is summed worker time and may exceed the aggregate wall time.

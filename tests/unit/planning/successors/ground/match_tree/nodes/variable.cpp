@@ -17,9 +17,9 @@ concept VariableSelectorContract =
            data.variable;
            data.domain_children;
            data.dontcare_child;
-           view.get_variable();
-           view.get_domain_children();
-           view.get_dontcare_child();
+           view.variable();
+           view.domain_children();
+           view.dontcare_child();
        };
 
 using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::Action<::tyr::GroundTag>, tyr::formalism::Axiom<::tyr::GroundTag>>;

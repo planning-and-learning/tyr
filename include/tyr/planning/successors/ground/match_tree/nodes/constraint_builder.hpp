@@ -50,7 +50,6 @@ struct builder<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, 
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::constraint, &builder::true_child, &builder::dontcare_child> {}; }
 };
 
 }  // namespace urd

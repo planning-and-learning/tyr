@@ -249,26 +249,26 @@ ygg::float_t evaluate(ygg::float_t element, const StateContext<Kind>&)
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
-{ return formalism::apply(element.get_operation(), evaluate(element.get_arg(), context)); }
+{ return formalism::apply(element.operation(), evaluate(element.operand(), context)); }
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
-{ return formalism::apply(element.get_operation(), evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context)); }
+{ return formalism::apply(element.operation(), evaluate(element.left_operand(), context), evaluate(element.right_operand(), context)); }
 
 template<TaskKind Kind>
 bool evaluate(formalism::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<Kind>& context)
-{ return formalism::apply(element.get_operation(), evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context)); }
+{ return formalism::apply(element.operation(), evaluate(element.left_operand(), context), evaluate(element.right_operand(), context)); }
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<Kind>& context)
 {
-    const auto child_fexprs = element.get_args();
+    const auto child_fexprs = element.operands();
 
     return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
                            child_fexprs.end(),
                            evaluate(child_fexprs.front(), context),
                            [&](const auto& value, const auto& child_expr)
-                           { return formalism::apply(element.get_operation(), value, evaluate(child_expr, context)); });
+                           { return formalism::apply(element.operation(), value, evaluate(child_expr, context)); });
 }
 
 template<TaskKind Kind>
@@ -291,7 +291,7 @@ ygg::float_t evaluate(formalism::FunctionExpressionView<GroundTag> element, cons
 
 template<TaskKind Kind, formalism::FactKind T>
 ygg::float_t evaluate(formalism::NumericEffectView<GroundTag, T> element, const StateContext<Kind>& context)
-{ return formalism::apply(element.get_operation(), evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context)); }
+{ return formalism::apply(element.operation(), evaluate(element.fterm(), context), evaluate(element.fexpr(), context)); }
 
 /**
  * is_applicable_if_fires
@@ -302,11 +302,11 @@ bool is_applicable_if_fires(formalism::ConditionalEffectView<GroundTag> element,
                             const StateContext<Kind>& context,
                             formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    const auto effect = element.get_effect();
-    if (effect.get_numeric_effects().empty() && !effect.get_auxiliary_numeric_effect().has_value())
+    const auto effect = element.effect();
+    if (effect.numeric_effects().empty() && !effect.auxiliary_numeric_effect().has_value())
         return true;
 
-    if (!is_applicable(element.get_condition(), context))
+    if (!is_applicable(element.condition(), context))
         return true;
 
     // Important: only modify effect families if condition is satisfied
@@ -331,11 +331,11 @@ bool is_applicable_if_fires(formalism::ConditionalEffectListView<GroundTag> elem
 
 template<TaskKind Kind>
 bool is_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
-{ return context.task().get_static_state().test(element.get_atom()) == element.get_polarity(); }
+{ return context.task().get_static_state().test(element.atom()) == element.polarity(); }
 
 template<TaskKind Kind>
 bool is_applicable(formalism::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<Kind>& context)
-{ return context.atom_storage().test(element.get_atom().index()) == element.get_polarity(); }
+{ return context.atom_storage().test(element.atom().index()) == element.polarity(); }
 
 template<TaskKind Kind, formalism::FactKind T>
 bool is_applicable(formalism::LiteralListView<GroundTag, T> elements, const StateContext<Kind>& context)
@@ -348,12 +348,12 @@ bool is_applicable(formalism::FDRFactView<formalism::FluentTag> element, const S
 {
     assert(element.has_value());
 
-    const auto value = context.fact_storage().get(element.get_variable().index());
+    const auto value = context.fact_storage().get(element.variable().index());
 
     if constexpr (std::same_as<P, formalism::PositiveTag>)
-        return value == element.get_value();
+        return value == element.value();
     else if constexpr (std::same_as<P, formalism::NegativeTag>)
-        return value != element.get_value();
+        return value != element.value();
     else
         static_assert(false, "Missing case");
 }
@@ -379,26 +379,26 @@ bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::FluentTag>
                    const StateContext<Kind>& context,
                    formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    const auto fterm_index = element.get_fterm().index();
+    const auto fterm_index = element.fterm().index();
     if (ref_fluent_effect_families.size() <= fterm_index.value)
         ref_fluent_effect_families.resize(fterm_index.value + 1, formalism::EffectFamily::None);
 
     // Check non-conflicting effects
-    const auto family = formalism::effect_family(element.get_operation());
+    const auto family = formalism::effect_family(element.operation());
     if (!formalism::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.value]))
         return false;  /// incompatible effects
 
     ref_fluent_effect_families[fterm_index.value] = family;
 
     // Check fterm is well-defined in context
-    if (element.get_operation() != formalism::NumericEffectOperatorKind::Assign)
+    if (element.operation() != formalism::NumericEffectOperatorKind::Assign)
     {
         if (std::isnan(context.numeric_storage().get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 
     // Check fexpr is well-defined in context
-    return !std::isnan(evaluate(element.get_fexpr(), context));
+    return !std::isnan(evaluate(element.fexpr(), context));
 }
 
 template<TaskKind Kind>
@@ -413,7 +413,7 @@ template<TaskKind Kind>
 bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryTag> element, const StateContext<Kind>& context)
 {
     // Check fexpr is well-defined in context
-    return !std::isnan(evaluate(element.get_fexpr(), context));
+    return !std::isnan(evaluate(element.fexpr(), context));
 }
 
 // GroundConjunctiveCondition
@@ -421,11 +421,11 @@ bool is_applicable(formalism::NumericEffectView<GroundTag, formalism::AuxiliaryT
 template<TaskKind Kind>
 bool is_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), context)                            //
-           && is_applicable<formalism::PositiveTag>(element.template get_facts<formalism::PositiveTag>(), context)  //
-           && is_applicable<formalism::NegativeTag>(element.template get_facts<formalism::NegativeTag>(), context)  //
-           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)                        //
-           && is_applicable(element.get_numeric_constraints(), context);
+    return is_applicable(element.template literals<formalism::StaticTag>(), context)                            //
+           && is_applicable<formalism::PositiveTag>(element.template facts<formalism::PositiveTag>(), context)  //
+           && is_applicable<formalism::NegativeTag>(element.template facts<formalism::NegativeTag>(), context)  //
+           && is_applicable(element.template literals<formalism::DerivedTag>(), context)                        //
+           && is_applicable(element.numeric_constraints(), context);
 }
 
 // GroundConjunctiveEffect
@@ -435,28 +435,28 @@ bool is_applicable(formalism::ConjunctiveEffectView<GroundTag> element,
                    const StateContext<Kind>& context,
                    formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    return is_applicable(element.get_numeric_effects(), context, ref_fluent_effect_families)
-           && (!element.get_auxiliary_numeric_effect().has_value() || is_applicable(element.get_auxiliary_numeric_effect().value(), context));
+    return is_applicable(element.numeric_effects(), context, ref_fluent_effect_families)
+           && (!element.auxiliary_numeric_effect().has_value() || is_applicable(element.auxiliary_numeric_effect().value(), context));
 }
 
 // GroundAction
 
 template<TaskKind Kind>
 bool is_applicable(formalism::ActionView<GroundTag> element, const StateContext<Kind>& context, formalism::EffectFamilyList& out_fluent_effect_families)
-{ return is_applicable(element.get_condition(), context) && is_applicable_if_fires(element.get_effects(), context, out_fluent_effect_families); }
+{ return is_applicable(element.condition(), context) && is_applicable_if_fires(element.effects(), context, out_fluent_effect_families); }
 
 // GroundAxiom
 
 template<TaskKind Kind>
 bool is_applicable(formalism::AxiomView<GroundTag> element, const StateContext<Kind>& context)
-{ return is_applicable(element.get_body(), context); }
+{ return is_applicable(element.body(), context); }
 
 /**
  * is_statically_applicable
  */
 
 inline bool is_statically_applicable(formalism::LiteralView<GroundTag, formalism::StaticTag> element, const StaticState& static_state)
-{ return static_state.test(element.get_atom()) == element.get_polarity(); }
+{ return static_state.test(element.atom()) == element.polarity(); }
 
 inline bool is_statically_applicable(formalism::LiteralListView<GroundTag, formalism::StaticTag> elements, const StaticState& static_state)
 {
@@ -466,17 +466,17 @@ inline bool is_statically_applicable(formalism::LiteralListView<GroundTag, forma
 // GroundConjunctiveCondition
 
 inline bool is_statically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StaticState& static_state)
-{ return is_statically_applicable(element.template get_literals<formalism::StaticTag>(), static_state); }
+{ return is_statically_applicable(element.template literals<formalism::StaticTag>(), static_state); }
 
 // GroundAction
 
 inline bool is_statically_applicable(formalism::ActionView<GroundTag> element, const StaticState& static_state)
-{ return is_statically_applicable(element.get_condition(), static_state); }
+{ return is_statically_applicable(element.condition(), static_state); }
 
 // GroundAxiom
 
 inline bool is_statically_applicable(formalism::AxiomView<GroundTag> element, const StaticState& static_state)
-{ return is_statically_applicable(element.get_body(), static_state); }
+{ return is_statically_applicable(element.body(), static_state); }
 
 /**
  * is_dynamically_applicable
@@ -487,10 +487,10 @@ inline bool is_statically_applicable(formalism::AxiomView<GroundTag> element, co
 template<TaskKind Kind>
 bool is_dynamically_applicable(formalism::ConjunctiveConditionView<GroundTag> element, const StateContext<Kind>& context)
 {
-    return is_applicable<formalism::PositiveTag>(element.template get_facts<formalism::PositiveTag>(), context)     //
-           && is_applicable<formalism::NegativeTag>(element.template get_facts<formalism::NegativeTag>(), context)  //
-           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)                        //
-           && is_applicable(element.get_numeric_constraints(), context);
+    return is_applicable<formalism::PositiveTag>(element.template facts<formalism::PositiveTag>(), context)     //
+           && is_applicable<formalism::NegativeTag>(element.template facts<formalism::NegativeTag>(), context)  //
+           && is_applicable(element.template literals<formalism::DerivedTag>(), context)                        //
+           && is_applicable(element.numeric_constraints(), context);
 }
 
 /**
@@ -503,10 +503,10 @@ inline bool is_consistent(formalism::ConjunctiveConditionView<GroundTag> element
                           urd::Store<urd::map<urd::index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>>& fluent_assign,
                           urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
 {
-    for (const auto fact : element.template get_facts<formalism::PositiveTag>())
+    for (const auto fact : element.template facts<formalism::PositiveTag>())
     {
-        const auto var = fact.get_variable().index();
-        const auto val = fact.get_value();
+        const auto var = fact.variable().index();
+        const auto val = fact.value();
 
         if (const auto it = fluent_assign.find(var); it != fluent_assign.end())
         {
@@ -519,10 +519,10 @@ inline bool is_consistent(formalism::ConjunctiveConditionView<GroundTag> element
         }
     }
 
-    for (const auto fact : element.template get_facts<formalism::NegativeTag>())
+    for (const auto fact : element.template facts<formalism::NegativeTag>())
     {
-        const auto var = fact.get_variable().index();
-        const auto val = fact.get_value();
+        const auto var = fact.variable().index();
+        const auto val = fact.value();
 
         if (const auto it = fluent_assign.find(var); it != fluent_assign.end())
         {
@@ -531,10 +531,10 @@ inline bool is_consistent(formalism::ConjunctiveConditionView<GroundTag> element
         }
     }
 
-    for (const auto literal : element.template get_literals<formalism::DerivedTag>())
+    for (const auto literal : element.template literals<formalism::DerivedTag>())
     {
-        const auto atom = literal.get_atom().index();
-        const auto pol = literal.get_polarity();
+        const auto atom = literal.atom().index();
+        const auto pol = literal.polarity();
 
         if (const auto it = derived_assign.find(atom); it != derived_assign.end())
         {
@@ -558,7 +558,7 @@ inline bool is_consistent(formalism::ActionView<GroundTag> element,
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();
-    return is_consistent(element.get_condition(), out_fluent_assign, out_derived_assign);
+    return is_consistent(element.condition(), out_fluent_assign, out_derived_assign);
 }
 
 // GroundAxiom
@@ -569,7 +569,7 @@ inline bool is_consistent(formalism::AxiomView<GroundTag> element,
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();
-    return is_consistent(element.get_body(), out_fluent_assign, out_derived_assign);
+    return is_consistent(element.body(), out_fluent_assign, out_derived_assign);
 }
 
 }

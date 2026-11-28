@@ -127,11 +127,11 @@ struct RPGPolicy<LiftedTag>
                                     witness,
                                     [&](const auto& instance)
                                     {
-                                        for (const auto literal : instance.get_body().template get_literals<formalism::DerivedTag>())
+                                        for (const auto literal : instance.get_body().template literals<formalism::DerivedTag>())
                                         {
-                                            if (!projection_rules.contains(literal.get_atom().get_predicate().index()))
+                                            if (!projection_rules.contains(literal.atom().predicate().index()))
                                                 continue;
-                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).index());
+                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.atom()).index());
                                             const auto* projection = annotation ? std::get_if<datalog::WitnessAnnotation<LiftedTag>>(annotation) : nullptr;
                                             assert(projection && "A derived projection atom has a witness.");
                                             if (projection)

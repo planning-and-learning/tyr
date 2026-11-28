@@ -9,23 +9,23 @@ def _check_packed_plans_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, generator = make_components_ground(task)
     node = GroundSuccessors(generator, state_repository, axiom_evaluator).initial_node()
     first = GroundSuccessors(generator, state_repository, axiom_evaluator).labeled_successor_nodes(node)[0]
-    second = GroundSuccessors(generator, state_repository, axiom_evaluator).labeled_successor_nodes(first.get_node())[0]
+    second = GroundSuccessors(generator, state_repository, axiom_evaluator).labeled_successor_nodes(first.node())[0]
     step_lists: tuple[list[GroundLabeledNode], ...] = ([], [first, second])
     for steps in step_lists:
         expected = [
-            (step.get_label(), step.get_node().get_state().pack(), step.get_node().get_metric()) for step in steps
+            (step.label(), step.node().state().pack(), step.node().metric()) for step in steps
         ]
-        plan = planning.ground.PlanBuilder(start_node=node, labeled_succ_nodes=list(steps)).view(state_repository)
-        assert plan.get_start_node().get_state().pack() == node.get_state().pack()
-        assert plan.get_start_node().get_metric() == node.get_metric()
-        assert plan.get_length() == len(steps)
+        plan = planning.ground.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=list(steps)).view(state_repository)
+        assert plan.start_node().state().pack() == node.state().pack()
+        assert plan.start_node().metric() == node.metric()
+        assert plan.length() == len(steps)
         assert plan.empty() == (not steps)
-        assert plan.get_cost() == (steps[-1].get_node().get_metric() if steps else 0)
+        assert plan.cost() == (steps[-1].node().metric() if steps else 0)
         assert [
-            (step.get_label(), step.get_node().get_state().pack(), step.get_node().get_metric())
-            for step in plan.get_labeled_succ_nodes()
+            (step.label(), step.node().state().pack(), step.node().metric())
+            for step in plan.labeled_succ_nodes()
         ] == expected
-        assert plan.get_goal_node().get_state().pack() == (steps[-1].get_node() if steps else node).get_state().pack()
+        assert plan.goal_node().state().pack() == (steps[-1].node() if steps else node).state().pack()
         assert repr(plan) == str(plan)
 
 
@@ -33,23 +33,23 @@ def _check_packed_plans_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, generator = make_components_lifted(task)
     node = LiftedSuccessors(generator, state_repository, axiom_evaluator).initial_node()
     first = LiftedSuccessors(generator, state_repository, axiom_evaluator).labeled_successor_nodes(node)[0]
-    second = LiftedSuccessors(generator, state_repository, axiom_evaluator).labeled_successor_nodes(first.get_node())[0]
+    second = LiftedSuccessors(generator, state_repository, axiom_evaluator).labeled_successor_nodes(first.node())[0]
     step_lists: tuple[list[LiftedLabeledNode], ...] = ([], [first, second])
     for steps in step_lists:
         expected = [
-            (step.get_label(), step.get_node().get_state().pack(), step.get_node().get_metric()) for step in steps
+            (step.label(), step.node().state().pack(), step.node().metric()) for step in steps
         ]
-        plan = planning.lifted.PlanBuilder(start_node=node, labeled_succ_nodes=list(steps)).view(state_repository)
-        assert plan.get_start_node().get_state().pack() == node.get_state().pack()
-        assert plan.get_start_node().get_metric() == node.get_metric()
-        assert plan.get_length() == len(steps)
+        plan = planning.lifted.deterministic.PlanBuilder(start_node=node, labeled_succ_nodes=list(steps)).view(state_repository)
+        assert plan.start_node().state().pack() == node.state().pack()
+        assert plan.start_node().metric() == node.metric()
+        assert plan.length() == len(steps)
         assert plan.empty() == (not steps)
-        assert plan.get_cost() == (steps[-1].get_node().get_metric() if steps else 0)
+        assert plan.cost() == (steps[-1].node().metric() if steps else 0)
         assert [
-            (step.get_label(), step.get_node().get_state().pack(), step.get_node().get_metric())
-            for step in plan.get_labeled_succ_nodes()
+            (step.label(), step.node().state().pack(), step.node().metric())
+            for step in plan.labeled_succ_nodes()
         ] == expected
-        assert plan.get_goal_node().get_state().pack() == (steps[-1].get_node() if steps else node).get_state().pack()
+        assert plan.goal_node().state().pack() == (steps[-1].node() if steps else node).state().pack()
         assert repr(plan) == str(plan)
 
 

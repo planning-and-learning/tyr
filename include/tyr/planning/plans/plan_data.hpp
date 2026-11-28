@@ -30,7 +30,7 @@ namespace urd
 {
 /// A plan, packed: its start node and the labeled nodes that follow it, each its record (its state's key). A value.
 template<::tyr::TaskKind Kind>
-struct data<::tyr::planning::Plan<Kind>>
+struct data<::tyr::planning::Plan<::tyr::planning::DeterministicTag, Kind>>
 {
     urd::data<::tyr::planning::Node<Kind>> start_node;
     urd::flat_vector<urd::data<::tyr::planning::LabeledNode<Kind>>> labeled_succ_nodes;
@@ -50,9 +50,7 @@ struct data<::tyr::planning::Plan<Kind>>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"start_node", &data::start_node>, urd::field<"labeled_succ_nodes", &data::labeled_succ_nodes>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::start_node, &data::labeled_succ_nodes> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 };
 }
 

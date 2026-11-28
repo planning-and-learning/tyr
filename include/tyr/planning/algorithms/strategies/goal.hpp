@@ -63,7 +63,7 @@ template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class ConjunctiveGoalStrategy : public GoalStrategy<Kind, V>
 {
 public:
-    ConjunctiveGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
+    ConjunctiveGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().goal()) {}
 
     ConjunctiveGoalStrategy(formalism::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
 
@@ -94,7 +94,7 @@ template<TaskKind Kind, typename V = StateBuilderView<Kind>>
 class SerializedGoalStrategy : public GoalStrategy<Kind, V>
 {
 public:
-    SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
+    SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().goal()) {}
 
     SerializedGoalStrategy(formalism::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
 
@@ -121,15 +121,15 @@ private:
         const auto state_context = StateContext { task, state, ygg::float_t { 0 } };
         auto result = ygg::uint_t { 0 };
 
-        for (auto literal : m_goal.template get_literals<formalism::StaticTag>())
+        for (auto literal : m_goal.template literals<formalism::StaticTag>())
             result += is_applicable(literal, state_context) ? 1 : 0;
-        for (auto literal : m_goal.template get_literals<formalism::DerivedTag>())
+        for (auto literal : m_goal.template literals<formalism::DerivedTag>())
             result += is_applicable(literal, state_context) ? 1 : 0;
-        for (auto fact : m_goal.template get_facts<formalism::PositiveTag>())
+        for (auto fact : m_goal.template facts<formalism::PositiveTag>())
             result += is_applicable<formalism::PositiveTag>(fact, state_context) ? 1 : 0;
-        for (auto fact : m_goal.template get_facts<formalism::NegativeTag>())
+        for (auto fact : m_goal.template facts<formalism::NegativeTag>())
             result += is_applicable<formalism::NegativeTag>(fact, state_context) ? 1 : 0;
-        for (auto numeric_constraint : m_goal.get_numeric_constraints())
+        for (auto numeric_constraint : m_goal.numeric_constraints())
             result += is_applicable(numeric_constraint, state_context) ? 1 : 0;
 
         return result;

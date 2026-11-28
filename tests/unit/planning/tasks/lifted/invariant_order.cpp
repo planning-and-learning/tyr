@@ -59,8 +59,8 @@ std::filesystem::path ferry_task() { return std::filesystem::path(BENCHMARKS_DIR
 std::set<std::string> predicate_names(InvariantView invariant)
 {
     auto result = std::set<std::string> {};
-    for (const auto atom : invariant.get_atoms())
-        result.insert(fmt::format("{}", atom.get_predicate().get_name()));
+    for (const auto atom : invariant.atoms())
+        result.insert(fmt::format("{}", atom.predicate().name()));
     return result;
 }
 
@@ -79,12 +79,12 @@ std::multiset<std::string> variable_texts(const planning::GroundTaskInstantiatio
     for (const auto variable : result.task->get_fdr_context()->get_variables())
     {
         auto names = urd::Store<urd::sequence<std::string>> {};
-        for (const auto atom : variable.get_atoms())
+        for (const auto atom : variable.atoms())
         {
             auto objects = urd::Store<urd::sequence<std::string>> {};
-            for (const auto object : atom.get_row().template resolve<tyr::formalism::Object>())
-                objects.push_back(fmt::format("{}", object.get_name()));
-            names.push_back(fmt::format("{}({})", atom.get_predicate().get_name(), fmt::join(objects, ",")));
+            for (const auto object : atom.row().template resolve<tyr::formalism::Object>())
+                objects.push_back(fmt::format("{}", object.name()));
+            names.push_back(fmt::format("{}({})", atom.predicate().name(), fmt::join(objects, ",")));
         }
         std::ranges::sort(names);
         texts.insert(fmt::format("{}", fmt::join(names, " ")));

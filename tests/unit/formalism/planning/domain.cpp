@@ -37,16 +37,16 @@ static_assert(requires(DomainData& data) {
 });
 static_assert(requires(const DomainView& view) {
     view.index();
-    view.get_name();
-    view.template get_predicates<tyr::formalism::StaticTag>();
-    view.template get_predicates<tyr::formalism::FluentTag>();
-    view.template get_predicates<tyr::formalism::DerivedTag>();
-    view.template get_functions<tyr::formalism::StaticTag>();
-    view.template get_functions<tyr::formalism::FluentTag>();
-    view.get_auxiliary_function();
-    view.get_constants();
-    view.get_actions();
-    view.get_axioms();
+    view.name();
+    view.template predicates<tyr::formalism::StaticTag>();
+    view.template predicates<tyr::formalism::FluentTag>();
+    view.template predicates<tyr::formalism::DerivedTag>();
+    view.template functions<tyr::formalism::StaticTag>();
+    view.template functions<tyr::formalism::FluentTag>();
+    view.auxiliary_function();
+    view.constants();
+    view.actions();
+    view.axioms();
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });

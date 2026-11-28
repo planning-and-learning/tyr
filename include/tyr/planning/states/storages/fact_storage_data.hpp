@@ -54,12 +54,10 @@ struct data<::tyr::planning::FactStorage<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &data::values>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::values> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>> key() const noexcept
-    { return urd::key<::tyr::planning::FactStorage<::tyr::GroundTag>>(index); }
+    { return index; }
 };
 
 /// A lifted state's fluent facts: a bit per (binary) fluent variable, as words. Its pool packs them and names them by
@@ -82,12 +80,10 @@ struct data<::tyr::planning::FactStorage<::tyr::LiftedTag>>
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &data::indices>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::indices> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>> key() const noexcept
-    { return urd::key<::tyr::planning::FactStorage<::tyr::LiftedTag>>(index); }
+    { return index; }
 };
 
 }  // namespace urd

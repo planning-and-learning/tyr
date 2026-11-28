@@ -130,24 +130,24 @@ private:
                       && std::same_as<CP, RuleCostPolicy> && !std::same_as<TP, NoTerminationPolicy>)
         {
             const auto& goal = m_ctx->out().tp().get_goal();
-            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx->out().schedulers().size() != 1)
+            if (!goal || !goal->numeric_constraints().empty() || m_ctx->out().schedulers().size() != 1)
                 return;
             const auto fact_sets = FactSets { m_ctx->in().facts().fact_sets, m_ctx->out().facts().fact_sets };
-            if (!is_applicable(goal->template get_literals<formalism::StaticTag>(), fact_sets))
+            if (!is_applicable(goal->template literals<formalism::StaticTag>(), fact_sets))
                 return;
 
             auto min_edge_cost = std::numeric_limits<Cost>::max();
             for (const auto& rule : m_ctx->in().engine().rules)
                 if (rule)
-                    min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
+                    min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().cost()));
 
             m_goal_positions.clear();
             m_num_goal_atoms = 0;
             boost::mp11::mp_for_each<MutableTags>(
                 [&]<typename F>(F)
                 {
-                    for (const auto literal : goal->template get_literals<F>())
-                        if (m_goal_positions.template get<F>().emplace(literal.get_atom().get_row().index(), m_num_goal_atoms).second)
+                    for (const auto literal : goal->template literals<F>())
+                        if (m_goal_positions.template get<F>().emplace(literal.atom().row().index(), m_num_goal_atoms).second)
                             ++m_num_goal_atoms;
                 });
             m_goal_final.clear();
@@ -254,7 +254,7 @@ private:
         boost::mp11::mp_for_each<MutableTags>(
             [&]<typename F>(F)
             {
-                for (const auto head_atom : ctx.in().cws_rule().get_rule().template get_heads<F>())
+                for (const auto head_atom : ctx.in().cws_rule().get_rule().template heads<F>())
                     heads.template get<F>().push_back(formalism::ground_row(head_atom, out.ground_context()).first);
             });
         insert_propositional_update(std::as_const(heads), input, out.head_updates(), out.delta_annotations());
@@ -277,14 +277,14 @@ private:
         create_nullary_binding(out.ground_context().binding());
 
         const auto nullary_condition = in.cws_rule().get_nullary_condition();
-        const auto conflicting_condition = in.cws_rule().get_rule().get_body();
+        const auto conflicting_condition = in.cws_rule().get_rule().body();
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
         const auto statically_applicable = [&]()
         {
             return applicability_cache.static_nullary
-                   && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
+                   && is_applicable(conflicting_condition.template literals<formalism::StaticTag>(), applicability_context);
         };
         const auto dynamically_applicable = [&]()
         {
@@ -332,7 +332,7 @@ private:
         constexpr size_t kNumStripes = 2;
         constexpr size_t kParallelThreshold = 1024;
         auto& kckp_algorithm = rctx.out().kckp();
-        if (kckp_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().get_arity() > 2 && !rctx.stratum_in().is_single_threaded())
+        if (kckp_algorithm.get_iteration() > 1 && rctx.in().cws_rule().get_rule().arity() > 2 && !rctx.stratum_in().is_single_threaded())
         {
             const auto& delta_edges = kckp_algorithm.materialize_delta_edges();
             if (delta_edges.size() >= kParallelThreshold)
@@ -385,7 +385,7 @@ private:
         boost::mp11::mp_for_each<MutableTags>(
             [&]<typename F>(F)
             {
-                for (const auto head_atom : in.cws_rule().get_rule().template get_heads<F>())
+                for (const auto head_atom : in.cws_rule().get_rule().template heads<F>())
                 {
                     const auto head = formalism::ground_row(head_atom, ground_context).first;
                     if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<F>(), head))
@@ -451,7 +451,7 @@ private:
         const auto statically_applicable = [&]()
         {
             return applicability_cache.static_nullary
-                   && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
+                   && is_applicable(conflicting_condition.template literals<formalism::StaticTag>(), applicability_context);
         };
 
         if (!statically_applicable())
@@ -512,7 +512,7 @@ private:
         const auto hyperedge_condition = cws_rule.get_hyperedge_condition();
         auto& kckp_algorithm = rctx.out().kckp();
         auto num_literals = size_t { 0 };
-        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { num_literals += hyperedge_condition.template get_literals<F>().size(); });
+        boost::mp11::mp_for_each<MutableTags>([&]<typename F>(F) { num_literals += hyperedge_condition.template literals<F>().size(); });
         if (num_literals == 0 || kckp_algorithm.get_iteration() <= 1)
             return;
 
@@ -535,7 +535,7 @@ private:
                     constexpr auto f = boost::mp11::mp_find<MutableTags, F>::value;
                     if constexpr (g <= f)
                     {
-                        const auto literals = hyperedge_condition.template get_literals<G>();
+                        const auto literals = hyperedge_condition.template literals<G>();
                         const auto end = (g < f) ? literals.size() : i;
                         for (size_t j = 0; j < end && !result; ++j)
                             result = is_applicable(literals[j], delta_context);
@@ -549,7 +549,7 @@ private:
             {
                 const auto& kind_anchors = anchors.template get<F>();
                 const auto& kind_delta = delta_fact_sets.template get<F>();
-                const auto num_kind_literals = hyperedge_condition.template get_literals<F>().size();
+                const auto num_kind_literals = hyperedge_condition.template literals<F>().size();
                 for (size_t i = 0; i < num_kind_literals; ++i)
                 {
                     for (const auto atom : rows(kind_delta, kind_anchors.heads[i].predicate.value))
@@ -608,7 +608,7 @@ private:
 
     void generate(RuleExecutionContext<AP, TP, CP>& rctx, bool enumerate_all)
     {
-        const auto arity = rctx.in().cws_rule().get_rule().get_body().get_arity();
+        const auto arity = rctx.in().cws_rule().get_rule().body().arity();
 
         if (arity == 0)
             generate_nullary_case(rctx);
@@ -645,9 +645,9 @@ private:
                 const auto wrctx = rctx.get_rule_worker_execution_context();
                 const auto& fact_sets = wrctx.in().fact_sets();
                 const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
-                const auto static_nullary = is_applicable(nullary_condition.template get_literals<formalism::StaticTag>(), fact_sets);
+                const auto static_nullary = is_applicable(nullary_condition.template literals<formalism::StaticTag>(), fact_sets);
                 const auto dynamic_nullary = static_nullary && is_dynamically_applicable(nullary_condition, fact_sets);
-                if (!dynamic_nullary && rctx.in().cws_rule().get_rule().get_body().get_arity() > 0)
+                if (!dynamic_nullary && rctx.in().cws_rule().get_rule().body().arity() > 0)
                 {
                     // No binding is applicable while the nullary condition fails. Its atoms are listened to, so the rule
                     // runs again once it holds, and the reset graph then enumerates all cliques.

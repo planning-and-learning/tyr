@@ -60,9 +60,7 @@ struct data<::tyr::planning::Transition>
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"kind", &data::kind>, urd::field<"binding", &data::binding>, urd::field<"open", &data::open>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::kind, &data::binding, &data::open> {}; }
+    static constexpr auto cista_members() noexcept { return urd::cista_members_of<data>(); }
 
     [[nodiscard]] urd::key<::tyr::planning::Transition> key() const noexcept { return index; }
 };

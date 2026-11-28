@@ -37,7 +37,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::Rul
     const auto rule_index = rule.index();
     auto& states = m_states;
     auto& satisfied = states[static_cast<ygg::uint_t>(rule_index.value)].numeric_constraint_satisfied;
-    const auto numeric_constraints = rule.get_body().get_numeric_constraints();
+    const auto numeric_constraints = rule.body().numeric_constraints();
 
     const auto fact_sets = FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets };
     for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
@@ -81,8 +81,8 @@ void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, 
         boost::mp11::mp_for_each<MutableTags>(
             [&]<typename F>(F)
             {
-                for (const auto literal : rule.get_body().template get_literals<F>())
-                    if (!literal.get_polarity() && is_applicable(literal, fact_sets))
+                for (const auto literal : rule.body().template literals<F>())
+                    if (!literal.polarity() && is_applicable(literal, fact_sets))
                         satisfy(rule, support_start<AP>(), aggregate);
             });
 }

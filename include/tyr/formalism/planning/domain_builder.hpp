@@ -20,6 +20,7 @@
 
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/function_builder.hpp"
 #include "tyr/formalism/object_builder.hpp"
 #include "tyr/formalism/planning/action_builder.hpp"
@@ -43,6 +44,7 @@ struct builder<::tyr::formalism::Domain, C>
 {
     urd::key<::tyr::formalism::Domain> index;
     urd::built_t<urd::flat_string, C> name;
+    urd::built_t<urd::flat_vector<::tyr::formalism::RequirementKind>, C> requirements;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>>, C> static_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>>, C> fluent_predicates;
     urd::built_t<urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>>, C> derived_predicates;
@@ -56,6 +58,7 @@ struct builder<::tyr::formalism::Domain, C>
     static constexpr auto fields() noexcept
     {
         return urd::Fields<urd::field<"name", &builder::name>,
+                           urd::field<"requirements", &builder::requirements>,
                            urd::field<"static_predicates", &builder::static_predicates>,
                            urd::field<"fluent_predicates", &builder::fluent_predicates>,
                            urd::field<"derived_predicates", &builder::derived_predicates>,
@@ -67,19 +70,6 @@ struct builder<::tyr::formalism::Domain, C>
                            urd::field<"axioms", &builder::axioms>> {};
     }
 
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&builder::name,
-                            &builder::static_predicates,
-                            &builder::fluent_predicates,
-                            &builder::derived_predicates,
-                            &builder::static_functions,
-                            &builder::fluent_functions,
-                            &builder::auxiliary_function,
-                            &builder::constants,
-                            &builder::actions,
-                            &builder::axioms> {};
-    }
 };
 
 }  // namespace urd

@@ -48,7 +48,6 @@ struct builder<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>, C>
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::fact, &builder::true_child, &builder::dontcare_child> {}; }
 };
 
 }  // namespace urd

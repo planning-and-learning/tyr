@@ -24,8 +24,8 @@ from queue import PriorityQueue
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism import Parser, RowActionLiftedBuilderView
-from pytyr.planning import SearchStatus, StateDelta
+from pytyr.formalism import Parser
+from pytyr.planning import SearchStatus
 from pytyr.planning.lifted import (
     AxiomEvaluator,
     ConjunctiveGoalStrategy,
@@ -36,17 +36,21 @@ from pytyr.planning.lifted import (
     NodeBuilderView,
     OwnedNodeBuilderView,
     NodeData,
-    PlanBuilder,
-    PlanBuilderView,
     StateIndex,
     StateRepository,
     SuccessorGenerator,
+    SuccessorState,
     Task,
+    TransitionLabel,
+    deterministic,
+    extend_successor,
+    find_successor,
     get_initial_node,
     get_node,
     intern_action_binding,
     register_successor,
 )
+from pytyr.planning.lifted.deterministic import PlanBuilder, PlanBuilderView
 
 # A node a caller holds (owned: returned on its own) or reads in place (borrowed: a labeled node's).
 Node = OwnedNodeBuilderView | NodeBuilderView
@@ -71,20 +75,22 @@ def labeled_successor_nodes(
 ) -> list[LabeledNode]:
     """The successors of `node`, each registered and labeled by its action binding.
 
-    The binding is interned: the generator hands bindings out borrowed, valid only during its callback.
+    The search is deterministic: one successor state per transition (the `deterministic` environment). The lookup gives a
+    state that is registered already its index and derived atoms, the axiom step closes any other under the axioms, and
+    register_successor registers it. The binding is interned: a transition's binding is borrowed, valid only during its
+    callback.
     """
     successors: list[LabeledNode] = []
 
-    def visit(borrowed: RowActionLiftedBuilderView) -> bool:
-        binding = intern_action_binding(successor_generator, borrowed)
-        state = state_repository.get_state_builder()
-        delta = StateDelta()
-        auxiliary_value = successor_generator.generate_successor_state(node, binding, state, delta)
-        successor = register_successor(state_repository, axiom_evaluator, state, auxiliary_value, node, delta)
+    def visit(transition: TransitionLabel, successor_state: SuccessorState) -> bool:
+        binding = intern_action_binding(successor_generator, transition.binding)
+        find_successor(state_repository, node, successor_state)
+        extend_successor(axiom_evaluator, node, successor_state)
+        successor = register_successor(state_repository, node, successor_state)
         successors.append(LabeledNodeBuilder(label=binding, node=successor).view(state_repository))
         return True
 
-    successor_generator.for_each_applicable_action_binding(node, visit)
+    deterministic.for_each_successor(successor_generator, node, visit)
     return successors
 
 
@@ -105,7 +111,7 @@ def backtrack_plan(
     successor_generator: SuccessorGenerator,
 ) -> PlanBuilderView:
     """Backtracks from the goal search node to compute the labeled state trajectory."""
-    cur_state_index = goal_node.get_state().pack().index()
+    cur_state_index = goal_node.state().pack().index()
     backward_state_trajectory: list[StateIndex] = []
 
     while cur_state_index is not None:
@@ -122,13 +128,13 @@ def backtrack_plan(
 
     for i in range(len(forward_state_trajectory) - 1):
         for labeled_succ_node in labeled_successor_nodes(successor_generator, node, state_repository, axiom_evaluator):
-            succ_node = labeled_succ_node.get_node()
-            succ_state = succ_node.get_state()
+            succ_node = labeled_succ_node.node()
+            succ_state = succ_node.state()
             succ_state_index = succ_state.pack().index()
 
             if succ_state_index == forward_state_trajectory[i + 1]:
                 labeled_succ_nodes.append(labeled_succ_node)
-                node = labeled_succ_node.get_node()
+                node = labeled_succ_node.node()
 
     return PlanBuilder(start_node=start_node, labeled_succ_nodes=labeled_succ_nodes).view(state_repository)
 
@@ -156,7 +162,7 @@ def find_solution(
 
 
     initial_node = get_initial_node(state_repository, axiom_evaluator)
-    initial_state = initial_node.get_state()
+    initial_state = initial_node.state()
 
     if goal_strategy.is_dynamic_goal_satisfied(initial_state, initial_state):
         return SearchResult(
@@ -164,7 +170,7 @@ def find_solution(
         )
 
     initial_h_value = heuristic.evaluate(initial_state)
-    initial_g_value = initial_node.get_metric()
+    initial_g_value = initial_node.metric()
     initial_state_index = initial_state.pack().index()
 
     search_nodes: dict[StateIndex, SearchNode] = {}
@@ -178,7 +184,7 @@ def find_solution(
     while not queue.empty():
         _, g_value, state_index = queue.get()
         node = get_node(state_repository, NodeData(state_index, g_value))
-        state = node.get_state()
+        state = node.state()
         search_node = search_nodes[state_index]
 
         state_h_value = heuristic.evaluate(state)
@@ -191,9 +197,9 @@ def find_solution(
             continue
 
         for labeled_succ_node in labeled_successor_nodes(successor_generator, node, state_repository, axiom_evaluator):
-            succ_node = labeled_succ_node.get_node()
-            succ_state = succ_node.get_state()
-            succ_g_value = succ_node.get_metric()
+            succ_node = labeled_succ_node.node()
+            succ_state = succ_node.state()
+            succ_g_value = succ_node.metric()
             succ_state_index = succ_state.pack().index()
 
             if succ_state_index not in search_nodes:
@@ -206,7 +212,7 @@ def find_solution(
 
             succ_search_node.parent = state_index
 
-            action = labeled_succ_node.get_label()
+            action = labeled_succ_node.label()
             if relaxed_plan is not None and action in relaxed_plan:
                 pass  # the action is applicable and in the relaxed plan: a preferred successor
 
@@ -260,7 +266,7 @@ def main() -> None:
     plan = search_result.plan
 
     if plan is not None:
-        print(f"Found plan with length {plan.get_length()} and cost {plan.get_cost()}")
+        print(f"Found plan with length {plan.length()} and cost {plan.cost()}")
         print(plan)
     else:
         print("No solution was found.")

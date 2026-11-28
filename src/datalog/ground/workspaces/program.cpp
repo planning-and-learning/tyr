@@ -31,7 +31,7 @@ namespace
 {
 void validate_rules(formalism::ProgramView<GroundTag> program, const FactSets& fact_sets)
 {
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
         if (!is_statically_applicable(rule, fact_sets))
             throw std::invalid_argument("Ground Datalog programs must remove statically inapplicable rules before execution");
 }
@@ -40,15 +40,15 @@ void validate_program(formalism::ProgramView<GroundTag> program, const FactSets&
 
 void initialize_dependencies(formalism::ProgramView<GroundTag> program, GroundRuleDependencies& dependencies)
 {
-    for (const auto rule : program.get_rules())
+    for (const auto rule : program.rules())
     {
-        const auto body = rule.get_body();
+        const auto body = rule.body();
         boost::mp11::mp_for_each<MutableTags>(
             [&]<typename F>(F)
             {
-                for (const auto literal : body.template get_literals<F>())
-                    if (literal.get_polarity())
-                        dependencies.precondition_to_rules.template get<F>().update(literal.get_atom().get_row().index(),
+                for (const auto literal : body.template literals<F>())
+                    if (literal.polarity())
+                        dependencies.precondition_to_rules.template get<F>().update(literal.atom().row().index(),
                                                                                     [&](auto& rules, bool) { rules.push_back(rule); });
             });
     }
@@ -57,10 +57,10 @@ void initialize_dependencies(formalism::ProgramView<GroundTag> program, GroundRu
 
 ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::ProgramView<GroundTag> program_) :
     program(program_),
-    facts(program.template get_predicates<formalism::StaticTag>(),
-          program.template get_functions<formalism::StaticTag>(),
-          program.template get_atoms<formalism::StaticTag>(),
-          program.template get_fterm_values<formalism::StaticTag>(),
+    facts(program.template predicates<formalism::StaticTag>(),
+          program.template functions<formalism::StaticTag>(),
+          program.template atoms<formalism::StaticTag>(),
+          program.template fterm_values<formalism::StaticTag>(),
           program.context()),
     dependencies(program),
     strata(analysis::compute_rule_stratification(program))

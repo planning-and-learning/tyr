@@ -40,24 +40,24 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_variables() const noexcept
+    auto variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
 
-    auto get_condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
+    auto condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
 
-    auto get_effect() const noexcept { return self().template member<&urd::record_of<V>::effect>(); }
+    auto effect() const noexcept { return self().template member<&urd::record_of<V>::effect>(); }
 
-    auto get_arity() const noexcept
+    auto arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return get_variables().size(); }
+    { return variables().size(); }
 
     static constexpr auto functions() noexcept
     {
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
             return urd::Functions<> {};
         else
-            return urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>> {};
+            return urd::Functions<urd::function<"arity", &view_mixin::arity>> {};
     }
 };
 }  // namespace urd

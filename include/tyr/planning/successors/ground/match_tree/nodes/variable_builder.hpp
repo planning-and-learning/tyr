@@ -47,7 +47,6 @@ struct builder<::tyr::planning::match_tree::VariableSelectorNode<Tag>, C>
                            urd::field<"dontcare_child", &builder::dontcare_child>> {};
     }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::variable, &builder::domain_children, &builder::dontcare_child> {}; }
 };
 
 }  // namespace urd

@@ -65,6 +65,7 @@
 #include <algorithm>
 #include <array>
 #include <span>
+#include <urd/elements/children.hpp>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/flat.hpp>
 #include <vector>
@@ -76,6 +77,14 @@ namespace tyr::planning
 namespace
 {
 
+/// The value of `fterm` in the successor being built so far (NaN where it has none), read through its numeric storage's
+/// view in the parent state's repository.
+template<TaskKind Kind>
+ygg::float_t value_so_far(const urd::builder<State<Kind>, StateRepository<Kind>>& successor,
+                          const StateContext<Kind>& state_context,
+                          urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> fterm)
+{ return NumericStorageBuilderView<Kind>(successor.numeric_storage.get(), &state_context.numeric_storage().context()).get(fterm); }
+
 template<TaskKind Kind, typename Effects>
 void process_effects(Effects effects,
                      urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
@@ -86,29 +95,29 @@ void process_effects(Effects effects,
 {
     for (const auto cond_effect : effects)
     {
-        if (is_applicable(cond_effect.get_condition(), state_context))
+        if (is_applicable(cond_effect.condition(), state_context))
         {
-            const auto effect = cond_effect.get_effect();
+            const auto effect = cond_effect.effect();
 
-            for (const auto fact : effect.template get_facts<formalism::NegativeTag>())
-                tmp_del_effects.push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+            for (const auto fact : effect.template facts<formalism::NegativeTag>())
+                tmp_del_effects.push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.variable(), fact.value()));
 
-            for (const auto fact : effect.template get_facts<formalism::PositiveTag>())
-                tmp_add_effects.push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+            for (const auto fact : effect.template facts<formalism::PositiveTag>())
+                tmp_add_effects.push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.variable(), fact.value()));
 
             // Each operation applies to the successor's value so far, its operand read in the parent state: several
             // additive (or several multiplicative) effects on one function term combine, in any order.
-            for (const auto numeric_effect : effect.get_numeric_effects())
+            for (const auto numeric_effect : effect.numeric_effects())
             {
-                const auto fterm = numeric_effect.get_fterm().index();
-                const auto operand = evaluate(numeric_effect.get_fexpr(), state_context);
-                successor_state_builder.set(fterm, formalism::apply(numeric_effect.get_operation(), successor_state_builder.get(fterm), operand));
+                const auto fterm = numeric_effect.fterm().index();
+                const auto operand = evaluate(numeric_effect.fexpr(), state_context);
+                successor_state_builder.set(fterm, formalism::apply(numeric_effect.operation(), value_so_far(successor_state_builder, state_context, fterm), operand));
                 tmp_numeric_writes.push_back(fterm);
             }
 
             /// Collect the increment (total-cost) in the state_context
-            if (effect.get_auxiliary_numeric_effect().has_value())
-                state_context.auxiliary_value() = evaluate(effect.get_auxiliary_numeric_effect().value(), state_context);
+            if (effect.auxiliary_numeric_effect().has_value())
+                state_context.auxiliary_value() = evaluate(effect.auxiliary_numeric_effect().value(), state_context);
         }
     }
 }
@@ -124,30 +133,30 @@ void apply_lifted_effect(formalism::ConditionalEffectView<LiftedTag> cond_effect
                          urd::flat_vector<urd::data<formalism::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
                          urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
 {
-    const auto effect = cond_effect.get_effect();
+    const auto effect = cond_effect.effect();
 
-    for (const auto literal : effect.get_literals())
+    for (const auto literal : effect.literals())
     {
-        const auto fact = fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first);
-        (literal.get_polarity() ? tmp_add_effects : tmp_del_effects)
-            .push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+        const auto fact = fdr_context.get_fact(ground(literal.atom(), grounder_context).first);
+        (literal.polarity() ? tmp_add_effects : tmp_del_effects)
+            .push_back(urd::make<formalism::FDRFact<formalism::FluentTag>>(fact.variable(), fact.value()));
     }
 
-    for (const auto numeric_effect : effect.get_numeric_effects())
+    for (const auto numeric_effect : effect.numeric_effects())
     {
         // Sequenced: both grounding and evaluation mutate the grounder context, and argument
         // evaluation order is unspecified (gcc and clang disagree). Evaluating first preserves
         // the historical gcc (right-to-left) index assignment order. The operation applies to the successor's value so
         // far, its operand read in the parent state (as process_effects).
-        const auto operand = evaluate(numeric_effect.get_fexpr(), applicability_context);
-        const auto fterm = ground(numeric_effect.get_fterm(), grounder_context).first.index();
-        successor_state_builder.set(fterm, formalism::apply(numeric_effect.get_operation(), successor_state_builder.get(fterm), operand));
+        const auto operand = evaluate(numeric_effect.fexpr(), applicability_context);
+        const auto fterm = ground(numeric_effect.fterm(), grounder_context).first.index();
+        successor_state_builder.set(fterm, formalism::apply(numeric_effect.operation(), value_so_far(successor_state_builder, state_context, fterm), operand));
         tmp_numeric_writes.push_back(fterm);
     }
 
     /// Collect the increment (total-cost) in the state_context
-    if (effect.get_auxiliary_numeric_effect().has_value())
-        state_context.auxiliary_value() = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
+    if (effect.auxiliary_numeric_effect().has_value())
+        state_context.auxiliary_value() = evaluate(effect.auxiliary_numeric_effect().value(), applicability_context);
 }
 
 /// Writes the exact changes of `successor` relative to `parent` at the touched variables and function terms into `delta`.
@@ -195,9 +204,9 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
     auto tmp_state_context = state_context;
 
     // The successor's unextended part is its parent's with the effects; its derived atoms are its axioms' to compute.
-    successor_state_builder.fact_storage->assign(state_context.fact_storage());
-    successor_state_builder.numeric_storage->assign(state_context.numeric_storage());
-    successor_state_builder.temporal_storage->assign(state_context.temporal_storage());
+    urd::build_from(state_context.fact_storage(), *successor_state_builder.fact_storage);
+    urd::build_from(state_context.numeric_storage(), *successor_state_builder.numeric_storage);
+    urd::build_from(state_context.temporal_storage(), *successor_state_builder.temporal_storage);
     successor_state_builder.clear_extended_part();
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
@@ -227,14 +236,14 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable(formalism::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{ return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state); }
+{ return tyr::planning::is_applicable(action.condition(), state) && is_applicable_if_fires(action, state); }
 
 template bool ActionExecutor::is_applicable(formalism::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable(formalism::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{ return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families); }
+{ return tyr::planning::is_applicable_if_fires(action.effects(), state, m_effect_families); }
 
 template bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
@@ -252,7 +261,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>&
                                           m_numeric_writes,
                                           delta,
                                           [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
-                                          { process_effects(action.get_effects(), out_state, tmp_state_context, del_effects, add_effects, numeric_writes); });
+                                          { process_effects(action.effects(), out_state, tmp_state_context, del_effects, add_effects, numeric_writes); });
 }
 
 template<TaskKind Kind>
@@ -273,7 +282,7 @@ ygg::float_t ActionExecutor::apply_effects_unregistered(const StateContext<Kind>
                                               for (const auto list : effects)
                                                   process_effects(list, out_state, tmp_state_context, del_effects, add_effects, numeric_writes);
                                               for (const auto pick : picks)
-                                                  process_effects(pick.get_effects(), out_state, tmp_state_context, del_effects, add_effects, numeric_writes);
+                                                  process_effects(pick.effects(), out_state, tmp_state_context, del_effects, add_effects, numeric_writes);
                                           });
 }
 
@@ -284,7 +293,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>&
                                                        urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                                                        StateDelta& delta)
 {
-    const auto effects = std::array { action.get_effects() };
+    const auto effects = std::array { action.effects() };
     return apply_effects_unregistered(state_context,
                                       std::span<const formalism::ConditionalEffectListView<GroundTag>>(effects),
                                       picks,
@@ -304,7 +313,7 @@ bool ActionExecutor::is_applicable_if_fires(std::span<const formalism::Condition
             if (!tyr::planning::is_applicable_if_fires(cond_effect, state, m_effect_families))
                 return false;
     for (const auto pick : picks)
-        for (const auto cond_effect : pick.get_effects())
+        for (const auto cond_effect : pick.effects())
             if (!tyr::planning::is_applicable_if_fires(cond_effect, state, m_effect_families))
                 return false;
     return true;
@@ -315,7 +324,7 @@ bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<GroundTag> act
                                             std::span<const formalism::OutcomeView<GroundTag>> picks,
                                             const StateContext<Kind>& state)
 {
-    const auto effects = std::array { action.get_effects() };
+    const auto effects = std::array { action.effects() };
     return is_applicable_if_fires(std::span<const formalism::ConditionalEffectListView<GroundTag>>(effects), picks, state);
 }
 
@@ -372,11 +381,11 @@ bool ActionExecutor::is_applicable_if_fires(formalism::ActionView<LiftedTag> act
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
     m_effect_families.clear();
     auto applicable = true;
-    for (const auto cond_effect : action.get_effects())
+    for (const auto cond_effect : action.effects())
         for_each_effect_binding(cond_effect,
                                 [&]
                                 {
-                                    if (applicable && !tyr::planning::is_applicable(cond_effect.get_effect(), applicability_context, m_effect_families))
+                                    if (applicable && !tyr::planning::is_applicable(cond_effect.effect(), applicability_context, m_effect_families))
                                         applicable = false;
                                 });
     return applicable;
@@ -399,7 +408,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                           [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
                                           {
                                               auto applicability_context = ApplicabilityContext { tmp_state_context, grounder, fdr };
-                                              for (const auto cond_effect : action.get_effects())
+                                              for (const auto cond_effect : action.effects())
                                                   for_each_effect_binding(cond_effect,
                                                                           [&]
                                                                           {
@@ -444,8 +453,8 @@ void for_each_bound_effect(std::span<const LiftedEffects> effects,
     }
     for (const auto& pick : picks)
     {
-        set_binding(grounder, pick.binding.first(pick.action.get_arity()));
-        for (const auto cond_effect : pick.outcome.get_effects())
+        set_binding(grounder, pick.binding.first(pick.action.arity()));
+        for (const auto cond_effect : pick.outcome.effects())
             for_each_effect_binding(pick.action,
                                     cond_effect,
                                     [&]
@@ -474,7 +483,7 @@ bool ActionExecutor::is_applicable_if_fires(std::span<const LiftedEffects> effec
                           for_each_effect_binding,
                           [&](formalism::ConditionalEffectView<LiftedTag> cond_effect)
                           {
-                              if (applicable && !tyr::planning::is_applicable(cond_effect.get_effect(), applicability_context, m_effect_families))
+                              if (applicable && !tyr::planning::is_applicable(cond_effect.effect(), applicability_context, m_effect_families))
                                   applicable = false;
                           });
     return applicable;

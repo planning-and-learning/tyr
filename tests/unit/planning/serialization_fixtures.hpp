@@ -69,7 +69,7 @@ tyr::planning::TaskPtr<Kind> make_task()
 
 /// A plan and the repository its states borrow (the plan goes first).
 template<TaskKind Kind>
-std::pair<tyr::planning::StateRepositoryPtr<Kind>, tyr::planning::OwnedPlanBuilderView<Kind>> make_plan()
+std::pair<tyr::planning::StateRepositoryPtr<Kind>, tyr::planning::OwnedPlanBuilderView<tyr::planning::DeterministicTag, Kind>> make_plan()
 {
     auto task = make_task<Kind>();
     auto execution = ygg::ExecutionContext::create(1);
@@ -100,13 +100,13 @@ void check_runtime_serialization()
     dictionaries.template register_table<tyr::planning::NumericStorageBuilderView<Kind>>("numeric_storages", "v");
     dictionaries.template register_table<tyr::planning::TemporalStorageBuilderView<Kind>>("temporal_storages", "T");
     EXPECT_TRUE(dictionaries.template table<tyr::planning::StateBuilderView<Kind>>().empty());
-    EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
-    EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].get_node()).as_string(), "n1");
-    EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[1].get_node()).as_string(), "n1");
+    EXPECT_EQ(dictionaries.serialize(plan.start_node()).as_string(), "n0");
+    EXPECT_EQ(dictionaries.serialize(plan.labeled_succ_nodes()[0].node()).as_string(), "n1");
+    EXPECT_EQ(dictionaries.serialize(plan.labeled_succ_nodes()[1].node()).as_string(), "n1");
     const auto nodes = dictionaries.template table<tyr::planning::NodeBuilderView<Kind>>();
     ASSERT_EQ(nodes.size(), 2);
     EXPECT_EQ(nodes[0].as_object().at("state").as_string(), "s0");
-    EXPECT_EQ(nodes[0].as_object().at("metric").as_double(), plan.get_start_node().get_metric());
+    EXPECT_EQ(nodes[0].as_object().at("metric").as_double(), plan.start_node().metric());
     EXPECT_EQ(nodes[1].as_object().at("state").as_string(), "s1");
     const auto states = dictionaries.template table<tyr::planning::StateBuilderView<Kind>>();
     ASSERT_EQ(states.size(), 2);
@@ -122,7 +122,7 @@ void check_runtime_serialization()
     EXPECT_FALSE(dictionaries.template table<tyr::planning::FactStorageBuilderView<Kind>>().empty());
     EXPECT_FALSE(dictionaries.template table<tyr::planning::NumericStorageBuilderView<Kind>>().empty());
     const auto snapshot = dictionaries.tables();
-    EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
+    EXPECT_EQ(dictionaries.serialize(plan.start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.tables(), snapshot);
 
     const auto task = make_task<Kind>();
